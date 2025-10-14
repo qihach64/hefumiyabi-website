@@ -1,26 +1,109 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* 樱花般清新淡雅的配色 */
+  --background: #fdfcfb;
+  --foreground: #2d2d2d;
+
+  /* 主色调 - 柔和的樱花粉 */
+  --primary: #f4a5b9;
+  --primary-foreground: #ffffff;
+
+  /* 次要色 - 淡雅的米色 */
+  --secondary: #f5f1ed;
+  --secondary-foreground: #4a4a4a;
+
+  /* 强调色 - 温暖的金色 */
+  --accent: #d4af37;
+  --accent-foreground: #ffffff;
+
+  /* 边框和分隔线 - 极淡的灰粉色 */
+  --border: #f0e5e5;
+  --input: #f0e5e5;
+  --ring: #f4a5b9;
+
+  /* 卡片背景 */
+  --card: #ffffff;
+  --card-foreground: #2d2d2d;
+
+  /* 弱化文字 */
+  --muted: #f5f1ed;
+  --muted-foreground: #6b6b6b;
+
+  /* 破坏性操作（保持功能性） */
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+
+  /* 圆角 */
+  --radius: 0.5rem;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-input: var(--border);
+  --color-ring: var(--ring);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* 移除深色模式，保持清新淡雅的主题 */
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.6;
+}
+
+/* 容器样式 - 居中布局 */
+.container {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .container {
+    max-width: 640px;
+  }
+}
+
+@media (min-width: 768px) {
+  .container {
+    max-width: 768px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    max-width: 1024px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .container {
+    max-width: 1280px;
+  }
+}
+
+@media (min-width: 1536px) {
+  .container {
+    max-width: 1536px;
+  }
 }
