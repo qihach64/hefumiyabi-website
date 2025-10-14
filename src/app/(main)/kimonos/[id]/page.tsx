@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
-import { Heart, MapPin, ArrowLeft } from "lucide-react";
+import { MapPin, ArrowLeft } from "lucide-react";
+import FavoriteButton from "@/components/kimono/FavoriteButton";
 
 export default async function KimonoDetailPage({
   params,
@@ -232,15 +233,10 @@ export default async function KimonoDetailPage({
             >
               立即预约
             </Link>
-            <button
+            <FavoriteButton
+              kimonoId={kimono.id}
               className="border rounded-md px-4 py-3 hover:bg-accent transition-colors"
-              onClick={() => {
-                // TODO: 实现收藏功能
-                console.log("收藏:", kimono.id);
-              }}
-            >
-              <Heart className="w-5 h-5" />
-            </button>
+            />
           </div>
         </div>
       </div>
