@@ -23,6 +23,9 @@ export default function Header() {
           <Link href="/stores" className="transition-colors hover:text-foreground/80">
             店铺信息
           </Link>
+          <Link href="/faq" className="transition-colors hover:text-foreground/80">
+            常见问题
+          </Link>
           <Link href="/about" className="transition-colors hover:text-foreground/80">
             关于我们
           </Link>
