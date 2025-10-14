@@ -1,0 +1,377 @@
+// Prisma Schema for 江戸和装工房雅
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============ 用户系统 ============
+model User {
+  id            String    @id @default(cuid())
+  email         String?   @unique
+  emailVerified DateTime?
+  phone         String?   @unique
+  phoneVerified DateTime?
+  passwordHash  String?
+
+  name     String?
+  avatar   String?
+  role     Role      @default(USER)
+  language Language  @default(ZH)
+  birthday DateTime?
+  gender   Gender?
+
+  // 营销数据
+  source       String?
+  referralCode String?   @unique
+  referredBy   String?
+  referrer     User?     @relation("Referrals", fields: [referredBy], references: [id])
+  referrals    User[]    @relation("Referrals")
+
+  // 关联
+  preference UserPreference?
+  bookings   Booking[]
+  favorites  Favorite[]
+  reviews    Review[]
+  behaviors  UserBehavior[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([phone])
+  @@map("users")
+}
+
+model UserPreference {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // 和服偏好
+  preferredStyles   String[]
+  preferredColors   String[]
+  preferredPatterns String[]
+
+  // 尺寸信息
+  height   Int?
+  shoeSize Float?
+
+  // 通知设置
+  emailNotification Boolean @default(true)
+  smsNotification   Boolean @default(false)
+
+  @@map("user_preferences")
+}
+
+// ============ 和服系统 ============
+model Kimono {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  nameEn      String?
+  description String?
+
+  category KimonoCategory
+  style    String
+  color    String[]
+  pattern  String[]
+  season   Season[]
+
+  size        String
+  isAvailable Boolean  @default(true)
+
+  // 图片 (多图支持)
+  images      KimonoImage[]
+
+  // 店铺关联 (多对多)
+  stores      KimonoStore[]
+
+  // 统计
+  viewCount    Int @default(0)
+  bookingCount Int @default(0)
+
+  // 关联
+  favorites Favorite[]
+  bookings  BookingKimono[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category])
+  @@index([isAvailable])
+  @@map("kimonos")
+}
+
+model KimonoImage {
+  id       String @id @default(cuid())
+  kimonoId String
+  kimono   Kimono @relation(fields: [kimonoId], references: [id], onDelete: Cascade)
+
+  url      String
+  alt      String?
+  order    Int     @default(0)
+
+  @@map("kimono_images")
+}
+
+// ============ 店铺系统 ============
+model Store {
+  id   String @id @default(cuid())
+  slug String @unique
+
+  name   String
+  nameEn String?
+  city   String
+
+  address      String
+  addressEn    String?
+  phone        String?
+  email        String?
+
+  latitude  Float?
+  longitude Float?
+
+  openingHours Json? // { "mon": "9:00-18:00", ... }
+
+  isActive Boolean @default(true)
+
+  // 关联
+  kimonos  KimonoStore[]
+  bookings Booking[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("stores")
+}
+
+model KimonoStore {
+  id       String @id @default(cuid())
+  kimonoId String
+  storeId  String
+
+  kimono Kimono @relation(fields: [kimonoId], references: [id], onDelete: Cascade)
+  store  Store  @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  quantity Int @default(1)
+
+  @@unique([kimonoId, storeId])
+  @@map("kimono_stores")
+}
+
+// ============ 套餐系统 ============
+model RentalPlan {
+  id   String @id @default(cuid())
+  slug String @unique
+
+  name        String
+  nameEn      String?
+  description String
+
+  category PlanCategory
+
+  price         Int // 人民币（分）
+  depositAmount Int @default(0)
+  duration      Int // 小时
+
+  includes String[] // ["着付け", "ヘアセット", "小物一式"]
+
+  isActive Boolean @default(true)
+
+  // 关联
+  bookings Booking[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("rental_plans")
+}
+
+// ============ 预约系统 ============
+model Booking {
+  id String @id @default(cuid())
+
+  // 用户信息（支持游客预约）
+  userId     String?
+  user       User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  guestName  String?
+  guestEmail String?
+  guestPhone String?
+
+  // 预约信息
+  storeId  String
+  store    Store  @relation(fields: [storeId], references: [id])
+  planId   String
+  plan     RentalPlan @relation(fields: [planId], references: [id])
+
+  rentalDate DateTime
+  returnDate DateTime
+
+  // 选择的和服
+  kimonos BookingKimono[]
+
+  // 附加服务
+  addOns String[] // ["プロ撮影", "髪飾り追加"]
+
+  // 支付
+  totalAmount   Int
+  depositAmount Int
+  paidAmount    Int            @default(0)
+  paymentStatus PaymentStatus  @default(PENDING)
+  paymentMethod String?
+
+  // 状态
+  status BookingStatus @default(PENDING)
+
+  // 备注
+  notes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([storeId])
+  @@index([rentalDate])
+  @@index([status])
+  @@map("bookings")
+}
+
+model BookingKimono {
+  id        String  @id @default(cuid())
+  bookingId String
+  kimonoId  String
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  kimono  Kimono  @relation(fields: [kimonoId], references: [id])
+
+  @@map("booking_kimonos")
+}
+
+// ============ 用户互动 ============
+model Favorite {
+  id       String @id @default(cuid())
+  userId   String
+  kimonoId String
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kimono Kimono @relation(fields: [kimonoId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, kimonoId])
+  @@map("favorites")
+}
+
+model Review {
+  id        String @id @default(cuid())
+  userId    String
+  bookingId String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  rating  Int    // 1-5
+  comment String
+  images  String[]
+
+  isPublic Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("reviews")
+}
+
+// ============ 数据分析 ============
+model UserBehavior {
+  id     String @id @default(cuid())
+  userId String?
+  user   User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  event BehaviorEvent
+  page  String?
+
+  kimonoId String?
+
+  userAgent String?
+  ipAddress String?
+
+  metadata Json? // 额外数据
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([event])
+  @@index([createdAt])
+  @@map("user_behaviors")
+}
+
+// ============ Enums ============
+enum Role {
+  USER
+  ADMIN
+  STAFF
+}
+
+enum Language {
+  JA
+  EN
+  ZH
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum KimonoCategory {
+  WOMEN
+  MEN
+  CHILDREN
+}
+
+enum Season {
+  SPRING
+  SUMMER
+  AUTUMN
+  WINTER
+  ALL_SEASON
+}
+
+enum PlanCategory {
+  LADIES
+  MENS
+  COUPLE
+  FAMILY
+  GROUP
+  SPECIAL
+}
+
+enum BookingStatus {
+  PENDING       // 待确认
+  CONFIRMED     // 已确认
+  IN_PROGRESS   // 使用中
+  COMPLETED     // 已完成
+  CANCELLED     // 已取消
+  NO_SHOW       // 未到店
+}
+
+enum PaymentStatus {
+  PENDING   // 待支付
+  PARTIAL   // 部分支付（定金）
+  PAID      // 已支付
+  REFUNDED  // 已退款
+}
+
+enum BehaviorEvent {
+  PAGE_VIEW
+  KIMONO_VIEW
+  KIMONO_FAVORITE
+  BOOKING_START
+  BOOKING_COMPLETE
+}
