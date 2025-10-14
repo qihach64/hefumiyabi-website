@@ -13,6 +13,20 @@ export default async function PlansPage() {
     ],
   });
 
+  // 获取活跃的优惠活动
+  const activeCampaigns = await prisma.campaign.findMany({
+    where: {
+      isActive: true,
+      endDate: {
+        gte: new Date(),
+      },
+    },
+    orderBy: {
+      priority: "desc",
+    },
+    take: 1,
+  });
+
   // 特色套餐（使用真实图片）
   const featuredPlans = [
     {
@@ -100,6 +114,47 @@ export default async function PlansPage() {
 
   return (
     <div className="flex flex-col">
+      {/* 活动横幅 */}
+      {activeCampaigns.length > 0 && (
+        <Link
+          href="/campaigns"
+          className="block bg-gradient-to-r from-rose-600 via-pink-600 to-orange-600 text-white hover:from-rose-700 hover:via-pink-700 hover:to-orange-700 transition-all"
+        >
+          <div className="container py-4 md:py-6">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="flex-shrink-0">
+                  <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center animate-pulse">
+                    <span className="text-2xl md:text-3xl">🎊</span>
+                  </div>
+                </div>
+                <div className="text-center md:text-left">
+                  <div className="text-xs md:text-sm font-semibold opacity-90 mb-1">
+                    {activeCampaigns[0].subtitle}
+                  </div>
+                  <div className="text-lg md:text-2xl font-black">
+                    {activeCampaigns[0].title}
+                  </div>
+                  <div className="text-sm md:text-base opacity-95 mt-1">
+                    在线预订享受{" "}
+                    <span className="text-yellow-300 font-bold text-lg">
+                      最高50%
+                    </span>{" "}
+                    折扣
+                  </div>
+                </div>
+              </div>
+              <div className="flex-shrink-0">
+                <div className="inline-flex items-center gap-2 px-6 md:px-8 py-3 md:py-4 rounded-full bg-white text-rose-600 font-bold text-sm md:text-base shadow-lg hover:shadow-xl hover:scale-105 transition-all">
+                  <span>立即查看</span>
+                  <span className="text-lg">→</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Link>
+      )}
+
       {/* Hero 区域 */}
       <section className="relative bg-gradient-to-br from-secondary via-background to-primary/5 overflow-hidden">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmNGE1YjkiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDE2YzAgMi4yMS0xLjc5IDQtNCA0cy00LTEuNzktNC00IDEuNzktNCA0LTQgNCAxLjc5IDQgNHptLTQgMjhjLTIuMjEgMC00LTEuNzktNC00czEuNzktNCA0LTQgNCAxLjc5IDQgNC0xLjc5IDQtNCA0eiIvPjwvZz48L2c+PC9zdmc+')] opacity-40"></div>

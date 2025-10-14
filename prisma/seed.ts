@@ -384,6 +384,10 @@ async function main() {
       isActive: true,
       isPinned: true,
       priority: 100,
+      bannerImage:
+        "https://cdn.sanity.io/images/u9jvdp7a/staging/138ce3673bca70c235c369eb233079d18c798ddc-8001x4501.jpg",
+      coverImage:
+        "https://cdn.sanity.io/images/u9jvdp7a/staging/138ce3673bca70c235c369eb233079d18c798ddc-8001x4501.jpg",
       restrictions: ["不适用于成人式", "不适用于毕业典礼"],
       terms:
         "本活动仅限在线预订。活动期间预订的套餐可在一年内使用。如需改期或取消，请遵循正常的预约政策。",

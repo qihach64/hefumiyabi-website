@@ -1,11 +1,21 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export default function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between gap-4">
-        {/* Logo - 移动端显示简称 */}
-        <Link href="/" className="flex items-center space-x-2 shrink-0">
+        {/* Logo - 使用图片 */}
+        <Link href="/" className="flex items-center gap-3 shrink-0">
+          <div className="relative w-10 h-10 md:w-12 md:h-12">
+            <Image
+              src="/logo.png"
+              alt="江戸和装工房雅"
+              fill
+              className="object-contain"
+              priority
+            />
+          </div>
           <span className="text-lg md:text-xl font-bold">
             <span className="hidden sm:inline">江戸和装工房雅</span>
             <span className="sm:hidden">雅</span>
