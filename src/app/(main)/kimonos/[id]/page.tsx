@@ -8,11 +8,12 @@ import FavoriteButton from "@/components/kimono/FavoriteButton";
 export default async function KimonoDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
   const kimono = await prisma.kimono.findUnique({
     where: {
-      id: params.id,
+      id,
     },
     include: {
       images: {
@@ -34,7 +35,7 @@ export default async function KimonoDetailPage({
 
   // 增加浏览次数
   await prisma.kimono.update({
-    where: { id: params.id },
+    where: { id },
     data: {
       viewCount: {
         increment: 1,
