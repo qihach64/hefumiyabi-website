@@ -15,37 +15,38 @@ interface SearchParams {
 export default async function KimonosPage({
   searchParams,
 }: {
-  searchParams: SearchParams;
+  searchParams: Promise<SearchParams>;
 }) {
-  const page = parseInt(searchParams.page || "1");
+  const params = await searchParams;
+  const page = parseInt(params.page || "1");
   const pageSize = 12;
 
   // 构建查询条件
   const where: any = {};
 
-  if (searchParams.category) {
-    where.category = searchParams.category;
+  if (params.category) {
+    where.category = params.category;
   }
 
-  if (searchParams.style) {
+  if (params.style) {
     where.style = {
-      contains: searchParams.style,
+      contains: params.style,
     };
   }
 
-  if (searchParams.color) {
+  if (params.color) {
     where.color = {
-      has: searchParams.color,
+      has: params.color,
     };
   }
 
-  if (searchParams.season) {
+  if (params.season) {
     where.season = {
-      has: searchParams.season,
+      has: params.season,
     };
   }
 
-  if (searchParams.isAvailable === "true") {
+  if (params.isAvailable === "true") {
     where.isAvailable = true;
   }
 
