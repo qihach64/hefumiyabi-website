@@ -7,6 +7,7 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
+    "scrape": "tsx scripts/scraper.ts",
     "db:seed": "tsx prisma/seed.ts",
     "db:reset": "prisma migrate reset && tsx prisma/seed.ts"
   },
