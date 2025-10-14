@@ -375,3 +375,97 @@ enum BehaviorEvent {
   BOOKING_START
   BOOKING_COMPLETE
 }
+
+// ============ 优惠活动系统 ============
+model Campaign {
+  id   String @id @default(cuid())
+  slug String @unique
+
+  title       String
+  titleEn     String?
+  description String
+  subtitle    String? // 副标题，如"10周年特别企划"
+
+  // 活动时间
+  startDate DateTime
+  endDate   DateTime
+
+  // 使用期限
+  usageStartDate DateTime?
+  usageEndDate   DateTime?
+
+  // 活动状态
+  isActive  Boolean @default(true)
+  isPinned  Boolean @default(false) // 是否置顶
+  priority  Int     @default(0) // 优先级，数字越大越靠前
+
+  // 封面图片
+  coverImage String?
+  bannerImage String?
+
+  // 活动类型
+  type CampaignType @default(DISCOUNT)
+
+  // 限制条件
+  restrictions String[] // ["不适用于成人式", "不适用于毕业典礼"]
+
+  // 活动条款
+  terms String? // 活动详细条款说明
+
+  // 关联的套餐
+  campaignPlans CampaignPlan[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([startDate, endDate])
+  @@map("campaigns")
+}
+
+model CampaignPlan {
+  id         String @id @default(cuid())
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  name        String
+  nameEn      String?
+  description String
+
+  // 价格
+  originalPrice Int // 原价（分）
+  campaignPrice Int // 活动价（分）
+
+  // 套餐详情
+  duration     Int? // 时长（小时）
+  includes     String[] // 包含的服务
+
+  // 适用店铺
+  applicableStores String[] // 店铺 slug 数组
+
+  // 图片
+  images String[]
+
+  // 限制
+  maxBookings Int? // 最大预订数量
+  currentBookings Int @default(0) // 当前预订数量
+
+  // 是否推荐
+  isFeatured Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([campaignId])
+  @@map("campaign_plans")
+}
+
+enum CampaignType {
+  DISCOUNT      // 折扣优惠
+  ANNIVERSARY   // 周年庆
+  SEASONAL      // 季节性活动
+  FLASH_SALE    // 限时抢购
+  GROUP_BUY     // 团购优惠
+  EARLY_BIRD    // 早鸟优惠
+  SPECIAL       // 特殊活动
+}

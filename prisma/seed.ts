@@ -366,12 +366,155 @@ async function main() {
   });
   console.log("✅ 创建了测试用户\n");
 
+  // 5. 创建优惠活动
+  console.log("🎊 创建优惠活动...");
+  const campaign = await prisma.campaign.create({
+    data: {
+      slug: "10th-anniversary",
+      title: "10周年特别企划",
+      titleEn: "10th Anniversary Special Campaign",
+      subtitle: "感恩回馈·限时优惠",
+      description:
+        "为庆祝江戸和装工房雅成立10周年，我们特别推出多款超值优惠套餐。在线预订享受最高50%折扣！",
+      type: "ANNIVERSARY",
+      startDate: new Date("2025-10-10"),
+      endDate: new Date("2025-10-17"),
+      usageStartDate: new Date("2025-10-10"),
+      usageEndDate: new Date("2026-10-10"),
+      isActive: true,
+      isPinned: true,
+      priority: 100,
+      restrictions: ["不适用于成人式", "不适用于毕业典礼"],
+      terms:
+        "本活动仅限在线预订。活动期间预订的套餐可在一年内使用。如需改期或取消，请遵循正常的预约政策。",
+      campaignPlans: {
+        create: [
+          {
+            name: "东京成人式振袖和服套餐 + 60分钟摄影",
+            nameEn: "Tokyo Coming of Age Furisode Kimono + 60min Photography",
+            description:
+              "想体验最正式的和服就是振袖和服了！包含专业摄影服务，留下珍贵回忆。",
+            originalPrice: 5800000, // ¥58,000 = ¥5,800 CNY = 580000分
+            campaignPrice: 3800000, // ¥38,000
+            duration: 8,
+            includes: [
+              "振袖和服租赁",
+              "专业着装服务",
+              "发型设计",
+              "60分钟专业摄影",
+              "全套配饰",
+              "修图服务",
+            ],
+            applicableStores: ["asakusa-main", "asakusa-station", "asakusa-premium"],
+            images: [
+              "https://cdn.sanity.io/images/u9jvdp7a/staging/2c5c377c69c7d60f41b052db2fdcfc955ff32437-1260x1536.png",
+            ],
+            isFeatured: true,
+          },
+          {
+            name: "东京成人式振袖和服套餐",
+            nameEn: "Tokyo Coming of Age Furisode Kimono",
+            description: "正式振袖和服体验，适合各种重要场合。",
+            originalPrice: 3800000, // ¥38,000
+            campaignPrice: 1900000, // ¥19,000
+            duration: 8,
+            includes: [
+              "振袖和服租赁",
+              "专业着装服务",
+              "发型设计",
+              "全套配饰",
+            ],
+            applicableStores: ["asakusa-main", "asakusa-station", "asakusa-premium"],
+            images: [],
+            isFeatured: true,
+          },
+          {
+            name: "家庭三人套餐 + 60分钟摄影",
+            nameEn: "Family 3-Person Package + 60min Photography",
+            description:
+              "全家一同游日本，当然要和小宝贝们一同体验和服！包含父母和儿童套装。",
+            originalPrice: 2600000, // ¥26,000
+            campaignPrice: 1500000, // ¥15,000
+            duration: 8,
+            includes: [
+              "成人和服 x2",
+              "儿童和服 x1",
+              "专业着装服务",
+              "发型设计",
+              "60分钟摄影",
+              "全套配饰",
+            ],
+            applicableStores: ["asakusa-station"],
+            images: [],
+            isFeatured: true,
+          },
+          {
+            name: "蕾丝复古和服团体优惠",
+            nameEn: "Lace and Antique Kimono Group Discount",
+            description: "蕾丝和复古和服特别限定套餐，适合团体游客。",
+            originalPrice: 1500000, // ¥15,000
+            campaignPrice: 900000, // ¥9,000
+            duration: 8,
+            includes: [
+              "蕾丝/复古和服租赁",
+              "专业着装服务",
+              "发型设计",
+              "全套配饰",
+            ],
+            applicableStores: ["asakusa-station"],
+            images: [],
+            isFeatured: false,
+          },
+          {
+            name: "蕾丝复古和服情侣优惠（浅草本店）",
+            nameEn: "Lace and Antique Kimono Couple Discount",
+            description: "优雅或甜美的蕾丝和服，专为情侣设计。",
+            originalPrice: 1500000, // ¥15,000
+            campaignPrice: 1100000, // ¥11,000
+            duration: 8,
+            includes: [
+              "蕾丝和服 x2",
+              "专业着装服务",
+              "发型设计",
+              "全套配饰",
+            ],
+            applicableStores: ["asakusa-main"],
+            images: [
+              "https://cdn.sanity.io/images/u9jvdp7a/staging/5dd1195b6e98cb17cfaf210b018dc5d9582b574f-1066x1314.png",
+            ],
+            isFeatured: false,
+          },
+          {
+            name: "振袖情侣和服套餐",
+            nameEn: "Furisode Couple Kimono Package",
+            description: "只要人对了，天天都是情人节！华丽振袖情侣套装。",
+            originalPrice: 5800000, // ¥58,000
+            campaignPrice: 3900000, // ¥39,000
+            duration: 8,
+            includes: [
+              "振袖和服 x2",
+              "专业着装服务",
+              "发型设计",
+              "全套配饰",
+              "情侣摄影（赠送）",
+            ],
+            applicableStores: ["asakusa-premium"],
+            images: [],
+            isFeatured: true,
+          },
+        ],
+      },
+    },
+  });
+  console.log("✅ 创建了1个优惠活动，包含6个活动套餐\n");
+
   console.log("🎉 数据库填充完成！\n");
   console.log("📊 统计:");
   console.log(`   - 店铺: ${stores.length} 个`);
   console.log(`   - 租赁套餐: ${plans.length} 个`);
   console.log(`   - 和服: ${kimonos.length} 套`);
   console.log(`   - 用户: 1 个`);
+  console.log(`   - 优惠活动: 1 个`);
 }
 
 main()

@@ -20,6 +20,9 @@ export default function Header() {
           <Link href="/plans" className="transition-colors hover:text-foreground/80">
             租赁套餐
           </Link>
+          <Link href="/campaigns" className="transition-colors hover:text-foreground/80">
+            优惠活动
+          </Link>
           <Link href="/stores" className="transition-colors hover:text-foreground/80">
             店铺信息
           </Link>
@@ -38,6 +41,9 @@ export default function Header() {
           </Link>
           <Link href="/plans" className="transition-colors hover:text-foreground/80">
             套餐
+          </Link>
+          <Link href="/campaigns" className="transition-colors hover:text-foreground/80">
+            优惠
           </Link>
         </nav>
 
