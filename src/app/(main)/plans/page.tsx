@@ -27,13 +27,12 @@ export default async function PlansPage() {
     take: 1,
   });
 
-  // 特色套餐（使用真实图片）
-  const featuredPlans = [
+  // 特色套餐（使用真实图片，映射到数据库中的套餐）
+  const featuredPlansData = [
     {
-      id: "daily-special",
+      planSlug: "women-daily-discount", // 女士日常优惠和服套餐
       name: "每日特惠和服套餐",
       nameEn: "Special Daily Discount Kimono Plan",
-      price: 3000,
       originalPrice: 5000,
       image:
         "https://cdn.sanity.io/images/u9jvdp7a/staging/cdff65bedb063563c91e3ff6fe56e2004faee1b0-1092x1472.png",
@@ -50,10 +49,9 @@ export default async function PlansPage() {
       gender: "仅限女性",
     },
     {
-      id: "couple-plan",
+      planSlug: "couple-discount", // 情侣优惠套餐
       name: "情侣优惠套餐",
       nameEn: "Couple Discount Plan",
-      price: 8999,
       originalPrice: 11000,
       image:
         "https://cdn.sanity.io/images/u9jvdp7a/staging/5dd1195b6e98cb17cfaf210b018dc5d9582b574f-1066x1314.png",
@@ -70,10 +68,9 @@ export default async function PlansPage() {
       gender: "情侣专享",
     },
     {
-      id: "group-plan",
+      planSlug: "group-5-people", // 5人团体套餐（1人免费）
       name: "5人团体优惠套餐",
       nameEn: "Group Discount Plan",
-      price: 20000,
       originalPrice: 27500,
       image:
         "https://cdn.sanity.io/images/u9jvdp7a/staging/d053820a53f8883cdc0debb7307375b260d383ab-1718x1714.png",
@@ -90,10 +87,9 @@ export default async function PlansPage() {
       gender: "团体专享",
     },
     {
-      id: "furisode-photo",
+      planSlug: "furisode-photoshoot", // 10周年振袖和服套餐（含60分钟摄影）
       name: "10周年振袖套餐+60分钟摄影",
       nameEn: "Premier Furisode Kimono Plan with Photo",
-      price: 38000,
       originalPrice: 58000,
       image:
         "https://cdn.sanity.io/images/u9jvdp7a/staging/2c5c377c69c7d60f41b052db2fdcfc955ff32437-1260x1536.png",
@@ -111,6 +107,17 @@ export default async function PlansPage() {
       isSpecial: true,
     },
   ];
+
+  // 将特色套餐数据与数据库套餐合并
+  const featuredPlans = featuredPlansData.map((featured) => {
+    const dbPlan = plans.find((p) => p.slug === featured.planSlug);
+    return {
+      ...featured,
+      id: dbPlan?.id || featured.planSlug,
+      price: dbPlan?.price || 0,
+      dbPlan,
+    };
+  });
 
   return (
     <div className="flex flex-col">
@@ -216,7 +223,7 @@ export default async function PlansPage() {
                     <div className="mb-4">
                       <div className="flex items-baseline gap-2 mb-2">
                         <span className="text-3xl font-bold text-primary">
-                          ¥{plan.price.toLocaleString()}
+                          ¥{(plan.price / 100).toLocaleString()}
                         </span>
                         {plan.originalPrice && (
                           <span className="text-lg text-muted-foreground line-through">
