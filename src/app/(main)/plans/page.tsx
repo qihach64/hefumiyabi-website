@@ -257,7 +257,7 @@ export default async function PlansPage() {
                     </div>
 
                     <Link
-                      href={`/booking?plan=${plan.id}`}
+                      href={`/booking?planId=${plan.id}`}
                       className="w-full inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4"
                     >
                       选择此套餐
@@ -342,7 +342,7 @@ export default async function PlansPage() {
                   )}
 
                   <Link
-                    href={`/booking?plan=${plan.id}`}
+                    href={`/booking?planId=${plan.id}`}
                     className="w-full inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4"
                   >
                     选择此套餐

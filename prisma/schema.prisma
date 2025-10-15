@@ -38,6 +38,8 @@ model User {
   favorites  Favorite[]
   reviews    Review[]
   behaviors  UserBehavior[]
+  accounts   Account[]
+  sessions   Session[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -45,6 +47,46 @@ model User {
   @@index([email])
   @@index([phone])
   @@map("users")
+}
+
+// NextAuth.js 认证表
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
 }
 
 model UserPreference {
@@ -204,13 +246,16 @@ model Booking {
   guestPhone String?
 
   // 预约信息
-  storeId  String
-  store    Store  @relation(fields: [storeId], references: [id])
-  planId   String
-  plan     RentalPlan @relation(fields: [planId], references: [id])
+  storeId         String
+  store           Store       @relation(fields: [storeId], references: [id])
+  planId          String?
+  plan            RentalPlan? @relation(fields: [planId], references: [id])
+  campaignPlanId  String?
 
   rentalDate DateTime
   returnDate DateTime
+  pickupTime String?
+  returnTime String?
 
   // 选择的和服
   kimonos BookingKimono[]

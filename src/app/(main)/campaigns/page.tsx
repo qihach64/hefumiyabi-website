@@ -364,7 +364,7 @@ export default async function CampaignsPage() {
 
                         {/* CTA 按钮 */}
                         <Link
-                          href={`/booking?campaign=${campaign.slug}&plan=${plan.id}`}
+                          href={`/booking?campaignPlanId=${plan.id}`}
                           className="w-full inline-flex items-center justify-center rounded-xl text-base font-bold transition-all bg-gradient-to-r from-rose-600 to-orange-600 text-white hover:shadow-xl hover:scale-105 h-12 px-6"
                         >
                           立即抢购
