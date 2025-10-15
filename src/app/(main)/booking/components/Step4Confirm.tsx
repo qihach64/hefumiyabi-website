@@ -60,9 +60,14 @@ export default function Step4Confirm({ bookingData, onPrev }: Step4Props) {
         setStore(storeData);
 
         // 获取套餐信息
-        const planIdToFetch = bookingData.planId || bookingData.campaignPlanId;
-        if (planIdToFetch) {
-          const planRes = await fetch(`/api/plans/${planIdToFetch}`);
+        if (bookingData.planId) {
+          const planRes = await fetch(`/api/plans/${bookingData.planId}`);
+          if (planRes.ok) {
+            const planData = await planRes.json();
+            setPlan(planData);
+          }
+        } else if (bookingData.campaignPlanId) {
+          const planRes = await fetch(`/api/campaign-plans/${bookingData.campaignPlanId}`);
           if (planRes.ok) {
             const planData = await planRes.json();
             setPlan(planData);

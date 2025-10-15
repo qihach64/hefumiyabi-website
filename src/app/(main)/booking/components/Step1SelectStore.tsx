@@ -44,14 +44,21 @@ export default function Step1SelectStore({
         setStores(storesData);
 
         // 如果有 planId 或 campaignPlanId，获取套餐信息
-        const planIdToFetch = bookingData.planId || bookingData.campaignPlanId;
-        if (planIdToFetch) {
-          const planRes = await fetch(`/api/plans/${planIdToFetch}`);
+        if (bookingData.planId) {
+          const planRes = await fetch(`/api/plans/${bookingData.planId}`);
           if (planRes.ok) {
             const planData = await planRes.json();
             setPlan(planData);
           } else {
             console.error("Failed to fetch plan:", planRes.status);
+          }
+        } else if (bookingData.campaignPlanId) {
+          const planRes = await fetch(`/api/campaign-plans/${bookingData.campaignPlanId}`);
+          if (planRes.ok) {
+            const planData = await planRes.json();
+            setPlan(planData);
+          } else {
+            console.error("Failed to fetch campaign plan:", planRes.status);
           }
         }
 
