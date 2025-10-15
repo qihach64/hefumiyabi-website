@@ -85,46 +85,65 @@ function SuccessContent() {
           </div>
 
           <div className="space-y-4">
-            {/* 套餐信息 */}
-            {booking.plan && (
+            {/* 预约项目 */}
+            {booking.items && booking.items.length > 0 && (
               <div className="flex items-start gap-3">
                 <Calendar className="w-5 h-5 text-gray-500 mt-0.5 shrink-0" />
                 <div className="flex-1">
-                  <p className="text-sm text-gray-500">套餐</p>
-                  <p className="font-medium text-gray-900">{booking.plan.name}</p>
+                  <p className="text-sm text-gray-500">预约项目</p>
+                  <div className="space-y-1 mt-1">
+                    {booking.items.map((item: any, idx: number) => (
+                      <div key={idx} className="font-medium text-gray-900">
+                        {item.plan?.name || "和服租赁"} × {item.quantity}
+                        {item.store && (
+                          <span className="text-sm text-gray-600 ml-2">
+                            ({item.store.name})
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
 
             {/* 店铺信息 */}
-            <div className="flex items-start gap-3">
-              <MapPin className="w-5 h-5 text-gray-500 mt-0.5 shrink-0" />
-              <div className="flex-1">
-                <p className="text-sm text-gray-500">店铺</p>
-                <p className="font-medium text-gray-900">{booking.store.name}</p>
-                <p className="text-sm text-gray-600 mt-1">
-                  {booking.store.city} - {booking.store.address}
-                </p>
+            {booking.items && booking.items.length > 0 && (
+              <div className="flex items-start gap-3">
+                <MapPin className="w-5 h-5 text-gray-500 mt-0.5 shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm text-gray-500">店铺</p>
+                  {Array.from(new Set(booking.items.map((item: any) => JSON.stringify({
+                    name: item.store.name,
+                    city: item.store.city,
+                    address: item.store.address,
+                  })))).map((storeJson: string, idx: number) => {
+                    const store = JSON.parse(storeJson);
+                    return (
+                      <div key={idx} className="mt-1">
+                        <p className="font-medium text-gray-900">{store.name}</p>
+                        <p className="text-sm text-gray-600">
+                          {store.city} - {store.address}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* 日期信息 */}
             <div className="flex items-start gap-3">
               <Calendar className="w-5 h-5 text-gray-500 mt-0.5 shrink-0" />
               <div className="flex-1">
-                <p className="text-sm text-gray-500">租赁日期</p>
+                <p className="text-sm text-gray-500">到店时间</p>
                 <p className="font-medium text-gray-900">
-                  {new Date(booking.rentalDate).toLocaleDateString("zh-CN", {
+                  {new Date(booking.visitDate).toLocaleDateString("zh-CN", {
                     year: "numeric",
                     month: "long",
                     day: "numeric",
                   })}{" "}
-                  -{" "}
-                  {new Date(booking.returnDate).toLocaleDateString("zh-CN", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
+                  {booking.visitTime}
                 </p>
               </div>
             </div>

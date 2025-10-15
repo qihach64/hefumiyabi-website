@@ -14,6 +14,8 @@ export interface CartItem {
   quantity: number;
   addOns: string[]; // 附加服务
   notes?: string; // 备注
+  storeId?: string; // 店铺ID
+  storeName?: string; // 店铺名称
 }
 
 interface CartStore {
@@ -33,6 +35,9 @@ interface CartStore {
 
   // 更新备注
   updateNotes: (id: string, notes: string) => void;
+
+  // 更新店铺
+  updateStore: (id: string, storeId: string, storeName: string) => void;
 
   // 清空购物车
   clearCart: () => void;
@@ -112,6 +117,14 @@ export const useCartStore = create<CartStore>()(
         set({
           items: get().items.map((item) =>
             item.id === id ? { ...item, notes } : item
+          ),
+        });
+      },
+
+      updateStore: (id, storeId, storeName) => {
+        set({
+          items: get().items.map((item) =>
+            item.id === id ? { ...item, storeId, storeName } : item
           ),
         });
       },

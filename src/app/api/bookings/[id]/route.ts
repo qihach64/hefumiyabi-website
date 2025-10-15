@@ -12,20 +12,24 @@ export async function GET(
         id,
       },
       include: {
-        store: {
-          select: {
-            id: true,
-            name: true,
-            city: true,
-            address: true,
-          },
-        },
-        plan: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            price: true,
+        items: {
+          include: {
+            store: {
+              select: {
+                id: true,
+                name: true,
+                city: true,
+                address: true,
+              },
+            },
+            plan: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                price: true,
+              },
+            },
           },
         },
         user: {

@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { User, Calendar, Mail, Phone, MapPin } from "lucide-react";
+import { User, Calendar, Mail, Phone } from "lucide-react";
 import EmailVerificationBanner from "@/components/auth/EmailVerificationBanner";
+import BookingsList from "@/components/BookingsList";
 
 export default async function ProfilePage() {
   const session = await auth();
@@ -16,16 +17,38 @@ export default async function ProfilePage() {
     include: {
       bookings: {
         include: {
-          store: true,
-          plan: true,
+          items: {
+            include: {
+              store: true,
+              plan: true,
+            },
+          },
         },
         orderBy: {
           createdAt: "desc",
         },
-        take: 5,
+        take: 10,
       },
     },
   });
+
+  // 获取每个 booking item 的 campaignPlan 信息（如果有）
+  if (user) {
+    for (const booking of user.bookings) {
+      for (const item of booking.items) {
+        if (item.campaignPlanId) {
+          const campaignPlan = await prisma.campaignPlan.findUnique({
+            where: { id: item.campaignPlanId },
+            select: {
+              name: true,
+              images: true,
+            },
+          });
+          (item as any).campaignPlan = campaignPlan;
+        }
+      }
+    }
+  }
 
   if (!user) {
     redirect("/login");
@@ -84,107 +107,7 @@ export default async function ProfilePage() {
               我的预约
             </h2>
 
-            {user.bookings.length === 0 ? (
-              <div className="text-center py-16">
-                <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                  <Calendar className="w-10 h-10 text-gray-400" />
-                </div>
-                <p className="text-gray-500 dark:text-gray-400 mb-6">
-                  您还没有任何预约记录
-                </p>
-                <a
-                  href="/plans"
-                  className="inline-flex items-center justify-center rounded-lg text-sm font-medium transition-colors bg-gradient-to-r from-rose-500 to-pink-500 text-white hover:from-rose-600 hover:to-pink-600 h-10 px-6 py-2 shadow-sm"
-                >
-                  浏览套餐
-                </a>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {user.bookings.map((booking) => (
-                  <div
-                    key={booking.id}
-                    className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:border-rose-200 dark:hover:border-rose-800 transition"
-                  >
-                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                          {booking.plan?.name || "和服租赁服务"}
-                        </h3>
-                        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                          <MapPin className="w-4 h-4" />
-                          <span>{booking.store.name}</span>
-                        </div>
-                      </div>
-                      <div className="flex-shrink-0">
-                        <div
-                          className={`inline-flex px-3 py-1.5 rounded-lg text-xs font-medium ${
-                            booking.status === "CONFIRMED"
-                              ? "bg-green-50 text-green-700 border border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
-                              : booking.status === "PENDING"
-                              ? "bg-yellow-50 text-yellow-700 border border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800"
-                              : booking.status === "COMPLETED"
-                              ? "bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800"
-                              : "bg-gray-100 text-gray-600 border border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700"
-                          }`}
-                        >
-                          {booking.status === "CONFIRMED"
-                            ? "已确认"
-                            : booking.status === "PENDING"
-                            ? "待确认"
-                            : booking.status === "COMPLETED"
-                            ? "已完成"
-                            : booking.status === "CANCELLED"
-                            ? "已取消"
-                            : booking.status}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                      <div className="flex justify-between sm:block">
-                        <span className="text-gray-500 dark:text-gray-400">
-                          租赁日期
-                        </span>
-                        <span className="font-medium text-gray-900 dark:text-gray-100 sm:block sm:mt-1">
-                          {new Date(booking.rentalDate).toLocaleDateString("zh-CN")}
-                        </span>
-                      </div>
-                      <div className="flex justify-between sm:block">
-                        <span className="text-gray-500 dark:text-gray-400">
-                          归还日期
-                        </span>
-                        <span className="font-medium text-gray-900 dark:text-gray-100 sm:block sm:mt-1">
-                          {new Date(booking.returnDate).toLocaleDateString("zh-CN")}
-                        </span>
-                      </div>
-                      <div className="flex justify-between sm:block">
-                        <span className="text-gray-500 dark:text-gray-400">
-                          总金额
-                        </span>
-                        <span className="font-semibold text-rose-600 dark:text-rose-400 sm:block sm:mt-1">
-                          ¥{(booking.totalAmount / 100).toFixed(2)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between sm:block">
-                        <span className="text-gray-500 dark:text-gray-400">
-                          支付状态
-                        </span>
-                        <span className="font-medium text-gray-900 dark:text-gray-100 sm:block sm:mt-1">
-                          {booking.paymentStatus === "PAID"
-                            ? "已支付"
-                            : booking.paymentStatus === "PARTIAL"
-                            ? "部分支付"
-                            : booking.paymentStatus === "PENDING"
-                            ? "待支付"
-                            : "已退款"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            <BookingsList bookings={user.bookings} />
           </div>
         </div>
       </div>
