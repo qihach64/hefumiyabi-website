@@ -60,10 +60,13 @@ export default function Step4Confirm({ bookingData, onPrev }: Step4Props) {
         setStore(storeData);
 
         // 获取套餐信息
-        if (bookingData.planId) {
-          const planRes = await fetch(`/api/plans/${bookingData.planId}`);
-          const planData = await planRes.json();
-          setPlan(planData);
+        const planIdToFetch = bookingData.planId || bookingData.campaignPlanId;
+        if (planIdToFetch) {
+          const planRes = await fetch(`/api/plans/${planIdToFetch}`);
+          if (planRes.ok) {
+            const planData = await planRes.json();
+            setPlan(planData);
+          }
         }
 
         setLoading(false);
@@ -75,7 +78,7 @@ export default function Step4Confirm({ bookingData, onPrev }: Step4Props) {
     };
 
     fetchData();
-  }, [bookingData.storeId, bookingData.planId]);
+  }, [bookingData.storeId, bookingData.planId, bookingData.campaignPlanId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -43,11 +43,16 @@ export default function Step1SelectStore({
         const storesData = await storesRes.json();
         setStores(storesData);
 
-        // 如果有 planId，获取套餐信息
-        if (bookingData.planId) {
-          const planRes = await fetch(`/api/plans/${bookingData.planId}`);
-          const planData = await planRes.json();
-          setPlan(planData);
+        // 如果有 planId 或 campaignPlanId，获取套餐信息
+        const planIdToFetch = bookingData.planId || bookingData.campaignPlanId;
+        if (planIdToFetch) {
+          const planRes = await fetch(`/api/plans/${planIdToFetch}`);
+          if (planRes.ok) {
+            const planData = await planRes.json();
+            setPlan(planData);
+          } else {
+            console.error("Failed to fetch plan:", planRes.status);
+          }
         }
 
         setLoading(false);
@@ -59,7 +64,7 @@ export default function Step1SelectStore({
     };
 
     fetchData();
-  }, [bookingData.planId]);
+  }, [bookingData.planId, bookingData.campaignPlanId]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

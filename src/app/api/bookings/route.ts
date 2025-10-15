@@ -24,12 +24,16 @@ export async function POST(request: Request) {
 
     // 获取套餐信息以计算价格
     let totalAmount = 0;
-    if (data.planId) {
+    const planIdToFetch = data.planId || data.campaignPlanId;
+    let actualPlanId = data.planId || null;
+
+    if (planIdToFetch) {
       const plan = await prisma.rentalPlan.findUnique({
-        where: { id: data.planId },
+        where: { id: planIdToFetch },
       });
       if (plan) {
         totalAmount = plan.price;
+        actualPlanId = plan.id; // Use the actual plan ID
       }
     }
 
@@ -41,7 +45,7 @@ export async function POST(request: Request) {
         guestEmail: data.guestEmail || null,
         guestPhone: data.guestPhone || null,
         storeId: data.storeId,
-        planId: data.planId || null,
+        planId: actualPlanId,
         campaignPlanId: data.campaignPlanId || null,
         rentalDate: new Date(data.rentalDate),
         returnDate: new Date(data.returnDate),
