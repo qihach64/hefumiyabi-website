@@ -1,7 +1,6 @@
 import Link from "next/link";
-import Image from "next/image";
 import prisma from "@/lib/prisma";
-import { Check, Clock, MapPin, Users } from "lucide-react";
+import PlansClient from "./PlansClient";
 
 export default async function PlansPage() {
   // 获取所有租赁套餐，按价格排序
@@ -11,6 +10,17 @@ export default async function PlansPage() {
         price: "asc",
       },
     ],
+  });
+
+  // 获取店铺列表
+  const stores = await prisma.store.findMany({
+    select: {
+      id: true,
+      name: true,
+    },
+    orderBy: {
+      name: "asc",
+    },
   });
 
   // 获取活跃的优惠活动
