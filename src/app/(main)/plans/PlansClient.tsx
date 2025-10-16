@@ -275,19 +275,20 @@ export default function PlansClient({
 
   return (
     <>
-      {/* Hero 区域 */}
-      <section className="relative bg-gradient-to-br from-secondary via-background to-primary/5 overflow-hidden">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmNGE1YjkiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDE2YzAgMi4yMS0xLjc5IDQtNCA0cy00LTEuNzktNC00IDEuNzktNCA0LTQgNCAxLjc5IDQgNHptLTQgMjhjLTIuMjEgMC00LTEuNzktNC00czEuNzktNCA0LTQgNCAxLjc5IDQgNC0xLjc5IDQtNCA0eiIvPjwvZz48L2c+PC9zdmc+')] opacity-40"></div>
-
-        <div className="container relative py-16 md:py-24">
-          <div className="text-center max-w-3xl mx-auto">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">租赁套餐</h1>
-            <p className="text-lg md:text-xl text-muted-foreground mb-6">
-              精心设计的套餐方案，满足您不同场景的需求。从经济实惠到豪华体验，总有一款适合您。
-            </p>
+      {/* 精简的头部区域 */}
+      <section className="bg-background border-b">
+        <div className="container py-6 md:py-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            {/* 标题 */}
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold">租赁套餐</h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                在线预订享受专属优惠价格
+              </p>
+            </div>
 
             {/* 店铺筛选器 */}
-            <div className="flex justify-center">
+            <div className="flex justify-start md:justify-end">
               <StoreFilter
                 stores={stores}
                 selectedStoreId={selectedStoreId}
@@ -305,31 +306,15 @@ export default function PlansClient({
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmYjkyM2MiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMTZjMCAyLjIxLTEuNzkgNC00IDRzLTQtMS43OS00LTQgMS43OS00IDQtNCA0IDEuNzkgNCA0em0tNCAyOGMtMi4yMSAwLTQtMS43OS00LTRzMS43OS00IDQtNCA0IDEuNzkgNCA0LTEuNzkgNC00IDR6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-30"></div>
 
           <div className="container relative">
-            {/* 标题区域 */}
-            <div className="text-center mb-12">
-              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white px-6 py-2 rounded-full mb-4 shadow-lg">
-                <Sparkles className="w-5 h-5 animate-pulse" />
-                <span className="font-bold">10周年纪念活动</span>
-                <Sparkles className="w-5 h-5 animate-pulse" />
+            {/* 精简的标题区域 */}
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white px-4 py-2 rounded-full mb-3 shadow-lg">
+                <Sparkles className="w-4 h-4" />
+                <span className="font-bold text-sm">10周年特惠</span>
               </div>
-              <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
-                特别优惠套餐
+              <h2 className="text-2xl md:text-3xl font-bold mb-2">
+                🎉 最高享50%优惠
               </h2>
-              <p className="text-muted-foreground max-w-2xl mx-auto mb-4">
-                庆祝10周年，精选套餐最高享50%优惠！数量有限，预订从速
-              </p>
-              {/* 优惠提示 */}
-              <div className="inline-flex items-center gap-3 bg-rose-50 dark:bg-rose-950/20 border-2 border-rose-200 dark:border-rose-800 rounded-lg px-6 py-3">
-                <span className="text-3xl">🎁</span>
-                <div className="text-left">
-                  <div className="text-sm font-bold text-rose-700 dark:text-rose-400">
-                    限时优惠
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    线上预约享受独家折扣价格
-                  </div>
-                </div>
-              </div>
             </div>
 
             {/* 套餐网格 */}
@@ -350,14 +335,9 @@ export default function PlansClient({
 
       {/* 常规套餐 */}
       {regularPlans.length > 0 && (
-        <section className="py-16 md:py-24 bg-background">
+        <section className="py-12 md:py-16 bg-background">
           <div className="container">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">更多套餐选择</h2>
-              <p className="text-muted-foreground max-w-2xl mx-auto">
-                多种套餐类型，满足您的个性化需求
-              </p>
-            </div>
+            <h2 className="text-xl md:text-2xl font-bold mb-6">更多套餐</h2>
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {regularPlans.map((plan) => (
@@ -368,84 +348,26 @@ export default function PlansClient({
         </section>
       )}
 
-      {/* 套餐特色 */}
-      <section className="py-16 md:py-24 bg-secondary/30">
+      {/* 精简的服务说明 */}
+      <section className="py-8 bg-secondary/20">
         <div className="container">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">套餐特色</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              所有套餐均包含以下基础服务
-            </p>
-          </div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 max-w-5xl mx-auto">
-            <div className="text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
-                <span className="text-3xl">👘</span>
-              </div>
-              <h3 className="text-lg font-semibold mb-2">专业着装</h3>
-              <p className="text-sm text-muted-foreground">
-                专业着装师为您提供完整的和服着装服务
-              </p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center text-sm">
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-2xl">👘</span>
+              <span className="text-muted-foreground">专业着装</span>
             </div>
-
-            <div className="text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
-                <span className="text-3xl">💇</span>
-              </div>
-              <h3 className="text-lg font-semibold mb-2">免费发型</h3>
-              <p className="text-sm text-muted-foreground">
-                所有套餐均包含免费的发型设计服务
-              </p>
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-2xl">💇</span>
+              <span className="text-muted-foreground">免费发型</span>
             </div>
-
-            <div className="text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
-                <span className="text-3xl">📦</span>
-              </div>
-              <h3 className="text-lg font-semibold mb-2">配件齐全</h3>
-              <p className="text-sm text-muted-foreground">
-                包含腰带、足袋、草履等全套配件
-              </p>
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-2xl">📦</span>
+              <span className="text-muted-foreground">配件齐全</span>
             </div>
-
-            <div className="text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
-                <span className="text-3xl">💳</span>
-              </div>
-              <h3 className="text-lg font-semibold mb-2">在线优惠</h3>
-              <p className="text-sm text-muted-foreground">
-                在线预订享受专属优惠价格
-              </p>
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-2xl">💳</span>
+              <span className="text-muted-foreground">在线优惠</span>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="py-16 md:py-24 bg-gradient-to-r from-primary/90 to-accent/90 text-primary-foreground relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMTZjMCAyLjIxLTEuNzkgNC00IDRzLTQtMS43OS00LTQgMS43OS00IDQtNCA0IDEuNzkgNCA0em0tNCAyOGMtMi4yMSAwLTQtMS43OS00LTRzMS43OS00IDQtNCA0IDEuNzkgNCA0LTEuNzkgNC00IDR6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-20"></div>
-
-        <div className="container text-center relative">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            准备好体验和服之美了吗？
-          </h2>
-          <p className="text-lg md:text-xl mb-8 opacity-90 max-w-2xl mx-auto">
-            选择适合您的套餐，立即预约，开启难忘的和服体验之旅
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/booking"
-              className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors bg-background text-foreground hover:bg-background/90 h-11 px-8"
-            >
-              立即预约
-            </Link>
-            <Link
-              href="/kimonos"
-              className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border-2 border-primary-foreground/20 hover:bg-primary-foreground/10 h-11 px-8"
-            >
-              浏览和服
-            </Link>
           </div>
         </div>
       </section>
