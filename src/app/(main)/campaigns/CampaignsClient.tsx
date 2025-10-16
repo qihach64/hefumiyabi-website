@@ -1,15 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import Image from "next/image";
-import { Check, MapPin, ShoppingCart } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Check, MapPin, ShoppingCart, Zap } from "lucide-react";
 import { useCartStore } from "@/store/cart";
 import StoreFilter from "@/components/StoreFilter";
 
 interface Store {
   id: string;
   name: string;
+  slug: string;
 }
 
 interface CampaignPlan {
@@ -29,20 +30,20 @@ interface CampaignsClientProps {
 }
 
 export default function CampaignsClient({ campaignPlans, stores }: CampaignsClientProps) {
+  const router = useRouter();
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
   const [addingToCart, setAddingToCart] = useState<string | null>(null);
-  const addItem = useCartStore((state) => state.addItem);
+  const { addItem } = useCartStore();
 
   // 根据选中的店铺筛选活动套餐
   const filteredPlans = selectedStoreId
     ? campaignPlans.filter((plan) => {
         const selectedStore = stores.find((s) => s.id === selectedStoreId);
-        if (!selectedStore || plan.applicableStores.length === 0) return true;
+        if (!selectedStore) return false;
+        if (plan.applicableStores.length === 0) return false;
 
-        // 检查套餐的 applicableStores 是否包含选中的店铺名称
-        return plan.applicableStores.some((storeName) =>
-          storeName.includes(selectedStore.name)
-        );
+        // 检查套餐的 applicableStores 是否包含选中的店铺 slug
+        return plan.applicableStores.includes(selectedStore.slug);
       })
     : campaignPlans;
 
@@ -71,6 +72,36 @@ export default function CampaignsClient({ campaignPlans, stores }: CampaignsClie
     setTimeout(() => {
       setAddingToCart(null);
     }, 1000);
+  };
+
+  // 立即预约函数（Amazon模式的"Buy Now"）
+  const handleQuickBook = (plan: CampaignPlan) => {
+    setAddingToCart(plan.id);
+
+    // 1. 添加当前套餐到购物车（不清空现有内容）
+    let matchingStore: Store | undefined;
+    if (plan.applicableStores.length > 0) {
+      matchingStore = stores.find((s) =>
+        plan.applicableStores.some((storeName) => storeName.includes(s.name))
+      );
+    }
+
+    addItem({
+      type: "CAMPAIGN",
+      campaignPlanId: plan.id,
+      name: plan.name,
+      price: plan.campaignPrice,
+      addOns: [],
+      image: plan.images[0],
+      storeId: matchingStore?.id,
+      storeName: matchingStore?.name,
+    });
+
+    // 2. 跳转到预约页面
+    setTimeout(() => {
+      setAddingToCart(null);
+      router.push('/booking');
+    }, 500);
   };
 
   return (
@@ -191,12 +222,33 @@ export default function CampaignsClient({ campaignPlans, stores }: CampaignsClie
                 </div>
               )}
 
-              {/* CTA 按钮 */}
-              <div className="flex gap-2">
+              {/* Amazon模式的按钮布局 */}
+              <div className="flex flex-col gap-2">
+                {/* 主要操作：立即预约 */}
+                <button
+                  onClick={() => handleQuickBook(plan)}
+                  disabled={addingToCart === plan.id}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors bg-primary text-primary-foreground hover:bg-primary/90 h-11 px-4 disabled:opacity-50"
+                  title="添加套餐到购物车并前往预约页面"
+                >
+                  {addingToCart === plan.id ? (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>处理中...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="w-4 h-4" />
+                      <span>立即预约</span>
+                    </>
+                  )}
+                </button>
+                
+                {/* 次要操作：加入购物车 */}
                 <button
                   onClick={() => handleAddToCart(plan)}
                   disabled={addingToCart === plan.id}
-                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors border border-primary text-primary hover:bg-primary/10 h-10 px-4 disabled:opacity-50"
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 disabled:opacity-50"
                 >
                   {addingToCart === plan.id ? (
                     <>
@@ -210,12 +262,6 @@ export default function CampaignsClient({ campaignPlans, stores }: CampaignsClie
                     </>
                   )}
                 </button>
-                <Link
-                  href={`/booking?campaignPlanId=${plan.id}`}
-                  className="flex-1 inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4"
-                >
-                  立即预约
-                </Link>
               </div>
             </div>
           </div>

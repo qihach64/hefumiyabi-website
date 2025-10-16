@@ -39,6 +39,7 @@ export default async function CampaignsPage() {
     select: {
       id: true,
       name: true,
+      slug: true,
     },
     orderBy: {
       name: "asc",

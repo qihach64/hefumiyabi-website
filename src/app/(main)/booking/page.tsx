@@ -22,22 +22,30 @@ function BookingContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  // 如果购物车为空，重定向到购物车页面
+  // 如果购物车为空，引导用户选择套餐
   if (items.length === 0) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-8">
           <ShoppingCart className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-          <h1 className="text-2xl font-bold mb-4">购物车是空的</h1>
+          <h1 className="text-2xl font-bold mb-4">还没有选择套餐</h1>
           <p className="text-muted-foreground mb-6">
-            请先添加套餐到购物车，然后再进行预约。
+            请先浏览并选择您喜欢的和服租赁套餐。
           </p>
-          <Link
-            href="/cart"
-            className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors bg-primary text-primary-foreground hover:bg-primary/90 h-11 px-8"
-          >
-            返回购物车
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              href="/plans"
+              className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors bg-primary text-primary-foreground hover:bg-primary/90 h-11 px-8"
+            >
+              浏览套餐
+            </Link>
+            <Link
+              href="/campaigns"
+              className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-primary text-primary hover:bg-primary/10 h-11 px-8"
+            >
+              查看优惠活动
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -177,11 +185,11 @@ function BookingContent() {
         {/* 头部 */}
         <div className="mb-8">
           <Link
-            href="/cart"
+            href="/plans"
             className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-2"
           >
             <ArrowLeft className="w-4 h-4" />
-            返回购物车
+            继续浏览套餐
           </Link>
           <h1 className="text-3xl md:text-4xl font-bold">确认预约</h1>
           <p className="text-muted-foreground mt-2">
@@ -298,10 +306,10 @@ function BookingContent() {
               {/* 提交按钮 */}
               <div className="flex gap-4">
                 <Link
-                  href="/cart"
+                  href="/plans"
                   className="flex-1 inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-input hover:bg-accent hover:text-accent-foreground h-12 px-6"
                 >
-                  返回修改
+                  继续浏览
                 </Link>
                 <button
                   type="submit"

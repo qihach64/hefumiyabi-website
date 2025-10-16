@@ -47,6 +47,9 @@ interface CartStore {
 
   // 获取商品总数
   getTotalItems: () => number;
+
+  // 快速预约功能（Amazon模式的"Buy Now"）
+  quickBook: (item: Omit<CartItem, "id" | "quantity">) => void;
 }
 
 export const useCartStore = create<CartStore>()(
@@ -142,6 +145,21 @@ export const useCartStore = create<CartStore>()(
 
       getTotalItems: () => {
         return get().items.reduce((total, item) => total + item.quantity, 0);
+      },
+
+      // 快速预约功能（Amazon模式的"Buy Now"）
+      quickBook: (item) => {
+        // 1. 清空购物车
+        set({ items: [] });
+        
+        // 2. 添加当前项目到购物车
+        const newItem = {
+          ...item,
+          id: `cart-${Date.now()}-${Math.random()}`,
+          quantity: 1,
+        };
+        
+        set({ items: [newItem] });
       },
     }),
     {

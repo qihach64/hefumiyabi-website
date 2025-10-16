@@ -1,0 +1,180 @@
+{
+  "scrapedAt": "2025-10-16T01:28:37.902Z",
+  "sourceUrl": "https://hefumiyabi.com/zh/plan",
+  "plans": [
+    {
+      "id": "women-daily-discount",
+      "slug": "women-daily-discount",
+      "name": "女士日常优惠和服套餐",
+      "nameEn": "Special Daily Discount Kimono Plan (Women)",
+      "description": "简约设计，适合中老年女性。20套优惠和服每日先到先得",
+      "price": 300000,
+      "originalPrice": 500000,
+      "duration": "4-8小时",
+      "category": "LADIES",
+      "features": [
+        "在线预订专享优惠",
+        "无需提前预约",
+        "20套优惠和服可选",
+        "免费发型设计",
+        "空手来店即可"
+      ],
+      "applicableStores": [
+        "asakusa-main",
+        "asakusa-station"
+      ],
+      "storeNames": [
+        "浅草本店",
+        "浅草駅前店"
+      ],
+      "images": [
+        "https://cdn.sanity.io/images/u9jvdp7a/staging/cdff65bedb063563c91e3ff6fe56e2004faee1b0-1092x1472.png"
+      ],
+      "isActive": true,
+      "isFeatured": true
+    },
+    {
+      "id": "furisode-photoshoot",
+      "slug": "furisode-photoshoot",
+      "name": "10周年振袖和服套餐+60分钟摄影",
+      "nameEn": "Premier Furisode Kimono Plan with 60-min Photography",
+      "description": "可爱时尚的设计，最新款式助您找到完美和服。适合成人式等重要场合",
+      "price": 3800000,
+      "originalPrice": 5800000,
+      "duration": "全天",
+      "category": "SPECIAL",
+      "features": [
+        "60分钟专业摄影",
+        "最新款振袖和服",
+        "专业化妆发型",
+        "精美照片成品",
+        "10周年特别优惠",
+        "成人式预约接受中"
+      ],
+      "applicableStores": [
+        "asakusa-main",
+        "asakusa-station",
+        "asakusa-premium"
+      ],
+      "storeNames": [
+        "浅草本店",
+        "浅草駅前店",
+        "浅草雅 プレミアム"
+      ],
+      "images": [
+        "https://cdn.sanity.io/images/u9jvdp7a/staging/2c5c377c69c7d60f41b052db2fdcfc955ff32437-1260x1536.png"
+      ],
+      "isActive": true,
+      "isFeatured": true,
+      "isSpecial": true
+    },
+    {
+      "id": "furisode-basic",
+      "slug": "furisode-basic",
+      "name": "振袖和服套餐",
+      "nameEn": "Premier Furisode Kimono Plan",
+      "description": "最新款振袖和服设计，适合成人式等正式场合",
+      "price": 1900000,
+      "originalPrice": 3800000,
+      "duration": "全天",
+      "category": "SPECIAL",
+      "features": [
+        "最新款振袖和服",
+        "专业着装服务",
+        "发型设计",
+        "全套配饰",
+        "成人式预约接受中"
+      ],
+      "applicableStores": [
+        "asakusa-main",
+        "asakusa-station",
+        "asakusa-premium"
+      ],
+      "storeNames": [
+        "浅草本店",
+        "浅草駅前店",
+        "浅草雅 プレミアム"
+      ],
+      "images": [
+        "https://cdn.sanity.io/images/u9jvdp7a/staging/2c5c377c69c7d60f41b052db2fdcfc955ff32437-1260x1536.png"
+      ],
+      "isActive": true,
+      "isFeatured": true
+    },
+    {
+      "id": "group-5-people",
+      "slug": "group-5-people",
+      "name": "5人团体套餐（1人免费）",
+      "nameEn": "5-Person Group Plan (1 Person Free)",
+      "description": "在京都清水寺附近享受5人团体和服体验，其中1名免费",
+      "price": 2000000,
+      "originalPrice": 2750000,
+      "duration": "全天",
+      "category": "GROUP",
+      "features": [
+        "5人团体优惠价",
+        "一人免费",
+        "免费发型设计",
+        "专业着装服务",
+        "清水寺附近便利位置",
+        "适合观光摄影"
+      ],
+      "applicableStores": [
+        "kiyomizu"
+      ],
+      "storeNames": [
+        "清水寺店"
+      ],
+      "images": [
+        "https://cdn.sanity.io/images/u9jvdp7a/staging/d053820a53f8883cdc0debb7307375b260d383ab-1718x1714.png"
+      ],
+      "isActive": true,
+      "isFeatured": true
+    },
+    {
+      "id": "couple-discount",
+      "slug": "couple-discount",
+      "name": "情侣优惠套餐",
+      "nameEn": "Couple Discount Plan",
+      "description": "最受欢迎的情侣套餐，包含蕾丝和服",
+      "price": 899900,
+      "originalPrice": 1100000,
+      "duration": "全天",
+      "category": "COUPLE",
+      "features": [
+        "一男一女情侣套装",
+        "包含蕾丝和服",
+        "免费发型设计",
+        "专业着装服务",
+        "适合观光摄影",
+        "最受欢迎套餐"
+      ],
+      "applicableStores": [
+        "kiyomizu"
+      ],
+      "storeNames": [
+        "清水寺店"
+      ],
+      "images": [
+        "https://cdn.sanity.io/images/u9jvdp7a/staging/5dd1195b6e98cb17cfaf210b018dc5d9582b574f-1066x1314.png"
+      ],
+      "isActive": true,
+      "isFeatured": true
+    }
+  ],
+  "metadata": {
+    "totalPlans": 5,
+    "categories": [
+      "LADIES",
+      "SPECIAL",
+      "GROUP",
+      "COUPLE"
+    ],
+    "stores": [
+      "浅草本店",
+      "浅草駅前店",
+      "浅草雅 プレミアム",
+      "清水寺店"
+    ]
+  }
+}

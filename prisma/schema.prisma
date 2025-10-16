@@ -218,11 +218,18 @@ model RentalPlan {
 
   category PlanCategory
 
-  price         Int // 人民币（分）
-  depositAmount Int @default(0)
-  duration      Int // 小时
+  price         Int  // 线上预约价格（人民币分）
+  originalPrice Int? // 线下原价（人民币分）
+  depositAmount Int  @default(0)
+  duration      Int  // 小时
 
   includes String[] // ["着付け", "ヘアセット", "小物一式"]
+  imageUrl String?  // 套餐图片URL
+  
+  // 店铺和地区信息
+  storeName String? // 店铺名称
+  region    String? // 地区（东京地区、京都地区等）
+  tags      String[] @default([]) // 标签（蕾丝和服、情侣套餐等）
 
   isActive Boolean @default(true)
 

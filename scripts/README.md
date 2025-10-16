@@ -4,6 +4,74 @@
 
 ## 📁 文件说明
 
+### `scrape-plans.js` - 官网套餐数据爬虫（手动提取）🆕
+从 https://hefumiyabi.com/zh/plan 提取官网套餐数据的脚本。
+
+**功能**:
+- 基于 WebFetch API 提取的数据
+- 手动整理为结构化格式
+- 支持中英文名称
+- 包含价格、描述、特色、适用店铺等完整数据
+- 自动保存为 JSON 格式
+
+**使用方法**:
+```bash
+node scripts/scrape-plans.js
+```
+
+**输出**:
+- `data/scraped-plans-[timestamp].json` - 完整数据（包含元数据和时间戳）
+- `data/plans-data.json` - 简化数据（仅套餐数组，便于直接导入）
+
+**抓取的套餐**:
+1. 女士日常优惠和服套餐 - ¥3,000（浅草本店、浅草駅前店）
+2. 10周年振袖套餐+60分钟摄影 - ¥38,000（浅草3店）
+3. 振袖和服套餐 - ¥19,000（浅草3店）
+4. 5人团体套餐 - ¥20,000/人（清水寺店）
+5. 情侣优惠套餐 - ¥8,999（清水寺店）
+
+**限制**:
+- 无法自动解析客户端渲染的内容
+- 数据需要手动维护
+- 如需自动抓取，请使用 `scrape-plans-puppeteer.js`
+
+---
+
+### `scrape-plans-puppeteer.js` - Puppeteer 爬虫（自动抓取）🆕
+使用无头浏览器自动抓取客户端渲染网站的数据。
+
+**功能**:
+- 完整浏览器环境，支持 JavaScript 执行
+- 自动等待页面加载
+- 提取动态内容
+- 支持截图调试
+
+**安装依赖**:
+```bash
+npm install puppeteer
+```
+
+**使用方法**:
+```bash
+node scripts/scrape-plans-puppeteer.js
+```
+
+**输出**:
+- `data/puppeteer-plans-[timestamp].json` - 自动抓取的数据
+- `data/debug-screenshot.png` - 调试截图（如果出错）
+
+**优势**:
+- ✅ 支持客户端渲染网站
+- ✅ 自动化程度高
+- ✅ 可处理复杂交互
+
+**劣势**:
+- ❌ 需要下载 Chromium (~170MB)
+- ❌ 资源消耗较大
+- ❌ 速度相对较慢
+
+📚 详细对比请查看: [docs/SCRAPING_METHODS.md](../docs/SCRAPING_METHODS.md)
+
 ### `scraper.ts` - 网站爬虫
 从 https://hefumiyabi.com 抓取数据的爬虫脚本。
 
