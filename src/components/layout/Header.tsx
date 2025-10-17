@@ -32,7 +32,7 @@ export default async function Header() {
           <Link href="/plans" className="transition-colors hover:text-foreground/80">
             租赁套餐
           </Link>
-          <Link href="/virtual-tryon" className="transition-colors hover:text-foreground/80 text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 font-semibold">
+          <Link href="/virtual-tryon" className="transition-colors hover:text-foreground/80 text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-rose-500 font-semibold">
             AI 试穿 ✨
           </Link>
           <Link href="/stores" className="transition-colors hover:text-foreground/80">
@@ -51,7 +51,7 @@ export default async function Header() {
           <Link href="/plans" className="transition-colors hover:text-foreground/80">
             套餐
           </Link>
-          <Link href="/virtual-tryon" className="transition-colors hover:text-foreground/80 text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 font-semibold">
+          <Link href="/virtual-tryon" className="transition-colors hover:text-foreground/80 text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-rose-500 font-semibold">
             AI试穿
           </Link>
           <Link href="/stores" className="transition-colors hover:text-foreground/80">
