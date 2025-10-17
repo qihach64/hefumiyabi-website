@@ -93,6 +93,11 @@ export default function PlansClient({
     new Set(allPlans.flatMap(p => p.tags || []).filter(Boolean))
   ) as string[];
 
+  // 只显示有对应套餐的活动
+  const campaignsWithPlans = campaigns.filter(campaign => 
+    allPlans.some(plan => plan.campaignId === campaign.id)
+  );
+
   // 统一筛选逻辑
   const filteredPlans = allPlans.filter(plan => {
     // 仅显示活动套餐（使用兼容判断）
@@ -432,35 +437,53 @@ export default function PlansClient({
                   : 'hover:bg-secondary'
               }`}
             >
-              🎊 仅限时优惠
+              <div className="flex items-center justify-between">
+                <span>🎊 仅限时优惠</span>
+                <span className="text-xs opacity-75">
+                  ({filteredCampaignPlans.length})
+                </span>
+              </div>
             </button>
             
-            {/* 全部活动 */}
-            <button
-              onClick={() => setSelectedCampaignId(null)}
-              className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                !selectedCampaignId
-                  ? 'bg-primary text-primary-foreground font-medium'
-                  : 'hover:bg-secondary'
-              }`}
-            >
-              全部活动
-            </button>
-            
-            {/* 活动列表 */}
-            {campaigns.map((campaign) => (
-              <button
-                key={campaign.id}
-                onClick={() => setSelectedCampaignId(campaign.id)}
-                className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                  selectedCampaignId === campaign.id
-                    ? 'bg-primary text-primary-foreground font-medium'
-                    : 'hover:bg-secondary'
-                }`}
-              >
-                {campaign.title}
-              </button>
-            ))}
+            {/* 只显示有套餐的活动 */}
+            {campaignsWithPlans.length > 0 && (
+              <>
+                {/* 全部活动 */}
+                <button
+                  onClick={() => setSelectedCampaignId(null)}
+                  className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
+                    !selectedCampaignId
+                      ? 'bg-primary text-primary-foreground font-medium'
+                      : 'hover:bg-secondary'
+                  }`}
+                >
+                  全部活动
+                </button>
+                
+                {/* 活动列表（只显示有套餐的） */}
+                {campaignsWithPlans.map((campaign) => {
+                  const planCount = allPlans.filter(p => p.campaignId === campaign.id).length;
+                  return (
+                    <button
+                      key={campaign.id}
+                      onClick={() => setSelectedCampaignId(campaign.id)}
+                      className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
+                        selectedCampaignId === campaign.id
+                          ? 'bg-primary text-primary-foreground font-medium'
+                          : 'hover:bg-secondary'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="truncate">{campaign.title}</span>
+                        <span className="text-xs opacity-75 ml-2 flex-shrink-0">
+                          ({planCount})
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </>
+            )}
           </div>
         </div>
 
