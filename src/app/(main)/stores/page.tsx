@@ -127,15 +127,21 @@ export default async function StoresPage() {
                           </div>
                         </div>
                         {store.latitude && store.longitude && (
-                          <a
-                            href={`https://www.google.com/maps/search/?api=1&query=${store.latitude},${store.longitude}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              window.open(
+                                `https://www.google.com/maps/search/?api=1&query=${store.latitude},${store.longitude}`,
+                                '_blank',
+                                'noopener,noreferrer'
+                              );
+                            }}
                             className="inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4"
                           >
                             <Navigation className="w-4 h-4" />
                             导航
-                          </a>
+                          </button>
                         )}
                       </div>
                     </div>
