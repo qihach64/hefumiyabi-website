@@ -1,0 +1,217 @@
+{
+  "scrapedAt": "2025-10-17T20:00:18.387Z",
+  "sourceUrl": "https://hefumiyabi.com/zh/campaign",
+  "method": "puppeteer",
+  "campaigns": [
+    {
+      "name": "男士武士袴礼服(10周年优惠,不可退款,京都清水寺店)",
+      "description": "对于男士的正式场合，我们也提供马乗袴的组合，让男士也能呈现正式庄重的和风气质，站在穿着华丽和服的女生旁边也能帅气登对",
+      "originalPrice": 20000,
+      "campaignPrice": 10000,
+      "images": [
+        "https://hefumiyabi.com/_next/image?url=https%3A%2F%2Fcdn.sanity.io%2Fimages%2Fu9jvdp7a%2Fstaging%2F9c834e2fd6b862694a2308d85cc36c707cc06890-916x1368.png%3Ffm%3Dwebp%26fit%3Dcrop&w=3840&q=100"
+      ],
+      "includes": [
+        "京都地区",
+        "男士套餐",
+        "清水寺店"
+      ],
+      "applicableStores": [
+        "京都清水寺店"
+      ],
+      "tags": [
+        "周年活动"
+      ],
+      "storeName": "京都清水寺店",
+      "region": "京都地区",
+      "hasPrice": true,
+      "hasImages": true,
+      "hasStores": true
+    },
+    {
+      "name": "京都雅正絹振袖|10周年优惠,不可退款",
+      "description": "作为未婚女性最高规格的礼服， \n 除了袖子比一般和服长之外，\n 整件和服使用正绢材质手工製作， \n 腰带、配件甚至鞋包都是不同于一般和服的规格， \n 着衣方式及细节都能让您体验日式精緻细节。",
+      "originalPrice": 35000,
+      "campaignPrice": 17500,
+      "images": [
+        "https://hefumiyabi.com/_next/image?url=https%3A%2F%2Fcdn.sanity.io%2Fimages%2Fu9jvdp7a%2Fstaging%2F42916d1b177ca5754edc6ed2ed24d748b3e7f04f-600x400.jpg%3Ffm%3Dwebp%26fit%3Dcrop&w=3840&q=100"
+      ],
+      "includes": [
+        "京都地区",
+        "女士套餐",
+        "清水寺店"
+      ],
+      "applicableStores": [],
+      "tags": [
+        "周年活动",
+        "振袖"
+      ],
+      "storeName": null,
+      "region": "京都地区",
+      "hasPrice": true,
+      "hasImages": true,
+      "hasStores": false
+    },
+    {
+      "name": "京都雅訪問着2人同行第二人半价|10周年优惠,不可退款",
+      "description": "最常在日剧或正式场合见到的和服， \n 优雅的花色与图案搭配太鼓结更显气质， \n 无论是参加茶会、婚宴或是正式聚餐皆可穿着， 想\n要体验更传统的和服伪装日本人的话，\n 一定要试试访问着和服喔！",
+      "originalPrice": 24000,
+      "campaignPrice": 18000,
+      "images": [
+        "https://hefumiyabi.com/_next/image?url=https%3A%2F%2Fcdn.sanity.io%2Fimages%2Fu9jvdp7a%2Fstaging%2Fa0c450b07e897b55982345da50b36c28af0f6f0e-600x400.jpg%3Ffm%3Dwebp%26fit%3Dcrop&w=3840&q=100"
+      ],
+      "includes": [
+        "京都地区",
+        "女士套餐",
+        "清水寺店"
+      ],
+      "applicableStores": [],
+      "tags": [
+        "周年活动"
+      ],
+      "storeName": null,
+      "region": "京都地区",
+      "hasPrice": true,
+      "hasImages": true,
+      "hasStores": false
+    },
+    {
+      "name": "京都不染川正絹振袖|10週年優惠,不可退款",
+      "description": "想体验最最正式的和服就是振袖和服了，\n作为未婚女性最高规格的服装，\n除了袖子比一般和服长之外，\n腰带、配件甚至手提包或草履，每一样都是不同于一般和服，\n着衣方式及细节都是和服最正式的搭配。\n在日本成人礼当天满20岁的女生都会穿上华丽的振袖和服去参加成人礼，\n在这一生中只有一次重要场合，\n振袖和服就是最适合这日子的主角的服装了。",
+      "originalPrice": 39800,
+      "campaignPrice": 19900,
+      "images": [
+        "https://hefumiyabi.com/_next/image?url=https%3A%2F%2Fcdn.sanity.io%2Fimages%2Fu9jvdp7a%2Fstaging%2Fe0b5996961173100efafa7a0f7bc2e752250e2b8-1080x714.jpg%3Ffm%3Dwebp%26fit%3Dcrop&w=3840&q=100"
+      ],
+      "includes": [
+        "京都地区",
+        "女士套餐",
+        "京都精品店 不染川"
+      ],
+      "applicableStores": [
+        "京都不染川店"
+      ],
+      "tags": [
+        "周年活动",
+        "振袖"
+      ],
+      "storeName": "京都不染川店",
+      "region": "京都地区",
+      "hasPrice": true,
+      "hasImages": true,
+      "hasStores": true
+    },
+    {
+      "name": "京都雅高级訪問着两人同行第二半价|10周年优惠,不可退款",
+      "description": "最常在日剧或正式场合见到的和服， \n 优雅的花色与图案搭配太鼓结更显气质， \n 无论是参加茶会、婚宴或是正式聚餐皆可穿着， 想\n要体验更传统的和服伪装日本人的话，\n 一定要试试访问着和服喔！",
+      "originalPrice": 36000,
+      "campaignPrice": 27000,
+      "images": [
+        "https://hefumiyabi.com/_next/image?url=https%3A%2F%2Fcdn.sanity.io%2Fimages%2Fu9jvdp7a%2Fstaging%2Fd1fca2445dae7d629110bb663082d9335e4d350b-1206x1510.jpg%3Ffm%3Dwebp%26fit%3Dcrop&w=3840&q=100"
+      ],
+      "includes": [
+        "京都地区",
+        "女士套餐",
+        "清水寺店"
+      ],
+      "applicableStores": [],
+      "tags": [
+        "周年活动"
+      ],
+      "storeName": null,
+      "region": "京都地区",
+      "hasPrice": true,
+      "hasImages": true,
+      "hasStores": false
+    },
+    {
+      "name": "京都雅豪华振袖|10周年优惠,不可退款",
+      "description": "对于预算较高，或是特别重要的场合，\n我们提供更高等级的振袖和服，整套使用高级的真丝正绢材质，\n传统烫金及手工刺绣工艺製作，每一件都是独一无二的工艺品，\n并且搭配本店特别挑选的精緻配件，整体华丽而隆重，给你日本华族的尊贵体验，\n无论是参加一生一次的成人礼，或是为人生大事拍摄纪念照，豪华正绢振袖都是最适合的服装选择。",
+      "originalPrice": 55000,
+      "campaignPrice": 27500,
+      "images": [
+        "https://hefumiyabi.com/_next/image?url=https%3A%2F%2Fcdn.sanity.io%2Fimages%2Fu9jvdp7a%2Fstaging%2Fad7aef37510c62923a8342a9838dc3de658e1b8f-3204x2136.jpg%3Ffm%3Dwebp%26fit%3Dcrop&w=3840&q=100"
+      ],
+      "includes": [
+        "京都地区",
+        "女士套餐",
+        "清水寺店"
+      ],
+      "applicableStores": [],
+      "tags": [
+        "周年活动",
+        "振袖"
+      ],
+      "storeName": null,
+      "region": "京都地区",
+      "hasPrice": true,
+      "hasImages": true,
+      "hasStores": false
+    },
+    {
+      "name": "京都不染川高级访问服or男士武士袴2人|10周年优惠,不可退款",
+      "description": "访问着无论是已婚或未婚都可以穿着的礼服。整件访问着的图案是连贯的图案，将整件和服展开后会形成一幅图画的样貌，称为「絵羽(えば)」的这种图案形式。作为稍微正式的礼服，友人婚宴、派对、陪同入学典礼、茶会、同学会、相亲等社交场合都适合穿着出席 包含物件",
+      "originalPrice": 48000,
+      "campaignPrice": 36000,
+      "images": [
+        "https://hefumiyabi.com/_next/image?url=https%3A%2F%2Fcdn.sanity.io%2Fimages%2Fu9jvdp7a%2Fstaging%2F2eeaa46801f76c38ec0c3cb648a7c6840c5d65cb-1856x1634.jpg%3Ffm%3Dwebp%26fit%3Dcrop&w=3840&q=100"
+      ],
+      "includes": [
+        "京都地区",
+        "女士套餐",
+        "京都精品店 不染川"
+      ],
+      "applicableStores": [
+        "京都不染川店"
+      ],
+      "tags": [
+        "周年活动"
+      ],
+      "storeName": "京都不染川店",
+      "region": "京都地区",
+      "hasPrice": true,
+      "hasImages": true,
+      "hasStores": true
+    },
+    {
+      "name": "10th不染川豪华振袖|10周年优惠,不可退款",
+      "description": "对于预算较高，或是特别重要的场合，\n我们提供更高等级的振袖和服，整套使用高级的真丝正绢材质，\n传统烫金及手工刺绣工艺製作，每一件都是独一无二的工艺品，\n并且搭配本店特别挑选的精緻配件，整体华丽而隆重，给你日本华族的尊贵体验，\n无论是参加一生一次的成人礼，或是为人生大事拍摄纪念照，豪华正绢振袖都是最适合的服装选择。",
+      "originalPrice": 75000,
+      "campaignPrice": 37500,
+      "images": [
+        "https://hefumiyabi.com/_next/image?url=https%3A%2F%2Fcdn.sanity.io%2Fimages%2Fu9jvdp7a%2Fstaging%2F870d812c77d11d10776185c8808e8739fc9c022f-1836x1172.jpg%3Ffm%3Dwebp%26fit%3Dcrop&w=3840&q=100"
+      ],
+      "includes": [
+        "京都地区",
+        "女士套餐",
+        "京都精品店 不染川"
+      ],
+      "applicableStores": [
+        "京都不染川店"
+      ],
+      "tags": [
+        "周年活动",
+        "振袖"
+      ],
+      "storeName": "京都不染川店",
+      "region": "京都地区",
+      "hasPrice": true,
+      "hasImages": true,
+      "hasStores": true
+    }
+  ],
+  "metadata": {
+    "totalCampaigns": 8,
+    "withPrice": 8,
+    "withImages": 8,
+    "withStores": 4,
+    "stores": [
+      "京都清水寺店",
+      "京都不染川店"
+    ],
+    "priceRange": {
+      "min": 10000,
+      "max": 37500
+    }
+  }
+}

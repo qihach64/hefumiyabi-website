@@ -553,8 +553,11 @@ model CampaignPlan {
   duration     Int? // 时长（小时）
   includes     String[] // 包含的服务
 
-  // 适用店铺
-  applicableStores String[] // 店铺 slug 数组
+  // 店铺和地区信息
+  storeName String? // 店铺名称（与 RentalPlan 保持一致）
+  region    String? // 地区（东京地区、京都地区等）
+  applicableStores String[] // 适用店铺 slug 数组
+  tags      String[] @default([]) // 标签（蕾丝和服、情侣套餐等）
 
   // 图片
   images String[]

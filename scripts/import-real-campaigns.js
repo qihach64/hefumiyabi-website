@@ -36,18 +36,49 @@ async function importCampaigns() {
   const scrapedCampaigns = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
   console.log(`📊 找到 ${scrapedCampaigns.length} 个活动套餐\n`);
 
+  // 1. 创建或查找父级 Campaign（活动）
+  console.log('🔍 检查父级活动...\n');
+  const campaignSlug = '10th-anniversary-campaign';
+  let parentCampaign = await prisma.campaign.findUnique({
+    where: { slug: campaignSlug }
+  });
+
+  if (!parentCampaign) {
+    console.log('📝 创建父级活动: 10周年优惠活动\n');
+    parentCampaign = await prisma.campaign.create({
+      data: {
+        slug: campaignSlug,
+        title: '10周年优惠活动',
+        titleEn: '10th Anniversary Campaign',
+        description: '江戸和装工房雅10周年特别优惠活动，多款套餐限时优惠！',
+        subtitle: '10周年特别企划',
+        startDate: new Date('2024-01-01'),
+        endDate: new Date('2025-12-31'),
+        isActive: true,
+        isPinned: true,
+        priority: 100,
+        type: 'ANNIVERSARY',
+        restrictions: [],
+      }
+    });
+    console.log(`✅ 父级活动已创建: ${parentCampaign.title}\n`);
+  } else {
+    console.log(`✅ 找到已存在的父级活动: ${parentCampaign.title}\n`);
+  }
+
   let imported = 0;
   let skipped = 0;
   let errors = 0;
 
+  // 2. 导入活动套餐
   for (const campaign of scrapedCampaigns) {
     try {
-      // 生成 slug
-      const slug = generateSlug(campaign.name);
-
-      // 检查是否已存在
-      const existing = await prisma.campaignPlan.findUnique({
-        where: { slug }
+      // 检查是否已存在（通过名称）
+      const existing = await prisma.campaignPlan.findFirst({
+        where: {
+          campaignId: parentCampaign.id,
+          name: campaign.name
+        }
       });
 
       if (existing) {
@@ -68,7 +99,7 @@ async function importCampaigns() {
       // 创建活动套餐
       await prisma.campaignPlan.create({
         data: {
-          slug,
+          campaignId: parentCampaign.id,
           name: campaign.name,
           description: campaign.description || `${campaign.name} - 限时优惠活动`,
           originalPrice: originalPriceInCNY,
@@ -76,8 +107,9 @@ async function importCampaigns() {
           images: campaign.images || [],
           includes: campaign.includes || [],
           applicableStores: campaign.applicableStores || [],
+          storeName: campaign.storeName || null,
+          region: campaign.region || null,
           tags: campaign.tags || [],
-          isActive: true,
         }
       });
 

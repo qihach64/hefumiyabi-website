@@ -211,6 +211,24 @@ async function scrapeCampaigns() {
           // 去重标签
           const uniqueTags = [...new Set(tags)];
 
+          // 提取 storeName 和 region
+          let storeName = null;
+          let region = null;
+
+          // 如果有单一店铺，设为 storeName
+          if (applicableStores.length === 1) {
+            storeName = applicableStores[0];
+          }
+
+          // 根据店铺或标题判断地区
+          if (fullText.includes('东京') || fullText.includes('東京') ||
+              fullText.includes('浅草') || fullText.includes('淺草')) {
+            region = '东京地区';
+          } else if (fullText.includes('京都') || fullText.includes('清水寺') ||
+                     fullText.includes('不染川')) {
+            region = '京都地区';
+          }
+
           // 只添加有效数据
           if (title && (campaignPrice || description || images.length > 0)) {
             results.push({
@@ -222,6 +240,8 @@ async function scrapeCampaigns() {
               includes: includes.slice(0, 10), // 最多10项服务
               applicableStores,
               tags: uniqueTags,
+              storeName, // 店铺名称
+              region, // 地区
               hasPrice: !!campaignPrice,
               hasImages: images.length > 0,
               hasStores: applicableStores.length > 0

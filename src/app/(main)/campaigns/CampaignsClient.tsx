@@ -117,8 +117,8 @@ export default function CampaignsClient({ campaignPlans, stores }: CampaignsClie
         />
       </div>
 
-      {/* 套餐网格 */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+      {/* 套餐网格 - 优化布局 */}
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {filteredPlans.length === 0 ? (
           <div className="col-span-full text-center py-12">
             <p className="text-muted-foreground text-lg">
@@ -132,125 +132,117 @@ export default function CampaignsClient({ campaignPlans, stores }: CampaignsClie
             plan.originalPrice) *
             100
         );
+        const savings = (plan.originalPrice - plan.campaignPrice) / 100;
 
         return (
           <div
             key={plan.id}
-            className="group relative overflow-hidden rounded-lg border bg-card hover:shadow-xl transition-all duration-300"
+            className="group relative overflow-hidden rounded-xl border-2 bg-card hover:border-primary/50 hover:shadow-2xl transition-all duration-300"
           >
-            {/* 折扣标签 */}
-            <div className="absolute top-4 right-4 z-10">
-              <div className="bg-accent text-accent-foreground px-3 py-1.5 rounded-md text-xs font-semibold shadow-lg">
-                {discountPercent}% OFF
+            {/* 超大折扣标签 - 左上角 */}
+            <div className="absolute top-0 left-0 z-10">
+              <div className="bg-gradient-to-br from-accent to-primary text-accent-foreground px-6 py-3 rounded-br-2xl shadow-lg">
+                <div className="text-2xl font-black leading-none">-{discountPercent}%</div>
+                <div className="text-xs font-medium mt-0.5">限时特惠</div>
               </div>
             </div>
 
             {/* 图片区域 */}
             {plan.images.length > 0 ? (
-              <div className="relative aspect-[3/4] overflow-hidden bg-secondary">
+              <div className="relative aspect-[4/5] overflow-hidden bg-secondary">
                 <Image
                   src={plan.images[0]}
                   alt={plan.name}
                   fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-300"
+                  className="object-cover group-hover:scale-105 transition-transform duration-500"
                   sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 />
+                {/* 图片上的价格叠加 */}
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                  <div className="text-white">
+                    <div className="flex items-baseline gap-2 mb-1">
+                      <span className="text-3xl font-black">
+                        ¥{(plan.campaignPrice / 100).toLocaleString()}
+                      </span>
+                      <span className="text-lg line-through opacity-70">
+                        ¥{(plan.originalPrice / 100).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="text-sm font-semibold text-accent">
+                      立省 ¥{savings.toLocaleString()}
+                    </div>
+                  </div>
+                </div>
               </div>
             ) : (
-              <div className="relative aspect-[3/4] overflow-hidden bg-secondary flex items-center justify-center">
+              <div className="relative aspect-[4/5] overflow-hidden bg-secondary flex items-center justify-center">
                 <span className="text-6xl">👘</span>
               </div>
             )}
 
-            {/* 内容区域 */}
-            <div className="p-6">
+            {/* 内容区域 - 简化信息 */}
+            <div className="p-4">
               {/* 标题 */}
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold mb-1 line-clamp-2">
-                  {plan.name}
-                </h3>
-              </div>
+              <h3 className="text-base font-bold mb-3 line-clamp-2 leading-tight">
+                {plan.name}
+              </h3>
 
-              {/* 价格 */}
-              <div className="mb-4">
-                <div className="flex items-baseline gap-2 mb-1">
-                  <span className="text-3xl font-bold text-primary">
-                    ¥{(plan.campaignPrice / 100).toLocaleString()}
-                  </span>
-                  <span className="text-lg text-muted-foreground line-through">
-                    ¥{(plan.originalPrice / 100).toLocaleString()}
-                  </span>
-                </div>
-                <div className="text-sm text-accent">
-                  省 ¥
-                  {(
-                    (plan.originalPrice - plan.campaignPrice) /
-                    100
-                  ).toLocaleString()}
-                </div>
-              </div>
-
-              {/* 描述 */}
-              <p className="text-sm text-muted-foreground mb-4 leading-relaxed line-clamp-2">
-                {plan.description}
-              </p>
-
-              {/* 包含服务 */}
-              <div className="mb-6 space-y-2">
-                {plan.includes.slice(0, 3).map((item, idx) => (
+              {/* 关键服务点 - 精简显示 */}
+              <div className="mb-4 space-y-1.5">
+                {plan.includes.slice(0, 2).map((item, idx) => (
                   <div
                     key={idx}
-                    className="flex items-start gap-2 text-sm"
+                    className="flex items-center gap-2 text-xs"
                   >
-                    <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                    <span>{item}</span>
+                    <Check className="w-3.5 h-3.5 text-green-600 shrink-0" />
+                    <span className="text-muted-foreground">{item}</span>
                   </div>
                 ))}
-                {plan.includes.length > 3 && (
-                  <p className="text-sm text-muted-foreground ml-6">
-                    +{plan.includes.length - 3} 更多服务
-                  </p>
+                {plan.includes.length > 2 && (
+                  <div className="text-xs text-muted-foreground flex items-center gap-1">
+                    <span className="inline-block w-3.5 h-3.5 text-center">+</span>
+                    <span>含 {plan.includes.length - 2} 项其他服务</span>
+                  </div>
                 )}
               </div>
 
-              {/* 适用店铺 */}
+              {/* 适用店铺 - 简化 */}
               {plan.applicableStores.length > 0 && (
-                <div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
-                  <MapPin className="w-4 h-4" />
-                  <span>
+                <div className="mb-3 flex items-center gap-1.5 text-xs bg-secondary/50 px-2 py-1.5 rounded-md">
+                  <MapPin className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <span className="text-muted-foreground truncate">
                     {plan.applicableStores[0]}
-                    {plan.applicableStores.length > 1 && ` +${plan.applicableStores.length - 1}`}
+                    {plan.applicableStores.length > 1 && ` 等${plan.applicableStores.length}店`}
                   </span>
                 </div>
               )}
 
-              {/* Amazon模式的按钮布局 */}
+              {/* 按钮 - 淡雅风格 */}
               <div className="flex flex-col gap-2">
-                {/* 主要操作：立即预约 */}
+                {/* 主CTA：立即预约 - 超大按钮 */}
                 <button
                   onClick={() => handleQuickBook(plan)}
                   disabled={addingToCart === plan.id}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors bg-primary text-primary-foreground hover:bg-primary/90 h-11 px-4 disabled:opacity-50"
-                  title="添加套餐到购物车并前往预约页面"
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-lg text-base font-bold transition-all bg-gradient-to-r from-primary to-accent text-primary-foreground hover:opacity-90 shadow-lg hover:shadow-xl h-12 px-4 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {addingToCart === plan.id ? (
                     <>
-                      <Check className="w-4 h-4" />
+                      <Check className="w-5 h-5" />
                       <span>处理中...</span>
                     </>
                   ) : (
                     <>
-                      <Zap className="w-4 h-4" />
+                      <Zap className="w-5 h-5" />
                       <span>立即预约</span>
                     </>
                   )}
                 </button>
-                
-                {/* 次要操作：加入购物车 */}
+
+                {/* 次要CTA：加入购物车 */}
                 <button
                   onClick={() => handleAddToCart(plan)}
                   disabled={addingToCart === plan.id}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 disabled:opacity-50"
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-lg text-sm font-medium transition-all border-2 border-input hover:border-primary hover:bg-primary/5 h-10 px-4 disabled:opacity-50"
                 >
                   {addingToCart === plan.id ? (
                     <>
