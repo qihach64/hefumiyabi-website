@@ -597,22 +597,8 @@ export default function PlansClient({
 
   return (
     <>
-      {/* 精简的头部 */}
-      <section className="bg-background border-b">
-        <div className="container py-4 md:py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold">租赁套餐</h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                在线预订享受专属优惠价格
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* 主内容区域 - 侧边栏布局 */}
-      <section className="py-6 bg-background">
+      <section className="py-6 bg-background min-h-screen">
         <div className="container">
           <div className="flex flex-col lg:flex-row gap-6">
             {/* 左侧筛选器（桌面端） */}
@@ -699,30 +685,6 @@ export default function PlansClient({
                   </button>
                 </div>
               )}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 精简的服务说明 */}
-      <section className="py-8 bg-secondary/20">
-        <div className="container">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center text-sm">
-            <div className="flex flex-col items-center gap-2">
-              <span className="text-2xl">👘</span>
-              <span className="text-muted-foreground">专业着装</span>
-            </div>
-            <div className="flex flex-col items-center gap-2">
-              <span className="text-2xl">💇</span>
-              <span className="text-muted-foreground">免费发型</span>
-            </div>
-            <div className="flex flex-col items-center gap-2">
-              <span className="text-2xl">📦</span>
-              <span className="text-muted-foreground">配件齐全</span>
-            </div>
-            <div className="flex flex-col items-center gap-2">
-              <span className="text-2xl">💳</span>
-              <span className="text-muted-foreground">在线优惠</span>
             </div>
           </div>
         </div>
