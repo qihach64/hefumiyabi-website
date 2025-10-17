@@ -430,7 +430,13 @@ export default function PlansClient({
           <div className="space-y-2">
             {/* 仅显示活动套餐 */}
             <button
-              onClick={() => setShowOnlyCampaigns(!showOnlyCampaigns)}
+              onClick={() => {
+                setShowOnlyCampaigns(!showOnlyCampaigns);
+                // 如果只有一个活动，切换时清除具体活动选择
+                if (campaignsWithPlans.length === 1) {
+                  setSelectedCampaignId(null);
+                }
+              }}
               className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
                 showOnlyCampaigns
                   ? 'bg-amber-500 text-white font-medium'
@@ -438,15 +444,15 @@ export default function PlansClient({
               }`}
             >
               <div className="flex items-center justify-between">
-                <span>🎊 仅限时优惠</span>
+                <span>🎊 所有优惠套餐</span>
                 <span className="text-xs opacity-75">
                   ({filteredCampaignPlans.length})
                 </span>
               </div>
             </button>
             
-            {/* 只显示有套餐的活动 */}
-            {campaignsWithPlans.length > 0 && (
+            {/* 只在有多个活动时显示具体活动筛选器 */}
+            {campaignsWithPlans.length > 1 && (
               <>
                 {/* 全部活动 */}
                 <button
