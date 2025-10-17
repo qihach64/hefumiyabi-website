@@ -140,6 +140,10 @@ async function importRegularPlans() {
       const filteredIncludes = (plan.includes || []).filter(item => item !== '和服租赁');
       const filteredTags = (plan.tags || []).filter(tag => tag !== '和服租赁');
       
+      // 使用默认图片（如果没有图片）
+      const imageUrl = plan.images?.[0] || 
+                      'https://images.unsplash.com/photo-1583846788883-5e8c7c93d85e?w=800&q=80'; // 默认和服图片
+      
       await prisma.rentalPlan.create({
         data: {
           slug,
@@ -152,7 +156,7 @@ async function importRegularPlans() {
           
           duration: plan.duration || 4,
           includes: filteredIncludes,
-          imageUrl: plan.images?.[0] || null,
+          imageUrl: imageUrl,
           
           storeName: plan.storeName || null,
           region: plan.region || null,
@@ -246,6 +250,10 @@ async function importCampaignPlans() {
       const filteredIncludes = campaign.includes.filter(item => item !== '和服租赁');
       const filteredTags = campaign.tags.filter(tag => tag !== '和服租赁');
       
+      // 使用默认图片（如果没有图片）
+      const campaignImageUrl = campaign.images?.[0] || 
+                               'https://images.unsplash.com/photo-1583846788883-5e8c7c93d85e?w=800&q=80'; // 默认和服图片
+      
       await prisma.rentalPlan.create({
         data: {
           slug,
@@ -258,7 +266,7 @@ async function importCampaignPlans() {
           
           duration: 4, // 默认4小时
           includes: filteredIncludes,
-          imageUrl: campaign.images[0] || null,
+          imageUrl: campaignImageUrl,
           
           storeName: campaign.storeName || null,
           region: campaign.region || null,
