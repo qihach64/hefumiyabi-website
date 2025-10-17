@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ChevronDown, Search } from "lucide-react";
+import { ChevronDown } from "lucide-react";
+import EmbeddedChatbot from "@/components/EmbeddedChatbot";
 
 // FAQ 数据结构
 const faqCategories = [
@@ -121,35 +122,22 @@ const faqCategories = [
 export default function FAQPage() {
   return (
     <div className="flex flex-col">
-      {/* Hero 区域 */}
-      <section className="relative bg-gradient-to-br from-secondary via-background to-primary/5 overflow-hidden">
+      {/* Hero 区域 - AI 客服 */}
+      <section className="relative bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 overflow-hidden">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmNGE1YjkiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDE2YzAgMi4yMS0xLjc5IDQtNCA0cy00LTEuNzktNC00IDEuNzktNCA0LTQgNCAxLjc5IDQgNHptLTQgMjhjLTIuMjEgMC00LTEuNzktNC00czEuNzktNCA0LTQgNCAxLjc5IDQgNC0xLjc5IDQtNCA0eiIvPjwvZz48L2c+PC9zdmc+')] opacity-40"></div>
 
-        <div className="container relative py-16 md:py-24">
-          <div className="text-center max-w-3xl mx-auto">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              常见问题 FAQ
+        <div className="container relative py-12 md:py-16">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl md:text-4xl font-bold mb-3">
+              常见问题 & AI 客服
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground mb-8">
-              关于和服租赁的常见问题解答
+            <p className="text-base md:text-lg text-muted-foreground">
+              快速解答您的疑问，提供24/7智能服务
             </p>
-
-            {/* 搜索框占位符 */}
-            <div className="max-w-xl mx-auto">
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="搜索问题..."
-                  className="w-full h-12 pl-12 pr-4 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                  disabled
-                />
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                搜索功能即将推出
-              </p>
-            </div>
           </div>
+
+          {/* AI 聊天机器人 */}
+          <EmbeddedChatbot />
         </div>
       </section>
 
