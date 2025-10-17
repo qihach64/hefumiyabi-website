@@ -137,7 +137,7 @@ async function importRegularPlans() {
       const originalPriceInCNY = Math.round(plan.originalPrice * JPY_TO_CNY * 100);
       
       // 过滤掉 "和服租赁" 标签
-      const filteredIncludes = plan.includes.filter(item => item !== '和服租赁');
+      const filteredIncludes = (plan.includes || []).filter(item => item !== '和服租赁');
       const filteredTags = (plan.tags || []).filter(tag => tag !== '和服租赁');
       
       await prisma.rentalPlan.create({

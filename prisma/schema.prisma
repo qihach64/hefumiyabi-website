@@ -1,5 +1,3 @@
-// Prisma Schema for 江戸和装工房雅
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,63 +7,54 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ============ 用户系统 ============
 model User {
-  id            String    @id @default(cuid())
-  email         String?   @unique
+  id            String          @id @default(cuid())
+  email         String?         @unique
   emailVerified DateTime?
-  phone         String?   @unique
+  phone         String?         @unique
   phoneVerified DateTime?
   passwordHash  String?
-
-  name     String?
-  avatar   String?
-  role     Role      @default(USER)
-  language Language  @default(ZH)
-  birthday DateTime?
-  gender   Gender?
-
-  // 营销数据
-  source       String?
-  referralCode String?   @unique
-  referredBy   String?
-  referrer     User?     @relation("Referrals", fields: [referredBy], references: [id])
-  referrals    User[]    @relation("Referrals")
-
-  // 关联
-  preference UserPreference?
-  cart       Cart?
-  bookings   Booking[]
-  favorites  Favorite[]
-  reviews    Review[]
-  behaviors  UserBehavior[]
-  accounts   Account[]
-  sessions   Session[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  name          String?
+  avatar        String?
+  role          Role            @default(USER)
+  language      Language        @default(ZH)
+  birthday      DateTime?
+  gender        Gender?
+  source        String?
+  referralCode  String?         @unique
+  referredBy    String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  accounts      Account[]
+  bookings      Booking[]
+  cart          Cart?
+  favorites     Favorite[]
+  reviews       Review[]
+  sessions      Session[]
+  behaviors     UserBehavior[]
+  preference    UserPreference?
+  referrer      User?           @relation("Referrals", fields: [referredBy], references: [id])
+  referrals     User[]          @relation("Referrals")
 
   @@index([email])
   @@index([phone])
   @@map("users")
 }
 
-// NextAuth.js 认证表
 model Account {
   id                String  @id @default(cuid())
   userId            String
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@map("accounts")
@@ -91,59 +80,41 @@ model VerificationToken {
 }
 
 model UserPreference {
-  id     String @id @default(cuid())
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // 和服偏好
+  id                String   @id @default(cuid())
+  userId            String   @unique
   preferredStyles   String[]
   preferredColors   String[]
   preferredPatterns String[]
-
-  // 尺寸信息
-  height   Int?
-  shoeSize Float?
-
-  // 通知设置
-  emailNotification Boolean @default(true)
-  smsNotification   Boolean @default(false)
+  height            Int?
+  shoeSize          Float?
+  emailNotification Boolean  @default(true)
+  smsNotification   Boolean  @default(false)
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_preferences")
 }
 
-// ============ 和服系统 ============
 model Kimono {
-  id          String   @id @default(cuid())
-  code        String   @unique
-  name        String
-  nameEn      String?
-  description String?
-
-  category KimonoCategory
-  style    String
-  color    String[]
-  pattern  String[]
-  season   Season[]
-
-  size        String
-  isAvailable Boolean  @default(true)
-
-  // 图片 (多图支持)
-  images      KimonoImage[]
-
-  // 店铺关联 (多对多)
-  stores      KimonoStore[]
-
-  // 统计
-  viewCount    Int @default(0)
-  bookingCount Int @default(0)
-
-  // 关联
-  favorites Favorite[]
-  bookings  BookingKimono[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String          @id @default(cuid())
+  code         String          @unique
+  name         String
+  nameEn       String?
+  description  String?
+  category     KimonoCategory
+  style        String
+  color        String[]
+  pattern      String[]
+  season       Season[]
+  size         String
+  isAvailable  Boolean         @default(true)
+  viewCount    Int             @default(0)
+  bookingCount Int             @default(0)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  bookings     BookingKimono[]
+  favorites    Favorite[]
+  images       KimonoImage[]
+  stores       KimonoStore[]
 
   @@index([category])
   @@index([isAvailable])
@@ -151,44 +122,34 @@ model Kimono {
 }
 
 model KimonoImage {
-  id       String @id @default(cuid())
+  id       String  @id @default(cuid())
   kimonoId String
-  kimono   Kimono @relation(fields: [kimonoId], references: [id], onDelete: Cascade)
-
   url      String
   alt      String?
   order    Int     @default(0)
+  kimono   Kimono  @relation(fields: [kimonoId], references: [id], onDelete: Cascade)
 
   @@map("kimono_images")
 }
 
-// ============ 店铺系统 ============
 model Store {
-  id   String @id @default(cuid())
-  slug String @unique
-
-  name   String
-  nameEn String?
-  city   String
-
+  id           String        @id @default(cuid())
+  slug         String        @unique
+  name         String
+  nameEn       String?
+  city         String
   address      String
   addressEn    String?
   phone        String?
   email        String?
-
-  latitude  Float?
-  longitude Float?
-
-  openingHours Json? // { "mon": "9:00-18:00", ... }
-
-  isActive Boolean @default(true)
-
-  // 关联
-  kimonos      KimonoStore[]
+  latitude     Float?
+  longitude    Float?
+  openingHours Json?
+  isActive     Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
   bookingItems BookingItem[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  kimonos      KimonoStore[]
 
   @@map("stores")
 }
@@ -197,63 +158,56 @@ model KimonoStore {
   id       String @id @default(cuid())
   kimonoId String
   storeId  String
-
-  kimono Kimono @relation(fields: [kimonoId], references: [id], onDelete: Cascade)
-  store  Store  @relation(fields: [storeId], references: [id], onDelete: Cascade)
-
-  quantity Int @default(1)
+  quantity Int    @default(1)
+  kimono   Kimono @relation(fields: [kimonoId], references: [id], onDelete: Cascade)
+  store    Store  @relation(fields: [storeId], references: [id], onDelete: Cascade)
 
   @@unique([kimonoId, storeId])
   @@map("kimono_stores")
 }
 
-// ============ 套餐系统 ============
 model RentalPlan {
-  id   String @id @default(cuid())
-  slug String @unique
-
-  name        String
-  nameEn      String?
-  description String
-
-  category PlanCategory
-
-  price         Int  // 线上预约价格（人民币分）
-  originalPrice Int? // 线下原价（人民币分）
-  depositAmount Int  @default(0)
-  duration      Int  // 小时
-
-  includes String[] // ["着付け", "ヘアセット", "小物一式"]
-  imageUrl String?  // 套餐图片URL
+  id            String        @id @default(cuid())
+  slug          String        @unique
+  name          String
+  nameEn        String?
+  description   String
+  category      PlanCategory
+  price         Int
+  originalPrice Int?
+  depositAmount Int           @default(0)
+  duration      Int
+  includes      String[]
+  imageUrl      String?
   
   // 店铺和地区信息
-  storeName String? // 店铺名称
-  region    String? // 地区（东京地区、京都地区等）
-  tags      String[] @default([]) // 标签（蕾丝和服、情侣套餐等）
-
+  storeName String?
+  region    String?
+  tags      String[]      @default([])
+  
   // 活动关联（新增）
   campaignId String?
   campaign   Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
   
   // 活动特性（新增）
-  isCampaign    Boolean @default(false)  // 是否为活动套餐
-  isLimited     Boolean @default(false)  // 是否限量
-  maxBookings   Int?    // 最大预订数量
-  currentBookings Int   @default(0)      // 当前预订数量
+  isCampaign      Boolean @default(false)
+  isLimited       Boolean @default(false)
+  maxBookings     Int?
+  currentBookings Int     @default(0)
   
   // 时间限制（新增）
-  availableFrom  DateTime? // 可用开始时间
-  availableUntil DateTime? // 可用结束时间
-
-  isActive Boolean @default(true)
-  isFeatured Boolean @default(false) // 是否推荐
-
+  availableFrom  DateTime?
+  availableUntil DateTime?
+  
+  isActive   Boolean @default(true)
+  isFeatured Boolean @default(false)
+  
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  
   // 关联
   bookingItems BookingItem[]
   cartItems    CartItem[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
   @@index([campaignId])
   @@index([isCampaign])
@@ -261,18 +215,15 @@ model RentalPlan {
   @@map("rental_plans")
 }
 
-// ============ 购物车系统 ============
 model Cart {
-  id        String   @id @default(cuid())
-  userId    String?  @unique // null 表示游客购物车
-  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  sessionId String?  @unique // 游客使用 sessionId
-
+  id        String     @id @default(cuid())
+  userId    String?    @unique
+  sessionId String?    @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  expiresAt DateTime
   items     CartItem[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  expiresAt DateTime // 购物车过期时间（7天后）
+  user      User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([sessionId])
@@ -281,57 +232,40 @@ model Cart {
 }
 
 model CartItem {
-  id     String @id @default(cuid())
-  cartId String
-  cart   Cart   @relation(fields: [cartId], references: [id], onDelete: Cascade)
-
-  type           String  // 'PLAN' | 'CAMPAIGN'
+  id             String      @id @default(cuid())
+  cartId         String
+  type           String
   planId         String?
-  plan           RentalPlan? @relation(fields: [planId], references: [id], onDelete: Cascade)
   campaignPlanId String?
-
-  quantity Int      @default(1)
-  addOns   String[] // 附加服务
-  notes    String?  // 备注
-
-  createdAt DateTime @default(now())
+  quantity       Int         @default(1)
+  addOns         String[]
+  notes          String?
+  createdAt      DateTime    @default(now())
+  cart           Cart        @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  plan           RentalPlan? @relation(fields: [planId], references: [id], onDelete: Cascade)
 
   @@map("cart_items")
 }
 
-// ============ 预约系统 ============
 model Booking {
-  id String @id @default(cuid())
-
-  // 用户信息（支持游客预约）
-  userId     String?
-  user       User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
-  guestName  String?
-  guestEmail String?
-  guestPhone String?
-
-  // 简化的到店信息（跨店铺预约在 items 中分别指定）
-  visitDate DateTime // 到店日期
-  visitTime String   // 到店时间 "10:00"
-
-  // 预约项（支持多个套餐，跨店铺）
-  items BookingItem[]
-
-  // 支付
-  totalAmount   Int
-  depositAmount Int
-  paidAmount    Int            @default(0)
-  paymentStatus PaymentStatus  @default(PENDING)
-  paymentMethod String?
-
-  // 状态
-  status BookingStatus @default(PENDING)
-
-  // 备注
-  specialRequests String? // 特殊要求
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String        @id @default(cuid())
+  userId          String?
+  guestName       String?
+  guestEmail      String?
+  guestPhone      String?
+  totalAmount     Int
+  depositAmount   Int
+  paidAmount      Int           @default(0)
+  paymentStatus   PaymentStatus @default(PENDING)
+  paymentMethod   String?
+  status          BookingStatus @default(PENDING)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  specialRequests String?
+  visitDate       DateTime
+  visitTime       String
+  items           BookingItem[]
+  user            User?         @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([visitDate])
@@ -340,33 +274,22 @@ model Booking {
 }
 
 model BookingItem {
-  id        String  @id @default(cuid())
-  bookingId String
-  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-
-  // 店铺（支持跨店铺）
-  storeId String
-  store   Store  @relation(fields: [storeId], references: [id])
-
-  // 套餐类型
-  type           String  // 'PLAN' | 'CAMPAIGN'
+  id             String          @id @default(cuid())
+  bookingId      String
+  storeId        String
+  type           String
   planId         String?
-  plan           RentalPlan? @relation(fields: [planId], references: [id])
   campaignPlanId String?
-
-  // 数量和价格
-  quantity   Int @default(1)
-  unitPrice  Int // 单价（分）
-  totalPrice Int // 总价（分）
-
-  // 附加服务
-  addOns String[]
-  notes  String?
-
-  // 选择的和服（如果适用）
-  kimonos BookingKimono[]
-
-  createdAt DateTime @default(now())
+  quantity       Int             @default(1)
+  unitPrice      Int
+  totalPrice     Int
+  addOns         String[]
+  notes          String?
+  createdAt      DateTime        @default(now())
+  booking        Booking         @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  plan           RentalPlan?     @relation(fields: [planId], references: [id])
+  store          Store           @relation(fields: [storeId], references: [id])
+  kimonos        BookingKimono[]
 
   @@index([storeId])
   @@map("booking_items")
@@ -374,66 +297,52 @@ model BookingItem {
 
 model BookingKimono {
   id            String      @id @default(cuid())
-  bookingItemId String
   kimonoId      String
-
-  bookingItem BookingItem @relation(fields: [bookingItemId], references: [id], onDelete: Cascade)
-  kimono      Kimono      @relation(fields: [kimonoId], references: [id])
+  bookingItemId String
+  bookingItem   BookingItem @relation(fields: [bookingItemId], references: [id], onDelete: Cascade)
+  kimono        Kimono      @relation(fields: [kimonoId], references: [id])
 
   @@map("booking_kimonos")
 }
 
-// ============ 用户互动 ============
 model Favorite {
-  id       String @id @default(cuid())
-  userId   String
-  kimonoId String
-
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  kimono Kimono @relation(fields: [kimonoId], references: [id], onDelete: Cascade)
-
+  id        String   @id @default(cuid())
+  userId    String
+  kimonoId  String
   createdAt DateTime @default(now())
+  kimono    Kimono   @relation(fields: [kimonoId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, kimonoId])
   @@map("favorites")
 }
 
 model Review {
-  id        String @id @default(cuid())
+  id        String   @id @default(cuid())
   userId    String
   bookingId String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  rating  Int    // 1-5
-  comment String
-  images  String[]
-
-  isPublic Boolean @default(true)
-
+  rating    Int
+  comment   String
+  images    String[]
+  isPublic  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("reviews")
 }
 
-// ============ 数据分析 ============
 model UserBehavior {
-  id     String @id @default(cuid())
-  userId String?
-  user   User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  event BehaviorEvent
-  page  String?
-
-  kimonoId String?
-
+  id        String        @id @default(cuid())
+  userId    String?
+  event     BehaviorEvent
+  page      String?
+  kimonoId  String?
   userAgent String?
   ipAddress String?
-
-  metadata Json? // 额外数据
-
-  createdAt DateTime @default(now())
+  metadata  Json?
+  createdAt DateTime      @default(now())
+  user      User?         @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([event])
@@ -441,7 +350,61 @@ model UserBehavior {
   @@map("user_behaviors")
 }
 
-// ============ Enums ============
+model Campaign {
+  id             String         @id @default(cuid())
+  slug           String         @unique
+  title          String
+  titleEn        String?
+  description    String
+  subtitle       String?
+  startDate      DateTime
+  endDate        DateTime
+  usageStartDate DateTime?
+  usageEndDate   DateTime?
+  isActive       Boolean        @default(true)
+  isPinned       Boolean        @default(false)
+  priority       Int            @default(0)
+  coverImage     String?
+  bannerImage    String?
+  type           CampaignType   @default(DISCOUNT)
+  restrictions   String[]
+  terms          String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  campaignPlans  CampaignPlan[]
+  rentalPlans    RentalPlan[]   // 新增：统一套餐系统
+
+  @@index([isActive])
+  @@index([startDate, endDate])
+  @@map("campaigns")
+}
+
+model CampaignPlan {
+  id               String   @id @default(cuid())
+  campaignId       String
+  name             String
+  nameEn           String?
+  description      String
+  originalPrice    Int
+  campaignPrice    Int
+  duration         Int?
+  includes         String[]
+  applicableStores String[]
+  images           String[]
+  maxBookings      Int?
+  currentBookings  Int      @default(0)
+  isFeatured       Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  region           String?
+  storeName        String?
+  tags             String[] @default([])
+  campaign         Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId])
+  @@map("campaign_plans")
+}
+
 enum Role {
   USER
   ADMIN
@@ -484,19 +447,19 @@ enum PlanCategory {
 }
 
 enum BookingStatus {
-  PENDING       // 待确认
-  CONFIRMED     // 已确认
-  IN_PROGRESS   // 使用中
-  COMPLETED     // 已完成
-  CANCELLED     // 已取消
-  NO_SHOW       // 未到店
+  PENDING
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
 }
 
 enum PaymentStatus {
-  PENDING   // 待支付
-  PARTIAL   // 部分支付（定金）
-  PAID      // 已支付
-  REFUNDED  // 已退款
+  PENDING
+  PARTIAL
+  PAID
+  REFUNDED
 }
 
 enum BehaviorEvent {
@@ -507,100 +470,12 @@ enum BehaviorEvent {
   BOOKING_COMPLETE
 }
 
-// ============ 优惠活动系统 ============
-model Campaign {
-  id   String @id @default(cuid())
-  slug String @unique
-
-  title       String
-  titleEn     String?
-  description String
-  subtitle    String? // 副标题，如"10周年特别企划"
-
-  // 活动时间
-  startDate DateTime
-  endDate   DateTime
-
-  // 使用期限
-  usageStartDate DateTime?
-  usageEndDate   DateTime?
-
-  // 活动状态
-  isActive  Boolean @default(true)
-  isPinned  Boolean @default(false) // 是否置顶
-  priority  Int     @default(0) // 优先级，数字越大越靠前
-
-  // 封面图片
-  coverImage String?
-  bannerImage String?
-
-  // 活动类型
-  type CampaignType @default(DISCOUNT)
-
-  // 限制条件
-  restrictions String[] // ["不适用于成人式", "不适用于毕业典礼"]
-
-  // 活动条款
-  terms String? // 活动详细条款说明
-
-  // 关联的套餐
-  campaignPlans CampaignPlan[]
-  rentalPlans   RentalPlan[]   // 新增：统一套餐系统
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([isActive])
-  @@index([startDate, endDate])
-  @@map("campaigns")
-}
-
-model CampaignPlan {
-  id         String @id @default(cuid())
-  campaignId String
-  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-
-  name        String
-  nameEn      String?
-  description String
-
-  // 价格
-  originalPrice Int // 原价（分）
-  campaignPrice Int // 活动价（分）
-
-  // 套餐详情
-  duration     Int? // 时长（小时）
-  includes     String[] // 包含的服务
-
-  // 店铺和地区信息
-  storeName String? // 店铺名称（与 RentalPlan 保持一致）
-  region    String? // 地区（东京地区、京都地区等）
-  applicableStores String[] // 适用店铺 slug 数组
-  tags      String[] @default([]) // 标签（蕾丝和服、情侣套餐等）
-
-  // 图片
-  images String[]
-
-  // 限制
-  maxBookings Int? // 最大预订数量
-  currentBookings Int @default(0) // 当前预订数量
-
-  // 是否推荐
-  isFeatured Boolean @default(false)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([campaignId])
-  @@map("campaign_plans")
-}
-
 enum CampaignType {
-  DISCOUNT      // 折扣优惠
-  ANNIVERSARY   // 周年庆
-  SEASONAL      // 季节性活动
-  FLASH_SALE    // 限时抢购
-  GROUP_BUY     // 团购优惠
-  EARLY_BIRD    // 早鸟优惠
-  SPECIAL       // 特殊活动
+  DISCOUNT
+  ANNIVERSARY
+  SEASONAL
+  FLASH_SALE
+  GROUP_BUY
+  EARLY_BIRD
+  SPECIAL
 }
