@@ -4,19 +4,9 @@ import PlansClient from "./PlansClient";
 
 export default async function PlansPage() {
   // 获取所有租赁套餐（包括活动套餐）
+  // 注意：首次运行前需要执行 pnpm prisma db push 同步schema
   const allPlans = await prisma.rentalPlan.findMany({
-    include: {
-      campaign: {
-        select: {
-          id: true,
-          slug: true,
-          title: true,
-          description: true,
-        },
-      },
-    },
     orderBy: [
-      { isCampaign: 'desc' }, // 活动套餐优先
       { price: 'asc' },
     ],
   });
@@ -28,13 +18,6 @@ export default async function PlansPage() {
       endDate: {
         gte: new Date(),
       },
-    },
-    select: {
-      id: true,
-      slug: true,
-      title: true,
-      description: true,
-      subtitle: true,
     },
     orderBy: {
       priority: 'desc',
