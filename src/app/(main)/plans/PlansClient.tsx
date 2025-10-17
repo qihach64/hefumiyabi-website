@@ -377,6 +377,15 @@ export default function PlansClient({
             )}
           </button>
 
+          {/* AI 试穿按钮 */}
+          <button
+            onClick={() => router.push('/virtual-tryon')}
+            className="w-full inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-all bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:shadow-lg hover:scale-[1.02] h-9 px-4"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>AI 试穿</span>
+          </button>
+
           <button
             onClick={() => handleAddToCart(plan)}
             disabled={addingToCart === plan.id}
