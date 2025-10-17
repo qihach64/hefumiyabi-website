@@ -479,3 +479,45 @@ enum CampaignType {
   EARLY_BIRD
   SPECIAL
 }
+
+// 社交媒体帖子
+model SocialPost {
+  id          String         @id @default(cuid())
+  platform    SocialPlatform // Instagram, Facebook, 微博
+  postId      String         @unique // 原平台的帖子ID
+  postUrl     String         // 帖子链接
+
+  // 内容
+  content     String?        @db.Text // 帖子文字内容
+  images      String[]       // 图片URL数组
+
+  // 作者信息
+  authorName  String         // 发帖人名称
+  authorAvatar String?       // 发帖人头像
+
+  // 互动数据
+  likes       Int            @default(0)
+  comments    Int            @default(0)
+  shares      Int            @default(0)
+
+  // 元数据
+  postedAt    DateTime       // 发帖时间
+  scrapedAt   DateTime       @default(now()) // 爬取时间
+
+  // 是否在首页展示
+  isFeatured  Boolean        @default(false)
+  displayOrder Int?          // 展示顺序（数字越小越靠前）
+
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([platform])
+  @@index([isFeatured, displayOrder])
+  @@map("social_posts")
+}
+
+enum SocialPlatform {
+  INSTAGRAM
+  FACEBOOK
+  WEIBO
+}
