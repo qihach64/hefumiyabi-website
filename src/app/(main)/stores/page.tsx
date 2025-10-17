@@ -1,6 +1,7 @@
 import Link from "next/link";
 import prisma from "@/lib/prisma";
-import { MapPin, Clock, Phone, Mail, Navigation } from "lucide-react";
+import { MapPin, Clock, Phone, Mail } from "lucide-react";
+import NavigationButton from "@/components/NavigationButton";
 
 export default async function StoresPage() {
   // 获取所有店铺，按城市分组
@@ -127,21 +128,10 @@ export default async function StoresPage() {
                           </div>
                         </div>
                         {store.latitude && store.longitude && (
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              window.open(
-                                `https://www.google.com/maps/search/?api=1&query=${store.latitude},${store.longitude}`,
-                                '_blank',
-                                'noopener,noreferrer'
-                              );
-                            }}
-                            className="inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4"
-                          >
-                            <Navigation className="w-4 h-4" />
-                            导航
-                          </button>
+                          <NavigationButton
+                            latitude={store.latitude}
+                            longitude={store.longitude}
+                          />
                         )}
                       </div>
                     </div>
