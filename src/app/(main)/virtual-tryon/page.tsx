@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Upload, Sparkles, Download, Share2, RotateCcw, Check } from "lucide-react";
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 
 interface Step {
   id: number;
@@ -27,33 +28,54 @@ const steps: Step[] = [
 ];
 
 export default function VirtualTryOnPage() {
+  const searchParams = useSearchParams();
   const [currentStep, setCurrentStep] = useState(1);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [selectedKimono, setSelectedKimono] = useState<string | null>(null);
+  const [selectedKimonoImage, setSelectedKimonoImage] = useState<string | null>(null);
+  const [selectedKimonoName, setSelectedKimonoName] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingProgress, setProcessingProgress] = useState(0);
   const [resultImage, setResultImage] = useState<string | null>(null);
   const [kimonos, setKimonos] = useState<Kimono[]>([]);
   const [isLoadingKimonos, setIsLoadingKimonos] = useState(true);
+  const [fromPlan, setFromPlan] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 获取和服数据
+  // 检查是否从套餐页面跳转过来
   useEffect(() => {
-    async function fetchKimonos() {
-      try {
-        const response = await fetch("/api/kimonos/featured");
-        if (response.ok) {
-          const data = await response.json();
-          setKimonos(data);
-        }
-      } catch (error) {
-        console.error("Failed to fetch kimonos:", error);
-      } finally {
-        setIsLoadingKimonos(false);
-      }
+    const kimonoImage = searchParams.get('kimonoImage');
+    const kimonoName = searchParams.get('kimonoName');
+    const planId = searchParams.get('planId');
+
+    if (kimonoImage && kimonoName) {
+      // 从套餐页面跳转过来，使用套餐的和服图片
+      setSelectedKimonoImage(kimonoImage);
+      setSelectedKimonoName(kimonoName);
+      setSelectedKimono(planId || 'from-plan');
+      setFromPlan(true);
+      // 不需要加载和服列表
+      setIsLoadingKimonos(false);
+    } else {
+      // 正常流程，需要加载和服列表
+      fetchKimonos();
     }
-    fetchKimonos();
-  }, []);
+  }, [searchParams]);
+
+  // 获取和服数据
+  async function fetchKimonos() {
+    try {
+      const response = await fetch("/api/kimonos/featured");
+      if (response.ok) {
+        const data = await response.json();
+        setKimonos(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch kimonos:", error);
+    } finally {
+      setIsLoadingKimonos(false);
+    }
+  }
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -61,7 +83,12 @@ export default function VirtualTryOnPage() {
       const reader = new FileReader();
       reader.onloadend = () => {
         setUploadedImage(reader.result as string);
-        setCurrentStep(2);
+        // 如果是从套餐页面跳转来的，直接跳到生成步骤
+        if (fromPlan) {
+          handleGenerate();
+        } else {
+          setCurrentStep(2);
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -84,8 +111,14 @@ export default function VirtualTryOnPage() {
           setIsProcessing(false);
           setCurrentStep(4);
           // Demo: 使用选中的和服图片作为结果（实际应该是 AI 生成的图片）
-          const kimono = kimonos.find((k) => k.id === selectedKimono);
-          setResultImage(kimono?.images[0] || uploadedImage);
+          if (fromPlan && selectedKimonoImage) {
+            // 从套餐页面跳转来的，使用传递的图片
+            setResultImage(selectedKimonoImage);
+          } else {
+            // 正常流程，从和服列表中查找
+            const kimono = kimonos.find((k) => k.id === selectedKimono);
+            setResultImage(kimono?.images[0] || uploadedImage);
+          }
           return 100;
         }
         return prev + 10;
@@ -226,8 +259,8 @@ export default function VirtualTryOnPage() {
               </div>
             )}
 
-            {/* Step 2: Select Kimono */}
-            {currentStep === 2 && (
+            {/* Step 2: Select Kimono - 只在非套餐跳转时显示 */}
+            {currentStep === 2 && !fromPlan && (
               <div className="bg-white rounded-2xl shadow-xl p-8">
                 <div className="mb-8">
                   <h2 className="text-2xl font-bold mb-2">选择和服款式</h2>
@@ -353,7 +386,9 @@ export default function VirtualTryOnPage() {
                   <h2 className="text-2xl font-bold mb-2">✨ 试穿效果生成成功！</h2>
                   <p className="text-purple-100">
                     这就是您穿上{" "}
-                    {kimonos.find((k) => k.id === selectedKimono)?.name}{" "}
+                    {fromPlan && selectedKimonoName
+                      ? selectedKimonoName
+                      : kimonos.find((k) => k.id === selectedKimono)?.name}{" "}
                     的效果
                   </p>
                 </div>

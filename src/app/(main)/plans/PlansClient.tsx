@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Check, ShoppingCart, Zap, Sparkles, MapPin, Store as StoreIcon, Tag, X, Filter } from "lucide-react";
+import { Check, ShoppingCart, Sparkles, MapPin, Store as StoreIcon, Tag, X, Filter } from "lucide-react";
 import { useCartStore } from "@/store/cart";
 
 interface Store {
@@ -203,30 +203,6 @@ export default function PlansClient({
     }, 1000);
   };
 
-  // 立即预约函数
-  const handleQuickBook = (plan: RentalPlan) => {
-    setAddingToCart(plan.id);
-
-    addItem({
-      type: "PLAN",
-      planId: plan.id,
-      name: plan.name,
-      price: plan.price,
-      originalPrice: plan.originalPrice,
-      addOns: [],
-      image: plan.imageUrl,
-      storeId: undefined,
-      storeName: undefined,
-      planStoreName: plan.storeName,
-      isCampaign: plan.isCampaign,
-    });
-
-    setTimeout(() => {
-      setAddingToCart(null);
-      router.push("/cart");
-    }, 500);
-  };
-
   // 套餐卡片组件
   const PlanCard = ({ plan }: { plan: RentalPlan }) => {
     // 计算优惠幅度
@@ -359,28 +335,18 @@ export default function PlansClient({
 
         {/* 按钮 */}
         <div className="flex flex-col gap-2">
-          <button
-            onClick={() => handleQuickBook(plan)}
-            disabled={addingToCart === plan.id}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 disabled:opacity-50"
-          >
-            {addingToCart === plan.id ? (
-              <>
-                <Check className="w-4 h-4" />
-                <span>处理中...</span>
-              </>
-            ) : (
-              <>
-                <Zap className="w-4 h-4" />
-                <span>立即预约</span>
-              </>
-            )}
-          </button>
-
           {/* AI 试穿按钮 */}
           <button
-            onClick={() => router.push('/virtual-tryon')}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-all bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:shadow-lg hover:scale-[1.02] h-9 px-4"
+            onClick={() => {
+              // 传递套餐图片和名称到 AI 试穿页面
+              const params = new URLSearchParams({
+                kimonoImage: plan.imageUrl || '',
+                kimonoName: plan.name,
+                planId: plan.id,
+              });
+              router.push(`/virtual-tryon?${params.toString()}`);
+            }}
+            className="w-full inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-all bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:shadow-lg hover:scale-[1.02] h-10 px-4"
           >
             <Sparkles className="w-4 h-4" />
             <span>AI 试穿</span>
@@ -389,7 +355,7 @@ export default function PlansClient({
           <button
             onClick={() => handleAddToCart(plan)}
             disabled={addingToCart === plan.id}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-4 disabled:opacity-50"
+            className="w-full inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 disabled:opacity-50"
           >
             {addingToCart === plan.id ? (
               <>
