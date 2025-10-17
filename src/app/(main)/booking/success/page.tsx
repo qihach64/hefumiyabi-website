@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { CheckCircle, Calendar, MapPin, Mail, Home, User } from "lucide-react";
 
 function SuccessContent() {
@@ -87,22 +88,44 @@ function SuccessContent() {
           <div className="space-y-4">
             {/* 预约项目 */}
             {booking.items && booking.items.length > 0 && (
-              <div className="flex items-start gap-3">
-                <Calendar className="w-5 h-5 text-gray-500 mt-0.5 shrink-0" />
-                <div className="flex-1">
-                  <p className="text-sm text-gray-500">预约项目</p>
-                  <div className="space-y-1 mt-1">
-                    {booking.items.map((item: any, idx: number) => (
-                      <div key={idx} className="font-medium text-gray-900">
-                        {item.plan?.name || "和服租赁"} × {item.quantity}
-                        {item.store && (
-                          <span className="text-sm text-gray-600 ml-2">
-                            ({item.store.name})
-                          </span>
+              <div>
+                <p className="text-sm text-gray-500 mb-3">预约项目</p>
+                <div className="space-y-3">
+                  {booking.items.map((item: any, idx: number) => {
+                    const itemImage = item.plan?.imageUrl || null;
+                    return (
+                      <div key={idx} className="flex gap-3 p-3 bg-gray-50 rounded-lg">
+                        {itemImage ? (
+                          <div className="relative w-16 h-20 rounded-md overflow-hidden bg-gray-200 shrink-0">
+                            <Image
+                              src={itemImage}
+                              alt={item.plan?.name || "和服"}
+                              fill
+                              className="object-cover"
+                              sizes="64px"
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-16 h-20 rounded-md bg-gray-200 flex items-center justify-center shrink-0">
+                            <span className="text-2xl">👘</span>
+                          </div>
                         )}
+                        <div className="flex-1">
+                          <div className="font-medium text-gray-900">
+                            {item.plan?.name || "和服租赁"}
+                          </div>
+                          <div className="text-sm text-gray-600 mt-1">
+                            数量: {item.quantity}
+                          </div>
+                          {item.store && (
+                            <div className="text-sm text-gray-600 mt-1">
+                              店铺: {item.store.name}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    ))}
-                  </div>
+                    );
+                  })}
                 </div>
               </div>
             )}

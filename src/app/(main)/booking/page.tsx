@@ -114,52 +114,47 @@ function BookingContent() {
     setIsSubmitting(true);
 
     try {
-      // 为每个店铺创建一个预约
-      const bookingPromises = Object.entries(itemsByStore).map(async ([storeId, storeItems]) => {
-        const bookingData = {
-          visitDate: visitDate.toISOString(),
-          visitTime,
-          guestName,
-          guestEmail,
-          guestPhone,
-          specialRequests,
-          items: storeItems.map((item) => ({
-            storeId: item.storeId, // 添加 storeId 到每个 item
-            type: item.type,
-            planId: item.planId,
-            campaignPlanId: item.campaignPlanId,
-            name: item.name,
-            quantity: item.quantity,
-            unitPrice: item.price,
-            totalPrice: item.price * item.quantity,
-            addOns: item.addOns,
-            notes: item.notes,
-          })),
-          totalAmount: storeItems.reduce((sum, item) => sum + item.price * item.quantity, 0),
-        };
+      // 创建一个预约，包含所有购物车项目
+      const bookingData = {
+        visitDate: visitDate.toISOString(),
+        visitTime,
+        guestName,
+        guestEmail,
+        guestPhone,
+        specialRequests,
+        items: items.map((item) => ({
+          storeId: item.storeId,
+          type: item.type,
+          planId: item.planId,
+          campaignPlanId: item.campaignPlanId,
+          name: item.name,
+          quantity: item.quantity,
+          unitPrice: item.price,
+          totalPrice: item.price * item.quantity,
+          addOns: item.addOns,
+          notes: item.notes,
+        })),
+        totalAmount: totalPrice,
+      };
 
-        const response = await fetch("/api/bookings", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(bookingData),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "创建预约失败");
-        }
-
-        return response.json();
+      const response = await fetch("/api/bookings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(bookingData),
       });
 
-      const bookingResults = await Promise.all(bookingPromises);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "创建预约失败");
+      }
 
-      // 跳转到成功页面，传递第一个预约的 ID
-      if (bookingResults.length > 0 && bookingResults[0].id) {
-        // 先跳转，然后在跳转后清空购物车
-        const successUrl = `/booking/success?id=${bookingResults[0].id}`;
+      const result = await response.json();
+
+      // 跳转到成功页面
+      if (result.id) {
+        const successUrl = `/booking/success?id=${result.id}`;
         router.push(successUrl);
 
         // 延迟清空购物车，避免用户看到空购物车页面
@@ -174,7 +169,15 @@ function BookingContent() {
       }
     } catch (err) {
       console.error("Booking error:", err);
-      setError(err instanceof Error ? err.message : "创建预约失败，请重试");
+      const errorMessage = err instanceof Error ? err.message : "创建预约失败，请重试";
+
+      // 如果是套餐不存在的错误，提示用户清空购物车
+      if (errorMessage.includes("套餐已不存在") || errorMessage.includes("不存在")) {
+        setError(errorMessage + " - 您可以尝试清空购物车并重新选择套餐");
+      } else {
+        setError(errorMessage);
+      }
+
       setIsSubmitting(false);
     }
   };
@@ -204,7 +207,20 @@ function BookingContent() {
               {/* 错误提示 */}
               {error && (
                 <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-lg text-sm">
-                  {error}
+                  <p className="mb-2">{error}</p>
+                  {(error.includes("不存在") || error.includes("已不存在")) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        clearCart();
+                        router.push("/plans");
+                      }}
+                      className="mt-2 inline-flex items-center gap-2 bg-destructive text-destructive-foreground hover:bg-destructive/90 px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                    >
+                      <ShoppingCart className="w-4 h-4" />
+                      清空购物车并重新选择
+                    </button>
+                  )}
                 </div>
               )}
 

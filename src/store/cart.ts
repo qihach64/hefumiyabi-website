@@ -14,8 +14,10 @@ export interface CartItem {
   quantity: number;
   addOns: string[]; // 附加服务
   notes?: string; // 备注
-  storeId?: string; // 店铺ID
-  storeName?: string; // 店铺名称
+  storeId?: string; // 用户选择的店铺ID
+  storeName?: string; // 用户选择的店铺名称
+  planStoreName?: string; // 套餐所属的店铺名称（常规套餐）
+  applicableStores?: string[]; // 活动套餐可用的店铺列表
 }
 
 interface CartStore {

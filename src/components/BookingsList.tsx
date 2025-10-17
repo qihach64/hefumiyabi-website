@@ -132,7 +132,7 @@ export default function BookingsList({ bookings }: BookingsListProps) {
             {/* 预约项目列表 */}
             <div className="space-y-4 mb-6">
               {booking.items.map((item: any, idx: number) => {
-                const itemImage = item.campaignPlan?.images?.[0] || null;
+                const itemImage = item.campaignPlan?.images?.[0] || item.plan?.imageUrl || null;
                 const itemName = item.campaignPlan?.name || item.plan?.name || "和服租赁";
 
                 return (

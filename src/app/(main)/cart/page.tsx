@@ -33,6 +33,38 @@ export default function CartPage() {
     fetchStores();
   }, []);
 
+  // 自动为只有一个可用店铺的套餐选择店铺
+  useEffect(() => {
+    if (stores.length === 0) return;
+
+    items.forEach((item) => {
+      // 如果已经选择了店铺，跳过
+      if (item.storeId) return;
+
+      // 获取该套餐的可用店铺列表
+      const availableStores = stores.filter((store) => {
+        if (item.planStoreName) {
+          return store.name === item.planStoreName ||
+                 item.planStoreName.includes(store.name) ||
+                 store.name.includes(item.planStoreName);
+        }
+        if (item.applicableStores && item.applicableStores.length > 0) {
+          return item.applicableStores.some((storeName) =>
+            store.name === storeName ||
+            storeName.includes(store.name) ||
+            store.name.includes(storeName)
+          );
+        }
+        return true;
+      });
+
+      // 如果只有一个可用店铺，自动选择
+      if (availableStores.length === 1) {
+        updateStore(item.id, availableStores[0].id, availableStores[0].name);
+      }
+    });
+  }, [stores, items, updateStore]);
+
   const handleClearCart = () => {
     if (confirm("确定要清空购物车吗？")) {
       setIsClearing(true);
@@ -168,15 +200,44 @@ export default function CartPage() {
                         className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       >
                         <option value="">请选择店铺</option>
-                        {stores.map((store) => (
-                          <option key={store.id} value={store.id}>
-                            {store.name}
-                          </option>
-                        ))}
+                        {stores
+                          .filter((store) => {
+                            // 常规套餐：如果有指定店铺，只显示该店铺
+                            if (item.planStoreName) {
+                              return store.name === item.planStoreName ||
+                                     item.planStoreName.includes(store.name) ||
+                                     store.name.includes(item.planStoreName);
+                            }
+                            // 活动套餐：如果有可用店铺列表，只显示列表中的店铺
+                            if (item.applicableStores && item.applicableStores.length > 0) {
+                              return item.applicableStores.some((storeName) =>
+                                store.name === storeName ||
+                                storeName.includes(store.name) ||
+                                store.name.includes(storeName)
+                              );
+                            }
+                            // 否则显示所有店铺
+                            return true;
+                          })
+                          .map((store) => (
+                            <option key={store.id} value={store.id}>
+                              {store.name}
+                            </option>
+                          ))}
                       </select>
                       {!item.storeId && (
                         <p className="text-xs text-destructive mt-1">
                           请选择店铺后才能预约
+                        </p>
+                      )}
+                      {item.planStoreName && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          此套餐仅在 {item.planStoreName} 提供
+                        </p>
+                      )}
+                      {item.applicableStores && item.applicableStores.length > 0 && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          此套餐可在 {item.applicableStores.length} 家店铺使用
                         </p>
                       )}
                     </div>

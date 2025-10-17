@@ -53,6 +53,38 @@ export async function POST(request: Request) {
       );
     }
 
+    // 验证所有的 planId 是否存在
+    const planIds = data.items
+      .filter((item: any) => item.planId)
+      .map((item: any) => item.planId);
+
+    if (planIds.length > 0) {
+      const existingPlans = await prisma.rentalPlan.findMany({
+        where: {
+          id: {
+            in: planIds
+          }
+        },
+        select: {
+          id: true
+        }
+      });
+
+      const existingPlanIds = existingPlans.map(p => p.id);
+      const invalidPlanIds = planIds.filter((id: string) => !existingPlanIds.includes(id));
+
+      if (invalidPlanIds.length > 0) {
+        console.log("Invalid plan IDs:", invalidPlanIds);
+        return NextResponse.json(
+          {
+            error: "部分套餐已不存在，请刷新页面重新选择",
+            invalidPlanIds
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     // 创建预约
     const booking = await prisma.booking.create({
       data: {

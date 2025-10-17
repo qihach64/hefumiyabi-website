@@ -150,6 +150,7 @@ export default function PlansClient({
       image: plan.imageUrl,
       storeId: undefined,
       storeName: undefined,
+      planStoreName: plan.storeName, // 传递套餐所属店铺
     });
 
     setTimeout(() => {
@@ -170,6 +171,7 @@ export default function PlansClient({
       image: plan.imageUrl,
       storeId: undefined,
       storeName: undefined,
+      planStoreName: plan.storeName, // 传递套餐所属店铺
     });
 
     setTimeout(() => {

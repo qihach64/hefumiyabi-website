@@ -67,6 +67,7 @@ export default function CampaignsClient({ campaignPlans, stores }: CampaignsClie
       image: plan.images[0],
       storeId: matchingStore?.id,
       storeName: matchingStore?.name,
+      applicableStores: plan.applicableStores, // 传递可用店铺列表
     });
 
     setTimeout(() => {
@@ -95,6 +96,7 @@ export default function CampaignsClient({ campaignPlans, stores }: CampaignsClie
       image: plan.images[0],
       storeId: matchingStore?.id,
       storeName: matchingStore?.name,
+      applicableStores: plan.applicableStores, // 传递可用店铺列表
     });
 
     // 2. 跳转到预约页面
