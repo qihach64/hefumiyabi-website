@@ -32,6 +32,9 @@ export default async function Header() {
           <Link href="/plans" className="transition-colors hover:text-foreground/80">
             租赁套餐
           </Link>
+          <Link href="/virtual-tryon" className="transition-colors hover:text-foreground/80 text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 font-semibold">
+            AI 试穿 ✨
+          </Link>
           <Link href="/stores" className="transition-colors hover:text-foreground/80">
             店铺信息
           </Link>
@@ -47,6 +50,9 @@ export default async function Header() {
         <nav className="flex md:hidden items-center space-x-3 text-sm font-medium">
           <Link href="/plans" className="transition-colors hover:text-foreground/80">
             套餐
+          </Link>
+          <Link href="/virtual-tryon" className="transition-colors hover:text-foreground/80 text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 font-semibold">
+            AI试穿
           </Link>
           <Link href="/stores" className="transition-colors hover:text-foreground/80">
             店铺
