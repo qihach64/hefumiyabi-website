@@ -68,6 +68,23 @@ export default function PlansClient({
   // 所有套餐
   const allPlans = plans;
 
+  // 临时判断：通过套餐名称判断是否为活动套餐（数据库同步前的兼容方案）
+  const isCampaignPlan = (plan: RentalPlan) => {
+    if (plan.isCampaign !== undefined) {
+      return plan.isCampaign; // 如果字段存在，使用它
+    }
+    // 否则通过名称判断
+    const name = plan.name || '';
+    return name.includes('10周年') || 
+           name.includes('10週年') || 
+           name.includes('10th') ||
+           name.includes('优惠') ||
+           name.includes('優惠') ||
+           name.includes('限定') ||
+           name.includes('special') ||
+           name.includes('campaign');
+  };
+
   // 提取所有唯一的地区
   const regions = Array.from(new Set(allPlans.map(p => p.region).filter(Boolean))) as string[];
 
@@ -78,14 +95,21 @@ export default function PlansClient({
 
   // 统一筛选逻辑
   const filteredPlans = allPlans.filter(plan => {
-    // 仅显示活动套餐
-    if (showOnlyCampaigns && !plan.isCampaign) {
+    // 仅显示活动套餐（使用兼容判断）
+    if (showOnlyCampaigns && !isCampaignPlan(plan)) {
       return false;
     }
     
-    // 活动筛选
-    if (selectedCampaignId && plan.campaignId !== selectedCampaignId) {
-      return false;
+    // 活动筛选（使用兼容判断）
+    if (selectedCampaignId) {
+      // 如果没有 campaignId 字段，通过名称匹配
+      if (!plan.campaignId && !isCampaignPlan(plan)) {
+        return false;
+      }
+      // 如果有 campaignId 字段，使用它
+      if (plan.campaignId && plan.campaignId !== selectedCampaignId) {
+        return false;
+      }
     }
     
     // 店铺筛选
@@ -111,9 +135,9 @@ export default function PlansClient({
     return true;
   });
   
-  // 分组：活动套餐和常规套餐
-  const filteredCampaignPlans = filteredPlans.filter(p => p.isCampaign);
-  const filteredRegularPlans = filteredPlans.filter(p => !p.isCampaign);
+  // 分组：活动套餐和常规套餐（使用兼容判断）
+  const filteredCampaignPlans = filteredPlans.filter(p => isCampaignPlan(p));
+  const filteredRegularPlans = filteredPlans.filter(p => !isCampaignPlan(p));
 
   // 切换标签选择
   const toggleTag = (tag: string) => {
