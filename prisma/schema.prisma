@@ -231,7 +231,22 @@ model RentalPlan {
   region    String? // 地区（东京地区、京都地区等）
   tags      String[] @default([]) // 标签（蕾丝和服、情侣套餐等）
 
+  // 活动关联（新增）
+  campaignId String?
+  campaign   Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  
+  // 活动特性（新增）
+  isCampaign    Boolean @default(false)  // 是否为活动套餐
+  isLimited     Boolean @default(false)  // 是否限量
+  maxBookings   Int?    // 最大预订数量
+  currentBookings Int   @default(0)      // 当前预订数量
+  
+  // 时间限制（新增）
+  availableFrom  DateTime? // 可用开始时间
+  availableUntil DateTime? // 可用结束时间
+
   isActive Boolean @default(true)
+  isFeatured Boolean @default(false) // 是否推荐
 
   // 关联
   bookingItems BookingItem[]
@@ -240,6 +255,9 @@ model RentalPlan {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([campaignId])
+  @@index([isCampaign])
+  @@index([availableFrom, availableUntil])
   @@map("rental_plans")
 }
 
@@ -527,6 +545,7 @@ model Campaign {
 
   // 关联的套餐
   campaignPlans CampaignPlan[]
+  rentalPlans   RentalPlan[]   // 新增：统一套餐系统
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

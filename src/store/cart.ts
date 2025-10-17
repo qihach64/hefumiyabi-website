@@ -3,21 +3,20 @@ import { persist } from "zustand/middleware";
 
 export interface CartItem {
   id: string; // 唯一ID（自生成）
-  type: "PLAN" | "CAMPAIGN";
-  planId?: string;
-  campaignPlanId?: string;
+  type: "PLAN"; // 统一使用 PLAN 类型（包括活动套餐）
+  planId: string; // 套餐ID（统一的RentalPlan ID）
   name: string;
   nameEn?: string;
   price: number; // 单价（分）
-  originalPrice?: number; // 原价（活动套餐）
+  originalPrice?: number; // 原价（用于显示优惠）
   image?: string;
   quantity: number;
   addOns: string[]; // 附加服务
   notes?: string; // 备注
   storeId?: string; // 用户选择的店铺ID
   storeName?: string; // 用户选择的店铺名称
-  planStoreName?: string; // 套餐所属的店铺名称（常规套餐）
-  applicableStores?: string[]; // 活动套餐可用的店铺列表
+  planStoreName?: string; // 套餐所属的店铺名称
+  isCampaign?: boolean; // 是否为活动套餐
 }
 
 interface CartStore {
@@ -63,11 +62,7 @@ export const useCartStore = create<CartStore>()(
         const items = get().items;
         // 检查是否已存在相同的套餐（不考虑 addOns 和 notes）
         const existingIndex = items.findIndex(
-          (i) =>
-            i.type === item.type &&
-            (item.type === "PLAN"
-              ? i.planId === item.planId
-              : i.campaignPlanId === item.campaignPlanId)
+          (i) => i.planId === item.planId
         );
 
         if (existingIndex >= 0) {

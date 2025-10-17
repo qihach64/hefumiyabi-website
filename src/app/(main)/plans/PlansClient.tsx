@@ -1,17 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Check, ShoppingCart, Zap, Sparkles, MapPin, Store as StoreIcon, Tag, X, Filter } from "lucide-react";
-import StoreFilter from "@/components/StoreFilter";
 import { useCartStore } from "@/store/cart";
 
 interface Store {
   id: string;
   name: string;
   slug: string;
+}
+
+interface Campaign {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
 }
 
 interface RentalPlan {
@@ -28,28 +33,40 @@ interface RentalPlan {
   storeName?: string; // 店铺名称
   region?: string; // 地区
   tags?: string[]; // 标签
+  
+  // 活动相关字段
+  isCampaign?: boolean;
+  campaignId?: string;
+  campaign?: Campaign;
+  isLimited?: boolean;
+  maxBookings?: number;
+  currentBookings?: number;
+  availableFrom?: Date | string;
+  availableUntil?: Date | string;
 }
 
 interface PlansClientProps {
-  anniversaryPlans: RentalPlan[];
-  regularPlans: RentalPlan[];
+  plans: RentalPlan[];
+  campaigns: Campaign[];
   stores: Store[];
 }
 
 export default function PlansClient({
-  anniversaryPlans,
-  regularPlans,
+  plans,
+  campaigns,
   stores,
 }: PlansClientProps) {
   const router = useRouter();
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
+  const [showOnlyCampaigns, setShowOnlyCampaigns] = useState<boolean>(false);
   const [addingToCart, setAddingToCart] = useState<string | null>(null);
   const { addItem } = useCartStore();
 
-  // 合并所有套餐
-  const allPlans = [...anniversaryPlans, ...regularPlans];
+  // 所有套餐
+  const allPlans = plans;
 
   // 提取所有唯一的地区
   const regions = Array.from(new Set(allPlans.map(p => p.region).filter(Boolean))) as string[];
@@ -59,8 +76,18 @@ export default function PlansClient({
     new Set(allPlans.flatMap(p => p.tags || []).filter(Boolean))
   ) as string[];
 
-  // 应用筛选
-  const filteredAnniversaryPlans = anniversaryPlans.filter(plan => {
+  // 统一筛选逻辑
+  const filteredPlans = allPlans.filter(plan => {
+    // 仅显示活动套餐
+    if (showOnlyCampaigns && !plan.isCampaign) {
+      return false;
+    }
+    
+    // 活动筛选
+    if (selectedCampaignId && plan.campaignId !== selectedCampaignId) {
+      return false;
+    }
+    
     // 店铺筛选
     if (selectedStoreId) {
       const selectedStore = stores.find(s => s.id === selectedStoreId);
@@ -83,30 +110,10 @@ export default function PlansClient({
 
     return true;
   });
-
-  const filteredRegularPlans = regularPlans.filter(plan => {
-    // 店铺筛选
-    if (selectedStoreId) {
-      const selectedStore = stores.find(s => s.id === selectedStoreId);
-      if (selectedStore && plan.storeName && !plan.storeName.includes(selectedStore.name)) {
-        return false;
-      }
-    }
-
-    // 地区筛选
-    if (selectedRegion && plan.region !== selectedRegion) {
-      return false;
-    }
-
-    // 标签筛选
-    if (selectedTags.length > 0) {
-      if (!plan.tags || !selectedTags.some(tag => plan.tags?.includes(tag))) {
-        return false;
-      }
-    }
-
-    return true;
-  });
+  
+  // 分组：活动套餐和常规套餐
+  const filteredCampaignPlans = filteredPlans.filter(p => p.isCampaign);
+  const filteredRegularPlans = filteredPlans.filter(p => !p.isCampaign);
 
   // 切换标签选择
   const toggleTag = (tag: string) => {
@@ -120,9 +127,16 @@ export default function PlansClient({
     setSelectedStoreId(null);
     setSelectedRegion(null);
     setSelectedTags([]);
+    setSelectedCampaignId(null);
+    setShowOnlyCampaigns(false);
   };
 
-  const hasActiveFilters = selectedStoreId || selectedRegion || selectedTags.length > 0;
+  const hasActiveFilters = 
+    selectedStoreId || 
+    selectedRegion || 
+    selectedTags.length > 0 || 
+    selectedCampaignId || 
+    showOnlyCampaigns;
 
   // 分类标签映射
   const getCategoryLabel = (category: string) => {
@@ -146,11 +160,13 @@ export default function PlansClient({
       planId: plan.id,
       name: plan.name,
       price: plan.price,
+      originalPrice: plan.originalPrice,
       addOns: [],
       image: plan.imageUrl,
       storeId: undefined,
       storeName: undefined,
-      planStoreName: plan.storeName, // 传递套餐所属店铺
+      planStoreName: plan.storeName,
+      isCampaign: plan.isCampaign,
     });
 
     setTimeout(() => {
@@ -167,16 +183,18 @@ export default function PlansClient({
       planId: plan.id,
       name: plan.name,
       price: plan.price,
+      originalPrice: plan.originalPrice,
       addOns: [],
       image: plan.imageUrl,
       storeId: undefined,
       storeName: undefined,
-      planStoreName: plan.storeName, // 传递套餐所属店铺
+      planStoreName: plan.storeName,
+      isCampaign: plan.isCampaign,
     });
 
     setTimeout(() => {
       setAddingToCart(null);
-      router.push("/booking");
+      router.push("/cart");
     }, 500);
   };
 
@@ -374,6 +392,54 @@ export default function PlansClient({
           )}
         </div>
 
+        {/* 活动筛选 */}
+        <div>
+          <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-amber-600" />
+            限时活动
+          </h3>
+          <div className="space-y-2">
+            {/* 仅显示活动套餐 */}
+            <button
+              onClick={() => setShowOnlyCampaigns(!showOnlyCampaigns)}
+              className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
+                showOnlyCampaigns
+                  ? 'bg-amber-500 text-white font-medium'
+                  : 'hover:bg-secondary'
+              }`}
+            >
+              🎊 仅限时优惠
+            </button>
+            
+            {/* 全部活动 */}
+            <button
+              onClick={() => setSelectedCampaignId(null)}
+              className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
+                !selectedCampaignId
+                  ? 'bg-primary text-primary-foreground font-medium'
+                  : 'hover:bg-secondary'
+              }`}
+            >
+              全部活动
+            </button>
+            
+            {/* 活动列表 */}
+            {campaigns.map((campaign) => (
+              <button
+                key={campaign.id}
+                onClick={() => setSelectedCampaignId(campaign.id)}
+                className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
+                  selectedCampaignId === campaign.id
+                    ? 'bg-primary text-primary-foreground font-medium'
+                    : 'hover:bg-secondary'
+                }`}
+              >
+                {campaign.title}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* 地区筛选 */}
         <div>
           <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
@@ -465,7 +531,12 @@ export default function PlansClient({
 
         {/* 筛选结果统计 */}
         <div className="pt-4 border-t text-sm text-muted-foreground">
-          找到 {filteredAnniversaryPlans.length + filteredRegularPlans.length} 个套餐
+          找到 {filteredPlans.length} 个套餐
+          {filteredCampaignPlans.length > 0 && (
+            <span className="block text-xs mt-1 text-amber-600">
+              🎊 {filteredCampaignPlans.length} 个活动优惠
+            </span>
+          )}
         </div>
       </div>
     </aside>
@@ -518,23 +589,23 @@ export default function PlansClient({
 
             {/* 右侧内容区域 */}
             <div className="flex-1 min-w-0">
-              {/* 10周年优惠套餐 */}
-              {filteredAnniversaryPlans.length > 0 && (
+              {/* 活动套餐 */}
+              {filteredCampaignPlans.length > 0 && (
                 <div className="mb-12">
                   <div className="flex items-center gap-3 mb-6">
                     <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white px-4 py-1.5 rounded-full shadow-lg">
                       <Sparkles className="w-4 h-4" />
-                      <span className="font-bold text-sm">10周年特惠</span>
+                      <span className="font-bold text-sm">限时优惠</span>
                     </div>
                     <span className="text-xl font-bold">🎉 最高享50%优惠</span>
                   </div>
 
                   <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {filteredAnniversaryPlans.map((plan) => (
+                    {filteredCampaignPlans.map((plan) => (
                       <div key={plan.id} className="relative">
-                        {/* 10周年徽章 */}
+                        {/* 活动徽章 */}
                         <div className="absolute top-2 right-2 z-10 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg animate-pulse">
-                          10周年限定
+                          {plan.campaign?.title || '限时优惠'}
                         </div>
                         <PlanCard plan={plan} />
                       </div>
@@ -546,7 +617,7 @@ export default function PlansClient({
               {/* 常规套餐 */}
               {filteredRegularPlans.length > 0 && (
                 <div>
-                  {filteredAnniversaryPlans.length > 0 && (
+                  {filteredCampaignPlans.length > 0 && (
                     <h2 className="text-xl font-bold mb-6">更多套餐</h2>
                   )}
 
@@ -559,7 +630,7 @@ export default function PlansClient({
               )}
 
               {/* 无结果提示 */}
-              {filteredAnniversaryPlans.length === 0 && filteredRegularPlans.length === 0 && (
+              {filteredPlans.length === 0 && (
                 <div className="text-center py-16">
                   <div className="text-6xl mb-4">🔍</div>
                   <h3 className="text-xl font-bold mb-2">未找到匹配的套餐</h3>

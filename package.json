@@ -9,7 +9,10 @@
     "lint": "eslint",
     "scrape": "tsx scripts/scraper.ts",
     "db:seed": "tsx prisma/seed.ts",
-    "db:reset": "prisma migrate reset && tsx prisma/seed.ts"
+    "db:reset": "prisma migrate reset && tsx prisma/seed.ts",
+    "import:unified-plans": "tsx scripts/import-unified-plans.ts",
+    "import:unified-plans:clear": "tsx scripts/import-unified-plans.ts --clear",
+    "migrate:campaigns": "tsx scripts/migrate-campaigns-to-plans.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

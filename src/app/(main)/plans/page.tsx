@@ -3,27 +3,43 @@ import prisma from "@/lib/prisma";
 import PlansClient from "./PlansClient";
 
 export default async function PlansPage() {
-  // 获取所有租赁套餐
+  // 获取所有租赁套餐（包括活动套餐）
   const allPlans = await prisma.rentalPlan.findMany({
-    orderBy: [
-      {
-        price: "asc",
+    include: {
+      campaign: {
+        select: {
+          id: true,
+          slug: true,
+          title: true,
+          description: true,
+        },
       },
+    },
+    orderBy: [
+      { isCampaign: 'desc' }, // 活动套餐优先
+      { price: 'asc' },
     ],
   });
 
-  // 分离十周年优惠套餐和普通套餐
-  const anniversaryPlans = allPlans.filter(plan =>
-    plan.name.includes('10周年') ||
-    plan.name.includes('10週年') ||
-    plan.name.includes('10th')
-  );
-
-  const regularPlans = allPlans.filter(plan =>
-    !plan.name.includes('10周年') &&
-    !plan.name.includes('10週年') &&
-    !plan.name.includes('10th')
-  );
+  // 获取所有活跃的优惠活动
+  const activeCampaigns = await prisma.campaign.findMany({
+    where: {
+      isActive: true,
+      endDate: {
+        gte: new Date(),
+      },
+    },
+    select: {
+      id: true,
+      slug: true,
+      title: true,
+      description: true,
+      subtitle: true,
+    },
+    orderBy: {
+      priority: 'desc',
+    },
+  });
 
   // 获取店铺列表
   const stores = await prisma.store.findMany({
@@ -33,22 +49,8 @@ export default async function PlansPage() {
       slug: true,
     },
     orderBy: {
-      name: "asc",
+      name: 'asc',
     },
-  });
-
-  // 获取活跃的优惠活动
-  const activeCampaigns = await prisma.campaign.findMany({
-    where: {
-      isActive: true,
-      endDate: {
-        gte: new Date(),
-      },
-    },
-    orderBy: {
-      priority: "desc",
-    },
-    take: 1,
   });
 
   return (
@@ -96,8 +98,8 @@ export default async function PlansPage() {
 
       {/* PlansClient 客户端组件 */}
       <PlansClient
-        anniversaryPlans={anniversaryPlans}
-        regularPlans={regularPlans}
+        plans={allPlans}
+        campaigns={activeCampaigns}
         stores={stores}
       />
     </div>
