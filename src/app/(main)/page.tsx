@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import prisma from "@/lib/prisma";
 import SocialPostCard from "@/components/SocialPostCard";
+import HeroSearchBar from "@/components/HeroSearchBar";
 import { Button } from "@/components/ui";
 import { SocialPlatform } from "@prisma/client";
 import { Sparkles, MapPin, Tag } from "lucide-react";
@@ -142,80 +143,32 @@ export default async function HomePage() {
 
   return (
     <div className="min-h-screen">
-      {/* Hero Section - Airbnb 风格 + 樱花美学 */}
-      <section className="relative bg-hero-gradient overflow-hidden">
+      {/* Hero Section - 平台风格 + 大搜索框 */}
+      <section className="relative bg-gradient-to-br from-sakura-50 via-white to-sakura-50 overflow-hidden">
         {/* 樱花装饰图案 */}
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmNGE1YjkiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDE2YzAgMi4yMS0xLjc5IDQtNCA0cy00LTEuNzktNC00IDEuNzktNCA0LTQgNCAxLjc5IDQgNHptLTQgMjhjLTIuMjEgMC00LTEuNzktNC00czEuNzktNCA0LTQgNCAxLjc5IDQgNC0xLjc5IDQtNCA0eiIvPjwvZz48L2c+PC9zdmc+')] opacity-40"></div>
 
-        <div className="container relative py-20 md:py-28">
-          <div className="text-center max-w-4xl mx-auto">
-            {/* 标题 */}
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 tracking-tight leading-tight">
-              <span className="block mb-2">江户和装工房雅</span>
-              <span className="block text-3xl md:text-4xl lg:text-5xl text-sakura-600">
-                Kimono Miyabi
-              </span>
+        <div className="container relative py-16 md:py-24 lg:py-32">
+          <div className="text-center max-w-5xl mx-auto">
+            {/* 平台标题 - Airbnb风格 */}
+            <h1 className="text-4xl md:text-5xl lg:text-7xl font-bold mb-6 tracking-tight leading-tight text-gray-900">
+              发现日本传统和服之美
             </h1>
 
-            {/* 副标题 */}
-            <p className="text-xl md:text-2xl text-gray-700 mb-4 font-medium">
-              浅草、上野、京都的和服租赁店
-            </p>
-            <p className="text-base md:text-lg text-gray-600 mb-10 max-w-2xl mx-auto leading-relaxed">
-              体验传统日式和服之美，留下难忘的东京、京都记忆
+            {/* 副标题 - 强调平台角色 */}
+            <p className="text-lg md:text-xl lg:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed">
+              连接优质和服商家，开启您的和服体验之旅
             </p>
 
-            {/* CTA Buttons - 使用新的 Button 组件 */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-              <Link href="/plans">
-                <Button variant="primary" size="lg" className="w-full sm:w-auto min-w-[200px]">
-                  <Sparkles className="w-5 h-5" />
-                  浏览和服套餐
-                </Button>
-              </Link>
-              <Link href="/booking">
-                <Button variant="outline" size="lg" className="w-full sm:w-auto min-w-[200px]">
-                  立即预约
-                </Button>
-              </Link>
+            {/* 大搜索框 - Airbnb风格 */}
+            <div className="mb-16">
+              <HeroSearchBar />
             </div>
 
-            {/* Social Media Links */}
-            <div className="flex gap-6 justify-center items-center">
-              <a
-                href="https://www.instagram.com/kimonomiyabi/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group flex items-center gap-2 text-sm text-gray-600 hover:text-sakura-500 transition-colors"
-              >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-                </svg>
-                <span className="hidden sm:inline font-medium">Instagram</span>
-              </a>
-              <a
-                href="https://www.facebook.com/kimonomiyabi77/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group flex items-center gap-2 text-sm text-gray-600 hover:text-sakura-500 transition-colors"
-              >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                </svg>
-                <span className="hidden sm:inline font-medium">Facebook</span>
-              </a>
-              <a
-                href="https://www.weibo.com/mymiyabi"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group flex items-center gap-2 text-sm text-gray-600 hover:text-sakura-500 transition-colors"
-              >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M9.63 18.36c-2.77 0-5.02-1.78-5.02-3.97 0-2.19 2.25-3.97 5.02-3.97s5.02 1.78 5.02 3.97c0 2.19-2.25 3.97-5.02 3.97zm0-6.5c-1.94 0-3.52 1.12-3.52 2.5s1.58 2.5 3.52 2.5 3.52-1.12 3.52-2.5-1.58-2.5-3.52-2.5zm11.43-2.63c-.55-.28-1.02-.47-1.02-.8 0-.28.3-.49.7-.49.55 0 .96.28 1.02.7h1.05c-.08-.94-.88-1.58-2.07-1.58-1.11 0-2.03.64-2.03 1.58 0 .86.66 1.3 1.52 1.68.63.28 1.19.49 1.19.94 0 .36-.36.64-.86.64-.66 0-1.13-.36-1.19-.86h-1.08c.08 1.08.97 1.74 2.27 1.74 1.27 0 2.16-.72 2.16-1.74 0-.97-.75-1.47-1.66-1.81z"/>
-                </svg>
-                <span className="hidden sm:inline font-medium">微博</span>
-              </a>
-            </div>
+            {/* 辅助信息 */}
+            <p className="text-sm text-gray-500">
+              东京浅草 · 京都清水寺 · 专业商家 · 安全预订
+            </p>
           </div>
         </div>
       </section>
