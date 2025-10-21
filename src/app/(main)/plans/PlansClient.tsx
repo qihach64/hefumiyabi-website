@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Check, ShoppingCart, Sparkles, MapPin, Store as StoreIcon, Tag, X, Filter } from "lucide-react";
 import { useCartStore } from "@/store/cart";
+import { Button, Badge } from "@/components/ui";
 
 interface Store {
   id: string;
@@ -211,17 +212,17 @@ export default function PlansClient({
       : 0;
 
     return (
-    <div className="relative overflow-hidden rounded-lg border bg-card hover:shadow-xl transition-all duration-300 group">
-      {/* 优惠标签 */}
+    <div className="relative overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-[1.01] group">
+      {/* 优惠标签 - 使用 Badge 组件 */}
       {discountPercent > 0 && (
-        <div className="absolute top-3 left-3 z-10 flex flex-col gap-1">
-          <div className="bg-rose-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
+        <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
+          <Badge variant="error" size="md" className="shadow-md">
             省¥{((plan.originalPrice! - plan.price) / 100).toFixed(0)}
-          </div>
+          </Badge>
           {discountPercent >= 30 && (
-            <div className="bg-amber-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg animate-pulse">
+            <Badge variant="warning" size="md" className="shadow-md animate-pulse">
               限时{discountPercent}% OFF
-            </div>
+            </Badge>
           )}
         </div>
       )}
@@ -295,30 +296,30 @@ export default function PlansClient({
           </p>
         )}
 
-        {/* 标签区域：地区、店铺、特色标签 */}
+        {/* 标签区域：地区、店铺、特色标签 - 使用 Badge 组件 */}
         <div className="flex flex-wrap gap-2 mb-4">
           {/* 地区标签 */}
           {plan.region && (
-            <div className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-secondary/50 px-2 py-1 rounded-md">
-              <MapPin className="w-3 h-3 text-blue-600" />
-              <span>{plan.region}</span>
-            </div>
+            <Badge variant="info" size="sm" rounded="md">
+              <MapPin className="w-3 h-3" />
+              {plan.region}
+            </Badge>
           )}
-          
+
           {/* 店铺标签 */}
           {plan.storeName && (
-            <div className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-secondary/50 px-2 py-1 rounded-md">
-              <StoreIcon className="w-3 h-3 text-green-600" />
-              <span>{plan.storeName}</span>
-            </div>
+            <Badge variant="success" size="sm" rounded="md">
+              <StoreIcon className="w-3 h-3" />
+              {plan.storeName}
+            </Badge>
           )}
-          
+
           {/* 特色标签 */}
           {plan.tags && plan.tags.slice(0, 2).map((tag, index) => (
-            <div key={index} className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-secondary/50 px-2 py-1 rounded-md">
-              <Tag className="w-3 h-3 text-amber-600" />
-              <span>{tag}</span>
-            </div>
+            <Badge key={index} variant="sakura" size="sm" rounded="md">
+              <Tag className="w-3 h-3" />
+              {tag}
+            </Badge>
           ))}
         </div>
 
@@ -333,10 +334,13 @@ export default function PlansClient({
           </div>
         )}
 
-        {/* 按钮 */}
-        <div className="flex flex-col gap-2">
+        {/* 按钮 - 使用新的 Button 组件 */}
+        <div className="flex flex-col gap-3">
           {/* AI 试穿按钮 */}
-          <button
+          <Button
+            variant="primary"
+            size="md"
+            fullWidth
             onClick={() => {
               // 传递套餐图片和名称到 AI 试穿页面
               const params = new URLSearchParams({
@@ -346,29 +350,31 @@ export default function PlansClient({
               });
               router.push(`/virtual-tryon?${params.toString()}`);
             }}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-all bg-gradient-to-r from-pink-400 to-rose-500 text-white hover:shadow-lg hover:scale-[1.02] h-10 px-4"
           >
             <Sparkles className="w-4 h-4" />
-            <span>AI 试穿</span>
-          </button>
+            AI 试穿
+          </Button>
 
-          <button
-            onClick={() => handleAddToCart(plan)}
+          {/* 加入购物车按钮 */}
+          <Button
+            variant="secondary"
+            size="md"
+            fullWidth
             disabled={addingToCart === plan.id}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 disabled:opacity-50"
+            onClick={() => handleAddToCart(plan)}
           >
             {addingToCart === plan.id ? (
               <>
                 <Check className="w-4 h-4" />
-                <span>已加入</span>
+                已加入
               </>
             ) : (
               <>
                 <ShoppingCart className="w-4 h-4" />
-                <span>加入购物车</span>
+                加入购物车
               </>
             )}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -606,20 +612,22 @@ export default function PlansClient({
               {/* 活动套餐 */}
               {filteredCampaignPlans.length > 0 && (
                 <div className="mb-12">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white px-4 py-1.5 rounded-full shadow-lg">
+                  <div className="flex items-center gap-4 mb-8">
+                    <Badge variant="warning" size="lg" className="shadow-lg">
                       <Sparkles className="w-4 h-4" />
-                      <span className="font-bold text-sm">限时优惠</span>
-                    </div>
-                    <span className="text-xl font-bold">🎉 最高享50%优惠</span>
+                      限时优惠
+                    </Badge>
+                    <span className="text-2xl font-bold text-gray-900">🎉 最高享50%优惠</span>
                   </div>
 
-                  <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                  <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-8">
                     {filteredCampaignPlans.map((plan) => (
                       <div key={plan.id} className="relative">
-                        {/* 活动徽章 */}
-                        <div className="absolute top-2 right-2 z-10 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg animate-pulse">
-                          {plan.campaign?.title || '限时优惠'}
+                        {/* 活动徽章 - 使用 Badge 组件 */}
+                        <div className="absolute top-4 right-4 z-10">
+                          <Badge variant="warning" size="md" className="shadow-md animate-pulse">
+                            {plan.campaign?.title || '限时优惠'}
+                          </Badge>
                         </div>
                         <PlanCard plan={plan} />
                       </div>
@@ -635,7 +643,7 @@ export default function PlansClient({
                     <h2 className="text-xl font-bold mb-6">更多套餐</h2>
                   )}
 
-                  <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                  <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-8">
                     {filteredRegularPlans.map((plan) => (
                       <PlanCard key={plan.id} plan={plan} />
                     ))}
@@ -645,19 +653,20 @@ export default function PlansClient({
 
               {/* 无结果提示 */}
               {filteredPlans.length === 0 && (
-                <div className="text-center py-16">
-                  <div className="text-6xl mb-4">🔍</div>
-                  <h3 className="text-xl font-bold mb-2">未找到匹配的套餐</h3>
-                  <p className="text-muted-foreground mb-6">
+                <div className="text-center py-20">
+                  <div className="text-7xl mb-6">🔍</div>
+                  <h3 className="text-2xl font-bold mb-3 text-gray-900">未找到匹配的套餐</h3>
+                  <p className="text-gray-600 mb-8 text-lg">
                     请尝试调整筛选条件
                   </p>
-                  <button
+                  <Button
+                    variant="primary"
+                    size="lg"
                     onClick={clearFilters}
-                    className="inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-6"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-5 h-5" />
                     清除所有筛选
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
