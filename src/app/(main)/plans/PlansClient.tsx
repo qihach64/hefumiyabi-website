@@ -1,10 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { Check, ShoppingCart, Sparkles, MapPin, Store as StoreIcon, Tag, X, Filter } from "lucide-react";
-import { useCartStore } from "@/store/cart";
+import PlanCard from "@/components/PlanCard";
+import { Sparkles, MapPin, Store as StoreIcon, Tag, X, Filter } from "lucide-react";
 import { Button, Badge } from "@/components/ui";
 
 interface Store {
@@ -57,14 +55,11 @@ export default function PlansClient({
   campaigns,
   stores,
 }: PlansClientProps) {
-  const router = useRouter();
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
   const [showOnlyCampaigns, setShowOnlyCampaigns] = useState<boolean>(false);
-  const [addingToCart, setAddingToCart] = useState<string | null>(null);
-  const { addItem } = useCartStore();
 
   // 所有套餐
   const allPlans = plans;
@@ -168,218 +163,6 @@ export default function PlansClient({
     selectedCampaignId || 
     showOnlyCampaigns;
 
-  // 分类标签映射
-  const getCategoryLabel = (category: string) => {
-    const labels: Record<string, string> = {
-      LADIES: "女士套餐",
-      MENS: "男士套餐",
-      COUPLE: "情侣套餐",
-      FAMILY: "亲子套餐",
-      GROUP: "团体套餐",
-      SPECIAL: "特别套餐",
-    };
-    return labels[category] || "套餐";
-  };
-
-  // 加入购物车函数
-  const handleAddToCart = (plan: RentalPlan) => {
-    setAddingToCart(plan.id);
-
-    addItem({
-      type: "PLAN",
-      planId: plan.id,
-      name: plan.name,
-      price: plan.price,
-      originalPrice: plan.originalPrice,
-      addOns: [],
-      image: plan.imageUrl,
-      storeId: undefined,
-      storeName: undefined,
-      planStoreName: plan.storeName,
-      isCampaign: plan.isCampaign,
-    });
-
-    setTimeout(() => {
-      setAddingToCart(null);
-    }, 1000);
-  };
-
-  // 套餐卡片组件
-  const PlanCard = ({ plan }: { plan: RentalPlan }) => {
-    // 计算优惠幅度
-    const discountPercent = plan.originalPrice && plan.originalPrice > plan.price
-      ? Math.round(((plan.originalPrice - plan.price) / plan.originalPrice) * 100)
-      : 0;
-
-    return (
-    <div className="relative overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-[1.01] group">
-      {/* 优惠标签 - 使用 Badge 组件 */}
-      {discountPercent > 0 && (
-        <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
-          <Badge variant="error" size="md" className="shadow-md">
-            省¥{((plan.originalPrice! - plan.price) / 100).toFixed(0)}
-          </Badge>
-          {discountPercent >= 30 && (
-            <Badge variant="warning" size="md" className="shadow-md animate-pulse">
-              限时{discountPercent}% OFF
-            </Badge>
-          )}
-        </div>
-      )}
-
-      {/* 图片区域 */}
-      <div className="relative aspect-[3/4] overflow-hidden bg-secondary">
-        {plan.imageUrl ? (
-          <Image
-            src={plan.imageUrl}
-            alt={plan.name}
-            fill
-            className="object-cover group-hover:scale-105 transition-transform duration-300"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center bg-secondary">
-            <span className="text-6xl opacity-20">👘</span>
-          </div>
-        )}
-      </div>
-
-      {/* 内容区域 */}
-      <div className="p-6">
-        <div className="mb-3">
-          <span className="text-xs font-semibold uppercase tracking-wide text-primary">
-            {getCategoryLabel(plan.category)}
-          </span>
-          <h3 className="text-lg font-bold mt-2 mb-1 line-clamp-2">
-            {plan.name}
-          </h3>
-          {plan.nameEn && (
-            <p className="text-xs text-muted-foreground line-clamp-1">
-              {plan.nameEn}
-            </p>
-          )}
-        </div>
-
-        <div className="mb-4">
-          {/* 价格对比 */}
-          <div className="flex flex-col gap-1">
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-bold text-primary">
-                ¥{(plan.price / 100).toLocaleString()}
-              </span>
-              {plan.originalPrice && plan.originalPrice > plan.price && (
-                <span className="text-sm text-muted-foreground line-through">
-                  ¥{(plan.originalPrice / 100).toLocaleString()}
-                </span>
-              )}
-            </div>
-            {/* 线上预约标签 */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-rose-600 font-semibold">
-                💰 线上预约优惠价
-              </span>
-              {discountPercent > 0 && (
-                <span className="text-xs bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full font-semibold">
-                  立省{discountPercent}%
-                </span>
-              )}
-            </div>
-          </div>
-          <p className="text-sm text-muted-foreground mt-2">
-            {plan.duration} 小时
-          </p>
-        </div>
-
-        {plan.description && (
-          <p className="text-sm text-muted-foreground mb-4 leading-relaxed line-clamp-2">
-            {plan.description}
-          </p>
-        )}
-
-        {/* 标签区域：地区、店铺、特色标签 - 使用 Badge 组件 */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          {/* 地区标签 */}
-          {plan.region && (
-            <Badge variant="info" size="sm" rounded="md">
-              <MapPin className="w-3 h-3" />
-              {plan.region}
-            </Badge>
-          )}
-
-          {/* 店铺标签 */}
-          {plan.storeName && (
-            <Badge variant="success" size="sm" rounded="md">
-              <StoreIcon className="w-3 h-3" />
-              {plan.storeName}
-            </Badge>
-          )}
-
-          {/* 特色标签 */}
-          {plan.tags && plan.tags.slice(0, 2).map((tag, index) => (
-            <Badge key={index} variant="sakura" size="sm" rounded="md">
-              <Tag className="w-3 h-3" />
-              {tag}
-            </Badge>
-          ))}
-        </div>
-
-        {plan.includes && plan.includes.length > 0 && (
-          <div className="space-y-1 mb-4">
-            {plan.includes.slice(0, 3).map((feature: string, index: number) => (
-              <div key={index} className="flex items-start gap-2 text-xs">
-                <Check className="w-3 h-3 text-primary mt-0.5 shrink-0" />
-                <span className="line-clamp-1">{feature}</span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* 按钮 - 使用新的 Button 组件 */}
-        <div className="flex flex-col gap-3">
-          {/* AI 试穿按钮 */}
-          <Button
-            variant="primary"
-            size="md"
-            fullWidth
-            onClick={() => {
-              // 传递套餐图片和名称到 AI 试穿页面
-              const params = new URLSearchParams({
-                kimonoImage: plan.imageUrl || '',
-                kimonoName: plan.name,
-                planId: plan.id,
-              });
-              router.push(`/virtual-tryon?${params.toString()}`);
-            }}
-          >
-            <Sparkles className="w-4 h-4" />
-            AI 试穿
-          </Button>
-
-          {/* 加入购物车按钮 */}
-          <Button
-            variant="secondary"
-            size="md"
-            fullWidth
-            disabled={addingToCart === plan.id}
-            onClick={() => handleAddToCart(plan)}
-          >
-            {addingToCart === plan.id ? (
-              <>
-                <Check className="w-4 h-4" />
-                已加入
-              </>
-            ) : (
-              <>
-                <ShoppingCart className="w-4 h-4" />
-                加入购物车
-              </>
-            )}
-          </Button>
-        </div>
-      </div>
-    </div>
-    );
-  };
 
   // 侧边栏筛选器组件
   const FilterSidebar = () => (
@@ -620,17 +403,14 @@ export default function PlansClient({
                     <span className="text-2xl font-bold text-gray-900">🎉 最高享50%优惠</span>
                   </div>
 
-                  <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-8">
+                  {/* Airbnb 风格网格：更宽松的间距 */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {filteredCampaignPlans.map((plan) => (
-                      <div key={plan.id} className="relative">
-                        {/* 活动徽章 - 使用 Badge 组件 */}
-                        <div className="absolute top-4 right-4 z-10">
-                          <Badge variant="warning" size="md" className="shadow-md animate-pulse">
-                            {plan.campaign?.title || '限时优惠'}
-                          </Badge>
-                        </div>
-                        <PlanCard plan={plan} />
-                      </div>
+                      <PlanCard
+                        key={plan.id}
+                        plan={plan}
+                        showMerchant={false}
+                      />
                     ))}
                   </div>
                 </div>
@@ -643,9 +423,14 @@ export default function PlansClient({
                     <h2 className="text-xl font-bold mb-6">更多套餐</h2>
                   )}
 
-                  <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-8">
+                  {/* Airbnb 风格网格 */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {filteredRegularPlans.map((plan) => (
-                      <PlanCard key={plan.id} plan={plan} />
+                      <PlanCard
+                        key={plan.id}
+                        plan={plan}
+                        showMerchant={false}
+                      />
                     ))}
                   </div>
                 </div>
