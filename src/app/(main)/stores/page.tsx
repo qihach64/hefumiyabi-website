@@ -1,7 +1,8 @@
 import Link from "next/link";
 import prisma from "@/lib/prisma";
-import { MapPin, Clock, Phone, Mail } from "lucide-react";
+import { MapPin, Clock, Phone, Mail, Navigation } from "lucide-react";
 import NavigationButton from "@/components/NavigationButton";
+import { Button, Badge } from "@/components/ui";
 
 export default async function StoresPage() {
   // 获取所有店铺，按城市分组
@@ -30,69 +31,72 @@ export default async function StoresPage() {
 
   return (
     <div className="flex flex-col">
-      {/* Hero 区域 */}
-      <section className="relative bg-gradient-to-br from-secondary via-background to-primary/5 overflow-hidden">
+      {/* Hero 区域 - Airbnb 风格 + 樱花美学 */}
+      <section className="relative bg-hero-gradient overflow-hidden">
+        {/* 樱花装饰图案 */}
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmNGE1YjkiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDE2YzAgMi4yMS0xLjc5IDQtNCA0cy00LTEuNzktNC00IDEuNzktNCA0LTQgNCAxLjc5IDQgNHptLTQgMjhjLTIuMjEgMC00LTEuNzktNC00czEuNzktNCA0LTQgNCAxLjc5IDQgNC0xLjc5IDQtNCA0eiIvPjwvZz48L2c+PC9zdmc+')] opacity-40"></div>
 
-        <div className="container relative py-16 md:py-24">
+        <div className="container relative py-20 md:py-28">
           <div className="text-center max-w-3xl mx-auto">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">店铺位置</h1>
-            <p className="text-lg md:text-xl text-muted-foreground">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-gray-900">
+              店铺位置
+            </h1>
+            <p className="text-xl md:text-2xl text-gray-700 max-w-2xl mx-auto leading-relaxed">
               东京、京都多处便利位置，让您轻松开启和服体验之旅
             </p>
           </div>
         </div>
       </section>
 
-      {/* 店铺列表 */}
-      <section className="py-16 md:py-24 bg-background">
+      {/* 店铺列表 - Airbnb 风格卡片 */}
+      <section className="py-16 md:py-24 bg-white">
         <div className="container">
           {Object.entries(storesByCity).map(([city, cityStores]) => (
-            <div key={city} className="mb-16 last:mb-0">
+            <div key={city} className="mb-20 last:mb-0">
               {/* 城市标题 */}
-              <div className="flex items-center gap-3 mb-8">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <MapPin className="w-6 h-6 text-primary" />
+              <div className="flex items-center gap-4 mb-10">
+                <div className="w-14 h-14 rounded-xl bg-sakura-100 flex items-center justify-center">
+                  <MapPin className="w-7 h-7 text-sakura-600" />
                 </div>
                 <div>
-                  <h2 className="text-2xl md:text-3xl font-bold">{city}</h2>
-                  <p className="text-sm text-muted-foreground">
+                  <h2 className="text-3xl md:text-4xl font-bold text-gray-900">{city}</h2>
+                  <Badge variant="sakura" size="sm" className="mt-2">
                     {cityStores.length} 家店铺
-                  </p>
+                  </Badge>
                 </div>
               </div>
 
-              {/* 店铺卡片 */}
-              <div className="grid md:grid-cols-2 gap-6">
+              {/* 店铺卡片 - Airbnb 风格 */}
+              <div className="grid md:grid-cols-2 gap-8">
                 {cityStores.map((store) => (
                   <Link
                     key={store.id}
                     href={`/stores/${store.slug}`}
-                    className="group relative overflow-hidden rounded-lg border bg-card hover:shadow-xl transition-all duration-300"
+                    className="group relative overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-[1.01]"
                   >
-                    <div className="p-6">
+                    <div className="p-8">
                       {/* 店铺名称 */}
-                      <div className="mb-4">
-                        <h3 className="text-xl font-bold mb-1 group-hover:text-primary transition-colors">
+                      <div className="mb-6">
+                        <h3 className="text-2xl font-bold mb-2 text-gray-900 group-hover:text-sakura-600 transition-colors">
                           {store.name}
                         </h3>
                         {store.nameEn && (
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-sm text-gray-500">
                             {store.nameEn}
                           </p>
                         )}
                       </div>
 
-                      {/* 地址 */}
-                      <div className="space-y-3 mb-6">
+                      {/* 地址和联系方式 */}
+                      <div className="space-y-4 mb-8">
                         <div className="flex items-start gap-3">
-                          <MapPin className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+                          <MapPin className="w-5 h-5 text-sakura-500 mt-0.5 shrink-0" />
                           <div>
-                            <p className="text-sm font-medium mb-1">
+                            <p className="text-base font-medium text-gray-700 mb-1">
                               {store.address}
                             </p>
                             {store.addressEn && (
-                              <p className="text-xs text-muted-foreground">
+                              <p className="text-sm text-gray-500">
                                 {store.addressEn}
                               </p>
                             )}
@@ -102,8 +106,8 @@ export default async function StoresPage() {
                         {/* 电话 */}
                         {store.phone && (
                           <div className="flex items-center gap-3">
-                            <Phone className="w-5 h-5 text-primary shrink-0" />
-                            <span className="text-sm">
+                            <Phone className="w-5 h-5 text-sakura-500 shrink-0" />
+                            <span className="text-sm text-gray-700">
                               {store.phone}
                             </span>
                           </div>
@@ -112,20 +116,20 @@ export default async function StoresPage() {
                         {/* 邮箱 */}
                         {store.email && (
                           <div className="flex items-center gap-3">
-                            <Mail className="w-5 h-5 text-primary shrink-0" />
-                            <span className="text-sm">
+                            <Mail className="w-5 h-5 text-sakura-500 shrink-0" />
+                            <span className="text-sm text-gray-700">
                               {store.email}
                             </span>
                           </div>
                         )}
                       </div>
 
-                      {/* 操作按钮 */}
+                      {/* 操作按钮 - 使用 Button 组件 */}
                       <div className="flex flex-col sm:flex-row gap-3">
                         <div className="flex-1">
-                          <div className="w-full inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4">
+                          <Button variant="primary" size="md" fullWidth>
                             查看详情
-                          </div>
+                          </Button>
                         </div>
                         {store.latitude && store.longitude && (
                           <NavigationButton
@@ -136,8 +140,8 @@ export default async function StoresPage() {
                       </div>
                     </div>
 
-                    {/* 悬浮效果 */}
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
+                    {/* 悬浮装饰 */}
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-sakura-50 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
                   </Link>
                 ))}
               </div>
