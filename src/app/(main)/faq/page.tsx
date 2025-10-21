@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import EmbeddedChatbot from "@/components/EmbeddedChatbot";
+import { Button } from "@/components/ui";
 
 // FAQ 数据结构
 const faqCategories = [
@@ -122,16 +123,17 @@ const faqCategories = [
 export default function FAQPage() {
   return (
     <div className="flex flex-col">
-      {/* Hero 区域 - AI 客服 */}
-      <section className="relative bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 overflow-hidden">
+      {/* Hero 区域 - AI 客服 + Airbnb 风格 */}
+      <section className="relative bg-hero-gradient overflow-hidden">
+        {/* 樱花装饰图案 */}
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmNGE1YjkiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDE2YzAgMi4yMS0xLjc5IDQtNCA0cy00LTEuNzktNC00IDEuNzktNCA0LTQgNCAxLjc5IDQgNHptLTQgMjhjLTIuMjEgMC00LTEuNzktNC00czEuNzktNCA0LTQgNCAxLjc5IDQgNC0xLjc5IDQtNCA0eiIvPjwvZz48L2c+PC9zdmc+')] opacity-40"></div>
 
-        <div className="container relative py-12 md:py-16">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl md:text-4xl font-bold mb-3">
+        <div className="container relative py-16 md:py-20">
+          <div className="text-center mb-10">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-gray-900">
               常见问题 & AI 客服
             </h1>
-            <p className="text-base md:text-lg text-muted-foreground">
+            <p className="text-xl md:text-2xl text-gray-700 max-w-2xl mx-auto leading-relaxed">
               快速解答您的疑问，提供24/7智能服务
             </p>
           </div>
@@ -141,15 +143,15 @@ export default function FAQPage() {
         </div>
       </section>
 
-      {/* FAQ 分类导航 */}
-      <section className="py-8 bg-background border-b sticky top-0 z-10 backdrop-blur-sm bg-background/95">
+      {/* FAQ 分类导航 - Airbnb 风格 */}
+      <section className="py-8 bg-white border-b border-gray-200 sticky top-0 z-10 backdrop-blur-sm bg-white/95">
         <div className="container">
           <div className="flex flex-wrap justify-center gap-4">
             {faqCategories.map((category) => (
               <a
                 key={category.id}
                 href={`#${category.id}`}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full border bg-card hover:bg-accent hover:border-primary transition-colors text-sm font-medium"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 bg-white hover:bg-sakura-50 hover:border-sakura-400 transition-colors text-sm font-medium text-gray-700 hover:text-sakura-600"
               >
                 <span className="text-lg">{category.icon}</span>
                 {category.title}
@@ -159,22 +161,22 @@ export default function FAQPage() {
         </div>
       </section>
 
-      {/* FAQ 内容 */}
-      <section className="py-16 md:py-24 bg-background">
+      {/* FAQ 内容 - Airbnb 风格卡片 */}
+      <section className="py-16 md:py-24 bg-white">
         <div className="container">
           <div className="max-w-4xl mx-auto space-y-16">
             {faqCategories.map((category, categoryIndex) => (
               <div key={category.id} id={category.id}>
                 {/* 分类标题 */}
                 <div className="flex items-center gap-3 mb-8">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-2xl">
+                  <div className="w-12 h-12 rounded-full bg-sakura-100 flex items-center justify-center text-2xl">
                     {category.icon}
                   </div>
                   <div>
-                    <h2 className="text-2xl md:text-3xl font-bold">
+                    <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
                       {category.title}
                     </h2>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-gray-600">
                       {category.faqs.length} 个问题
                     </p>
                   </div>
@@ -185,19 +187,19 @@ export default function FAQPage() {
                   {category.faqs.map((faq, faqIndex) => (
                     <details
                       key={faqIndex}
-                      className="group rounded-lg border bg-card overflow-hidden hover:shadow-md transition-shadow"
+                      className="group rounded-xl border border-gray-200 bg-white overflow-hidden hover:shadow-lg transition-all duration-300"
                     >
                       <summary className="flex items-center justify-between p-6 cursor-pointer list-none">
-                        <h3 className="font-semibold pr-4 flex-1">
-                          <span className="text-primary mr-2">Q.</span>
+                        <h3 className="font-semibold pr-4 flex-1 text-gray-900">
+                          <span className="text-sakura-600 mr-2">Q.</span>
                           {faq.question}
                         </h3>
-                        <ChevronDown className="w-5 h-5 text-muted-foreground group-open:rotate-180 transition-transform shrink-0" />
+                        <ChevronDown className="w-5 h-5 text-gray-600 group-open:rotate-180 transition-transform shrink-0" />
                       </summary>
                       <div className="px-6 pb-6">
-                        <div className="pt-4 border-t">
-                          <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
-                            <span className="text-accent font-semibold mr-2">
+                        <div className="pt-4 border-t border-gray-200">
+                          <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
+                            <span className="text-sakura-600 font-semibold mr-2">
                               A.
                             </span>
                             {faq.answer}
@@ -213,80 +215,78 @@ export default function FAQPage() {
         </div>
       </section>
 
-      {/* 找不到答案 */}
+      {/* 找不到答案 - 使用 Button 组件 */}
       <section className="py-16 md:py-24 bg-secondary/30">
         <div className="container">
           <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-3xl font-bold mb-4">还有其他问题？</h2>
-            <p className="text-muted-foreground mb-8">
+            <h2 className="text-3xl font-bold mb-4 text-gray-900">还有其他问题？</h2>
+            <p className="text-gray-700 mb-8">
               如果您没有找到想要的答案，欢迎随时联系我们的客服团队
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                href="/contact"
-                className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors bg-primary text-primary-foreground hover:bg-primary/90 h-11 px-8"
-              >
-                联系我们
+              <Link href="/contact">
+                <Button variant="primary" size="lg" className="w-full sm:w-auto min-w-[160px]">
+                  联系我们
+                </Button>
               </Link>
-              <Link
-                href="/booking"
-                className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-input bg-background hover:bg-accent hover:text-accent-foreground h-11 px-8"
-              >
-                立即预约
+              <Link href="/booking">
+                <Button variant="secondary" size="lg" className="w-full sm:w-auto min-w-[160px]">
+                  立即预约
+                </Button>
               </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 快速链接 */}
-      <section className="py-16 bg-background">
+      {/* 快速链接 - Airbnb 风格卡片 */}
+      <section className="py-16 bg-white">
         <div className="container">
           <div className="text-center mb-12">
-            <h2 className="text-2xl font-bold mb-4">相关资源</h2>
+            <h2 className="text-2xl font-bold mb-4 text-gray-900">相关资源</h2>
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-4xl mx-auto">
             <Link
               href="/plans"
-              className="p-6 rounded-lg border bg-card hover:shadow-lg transition-shadow text-center"
+              className="p-6 rounded-xl border border-gray-200 bg-white hover:shadow-lg transition-all duration-300 text-center"
             >
               <div className="text-3xl mb-3">📋</div>
-              <h3 className="font-semibold mb-2">查看套餐</h3>
-              <p className="text-sm text-muted-foreground">
+              <h3 className="font-semibold mb-2 text-gray-900">查看套餐</h3>
+              <p className="text-sm text-gray-600">
                 了解不同的租赁套餐和价格
               </p>
             </Link>
 
             <Link
               href="/stores"
-              className="p-6 rounded-lg border bg-card hover:shadow-lg transition-shadow text-center"
+              className="p-6 rounded-xl border border-gray-200 bg-white hover:shadow-lg transition-all duration-300 text-center"
             >
               <div className="text-3xl mb-3">📍</div>
-              <h3 className="font-semibold mb-2">店铺位置</h3>
-              <p className="text-sm text-muted-foreground">
+              <h3 className="font-semibold mb-2 text-gray-900">店铺位置</h3>
+              <p className="text-sm text-gray-600">
                 查找离您最近的店铺
               </p>
             </Link>
 
             <Link
               href="/kimonos"
-              className="p-6 rounded-lg border bg-card hover:shadow-lg transition-shadow text-center"
+              className="p-6 rounded-xl border border-gray-200 bg-white hover:shadow-lg transition-all duration-300 text-center"
             >
               <div className="text-3xl mb-3">👘</div>
-              <h3 className="font-semibold mb-2">和服图库</h3>
-              <p className="text-sm text-muted-foreground">
+              <h3 className="font-semibold mb-2 text-gray-900">和服图库</h3>
+              <p className="text-sm text-gray-600">
                 浏览精美的和服款式
               </p>
             </Link>
 
             <Link
               href="/about"
-              className="p-6 rounded-lg border bg-card hover:shadow-lg transition-shadow text-center"
+              className="p-6 rounded-xl border border-gray-200 bg-white hover:shadow-lg transition-all duration-300 text-center"
             >
               <div className="text-3xl mb-3">ℹ️</div>
-              <h3 className="font-semibold mb-2">关于我们</h3>
-              <p className="text-sm text-muted-foreground">
+              <h3 className="font-semibold mb-2 text-gray-900">关于我们</h3>
+              <p className="text-sm text-gray-600">
                 了解我们的服务和理念
               </p>
             </Link>
