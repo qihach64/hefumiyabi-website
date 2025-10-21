@@ -674,6 +674,247 @@ Next.js App
 
 ---
 
-**最后更新**: 2025-10-20
-**状态**: 规划阶段
+## 📝 实施步骤
+
+### 已完成 ✅
+
+#### Phase 1.1: 数据模型迁移 (已完成)
+
+**1. Prisma Schema 更新**
+- ✅ 添加 `Merchant` 模型（商家实体）
+- ✅ 添加 `Listing` 模型（商家发布的套餐）
+- ✅ 添加 `Payout` 模型（支付分账）
+- ✅ 添加 `MerchantReview` 模型（商家评价）
+- ✅ 更新 `Store` 模型，添加 `merchantId` 字段
+- ✅ 更新 `Booking` 模型，添加 `merchantId`、`platformFee`、`merchantAmount` 字段
+- ✅ 添加 `Role.MERCHANT` 枚举值
+- ✅ 添加 `MerchantStatus`、`ListingStatus`、`PayoutStatus` 枚举
+
+**2. 数据库迁移**
+```bash
+# 已执行
+npx prisma db push
+```
+
+**3. 数据迁移脚本**
+```bash
+# 已执行
+npx tsx scripts/migrate-to-platform.ts
+```
+
+**迁移结果**:
+- ✅ 创建默认商家账户：江戸和装工房雅
+- ✅ 所有现有店铺（5个）已关联到默认商家
+- ✅ 数据完整性验证通过
+
+**Schema 文件**: `prisma/schema.prisma`
+**迁移脚本**: `scripts/migrate-to-platform.ts`
+
+---
+
+### 下一步 📅
+
+#### Phase 1.2: 商家后台基础 (Week 3-4)
+
+**1. 认证和权限**
+- [ ] 更新用户注册流程，支持商家角色
+- [ ] 实现商家认证中间件
+- [ ] 创建权限检查工具函数
+
+**2. 商家后台页面**
+```bash
+/merchant
+  /dashboard        # 商家仪表盘
+  /profile          # 商家资料
+  /stores           # 店铺管理
+  /listings         # 套餐管理
+    /new            # 创建套餐
+    /[id]/edit      # 编辑套餐
+  /bookings         # 预约管理
+  /payouts          # 收益管理
+```
+
+**3. API 端点**
+```typescript
+// 商家管理
+POST   /api/merchant/register        // 商家入驻申请
+GET    /api/merchant/profile         // 获取商家信息
+PUT    /api/merchant/profile         // 更新商家信息
+
+// 套餐管理
+GET    /api/merchant/listings        // 获取商家套餐列表
+POST   /api/merchant/listings        // 创建套餐
+PUT    /api/merchant/listings/[id]   // 更新套餐
+DELETE /api/merchant/listings/[id]   // 删除套餐
+
+// 预约管理
+GET    /api/merchant/bookings        // 获取预约列表
+PUT    /api/merchant/bookings/[id]   // 更新预约状态
+
+// 收益管理
+GET    /api/merchant/payouts         // 获取分账记录
+GET    /api/merchant/analytics       // 数据统计
+```
+
+**4. 组件开发**
+- [ ] `MerchantNav` - 商家后台导航
+- [ ] `ListingForm` - 套餐创建/编辑表单
+- [ ] `BookingList` - 商家预约列表
+- [ ] `PayoutSummary` - 收益统计卡片
+- [ ] `MerchantStats` - 商家数据仪表盘
+
+#### Phase 2.1: 支付分账 (Week 5-6)
+
+**1. 支付逻辑更新**
+```typescript
+// 创建预约时自动计算分账
+const createBooking = async (data) => {
+  const merchant = await prisma.merchant.findUnique({
+    where: { id: data.merchantId }
+  });
+
+  const platformFee = Math.floor(data.totalAmount * merchant.commissionRate);
+  const merchantAmount = data.totalAmount - platformFee;
+
+  const booking = await prisma.booking.create({
+    data: {
+      ...data,
+      platformFee,
+      merchantAmount,
+    }
+  });
+
+  // 创建分账记录
+  await prisma.payout.create({
+    data: {
+      merchantId: data.merchantId,
+      bookingId: booking.id,
+      amount: merchantAmount,
+      platformFee,
+      status: 'PENDING',
+    }
+  });
+
+  return booking;
+};
+```
+
+**2. 分账定时任务**
+- [ ] 每日自动生成待支付的分账记录
+- [ ] 批量支付接口（对接银行API）
+- [ ] 支付失败重试机制
+
+**3. 商家收益页面**
+- [ ] 收益概览（总收益、待结算、已结算）
+- [ ] 分账明细列表
+- [ ] 提现申请功能
+
+#### Phase 2.2: 平台管理后台 (Week 7-8)
+
+**1. 管理后台页面**
+```bash
+/admin
+  /dashboard         # 平台数据总览
+  /merchants         # 商家管理
+    /pending         # 待审核商家
+    /approved        # 已通过商家
+  /listings          # 套餐审核
+    /pending         # 待审核套餐
+  /bookings          # 订单管理
+  /payouts           # 分账管理
+  /analytics         # 数据分析
+```
+
+**2. 审核流程**
+```typescript
+// 商家审核
+PUT /api/admin/merchants/[id]/approve
+PUT /api/admin/merchants/[id]/reject
+
+// 套餐审核
+PUT /api/admin/listings/[id]/approve
+PUT /api/admin/listings/[id]/reject
+```
+
+---
+
+### 使用方法
+
+#### 开发环境启动
+
+```bash
+# 1. 安装依赖
+pnpm install
+
+# 2. 数据库已迁移，直接启动
+pnpm dev
+
+# 3. 查看数据库
+npx prisma studio
+```
+
+#### 访问说明
+
+- **客户端**: http://localhost:3000
+- **商家后台**: http://localhost:3000/merchant（即将开发）
+- **管理后台**: http://localhost:3000/admin（即将开发）
+- **Prisma Studio**: http://localhost:5555
+
+#### 测试账号
+
+**默认商家**:
+- 商家名称: 江戸和装工房雅
+- 状态: APPROVED (已通过)
+- 佣金率: 0% (默认商家免佣金)
+- 关联店铺: 5个
+
+**下一步操作**:
+1. 在用户表中将某个用户角色改为 `MERCHANT`
+2. 创建商家后台登录页面
+3. 实现套餐发布功能
+
+---
+
+### 数据库变更记录
+
+**新增表**:
+- `merchants` - 商家信息
+- `listings` - 商家发布的套餐
+- `payouts` - 支付分账记录
+- `merchant_reviews` - 商家评价
+
+**修改表**:
+- `stores` - 添加 `merchantId` 字段（可选，向后兼容）
+- `bookings` - 添加 `merchantId`、`platformFee`、`merchantAmount` 字段
+- `users` - Role 枚举新增 `MERCHANT`
+
+**新增枚举**:
+- `MerchantStatus`: PENDING, APPROVED, REJECTED, SUSPENDED
+- `ListingStatus`: PENDING, APPROVED, REJECTED, SUSPENDED
+- `PayoutStatus`: PENDING, SCHEDULED, PROCESSING, COMPLETED, FAILED, CANCELLED
+
+---
+
+### 回滚方案
+
+如需回滚到单商家模式，执行以下步骤：
+
+```bash
+# 1. 备份数据
+pg_dump $DATABASE_URL > backup.sql
+
+# 2. 移除新表（谨慎操作）
+# 手动在数据库中删除 merchants, listings, payouts, merchant_reviews 表
+
+# 3. 还原 schema
+git checkout HEAD~1 prisma/schema.prisma
+npx prisma db push
+```
+
+⚠️ **警告**: 回滚会丢失所有平台模式相关的数据！
+
+---
+
+**最后更新**: 2025-10-21
+**状态**: 🚀 Phase 1.1 已完成，Phase 1.2 进行中
 **优先级**: 🔥 HIGH

@@ -35,6 +35,7 @@ model User {
   preference    UserPreference?
   referrer      User?           @relation("Referrals", fields: [referredBy], references: [id])
   referrals     User[]          @relation("Referrals")
+  merchant      Merchant?
 
   @@index([email])
   @@index([phone])
@@ -132,6 +133,36 @@ model KimonoImage {
   @@map("kimono_images")
 }
 
+model Merchant {
+  id             String           @id @default(cuid())
+  ownerId        String           @unique
+  businessName   String
+  legalName      String?
+  description    String?
+  logo           String?
+  status         MerchantStatus   @default(PENDING)
+  verified       Boolean          @default(false)
+  commissionRate Float            @default(0.15)
+  bankAccount    String?
+  taxId          String?
+  totalBookings  Int              @default(0)
+  totalRevenue   Int              @default(0)
+  rating         Float?
+  reviewCount    Int              @default(0)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  owner          User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  stores         Store[]
+  listings       Listing[]
+  bookings       Booking[]
+  reviews        MerchantReview[]
+  payouts        Payout[]
+
+  @@index([status])
+  @@index([verified])
+  @@map("merchants")
+}
+
 model Store {
   id           String        @id @default(cuid())
   slug         String        @unique
@@ -146,11 +177,15 @@ model Store {
   longitude    Float?
   openingHours Json?
   isActive     Boolean       @default(true)
+  merchantId   String?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
+  merchant     Merchant?     @relation(fields: [merchantId], references: [id])
   bookingItems BookingItem[]
   kimonos      KimonoStore[]
+  listings     Listing[]
 
+  @@index([merchantId])
   @@map("stores")
 }
 
@@ -215,6 +250,39 @@ model RentalPlan {
   @@map("rental_plans")
 }
 
+model Listing {
+  id             String        @id @default(cuid())
+  merchantId     String
+  storeId        String
+  name           String
+  nameEn         String?
+  description    String
+  category       PlanCategory
+  price          Int
+  originalPrice  Int?
+  depositAmount  Int           @default(0)
+  duration       Int
+  includes       String[]
+  imageUrl       String?
+  images         String[]      @default([])
+  status         ListingStatus @default(PENDING)
+  rejectionReason String?
+  isActive       Boolean       @default(true)
+  isFeatured     Boolean       @default(false)
+  viewCount      Int           @default(0)
+  bookingCount   Int           @default(0)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  merchant       Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  store          Store         @relation(fields: [storeId], references: [id])
+
+  @@index([merchantId])
+  @@index([storeId])
+  @@index([status])
+  @@index([category])
+  @@map("listings")
+}
+
 model Cart {
   id        String     @id @default(cuid())
   userId    String?    @unique
@@ -250,12 +318,15 @@ model CartItem {
 model Booking {
   id              String        @id @default(cuid())
   userId          String?
+  merchantId      String?
   guestName       String?
   guestEmail      String?
   guestPhone      String?
   totalAmount     Int
   depositAmount   Int
   paidAmount      Int           @default(0)
+  platformFee     Int           @default(0)
+  merchantAmount  Int           @default(0)
   paymentStatus   PaymentStatus @default(PENDING)
   paymentMethod   String?
   status          BookingStatus @default(PENDING)
@@ -266,8 +337,11 @@ model Booking {
   visitTime       String
   items           BookingItem[]
   user            User?         @relation(fields: [userId], references: [id])
+  merchant        Merchant?     @relation(fields: [merchantId], references: [id])
+  payout          Payout?
 
   @@index([userId])
+  @@index([merchantId])
   @@index([visitDate])
   @@index([status])
   @@map("bookings")
@@ -409,6 +483,7 @@ enum Role {
   USER
   ADMIN
   STAFF
+  MERCHANT
 }
 
 enum Language {
@@ -520,4 +595,68 @@ enum SocialPlatform {
   INSTAGRAM
   FACEBOOK
   WEIBO
+}
+
+model Payout {
+  id          String       @id @default(cuid())
+  merchantId  String
+  bookingId   String       @unique
+  amount      Int
+  platformFee Int
+  status      PayoutStatus @default(PENDING)
+  scheduledAt DateTime?
+  paidAt      DateTime?
+  method      String?
+  reference   String?
+  notes       String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  merchant    Merchant     @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  booking     Booking      @relation(fields: [bookingId], references: [id])
+
+  @@index([merchantId])
+  @@index([status])
+  @@index([scheduledAt])
+  @@map("payouts")
+}
+
+model MerchantReview {
+  id          String   @id @default(cuid())
+  merchantId  String
+  userId      String
+  bookingId   String?
+  rating      Int
+  comment     String?
+  response    String?
+  isPublic    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  merchant    Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@index([merchantId])
+  @@index([rating])
+  @@map("merchant_reviews")
+}
+
+enum MerchantStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum ListingStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum PayoutStatus {
+  PENDING
+  SCHEDULED
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
 }
