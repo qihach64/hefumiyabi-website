@@ -89,7 +89,7 @@ export default function HeroSearchBar() {
       {/* 移动端：堆叠式搜索框 */}
       <div className="md:hidden bg-white rounded-2xl shadow-xl p-4 space-y-3">
         {/* 目的地 */}
-        <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-xl">
+        <div className="flex items-center gap-3 p-4 border border-gray-200 rounded-xl active:border-sakura-500 transition-colors">
           <MapPin className="w-5 h-5 text-sakura-500 flex-shrink-0" />
           <div className="flex-1">
             <label className="block text-xs font-semibold text-gray-700 mb-1">
@@ -100,13 +100,13 @@ export default function HeroSearchBar() {
               placeholder="东京、京都..."
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              className="w-full text-sm text-gray-900 placeholder-gray-400 bg-transparent border-none outline-none"
+              className="w-full text-base text-gray-900 placeholder-gray-400 bg-transparent border-none outline-none"
             />
           </div>
         </div>
 
         {/* 日期 */}
-        <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-xl">
+        <div className="flex items-center gap-3 p-4 border border-gray-200 rounded-xl active:border-sakura-500 transition-colors">
           <Calendar className="w-5 h-5 text-sakura-500 flex-shrink-0" />
           <div className="flex-1">
             <label className="block text-xs font-semibold text-gray-700 mb-1">
@@ -116,13 +116,13 @@ export default function HeroSearchBar() {
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full text-sm text-gray-900 placeholder-gray-400 bg-transparent border-none outline-none"
+              className="w-full text-base text-gray-900 placeholder-gray-400 bg-transparent border-none outline-none"
             />
           </div>
         </div>
 
         {/* 人数 */}
-        <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-xl">
+        <div className="flex items-center gap-3 p-4 border border-gray-200 rounded-xl active:border-sakura-500 transition-colors">
           <Users className="w-5 h-5 text-sakura-500 flex-shrink-0" />
           <div className="flex-1">
             <label className="block text-xs font-semibold text-gray-700 mb-1">
@@ -134,17 +134,17 @@ export default function HeroSearchBar() {
               placeholder="几人"
               value={guests}
               onChange={(e) => setGuests(e.target.value)}
-              className="w-full text-sm text-gray-900 placeholder-gray-400 bg-transparent border-none outline-none"
+              className="w-full text-base text-gray-900 placeholder-gray-400 bg-transparent border-none outline-none"
             />
           </div>
         </div>
 
-        {/* 搜索按钮 */}
+        {/* 搜索按钮 - 增大触摸目标 */}
         <Button
           variant="primary"
           size="lg"
           onClick={handleSearch}
-          className="w-full flex items-center justify-center gap-2"
+          className="w-full flex items-center justify-center gap-2 py-4 text-base"
         >
           <Search className="w-5 h-5" />
           搜索和服体验

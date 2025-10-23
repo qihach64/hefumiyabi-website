@@ -45,7 +45,7 @@ export default async function PlanDetailPage({ params }: PlanDetailPageProps) {
 
   return (
     <div className="bg-gray-50 min-h-screen">
-      <div className="container py-8">
+      <div className="container py-8 pb-32 lg:pb-8">
         {/* 标题区域 */}
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-3">
