@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { Store, Users, Calendar, DollarSign, AlertCircle } from "lucide-react";
+import { Store, Users, Calendar, DollarSign, AlertCircle, Settings } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui";
 
