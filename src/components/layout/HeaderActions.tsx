@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Store, ArrowRight } from "lucide-react";
 import CartIcon from "../CartIcon";
+import { useState, useEffect } from "react";
 
 interface HeaderActionsProps {
   isLoggedIn: boolean;
@@ -16,7 +17,66 @@ interface HeaderActionsProps {
 
 export default function HeaderActions({ isLoggedIn, merchant }: HeaderActionsProps) {
   const pathname = usePathname();
+  const [isMounted, setIsMounted] = useState(false);
   const isMerchantPage = pathname?.startsWith("/merchant");
+
+  // 等待客户端挂载完成，避免 hydration 不匹配
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // 在挂载前渲染简化版本，避免 hydration 不匹配
+  if (!isMounted) {
+    return (
+      <div className="flex items-center gap-2 shrink-0">
+        {/* 商家按钮骨架 */}
+        {merchant && merchant.status === "APPROVED" && (
+          <Link
+            href="/merchant/dashboard"
+            className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-full text-sm font-medium transition-all bg-sakura-50 hover:bg-sakura-100 text-sakura-700 border border-sakura-200"
+          >
+            <Store className="w-4 h-4" />
+            <span className="hidden md:inline">商家中心</span>
+            <span className="md:hidden">商家</span>
+          </Link>
+        )}
+
+        {merchant && (merchant.status === "PENDING" || merchant.status === "REJECTED") && (
+          <Link
+            href="/merchant/pending"
+            className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-full text-sm font-medium transition-all bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200"
+          >
+            <Store className="w-4 h-4" />
+            <span className="hidden md:inline">
+              {merchant.status === "PENDING" ? "审核中" : "申请被拒"}
+            </span>
+            <span className="md:hidden">审核</span>
+          </Link>
+        )}
+
+        {!merchant && (
+          <Link
+            href="/merchant/register"
+            className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-full text-sm font-medium transition-all border-2 border-sakura-300 text-sakura-600 hover:bg-sakura-50"
+          >
+            <Store className="w-4 h-4" />
+            <span className="hidden md:inline">成为商家</span>
+            <span className="md:hidden">商家</span>
+          </Link>
+        )}
+
+        <CartIcon />
+
+        <Link
+          href="/plans"
+          className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background bg-primary text-primary-foreground hover:bg-primary/90 h-9 md:h-10 px-3 md:px-4 py-2"
+        >
+          <span className="hidden sm:inline">立即预约</span>
+          <span className="sm:hidden">预约</span>
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center gap-2 shrink-0">
