@@ -6,24 +6,24 @@ import { z } from "zod";
 // 验证 schema
 const createPlanSchema = z.object({
   name: z.string().min(1, "套餐名称不能为空"),
-  nameEn: z.string().optional(),
+  nameEn: z.string().optional().nullable().transform(val => val || ""),
   description: z.string().min(10, "描述至少需要10个字符"),
   category: z.enum(["LADIES", "MENS", "COUPLE", "FAMILY", "GROUP", "SPECIAL"]),
   price: z.number().int().positive("价格必须大于0"),
-  originalPrice: z.number().int().positive().optional(),
+  originalPrice: z.number().int().positive().optional().nullable(),
   depositAmount: z.number().int().nonnegative("押金不能为负数"),
   duration: z.number().int().positive("时长必须大于0"),
   includes: z.array(z.string()),
-  imageUrl: z.string().url().optional().or(z.literal("")),
-  storeName: z.string().optional(),
-  region: z.string().optional(),
+  imageUrl: z.union([z.string().url(), z.literal("")]).optional().nullable().transform(val => val || ""),
+  storeName: z.string().optional().nullable().transform(val => val || ""),
+  region: z.string().optional().nullable().transform(val => val || ""),
   tags: z.array(z.string()),
   isActive: z.boolean().default(true),
   isFeatured: z.boolean().default(false),
   isLimited: z.boolean().default(false),
-  maxBookings: z.number().int().positive().optional(),
-  availableFrom: z.string().datetime().optional().or(z.literal("")),
-  availableUntil: z.string().datetime().optional().or(z.literal("")),
+  maxBookings: z.number().int().positive().optional().nullable(),
+  availableFrom: z.union([z.string().datetime(), z.literal("")]).optional().nullable().transform(val => val || ""),
+  availableUntil: z.union([z.string().datetime(), z.literal("")]).optional().nullable().transform(val => val || ""),
 });
 
 // POST - 创建新套餐
@@ -91,8 +91,13 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     if (error instanceof z.ZodError) {
+      const errorMessages = error.errors.map(err => `${err.path.join('.')}: ${err.message}`).join('; ');
+      console.error("数据验证失败:", error.errors);
       return NextResponse.json(
-        { message: "数据验证失败", errors: error.errors },
+        {
+          message: `数据验证失败: ${errorMessages}`,
+          errors: error.errors
+        },
         { status: 400 }
       );
     }
