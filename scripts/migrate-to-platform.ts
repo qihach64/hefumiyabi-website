@@ -26,7 +26,7 @@ async function main() {
     console.log('   创建默认admin用户...');
     adminUser = await prisma.user.create({
       data: {
-        email: 'admin@hefumiyabi.com',
+        email: 'stylekay1168@gmail.com',
         name: '管理员',
         role: 'ADMIN',
         emailVerified: new Date(),
