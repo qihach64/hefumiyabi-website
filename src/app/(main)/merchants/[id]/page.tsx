@@ -39,13 +39,12 @@ export default async function MerchantPage({ params }: MerchantPageProps) {
           createdAt: "desc",
         },
         take: 6,
-        include: {
-          user: {
-            select: {
-              name: true,
-              avatar: true,
-            },
-          },
+        select: {
+          id: true,
+          rating: true,
+          comment: true,
+          createdAt: true,
+          userId: true,
         },
       },
     },
@@ -218,11 +217,11 @@ export default async function MerchantPage({ params }: MerchantPageProps) {
                     >
                       <div className="flex items-center gap-3 mb-4">
                         <div className="w-12 h-12 bg-gradient-to-br from-sakura-400 to-sakura-500 rounded-full flex items-center justify-center text-white font-bold">
-                          {review.user.name?.charAt(0) || "U"}
+                          用
                         </div>
                         <div>
                           <p className="font-semibold text-gray-900">
-                            {review.user.name || "匿名用户"}
+                            用户
                           </p>
                           <p className="text-sm text-gray-600">
                             {new Date(review.createdAt).toLocaleDateString("zh-CN")}
