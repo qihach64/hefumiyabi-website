@@ -5,7 +5,7 @@ import SocialPostCard from "@/components/SocialPostCard";
 import HeroSearchBar from "@/components/HeroSearchBar";
 import { Button } from "@/components/ui";
 import { SocialPlatform } from "@prisma/client";
-import { Sparkles, MapPin, Tag, Store } from "lucide-react";
+import { Sparkles, MapPin, Tag } from "lucide-react";
 
 export default async function HomePage() {
   // 获取精选的社交媒体帖子
@@ -169,100 +169,6 @@ export default async function HomePage() {
             <p className="text-sm text-gray-500">
               东京浅草 · 京都清水寺 · 专业商家 · 安全预订
             </p>
-          </div>
-        </div>
-      </section>
-
-      {/* 成为商家 CTA横幅 - Airbnb Hosting风格 */}
-      <section className="py-12 md:py-16 bg-white border-y border-gray-200">
-        <div className="container">
-          <div className="max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-              {/* 左侧：图片 */}
-              <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-gradient-to-br from-sakura-100 via-pink-50 to-rose-100">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center p-8">
-                    <div className="text-8xl mb-4">🏪</div>
-                    <p className="text-2xl font-bold text-sakura-700">
-                      分享您的和服之美
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* 右侧：文字 */}
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                    成为和服商家
-                  </h2>
-                  <p className="text-lg text-gray-600 leading-relaxed">
-                    加入我们的平台，让更多客户发现您的和服体验。
-                    我们提供专业的平台支持、营销推广和安全的交易保障。
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-sakura-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-sakura-600">✓</span>
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-900">免费入驻</p>
-                      <p className="text-sm text-gray-600">零门槛开启生意</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-sakura-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-sakura-600">✓</span>
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-900">流量曝光</p>
-                      <p className="text-sm text-gray-600">平台推广支持</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-sakura-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-sakura-600">✓</span>
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-900">安全交易</p>
-                      <p className="text-sm text-gray-600">7天内快速结算</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-sakura-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-sakura-600">✓</span>
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-900">专业工具</p>
-                      <p className="text-sm text-gray-600">数据分析后台</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <Link href="/merchant/register">
-                    <Button variant="primary" size="lg" fullWidth>
-                      <Store className="w-5 h-5 mr-2" />
-                      立即入驻
-                    </Button>
-                  </Link>
-                  <Link href="/about/merchants">
-                    <Button variant="secondary" size="lg" fullWidth>
-                      了解更多
-                    </Button>
-                  </Link>
-                </div>
-
-                <p className="text-sm text-gray-500">
-                  已有 <span className="font-semibold text-sakura-600">50+</span> 优质商家入驻平台
-                </p>
-              </div>
-            </div>
           </div>
         </div>
       </section>
