@@ -29,16 +29,19 @@ const updatePlanSchema = z.object({
 // GET - 获取单个套餐详情
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Await params (Next.js 15 requirement)
+    const { id } = await params;
+
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ message: "请先登录" }, { status: 401 });
     }
 
     const plan = await prisma.rentalPlan.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         campaign: {
           select: {
@@ -63,9 +66,12 @@ export async function GET(
 // PATCH - 更新套餐
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Await params (Next.js 15 requirement)
+    const { id } = await params;
+
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ message: "请先登录" }, { status: 401 });
@@ -88,7 +94,7 @@ export async function PATCH(
 
     // 更新套餐
     const updatedPlan = await prisma.rentalPlan.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         name: validatedData.name,
         nameEn: validatedData.nameEn || null,
@@ -122,7 +128,7 @@ export async function PATCH(
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const errorMessages = error.errors.map(err => `${err.path.join('.')}: ${err.message}`).join('; ');
+      const errorMessages = error.errors?.map(err => `${err.path.join('.')}: ${err.message}`).join('; ') || '验证失败';
       console.error("数据验证失败:", error.errors);
       return NextResponse.json(
         {
@@ -141,9 +147,12 @@ export async function PATCH(
 // DELETE - 删除套餐（软删除 - 设为不可用）
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Await params (Next.js 15 requirement)
+    const { id } = await params;
+
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ message: "请先登录" }, { status: 401 });
@@ -163,7 +172,7 @@ export async function DELETE(
 
     // 软删除 - 设为不可用
     await prisma.rentalPlan.update({
-      where: { id: params.id },
+      where: { id },
       data: { isActive: false },
     });
 

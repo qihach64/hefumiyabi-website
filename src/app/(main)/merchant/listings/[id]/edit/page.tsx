@@ -12,6 +12,9 @@ interface EditListingPageProps {
 }
 
 export default async function EditListingPage({ params }: EditListingPageProps) {
+  // Await params (Next.js 15 requirement)
+  const { id } = await params;
+
   // 验证登录
   const session = await auth();
   if (!session?.user?.id) {
@@ -29,7 +32,7 @@ export default async function EditListingPage({ params }: EditListingPageProps) 
 
   // 获取套餐信息
   const plan = await prisma.rentalPlan.findUnique({
-    where: { id: params.id },
+    where: { id },
   });
 
   if (!plan) {
