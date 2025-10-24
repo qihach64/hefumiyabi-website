@@ -54,6 +54,23 @@ export default function Footer() {
                 </Link>
               </li>
             </ul>
+
+            <h4 className="font-semibold mb-4 mt-6">合作伙伴</h4>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <Link
+                  href="/merchant/register"
+                  className="text-sakura-500 hover:text-sakura-600 font-medium flex items-center gap-1"
+                >
+                  🏪 成为商家
+                </Link>
+              </li>
+              <li>
+                <Link href="/about/merchants" className="text-muted-foreground hover:text-foreground">
+                  商家帮助中心
+                </Link>
+              </li>
+            </ul>
           </div>
 
           <div>

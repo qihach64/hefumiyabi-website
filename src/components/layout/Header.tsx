@@ -1,11 +1,25 @@
 import Link from "next/link";
 import Image from "next/image";
 import { auth } from "@/auth";
+import prisma from "@/lib/prisma";
 import UserMenu from "./UserMenu";
 import HeaderActions from "./HeaderActions";
 
 export default async function Header() {
   const session = await auth();
+
+  // 检查用户是否有商家账户
+  let merchant = null;
+  if (session?.user?.id) {
+    merchant = await prisma.merchant.findUnique({
+      where: { ownerId: session.user.id },
+      select: {
+        id: true,
+        status: true,
+        businessName: true,
+      },
+    });
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -62,7 +76,10 @@ export default async function Header() {
         {/* 右侧按钮区域 */}
         <div className="flex items-center gap-2 shrink-0">
           {/* 购物车和预约按钮 */}
-          <HeaderActions isLoggedIn={!!session?.user} />
+          <HeaderActions
+            isLoggedIn={!!session?.user}
+            merchant={merchant}
+          />
 
           {/* 用户菜单 / 登录按钮 */}
           {session?.user ? (
