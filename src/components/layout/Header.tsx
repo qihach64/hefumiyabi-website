@@ -35,7 +35,7 @@ export default async function Header() {
               priority
             />
           </div>
-          <span className="text-lg md:text-xl font-bold text-[#A1887F]">
+          <span className="text-lg md:text-xl font-bold text-sakura-600">
             和缘
           </span>
         </Link>
