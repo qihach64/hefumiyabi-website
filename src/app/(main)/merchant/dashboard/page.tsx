@@ -31,7 +31,13 @@ export default async function MerchantDashboardPage() {
         select: {
           id: true,
           name: true,
+          address: true,
           city: true,
+          phone: true,
+          isActive: true,
+        },
+        orderBy: {
+          createdAt: "asc",
         },
       },
       bookings: {
@@ -322,34 +328,63 @@ export default async function MerchantDashboardPage() {
 
             {/* 店铺列表 */}
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
-              <h2 className="text-lg font-bold text-gray-900 mb-4">我的店铺</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-gray-900">我的店铺</h2>
+                <Link href="/merchant/stores">
+                  <Button variant="secondary" size="sm">
+                    管理店铺
+                  </Button>
+                </Link>
+              </div>
               {merchant.stores.length > 0 ? (
                 <div className="space-y-3">
                   {merchant.stores.map((store) => (
-                    <Link
+                    <div
                       key={store.id}
-                      href={`/merchant/stores/${store.id}`}
-                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors group"
+                      className="p-4 border border-gray-200 rounded-xl hover:border-sakura-300 hover:bg-sakura-50/30 transition-all"
                     >
-                      <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                        <Store className="w-5 h-5 text-gray-600" />
+                      <div className="flex items-start gap-3">
+                        <div className="w-12 h-12 bg-sakura-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <Store className="w-6 h-6 text-sakura-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-semibold text-gray-900 truncate">
+                              {store.name}
+                            </h3>
+                            <Badge
+                              variant={store.isActive ? "success" : "secondary"}
+                              size="sm"
+                            >
+                              {store.isActive ? "营业中" : "已关闭"}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-gray-600 mb-2">
+                            📍 {store.address}
+                          </p>
+                          <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
+                            <span>🏙️ {store.city}</span>
+                            {store.phone && <span>📞 {store.phone}</span>}
+                          </div>
+                        </div>
+                        <Link href={`/stores/${store.id}`} target="_blank">
+                          <Button variant="ghost" size="sm">
+                            <ArrowRight className="w-4 h-4" />
+                          </Button>
+                        </Link>
                       </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-gray-900">{store.name}</p>
-                        <p className="text-xs text-gray-600">{store.city}</p>
-                      </div>
-                      <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-sakura-600 transition-colors" />
-                    </Link>
+                    </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-6">
-                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <AlertCircle className="w-6 h-6 text-gray-400" />
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Store className="w-8 h-8 text-gray-400" />
                   </div>
-                  <p className="text-sm text-gray-600 mb-3">还没有店铺</p>
+                  <p className="text-gray-600 mb-4">还没有添加店铺</p>
                   <Link href="/merchant/stores/new">
-                    <Button variant="primary" size="sm">
+                    <Button variant="primary" size="md">
+                      <Plus className="w-4 h-4 mr-2" />
                       添加店铺
                     </Button>
                   </Link>
