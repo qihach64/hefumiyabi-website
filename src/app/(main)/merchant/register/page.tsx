@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui";
 import { Store, Building2, FileText, CreditCard, Hash, Upload, CheckCircle } from "lucide-react";
 
 export default function MerchantRegisterPage() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
 
@@ -22,6 +24,31 @@ export default function MerchantRegisterPage() {
 
   // 表单验证错误
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // 检查登录状态
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      // 未登录，重定向到登录页面，并带上回调URL
+      router.push("/login?callbackUrl=/merchant/register");
+    }
+  }, [status, router]);
+
+  // 加载中显示
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sakura-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">加载中...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 未登录则不渲染内容（会被重定向）
+  if (!session) {
+    return null;
+  }
 
   // 处理输入变化
   const handleChange = (field: string, value: string) => {

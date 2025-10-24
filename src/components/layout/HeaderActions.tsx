@@ -60,8 +60,8 @@ export default function HeaderActions({ isLoggedIn, merchant }: HeaderActionsPro
         </Link>
       )}
 
-      {/* 成为商家入口 - 仅未注册商家的登录用户显示 */}
-      {isLoggedIn && !merchant && (
+      {/* 成为商家入口 - 未注册商家的用户显示（包括游客） */}
+      {!merchant && (
         <Link
           href="/merchant/register"
           className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-full text-sm font-medium transition-all border-2 border-sakura-300 text-sakura-600 hover:bg-sakura-50"
