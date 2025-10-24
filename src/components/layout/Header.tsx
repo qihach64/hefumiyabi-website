@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import UserMenu from "./UserMenu";
 import HeaderActions from "./HeaderActions";
+import NavLink from "./NavLink";
 
 export default async function Header() {
   const session = await auth();
@@ -21,12 +22,26 @@ export default async function Header() {
     });
   }
 
+  // 导航链接配置
+  const navLinks = [
+    { href: "/plans", label: "租赁套餐", mobileLabel: "套餐" },
+    {
+      href: "/virtual-tryon",
+      label: "AI 试穿",
+      mobileLabel: "AI试穿",
+      special: true
+    },
+    { href: "/stores", label: "店铺信息", mobileLabel: "店铺" },
+    { href: "/faq", label: "常见问题", mobileHidden: true },
+    { href: "/about", label: "关于我们", mobileHidden: true },
+  ];
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="w-full bg-white shadow-sm">
       <div className="container flex h-16 items-center justify-between gap-4">
         {/* Logo - 使用图片 */}
-        <Link href="/" className="flex items-center gap-3 shrink-0">
-          <div className="relative w-10 h-10 md:w-12 md:h-12">
+        <Link href="/" className="flex items-center gap-2 md:gap-3 shrink-0 group">
+          <div className="relative w-9 h-9 md:w-10 md:h-10 transition-transform group-hover:scale-105">
             <Image
               src="/logo.svg"
               alt="和缘"
@@ -35,41 +50,38 @@ export default async function Header() {
               priority
             />
           </div>
-          <span className="text-lg md:text-xl font-bold text-sakura-600">
+          <span className="text-base md:text-lg font-bold text-sakura-600 transition-colors group-hover:text-sakura-700">
             和缘
           </span>
         </Link>
 
-        {/* 导航 - 移动端隐藏部分链接 */}
-        <nav className="hidden md:flex items-center space-x-6 text-sm font-medium">
-          <Link href="/plans" className="transition-colors hover:text-foreground/80">
-            租赁套餐
-          </Link>
-          <Link href="/virtual-tryon" className="transition-colors hover:text-foreground/80 text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-rose-500 font-semibold">
-            AI 试穿 ✨
-          </Link>
-          <Link href="/stores" className="transition-colors hover:text-foreground/80">
-            店铺信息
-          </Link>
-          <Link href="/faq" className="transition-colors hover:text-foreground/80">
-            常见问题
-          </Link>
-          <Link href="/about" className="transition-colors hover:text-foreground/80">
-            关于我们
-          </Link>
+        {/* 导航 - 桌面端 */}
+        <nav className="hidden md:flex items-center space-x-1">
+          {navLinks.map((link) => (
+            <NavLink
+              key={link.href}
+              href={link.href}
+              special={link.special}
+            >
+              {link.label}
+            </NavLink>
+          ))}
         </nav>
 
-        {/* 移动端简化导航 */}
-        <nav className="flex md:hidden items-center space-x-3 text-sm font-medium">
-          <Link href="/plans" className="transition-colors hover:text-foreground/80">
-            套餐
-          </Link>
-          <Link href="/virtual-tryon" className="transition-colors hover:text-foreground/80 text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-rose-500 font-semibold">
-            AI试穿
-          </Link>
-          <Link href="/stores" className="transition-colors hover:text-foreground/80">
-            店铺
-          </Link>
+        {/* 导航 - 移动端 */}
+        <nav className="flex md:hidden items-center space-x-1">
+          {navLinks
+            .filter((link) => !link.mobileHidden)
+            .map((link) => (
+              <NavLink
+                key={link.href}
+                href={link.href}
+                special={link.special}
+                mobile
+              >
+                {link.mobileLabel || link.label}
+              </NavLink>
+            ))}
         </nav>
 
         {/* 右侧按钮区域 */}
