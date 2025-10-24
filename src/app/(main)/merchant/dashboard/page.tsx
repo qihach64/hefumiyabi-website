@@ -283,6 +283,20 @@ export default async function MerchantDashboardPage() {
               <h2 className="text-lg font-bold text-gray-900 mb-4">快捷操作</h2>
               <div className="space-y-3">
                 <Link
+                  href="/merchant/listings"
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-purple-50 transition-colors group"
+                >
+                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+                    <Package className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900">套餐管理</p>
+                    <p className="text-xs text-gray-600">查看和编辑所有套餐</p>
+                  </div>
+                  <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-purple-600 transition-colors" />
+                </Link>
+
+                <Link
                   href="/merchant/listings/new"
                   className="flex items-center gap-3 p-3 rounded-xl hover:bg-sakura-50 transition-colors group"
                 >
@@ -290,8 +304,8 @@ export default async function MerchantDashboardPage() {
                     <Plus className="w-5 h-5 text-sakura-600" />
                   </div>
                   <div className="flex-1">
-                    <p className="font-medium text-gray-900">发布套餐</p>
-                    <p className="text-xs text-gray-600">添加新的和服体验套餐</p>
+                    <p className="font-medium text-gray-900">发布新套餐</p>
+                    <p className="text-xs text-gray-600">添加和服体验套餐</p>
                   </div>
                   <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-sakura-600 transition-colors" />
                 </Link>
@@ -311,17 +325,18 @@ export default async function MerchantDashboardPage() {
                 </Link>
 
                 <Link
-                  href="/merchant/analytics"
-                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-green-50 transition-colors group"
+                  href={`/merchants/${merchant.id}`}
+                  target="_blank"
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-amber-50 transition-colors group"
                 >
-                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors">
-                    <TrendingUp className="w-5 h-5 text-green-600" />
+                  <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center group-hover:bg-amber-200 transition-colors">
+                    <Users className="w-5 h-5 text-amber-600" />
                   </div>
                   <div className="flex-1">
-                    <p className="font-medium text-gray-900">数据分析</p>
-                    <p className="text-xs text-gray-600">查看详细运营数据</p>
+                    <p className="font-medium text-gray-900">查看公开页面</p>
+                    <p className="text-xs text-gray-600">预览客户看到的页面</p>
                   </div>
-                  <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-green-600 transition-colors" />
+                  <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-amber-600 transition-colors" />
                 </Link>
               </div>
             </div>
