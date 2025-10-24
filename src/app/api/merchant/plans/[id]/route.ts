@@ -128,8 +128,26 @@ export async function PATCH(
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const errorMessages = error.errors?.map(err => `${err.path.join('.')}: ${err.message}`).join('; ') || '验证失败';
-      console.error("数据验证失败:", error.errors);
+      console.error("=== ZOD VALIDATION ERROR ===");
+      console.error("Full error object:", error);
+      console.error("Error.errors:", error.errors);
+      console.error("JSON stringify:", JSON.stringify(error.errors, null, 2));
+
+      // Build error messages with defensive checks
+      let errorMessages = '验证失败';
+      if (error.errors && Array.isArray(error.errors) && error.errors.length > 0) {
+        errorMessages = error.errors
+          .map(err => {
+            const path = (err.path || []).join('.');
+            const msg = err.message || '未知错误';
+            return `${path}: ${msg}`;
+          })
+          .filter(msg => msg)
+          .join('; ') || '验证失败';
+      }
+
+      console.error("Final error message:", errorMessages);
+
       return NextResponse.json(
         {
           message: `数据验证失败: ${errorMessages}`,

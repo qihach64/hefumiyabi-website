@@ -13,10 +13,27 @@ import {
   Plus,
   ArrowRight,
   AlertCircle,
+  User,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Button, Badge } from "@/components/ui";
 
-export default async function MerchantDashboardPage() {
+interface MerchantDashboardPageProps {
+  searchParams: {
+    page?: string;
+    status?: string;
+  };
+}
+
+const ITEMS_PER_PAGE = 10;
+
+export default async function MerchantDashboardPage({ searchParams }: MerchantDashboardPageProps) {
+  // Await searchParams (Next.js 15 requirement)
+  const params = await searchParams;
+  const page = parseInt(params.page || "1");
+  const statusFilter = params.status;
+
   // 验证登录
   const session = await auth();
   if (!session?.user?.id) {
@@ -40,19 +57,6 @@ export default async function MerchantDashboardPage() {
           createdAt: "asc",
         },
       },
-      bookings: {
-        select: {
-          id: true,
-          status: true,
-          paymentStatus: true,
-          totalAmount: true,
-          createdAt: true,
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-        take: 5,
-      },
     },
   });
 
@@ -65,33 +69,91 @@ export default async function MerchantDashboardPage() {
     redirect("/merchant/pending");
   }
 
+  // 构建订单查询条件
+  const where = {
+    merchantId: merchant.id,
+    ...(statusFilter && { status: statusFilter }),
+  };
+
+  // 获取订单总数
+  const totalBookings = await prisma.booking.count({ where });
+
+  // 获取分页订单
+  const bookings = await prisma.booking.findMany({
+    where,
+    include: {
+      user: {
+        select: {
+          name: true,
+          email: true,
+        },
+      },
+      items: {
+        include: {
+          plan: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+    skip: (page - 1) * ITEMS_PER_PAGE,
+    take: ITEMS_PER_PAGE,
+  });
+
+  const totalPages = Math.ceil(totalBookings / ITEMS_PER_PAGE);
+
+  // 状态统计
+  const statusCounts = await prisma.booking.groupBy({
+    by: ["status"],
+    where: { merchantId: merchant.id },
+    _count: true,
+  });
+
+  const statusStats = statusCounts.reduce(
+    (acc, { status, _count }) => {
+      acc[status] = _count;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
+
   // 计算统计数据
-  const totalBookings = merchant.totalBookings;
   const totalRevenue = merchant.totalRevenue;
   const avgRating = merchant.rating || 0;
   const reviewCount = merchant.reviewCount;
 
-  // 本月数据（模拟）
-  const thisMonthBookings = merchant.bookings.filter((b) => {
-    const bookingDate = new Date(b.createdAt);
-    const now = new Date();
-    return (
-      bookingDate.getMonth() === now.getMonth() &&
-      bookingDate.getFullYear() === now.getFullYear()
-    );
-  }).length;
+  // 本月数据
+  const now = new Date();
+  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  const thisMonthRevenue = merchant.bookings
-    .filter((b) => {
-      const bookingDate = new Date(b.createdAt);
-      const now = new Date();
-      return (
-        bookingDate.getMonth() === now.getMonth() &&
-        bookingDate.getFullYear() === now.getFullYear() &&
-        b.paymentStatus === "PAID"
-      );
-    })
-    .reduce((sum, b) => sum + b.totalAmount, 0);
+  const thisMonthBookings = await prisma.booking.count({
+    where: {
+      merchantId: merchant.id,
+      createdAt: {
+        gte: firstDayOfMonth,
+      },
+    },
+  });
+
+  const thisMonthRevenueData = await prisma.booking.aggregate({
+    where: {
+      merchantId: merchant.id,
+      createdAt: {
+        gte: firstDayOfMonth,
+      },
+      paymentStatus: "PAID",
+    },
+    _sum: {
+      totalAmount: true,
+    },
+  });
+
+  const thisMonthRevenue = thisMonthRevenueData._sum.totalAmount || 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -196,81 +258,199 @@ export default async function MerchantDashboardPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* 左侧：最近订单 */}
+          {/* 左侧：订单列表 */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-gray-900">最近订单</h2>
-                <Link href="/merchant/bookings">
-                  <Button variant="secondary" size="sm">
-                    查看全部
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
+                <h2 className="text-xl font-bold text-gray-900">订单管理</h2>
+                <span className="text-sm text-gray-600">
+                  共 {totalBookings} 个订单
+                </span>
+              </div>
+
+              {/* 状态筛选 */}
+              <div className="flex flex-wrap gap-2 mb-6">
+                <Link
+                  href="/merchant/dashboard"
+                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                    !statusFilter
+                      ? "bg-sakura-600 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  全部 ({merchant.totalBookings})
+                </Link>
+                <Link
+                  href="/merchant/dashboard?status=PENDING"
+                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                    statusFilter === "PENDING"
+                      ? "bg-amber-500 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  待确认 ({statusStats.PENDING || 0})
+                </Link>
+                <Link
+                  href="/merchant/dashboard?status=CONFIRMED"
+                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                    statusFilter === "CONFIRMED"
+                      ? "bg-blue-500 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  已确认 ({statusStats.CONFIRMED || 0})
+                </Link>
+                <Link
+                  href="/merchant/dashboard?status=COMPLETED"
+                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                    statusFilter === "COMPLETED"
+                      ? "bg-green-500 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  已完成 ({statusStats.COMPLETED || 0})
                 </Link>
               </div>
 
-              {merchant.bookings.length > 0 ? (
-                <div className="space-y-4">
-                  {merchant.bookings.map((booking) => (
-                    <div
-                      key={booking.id}
-                      className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <span className="font-semibold text-gray-900">
-                            订单 #{booking.id.slice(-8)}
-                          </span>
-                          <Badge
-                            variant={
-                              booking.paymentStatus === "PAID"
-                                ? "success"
-                                : "warning"
-                            }
-                            size="sm"
-                          >
-                            {booking.paymentStatus === "PAID" ? "已支付" : "待支付"}
-                          </Badge>
-                          <Badge
-                            variant={
-                              booking.status === "CONFIRMED"
-                                ? "success"
-                                : booking.status === "PENDING"
-                                ? "warning"
-                                : "secondary"
-                            }
-                            size="sm"
-                          >
-                            {booking.status === "CONFIRMED"
-                              ? "已确认"
-                              : booking.status === "PENDING"
-                              ? "待确认"
-                              : booking.status}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-gray-600">
-                          {new Date(booking.createdAt).toLocaleDateString("zh-CN")}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-lg font-bold text-gray-900">
-                          ¥{(booking.totalAmount / 100).toLocaleString()}
-                        </p>
-                      </div>
+              {bookings.length > 0 ? (
+                <>
+                  <div className="space-y-3 mb-6">
+                    {bookings.map((booking) => {
+                      const getStatusBadge = (status: string) => {
+                        const map: Record<string, { variant: any; label: string }> = {
+                          PENDING: { variant: "warning", label: "待确认" },
+                          CONFIRMED: { variant: "info", label: "已确认" },
+                          COMPLETED: { variant: "success", label: "已完成" },
+                          CANCELLED: { variant: "secondary", label: "已取消" },
+                        };
+                        return map[status] || { variant: "secondary", label: status };
+                      };
+
+                      const getPaymentBadge = (status: string) => {
+                        const map: Record<string, { variant: any; label: string }> = {
+                          PENDING: { variant: "warning", label: "待支付" },
+                          PAID: { variant: "success", label: "已支付" },
+                          REFUNDED: { variant: "secondary", label: "已退款" },
+                        };
+                        return map[status] || { variant: "secondary", label: status };
+                      };
+
+                      const statusBadge = getStatusBadge(booking.status);
+                      const paymentBadge = getPaymentBadge(booking.paymentStatus);
+
+                      return (
+                        <Link
+                          key={booking.id}
+                          href={`/merchant/bookings/${booking.id}`}
+                          className="block p-4 bg-gray-50 rounded-xl hover:bg-gray-100 hover:border-sakura-300 border border-transparent transition-all"
+                        >
+                          <div className="flex items-center justify-between gap-4">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="font-semibold text-gray-900">
+                                  #{booking.id.slice(-8)}
+                                </span>
+                                <Badge variant={statusBadge.variant} size="sm">
+                                  {statusBadge.label}
+                                </Badge>
+                                <Badge variant={paymentBadge.variant} size="sm">
+                                  {paymentBadge.label}
+                                </Badge>
+                              </div>
+
+                              <div className="flex items-center gap-4 text-sm text-gray-600">
+                                <div className="flex items-center gap-1">
+                                  <User className="w-3.5 h-3.5" />
+                                  <span className="truncate">
+                                    {booking.guestName || booking.user?.name || "未知"}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Calendar className="w-3.5 h-3.5" />
+                                  <span>
+                                    {booking.visitDate ? new Date(booking.visitDate).toLocaleDateString("zh-CN") : new Date(booking.createdAt).toLocaleDateString("zh-CN")}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {booking.items.length > 0 && (
+                                <div className="mt-2 flex flex-wrap gap-1">
+                                  {booking.items.slice(0, 2).map((item, idx) => (
+                                    <span
+                                      key={idx}
+                                      className="inline-block px-2 py-0.5 bg-white rounded text-xs text-gray-600"
+                                    >
+                                      {item.plan?.name} ×{item.quantity}
+                                    </span>
+                                  ))}
+                                  {booking.items.length > 2 && (
+                                    <span className="inline-block px-2 py-0.5 bg-white rounded text-xs text-gray-600">
+                                      +{booking.items.length - 2}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="text-right flex-shrink-0">
+                              <p className="text-lg font-bold text-gray-900">
+                                ¥{(booking.totalAmount / 100).toLocaleString()}
+                              </p>
+                            </div>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+
+                  {/* 分页 */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                      <Link
+                        href={`/merchant/dashboard?page=${Math.max(1, page - 1)}${statusFilter ? `&status=${statusFilter}` : ""}`}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all ${
+                          page > 1
+                            ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                            : "bg-gray-50 text-gray-400 cursor-not-allowed"
+                        }`}
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                        上一页
+                      </Link>
+
+                      <span className="text-sm text-gray-600">
+                        第 {page} / {totalPages} 页
+                      </span>
+
+                      <Link
+                        href={`/merchant/dashboard?page=${Math.min(totalPages, page + 1)}${statusFilter ? `&status=${statusFilter}` : ""}`}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all ${
+                          page < totalPages
+                            ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                            : "bg-gray-50 text-gray-400 cursor-not-allowed"
+                        }`}
+                      >
+                        下一页
+                        <ChevronRight className="w-4 h-4" />
+                      </Link>
                     </div>
-                  ))}
-                </div>
+                  )}
+                </>
               ) : (
                 <div className="text-center py-12">
                   <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Package className="w-8 h-8 text-gray-400" />
                   </div>
-                  <p className="text-gray-600 mb-4">暂无订单</p>
-                  <Link href="/merchant/listings/new">
-                    <Button variant="primary" size="md">
-                      发布套餐开始接单
-                    </Button>
-                  </Link>
+                  <p className="text-gray-600 mb-4">
+                    {statusFilter ? "暂无符合条件的订单" : "暂无订单"}
+                  </p>
+                  {!statusFilter && (
+                    <Link href="/merchant/listings/new">
+                      <Button variant="primary" size="md">
+                        发布套餐开始接单
+                      </Button>
+                    </Link>
+                  )}
                 </div>
               )}
             </div>

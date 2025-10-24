@@ -98,13 +98,17 @@ export default function PlanEditForm({ plan }: PlanEditFormProps) {
           price: Math.round(Number(formData.price) * 100), // 转换为分
           originalPrice: formData.originalPrice
             ? Math.round(Number(formData.originalPrice) * 100)
-            : undefined,
+            : null,
           depositAmount: Math.round(Number(formData.depositAmount) * 100),
           maxBookings: formData.maxBookings
             ? Number(formData.maxBookings)
-            : undefined,
-          availableFrom: formData.availableFrom || undefined,
-          availableUntil: formData.availableUntil || undefined,
+            : null,
+          availableFrom: formData.availableFrom
+            ? new Date(formData.availableFrom).toISOString()
+            : "",
+          availableUntil: formData.availableUntil
+            ? new Date(formData.availableUntil).toISOString()
+            : "",
         }),
       });
 
