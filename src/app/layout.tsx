@@ -10,12 +10,12 @@ const notoSansSC = Noto_Sans_SC({
 });
 
 export const metadata: Metadata = {
-  title: "江戸和装工房雅 - 专业和服租赁服务",
+  title: "和缘 - 专业和服租赁服务",
   description: "东京、京都专业和服租赁，体验传统日本文化，提供女士、男士、情侣和服套餐",
   keywords: ["和服租赁", "和服体验", "东京和服", "京都和服", "浅草和服", "传统服饰"],
   icons: {
-    icon: "/logo.png",
-    apple: "/logo.png",
+    icon: "/logo.svg",
+    apple: "/logo.svg",
   },
 };
 

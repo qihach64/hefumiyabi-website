@@ -26,18 +26,17 @@ export default async function Header() {
       <div className="container flex h-16 items-center justify-between gap-4">
         {/* Logo - 使用图片 */}
         <Link href="/" className="flex items-center gap-3 shrink-0">
-          <div className="relative w-10 h-10 md:w-12 md:h-12 bg-white rounded-full p-1">
+          <div className="relative w-10 h-10 md:w-12 md:h-12">
             <Image
-              src="/logo.png"
-              alt="江戸和装工房雅"
+              src="/logo.svg"
+              alt="和缘"
               fill
               className="object-contain"
               priority
             />
           </div>
-          <span className="text-lg md:text-xl font-bold">
-            <span className="hidden sm:inline">江戸和装工房雅</span>
-            <span className="sm:hidden">雅</span>
+          <span className="text-lg md:text-xl font-bold text-[#A1887F]">
+            和缘
           </span>
         </Link>
 
