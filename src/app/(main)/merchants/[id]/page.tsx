@@ -55,7 +55,8 @@ export default async function MerchantPage({ params }: MerchantPageProps) {
   }
 
   // 获取商家的套餐（通过店铺关联）
-  const plans = await prisma.rentalPlan.findMany({
+  // 先尝试查找匹配店铺名称的套餐
+  let plans = await prisma.rentalPlan.findMany({
     where: {
       storeName: {
         in: merchant.stores.map(s => s.name),
@@ -76,6 +77,29 @@ export default async function MerchantPage({ params }: MerchantPageProps) {
     ],
     take: 12,
   });
+
+  // 如果没有匹配的套餐，显示所有活跃套餐（临时方案）
+  if (plans.length === 0) {
+    plans = await prisma.rentalPlan.findMany({
+      where: {
+        isActive: true,
+      },
+      include: {
+        campaign: {
+          select: {
+            id: true,
+            title: true,
+          },
+        },
+      },
+      orderBy: [
+        { isCampaign: "desc" },
+        { isFeatured: "desc" },
+        { createdAt: "desc" },
+      ],
+      take: 12,
+    });
+  }
 
   // 计算加入时长
   const joinedDate = new Date(merchant.createdAt);
