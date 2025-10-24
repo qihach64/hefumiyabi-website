@@ -110,17 +110,17 @@ export default async function MerchantDashboardPage() {
             </div>
 
             <div className="flex flex-wrap gap-3">
-              <Button variant="primary" size="lg" asChild>
-                <Link href="/merchant/listings/new">
+              <Link href="/merchant/listings/new">
+                <Button variant="primary" size="lg">
                   <Plus className="w-5 h-5 mr-2" />
                   发布套餐
-                </Link>
-              </Button>
-              <Button variant="secondary" size="lg" asChild>
-                <Link href={`/merchants/${merchant.id}`}>
+                </Button>
+              </Link>
+              <Link href={`/merchants/${merchant.id}`}>
+                <Button variant="secondary" size="lg">
                   查看公开页面
-                </Link>
-              </Button>
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -195,12 +195,12 @@ export default async function MerchantDashboardPage() {
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-gray-900">最近订单</h2>
-                <Button variant="secondary" size="sm" asChild>
-                  <Link href="/merchant/bookings">
+                <Link href="/merchant/bookings">
+                  <Button variant="secondary" size="sm">
                     查看全部
                     <ArrowRight className="w-4 h-4 ml-2" />
-                  </Link>
-                </Button>
+                  </Button>
+                </Link>
               </div>
 
               {merchant.bookings.length > 0 ? (
@@ -260,11 +260,11 @@ export default async function MerchantDashboardPage() {
                     <Package className="w-8 h-8 text-gray-400" />
                   </div>
                   <p className="text-gray-600 mb-4">暂无订单</p>
-                  <Button variant="primary" size="md" asChild>
-                    <Link href="/merchant/listings/new">
+                  <Link href="/merchant/listings/new">
+                    <Button variant="primary" size="md">
                       发布套餐开始接单
-                    </Link>
-                  </Button>
+                    </Button>
+                  </Link>
                 </div>
               )}
             </div>
@@ -348,11 +348,11 @@ export default async function MerchantDashboardPage() {
                     <AlertCircle className="w-6 h-6 text-gray-400" />
                   </div>
                   <p className="text-sm text-gray-600 mb-3">还没有店铺</p>
-                  <Button variant="primary" size="sm" asChild>
-                    <Link href="/merchant/stores/new">
+                  <Link href="/merchant/stores/new">
+                    <Button variant="primary" size="sm">
                       添加店铺
-                    </Link>
-                  </Button>
+                    </Button>
+                  </Link>
                 </div>
               )}
             </div>

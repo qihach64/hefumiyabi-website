@@ -45,16 +45,16 @@ export default async function MerchantPendingPage() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button variant="primary" size="lg" asChild>
-              <Link href="/merchant/register">
+            <Link href="/merchant/register">
+              <Button variant="primary" size="lg" fullWidth>
                 重新申请
-              </Link>
-            </Button>
-            <Button variant="secondary" size="lg" asChild>
-              <Link href="mailto:merchant@hefumiyabi.com">
+              </Button>
+            </Link>
+            <a href="mailto:merchant@hefumiyabi.com">
+              <Button variant="secondary" size="lg" fullWidth>
                 联系客服
-              </Link>
-            </Button>
+              </Button>
+            </a>
           </div>
         </div>
       </div>
@@ -163,16 +163,16 @@ export default async function MerchantPendingPage() {
 
         {/* 操作按钮 */}
         <div className="flex flex-col sm:flex-row gap-4">
-          <Button variant="primary" size="lg" className="flex-1" asChild>
-            <Link href="/">
+          <Link href="/" className="flex-1">
+            <Button variant="primary" size="lg" fullWidth>
               返回首页
-            </Link>
-          </Button>
-          <Button variant="secondary" size="lg" className="flex-1" asChild>
-            <Link href="/profile">
+            </Button>
+          </Link>
+          <Link href="/profile" className="flex-1">
+            <Button variant="secondary" size="lg" fullWidth>
               查看个人中心
-            </Link>
-          </Button>
+            </Button>
+          </Link>
         </div>
 
         {/* 帮助链接 */}
