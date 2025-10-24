@@ -108,11 +108,20 @@ export default function PlanEditForm({ plan }: PlanEditFormProps) {
         }),
       });
 
-      const data = await response.json();
-
+      // Check response status first
       if (!response.ok) {
-        throw new Error(data.message || "更新失败");
+        // Try to parse error message from JSON response
+        try {
+          const data = await response.json();
+          throw new Error(data.message || `更新失败 (${response.status})`);
+        } catch (jsonError) {
+          // If JSON parsing fails, throw generic error
+          throw new Error(`更新失败 (${response.status})`);
+        }
       }
+
+      // Parse successful response
+      const data = await response.json();
 
       setSuccess(true);
       setTimeout(() => {

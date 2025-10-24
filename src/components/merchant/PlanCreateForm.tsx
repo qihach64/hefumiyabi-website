@@ -75,11 +75,20 @@ export default function PlanCreateForm() {
         }),
       });
 
-      const data = await response.json();
-
+      // Check response status first
       if (!response.ok) {
-        throw new Error(data.message || "创建失败");
+        // Try to parse error message from JSON response
+        try {
+          const data = await response.json();
+          throw new Error(data.message || `创建失败 (${response.status})`);
+        } catch (jsonError) {
+          // If JSON parsing fails, throw generic error
+          throw new Error(`创建失败 (${response.status})`);
+        }
       }
+
+      // Parse successful response
+      const data = await response.json();
 
       // 成功后跳转到套餐列表
       router.push("/merchant/listings");
