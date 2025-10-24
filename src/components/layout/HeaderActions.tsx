@@ -27,7 +27,7 @@ export default function HeaderActions({ isLoggedIn, merchant }: HeaderActionsPro
             // 在商家页面，显示"切换到客户模式"
             <Link
               href="/"
-              className="hidden sm:flex items-center gap-2 px-3 md:px-4 py-2 rounded-full text-sm font-medium transition-all hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
+              className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-full text-sm font-medium transition-all hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
             >
               <ArrowRight className="w-4 h-4 rotate-180" />
               <span className="hidden md:inline">客户模式</span>
@@ -36,7 +36,7 @@ export default function HeaderActions({ isLoggedIn, merchant }: HeaderActionsPro
             // 在客户页面，显示"切换到商家模式"
             <Link
               href="/merchant/dashboard"
-              className="hidden sm:flex items-center gap-2 px-3 md:px-4 py-2 rounded-full text-sm font-medium transition-all bg-sakura-50 hover:bg-sakura-100 text-sakura-700 border border-sakura-200"
+              className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-full text-sm font-medium transition-all bg-sakura-50 hover:bg-sakura-100 text-sakura-700 border border-sakura-200"
             >
               <Store className="w-4 h-4" />
               <span className="hidden md:inline">商家中心</span>
@@ -46,14 +46,29 @@ export default function HeaderActions({ isLoggedIn, merchant }: HeaderActionsPro
         </>
       )}
 
+      {/* 商家申请状态 - PENDING 或 REJECTED */}
+      {merchant && (merchant.status === "PENDING" || merchant.status === "REJECTED") && (
+        <Link
+          href="/merchant/pending"
+          className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-full text-sm font-medium transition-all bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200"
+        >
+          <Store className="w-4 h-4" />
+          <span className="hidden md:inline">
+            {merchant.status === "PENDING" ? "审核中" : "申请被拒"}
+          </span>
+          <span className="md:hidden">审核</span>
+        </Link>
+      )}
+
       {/* 成为商家入口 - 仅未注册商家的登录用户显示 */}
       {isLoggedIn && !merchant && (
         <Link
           href="/merchant/register"
-          className="hidden sm:flex items-center gap-2 px-3 md:px-4 py-2 rounded-full text-sm font-medium transition-all border-2 border-sakura-300 text-sakura-600 hover:bg-sakura-50"
+          className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-full text-sm font-medium transition-all border-2 border-sakura-300 text-sakura-600 hover:bg-sakura-50"
         >
           <Store className="w-4 h-4" />
           <span className="hidden md:inline">成为商家</span>
+          <span className="md:hidden">商家</span>
         </Link>
       )}
 
