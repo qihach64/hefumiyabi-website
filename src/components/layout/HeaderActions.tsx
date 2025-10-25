@@ -139,7 +139,7 @@ export default function HeaderActions({ isLoggedIn, merchant }: HeaderActionsPro
       {!isMerchantPage && (
         <Link
           href="/plans"
-          className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background bg-primary text-primary-foreground hover:bg-primary/90 h-9 md:h-10 px-3 md:px-4 py-2"
+          className="inline-flex items-center justify-center rounded-lg text-sm font-medium transition-colors bg-sakura-600 text-white hover:bg-sakura-700 active:scale-95 h-9 md:h-10 px-3 md:px-4 shadow-sm"
         >
           <span className="hidden sm:inline">立即预约</span>
           <span className="sm:hidden">预约</span>
