@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
 import { Upload, Sparkles, Download, Share2, RotateCcw, Check } from "lucide-react";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
@@ -27,7 +27,8 @@ const steps: Step[] = [
   { id: 4, title: "查看效果", description: "预览试穿效果" },
 ];
 
-export default function VirtualTryOnPage() {
+// 内容组件：包含 useSearchParams 的逻辑
+function VirtualTryOnContent() {
   const searchParams = useSearchParams();
   const [currentStep, setCurrentStep] = useState(1);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -570,5 +571,20 @@ export default function VirtualTryOnPage() {
         </div>
       </section>
     </div>
+  );
+}
+
+// 主组件：用 Suspense 包裹
+export default function VirtualTryOnPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-rose-50 via-pink-50 to-orange-50">
+          <Sparkles className="w-12 h-12 text-rose-600 animate-pulse" />
+        </div>
+      }
+    >
+      <VirtualTryOnContent />
+    </Suspense>
   );
 }
