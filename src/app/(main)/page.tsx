@@ -4,6 +4,9 @@ import HeroSearchBar from "@/components/HeroSearchBar";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 
+// 禁用静态生成，在运行时动态渲染（主页需要实时套餐数据）
+export const dynamic = 'force-dynamic';
+
 // 分类配置
 const categories = [
   { id: "LADIES", icon: "👩", label: "女士和服", description: "优雅传统的女士和服体验" },
