@@ -1,5 +1,8 @@
 import { prisma } from "@/lib/db";
 
+// 禁用静态生成，在运行时动态渲染（避免构建时连接数据库）
+export const dynamic = 'force-dynamic';
+
 async function getAnalyticsData() {
   // 基础指标
   const totalUsers = await prisma.user.count();

@@ -1,6 +1,9 @@
 import prisma from "@/lib/prisma";
 import MerchantReviewList from "./MerchantReviewList";
 
+// 禁用静态生成，在运行时动态渲染（避免构建时连接数据库）
+export const dynamic = 'force-dynamic';
+
 export default async function AdminMerchantsPage() {
   // 获取所有商家
   const merchants = await prisma.merchant.findMany({

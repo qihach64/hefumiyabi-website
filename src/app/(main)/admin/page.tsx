@@ -3,6 +3,9 @@ import { Store, Users, Calendar, DollarSign, AlertCircle, Settings } from "lucid
 import Link from "next/link";
 import { Button } from "@/components/ui";
 
+// 禁用静态生成，在运行时动态渲染（避免构建时连接数据库）
+export const dynamic = 'force-dynamic';
+
 export default async function AdminDashboardPage() {
   // 获取统计数据
   const [
