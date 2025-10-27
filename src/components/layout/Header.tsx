@@ -55,14 +55,14 @@ export default async function Header() {
               <div className="relative w-8 h-8 md:w-10 md:h-10 transition-transform group-hover:scale-105">
                 <Image
                   src="/logo.svg"
-                  alt="和缘"
+                  alt="Kimono One"
                   fill
                   className="object-contain"
                   priority
                 />
               </div>
               <span className="text-base md:text-lg font-bold text-sakura-600 transition-colors group-hover:text-sakura-700">
-                和缘
+                Kimono One
               </span>
             </Link>
           </div>
