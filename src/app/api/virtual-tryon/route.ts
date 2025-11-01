@@ -16,57 +16,15 @@ const DAILY_FREE_LIMIT = 3;
 const REGISTERED_USER_LIMIT = 8;
 const CACHE_TTL = 60 * 60 * 24 * 30; // 30天
 
-// 检查用户额度
+// 检查用户额度 - 临时禁用数据库检查
 async function checkUserQuota(userId: string | null, sessionId: string): Promise<{
   allowed: boolean;
   remaining: number;
   message?: string;
 }> {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  // 检查用户是否有活跃预约（有预约的用户无限制）
-  if (userId) {
-    const activeBooking = await prisma.booking.findFirst({
-      where: {
-        userId,
-        status: { in: ['PENDING', 'CONFIRMED'] },
-      },
-    });
-
-    if (activeBooking) {
-      return { allowed: true, remaining: -1 }; // -1 表示无限
-    }
-  }
-
-  // 检查今日使用次数
-  const todayUsage = await prisma.virtualTryOn.count({
-    where: {
-      OR: [
-        { userId: userId || undefined },
-        { sessionId },
-      ],
-      createdAt: {
-        gte: today,
-      },
-      status: 'COMPLETED',
-    },
-  });
-
-  const limit = userId ? REGISTERED_USER_LIMIT : DAILY_FREE_LIMIT;
-  const remaining = Math.max(0, limit - todayUsage);
-
-  if (todayUsage >= limit) {
-    return {
-      allowed: false,
-      remaining: 0,
-      message: userId
-        ? '今日免费次数已用完，预约后可无限使用！'
-        : '今日免费次数已用完，注册可获得更多次数',
-    };
-  }
-
-  return { allowed: true, remaining };
+  // TODO: 暂时跳过数据库检查，直接允许所有请求
+  console.log('⚠️ Quota check bypassed - allowing all requests');
+  return { allowed: true, remaining: -1 }; // -1 表示无限
 }
 
 // 上传图片到临时存储（实际项目中应该上传到 R2/S3）
@@ -96,69 +54,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 检查额度
+    // 检查额度 - 已禁用
     const quota = await checkUserQuota(userId, sessionId);
-    if (!quota.allowed) {
-      return NextResponse.json(
-        {
-          error: 'quota_exceeded',
-          message: quota.message,
-          suggestedAction: userId ? 'booking' : 'register'
-        },
-        { status: 429 }
-      );
-    }
+    // quota 检查已在函数内部跳过
 
-    // 创建试穿记录
-    const tryOn = await prisma.virtualTryOn.create({
-      data: {
-        userId,
-        sessionId,
-        planId,
-        kimonoId,
-        personImageUrl: 'processing', // 临时占位
-        provider: 'nano-banana',
-        status: 'PROCESSING' as TryOnStatus,
-      },
-    });
-
-    // 检查缓存
-    if (planId || kimonoId) {
-      const cacheKey = `${planId || kimonoId}-${personImageBase64.substring(0, 100)}`;
-      const cached = await prisma.virtualTryOn.findFirst({
-        where: {
-          metadata: {
-            path: ['cacheKey'],
-            equals: cacheKey,
-          },
-          status: 'COMPLETED' as TryOnStatus,
-          createdAt: {
-            gte: new Date(Date.now() - CACHE_TTL * 1000),
-          },
-        },
-        orderBy: { createdAt: 'desc' },
-      });
-
-      if (cached && cached.resultImageUrl) {
-        await prisma.virtualTryOn.update({
-          where: { id: tryOn.id },
-          data: {
-            resultImageUrl: cached.resultImageUrl,
-            status: 'COMPLETED' as TryOnStatus,
-            fromCache: true,
-            duration: 0,
-          },
-        });
-
-        return NextResponse.json({
-          success: true,
-          id: tryOn.id,
-          imageUrl: cached.resultImageUrl,
-          fromCache: true,
-          remainingQuota: quota.remaining - 1,
-        });
-      }
-    }
+    // TODO: 临时跳过数据库记录创建和缓存检查
+    console.log('⚠️ Skipping database operations for virtualTryOn');
 
     // 获取和服图片URL
     let kimonoImageUrlToUse = kimonoImageUrl;
@@ -181,14 +82,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (!kimonoImageUrlToUse) {
-      await prisma.virtualTryOn.update({
-        where: { id: tryOn.id },
-        data: {
-          status: 'FAILED' as TryOnStatus,
-          errorMessage: '未找到和服图片',
-        },
-      });
-
+      console.error('❌ Kimono image not found');
       return NextResponse.json(
         { error: 'kimono_not_found', message: '未找到和服信息' },
         { status: 404 }
@@ -210,7 +104,7 @@ REQUIREMENTS:
    - Lower body: kimono bottom/hakama extending to ankles
    - Obi (belt) positioned correctly at waist level
    - Sleeves should show the hands naturally
-6. Preserve the person's face, body proportions, and background exactly as they are
+6. Preserve the image1's person's face, body proportions, and background exactly as they are
 7. Adjust the pose if needed to ensure front-facing orientation with visible hands
 8. Make the kimono drape naturally with realistic fabric folds and movement
 9. Accurately transfer the kimono's colors, patterns, and textures from the reference image
@@ -297,29 +191,15 @@ The output must be a complete full-body photograph showing this person FACING FO
       const resultBuffer = Buffer.from(imageBytes, 'base64');
       const resultUrl = await uploadImage(resultBuffer, 'image/png');
 
-      // 更新记录
-      await prisma.virtualTryOn.update({
-        where: { id: tryOn.id },
-        data: {
-          personImageUrl: personImageBase64.substring(0, 500), // 存储部分用于去重
-          resultImageUrl: resultUrl,
-          status: 'COMPLETED' as TryOnStatus,
-          duration,
-          cost: 0.00, // Gemini 2.5 Flash Image - 免费
-          metadata: {
-            cacheKey: `${planId || kimonoId || 'custom'}-${personImageBase64.substring(0, 100)}`,
-            prompt: prompt.substring(0, 500),
-            kimonoSource: kimonoImageUrlToUse.startsWith('data:') ? 'upload' : 'plan',
-          },
-        },
-      });
+      // TODO: 跳过数据库更新记录
+      console.log('✅ Image generated successfully, skipping database update');
 
       const response = NextResponse.json({
         success: true,
-        id: tryOn.id,
+        id: 'temp-' + Date.now(), // 临时 ID
         imageUrl: resultUrl,
         duration,
-        remainingQuota: quota.remaining - 1,
+        remainingQuota: -1, // 无限制
         quality: 'premium',
       });
 
@@ -336,13 +216,8 @@ The output must be a complete full-body photograph showing this person FACING FO
     } catch (aiError: any) {
       console.error('Gemini AI error:', aiError);
 
-      await prisma.virtualTryOn.update({
-        where: { id: tryOn.id },
-        data: {
-          status: 'FAILED' as TryOnStatus,
-          errorMessage: aiError.message,
-        },
-      });
+      // TODO: 跳过数据库错误记录
+      console.log('⚠️ AI error occurred, skipping database error logging');
 
       // AI API 错误处理
       if (aiError.message?.includes('quota') || aiError.message?.includes('rate limit')) {
@@ -373,61 +248,70 @@ The output must be a complete full-body photograph showing this person FACING FO
   }
 }
 
-// GET 方法：查询试穿历史
+// GET 方法：查询试穿历史 - 暂时禁用
 export async function GET(req: NextRequest) {
-  try {
-    const session = await auth();
-    const userId = session?.user?.id;
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'unauthorized', message: '请先登录' },
-        { status: 401 }
-      );
-    }
-
-    const searchParams = req.nextUrl.searchParams;
-    const limit = parseInt(searchParams.get('limit') || '10');
-    const offset = parseInt(searchParams.get('offset') || '0');
-
-    const [tryOns, total] = await Promise.all([
-      prisma.virtualTryOn.findMany({
-        where: {
-          userId,
-          status: 'COMPLETED' as TryOnStatus,
-        },
-        orderBy: { createdAt: 'desc' },
-        take: limit,
-        skip: offset,
-        select: {
-          id: true,
-          resultImageUrl: true,
-          createdAt: true,
-          fromCache: true,
-          duration: true,
-        },
-      }),
-      prisma.virtualTryOn.count({
-        where: {
-          userId,
-          status: 'COMPLETED' as TryOnStatus,
-        },
-      }),
-    ]);
-
-    return NextResponse.json({
-      success: true,
-      data: tryOns,
-      total,
-      limit,
-      offset,
-    });
-
-  } catch (error: any) {
-    console.error('Get try-on history error:', error);
-    return NextResponse.json({
-      error: 'internal_error',
-      message: '获取历史记录失败',
-    }, { status: 500 });
-  }
+  console.log('⚠️ GET endpoint temporarily disabled - virtualTryOn table not available');
+  return NextResponse.json({
+    error: 'not_implemented',
+    message: '历史记录功能暂时不可用',
+  }, { status: 501 });
 }
+
+// TODO: 恢复历史记录功能
+// export async function GET(req: NextRequest) {
+//   try {
+//     const session = await auth();
+//     const userId = session?.user?.id;
+//
+//     if (!userId) {
+//       return NextResponse.json(
+//         { error: 'unauthorized', message: '请先登录' },
+//         { status: 401 }
+//       );
+//     }
+//
+//     const searchParams = req.nextUrl.searchParams;
+//     const limit = parseInt(searchParams.get('limit') || '10');
+//     const offset = parseInt(searchParams.get('offset') || '0');
+//
+//     const [tryOns, total] = await Promise.all([
+//       prisma.virtualTryOn.findMany({
+//         where: {
+//           userId,
+//           status: 'COMPLETED' as TryOnStatus,
+//         },
+//         orderBy: { createdAt: 'desc' },
+//         take: limit,
+//         skip: offset,
+//         select: {
+//           id: true,
+//           resultImageUrl: true,
+//           createdAt: true,
+//           fromCache: true,
+//           duration: true,
+//         },
+//       }),
+//       prisma.virtualTryOn.count({
+//         where: {
+//           userId,
+//           status: 'COMPLETED' as TryOnStatus,
+//         },
+//       }),
+//     ]);
+//
+//     return NextResponse.json({
+//       success: true,
+//       data: tryOns,
+//       total,
+//       limit,
+//       offset,
+//     });
+//
+//   } catch (error: any) {
+//     console.error('Get try-on history error:', error);
+//     return NextResponse.json({
+//       error: 'internal_error',
+//       message: '获取历史记录失败',
+//     }, { status: 500 });
+//   }
+// }
