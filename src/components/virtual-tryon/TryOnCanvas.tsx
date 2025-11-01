@@ -1,8 +1,14 @@
 'use client';
 
 import { useRef } from 'react';
-import { Upload, Sparkles, AlertCircle } from 'lucide-react';
+import { Upload, Download, Share2, RotateCcw, AlertCircle } from 'lucide-react';
 import Image from 'next/image';
+
+interface GeneratedResult {
+  kimono: { id: string; name: string; imageUrl: string };
+  resultImage: string;
+  timestamp: Date;
+}
 
 interface TryOnCanvasProps {
   userPhoto: string | null;
@@ -10,8 +16,11 @@ interface TryOnCanvasProps {
   isGenerating: boolean;
   error: string | null;
   onPhotoUpload: (dataUrl: string) => void;
-  onGenerate: () => void;
-  canGenerate: boolean;
+  onReset: () => void;
+  onPhotoChange: () => void; // 更换照片时清除结果
+  generatedResults: GeneratedResult[];
+  activeResultIndex: number;
+  onResultChange: (index: number) => void;
 }
 
 export default function TryOnCanvas({
@@ -20,8 +29,11 @@ export default function TryOnCanvas({
   isGenerating,
   error,
   onPhotoUpload,
-  onGenerate,
-  canGenerate,
+  onReset,
+  onPhotoChange,
+  generatedResults,
+  activeResultIndex,
+  onResultChange,
 }: TryOnCanvasProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -38,67 +50,91 @@ export default function TryOnCanvas({
     reader.onload = (event) => {
       const dataUrl = event.target?.result as string;
       onPhotoUpload(dataUrl);
+      // 更换照片后清除之前的结果
+      if (resultImage) {
+        onPhotoChange();
+      }
     };
     reader.readAsDataURL(file);
   };
 
+  const handleDownload = () => {
+    if (!resultImage) return;
+    const link = document.createElement('a');
+    link.href = resultImage;
+    link.download = `kimono-tryon-${Date.now()}.png`;
+    link.click();
+  };
+
+  const handleShare = async () => {
+    if (!resultImage) return;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'AI 和服试穿效果',
+          text: '看看我穿和服的效果！',
+          url: window.location.href,
+        });
+      } catch (err) {
+        console.log('分享取消或失败', err);
+      }
+    } else {
+      // 复制链接
+      navigator.clipboard.writeText(window.location.href);
+      alert('链接已复制到剪贴板');
+    }
+  };
+
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">
-          试穿效果
-        </h2>
-        {userPhoto && (
-          <button
-            onClick={() => {
-              onPhotoUpload(null as any);
-              if (fileInputRef.current) {
-                fileInputRef.current.value = '';
-              }
-            }}
-            className="text-sm text-gray-600 hover:text-gray-900 underline transition-colors"
-          >
-            更换照片
-          </button>
-        )}
-      </div>
+      <h2 className="text-lg font-semibold text-gray-900">上传照片</h2>
 
       {/* Upload or Display */}
       {!userPhoto ? (
-        <div
-          onClick={() => fileInputRef.current?.click()}
-          className="border-2 border-dashed border-gray-300 rounded-xl p-8 md:p-12 text-center hover:border-gray-400 transition-colors cursor-pointer bg-gray-50"
-        >
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            className="hidden"
-          />
-          <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
-            <Upload className="h-8 w-8 text-gray-400" />
-          </div>
-          <h3 className="text-base font-semibold text-gray-900 mb-2">
-            上传您的照片
-          </h3>
-          <p className="text-sm text-gray-600 mb-4">
-            建议使用全身照，站立姿势，清晰背景
-          </p>
-          <div className="inline-flex px-6 py-2.5 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-900 hover:bg-gray-50 transition-colors">
-            选择照片
+        <div>
+          <div
+            onClick={() => fileInputRef.current?.click()}
+            className="border-2 border-dashed border-gray-300 rounded-xl p-12 text-center hover:border-sakura-400 transition-colors cursor-pointer bg-white"
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+            <div className="w-16 h-16 bg-sakura-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Upload className="h-8 w-8 text-sakura-600" />
+            </div>
+            <h3 className="text-base font-semibold text-gray-900 mb-2">
+              点击上传照片
+            </h3>
+            <p className="text-xs text-gray-500">
+              全身照 · 正面 · 简单背景
+            </p>
           </div>
         </div>
       ) : (
         <>
           {/* Comparison View */}
-          <div className="grid grid-cols-2 gap-3 md:gap-4">
+          <div className="grid grid-cols-2 gap-4">
             {/* User Photo */}
             <div className="space-y-2">
-              <p className="text-xs font-medium text-gray-700">
-                您的照片
-              </p>
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-medium text-gray-600">原图</p>
+                {userPhoto && (
+                  <button
+                    onClick={() => {
+                      fileInputRef.current?.click();
+                    }}
+                    className="text-xs text-sakura-600 hover:text-sakura-700 font-medium flex items-center gap-1"
+                  >
+                    <Upload className="h-3 w-3" />
+                    更换
+                  </button>
+                )}
+              </div>
               <div className="relative aspect-[3/4] rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
                 <Image
                   src={userPhoto}
@@ -106,24 +142,25 @@ export default function TryOnCanvas({
                   fill
                   className="object-cover"
                 />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
               </div>
             </div>
 
             {/* Result */}
             <div className="space-y-2">
-              <p className="text-xs font-medium text-sakura-600">
-                试穿效果
-              </p>
-              <div className="relative aspect-[3/4] rounded-xl overflow-hidden border border-sakura-200 bg-gray-50">
+              <p className="text-xs font-medium text-sakura-600">试穿效果</p>
+              <div className="relative aspect-[3/4] rounded-xl overflow-hidden border-2 border-sakura-400 bg-gray-50">
                 {isGenerating ? (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-sakura-50">
-                    <div className="w-12 h-12 border-4 border-sakura-200 border-t-sakura-600 rounded-full animate-spin mb-3"></div>
-                    <p className="text-sm text-gray-700 font-medium">
-                      AI 生成中...
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      约需 15-20 秒
-                    </p>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-white">
+                    <div className="w-12 h-12 border-4 border-gray-200 border-t-sakura-600 rounded-full animate-spin mb-3"></div>
+                    <p className="text-sm text-gray-700 font-medium">生成中</p>
+                    <p className="text-xs text-gray-400 mt-1">约 15-20 秒</p>
                   </div>
                 ) : resultImage ? (
                   <Image
@@ -133,9 +170,8 @@ export default function TryOnCanvas({
                     className="object-cover"
                   />
                 ) : (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400">
-                    <Sparkles className="h-12 w-12 mb-2" />
-                    <p className="text-xs">等待生成</p>
+                  <div className="absolute inset-0 flex items-center justify-center text-gray-300">
+                    <p className="text-sm">选择和服后生成</p>
                   </div>
                 )}
               </div>
@@ -153,58 +189,94 @@ export default function TryOnCanvas({
             </div>
           )}
 
-          {/* Generate Button */}
-          <button
-            onClick={onGenerate}
-            disabled={!canGenerate}
-            className={`
-              w-full py-3.5 rounded-xl font-semibold text-base
-              transition-all duration-200
-              ${canGenerate
-                ? 'bg-sakura-600 text-white hover:bg-sakura-700 active:scale-98 shadow-md hover:shadow-lg'
-                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-              }
-            `}
-          >
-            {isGenerating ? (
-              <span className="flex items-center justify-center gap-2">
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>生成中...</span>
-              </span>
-            ) : (
-              <span className="flex items-center justify-center gap-2">
-                <Sparkles className="h-5 w-5" />
-                <span>生成试穿效果</span>
-              </span>
-            )}
-          </button>
+          {/* Results Switcher - 和服对比切换 */}
+          {generatedResults.length > 1 && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-gray-900">试穿对比 ({generatedResults.length} 个和服)</p>
+                <p className="text-xs text-gray-500">点击切换</p>
+              </div>
+              <div className="flex gap-3 overflow-x-auto pb-2">
+                {generatedResults.map((result, index) => (
+                  <button
+                    key={index}
+                    onClick={() => onResultChange(index)}
+                    className={`
+                      flex-shrink-0 space-y-1.5 transition-all
+                    `}
+                  >
+                    <div className={`
+                      relative w-20 h-24 rounded-lg overflow-hidden border-2 transition-all
+                      ${activeResultIndex === index
+                        ? 'border-sakura-600 ring-4 ring-sakura-200 shadow-lg scale-105'
+                        : 'border-gray-200 hover:border-sakura-300 hover:shadow-md'
+                      }
+                    `}>
+                      <Image
+                        src={result.kimono.imageUrl}
+                        alt={result.kimono.name}
+                        fill
+                        className="object-cover"
+                      />
+                      {activeResultIndex === index && (
+                        <div className="absolute inset-0 bg-sakura-600/10"></div>
+                      )}
+                    </div>
+                    <p className={`
+                      text-xs font-medium text-center truncate w-20
+                      ${activeResultIndex === index
+                        ? 'text-sakura-600'
+                        : 'text-gray-600'
+                      }
+                    `}>
+                      {result.kimono.name}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          {resultImage && (
+            <div className="space-y-2">
+              {/* 更换照片 - 主要操作 */}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full py-3 bg-white border-2 border-sakura-600 rounded-lg text-sm font-semibold text-sakura-600 hover:bg-sakura-50 transition-all flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
+              >
+                <Upload className="h-5 w-5" />
+                更换照片重新试穿
+              </button>
+
+              {/* 次要操作 */}
+              <div className="flex gap-2">
+                <button
+                  onClick={handleDownload}
+                  className="flex-1 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  下载
+                </button>
+                <button
+                  onClick={handleShare}
+                  className="flex-1 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                >
+                  <Share2 className="h-4 w-4" />
+                  分享
+                </button>
+                <button
+                  onClick={onReset}
+                  className="flex-1 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  重置
+                </button>
+              </div>
+            </div>
+          )}
         </>
       )}
-
-      {/* Tips */}
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-        <h4 className="text-sm font-semibold text-gray-900 mb-2">
-          拍照小贴士
-        </h4>
-        <ul className="text-xs text-gray-600 space-y-1.5">
-          <li className="flex items-start">
-            <span className="mr-2">•</span>
-            <span>全身照效果最佳（从头到脚）</span>
-          </li>
-          <li className="flex items-start">
-            <span className="mr-2">•</span>
-            <span>站立姿势，正面面对镜头</span>
-          </li>
-          <li className="flex items-start">
-            <span className="mr-2">•</span>
-            <span>选择简单干净的背景</span>
-          </li>
-          <li className="flex items-start">
-            <span className="mr-2">•</span>
-            <span>光线充足，避免背光</span>
-          </li>
-        </ul>
-      </div>
     </div>
   );
 }

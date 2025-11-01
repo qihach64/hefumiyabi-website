@@ -1,15 +1,21 @@
 'use client';
 
 import { useState } from 'react';
-import { Sparkles } from 'lucide-react';
 import TryOnCanvas from './TryOnCanvas';
 import KimonoSelector from './KimonoSelector';
 import { KimonoItem } from '@/types/virtual-tryon';
 
+interface GeneratedResult {
+  kimono: KimonoItem;
+  resultImage: string;
+  timestamp: Date;
+}
+
 export default function VirtualTryOnApp() {
   const [userPhoto, setUserPhoto] = useState<string | null>(null);
   const [selectedKimono, setSelectedKimono] = useState<KimonoItem | null>(null);
-  const [resultImage, setResultImage] = useState<string | null>(null);
+  const [generatedResults, setGeneratedResults] = useState<GeneratedResult[]>([]);
+  const [activeResultIndex, setActiveResultIndex] = useState<number>(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,7 +46,14 @@ export default function VirtualTryOnApp() {
         throw new Error(data.message || '生成失败');
       }
 
-      setResultImage(data.imageUrl);
+      // 添加到结果历史
+      const newResult: GeneratedResult = {
+        kimono: selectedKimono,
+        resultImage: data.imageUrl,
+        timestamp: new Date(),
+      };
+      setGeneratedResults(prev => [...prev, newResult]);
+      setActiveResultIndex(generatedResults.length);
     } catch (err: any) {
       console.error('Generation error:', err);
       setError(err.message || '生成失败，请重试');
@@ -49,40 +62,85 @@ export default function VirtualTryOnApp() {
     }
   };
 
+  const handleReset = () => {
+    setUserPhoto(null);
+    setSelectedKimono(null);
+    setGeneratedResults([]);
+    setActiveResultIndex(0);
+    setError(null);
+  };
+
+  const handlePhotoChange = () => {
+    // 更换照片时清除生成结果，显示 CTA
+    setGeneratedResults([]);
+    setActiveResultIndex(0);
+    setError(null);
+  };
+
+  const activeResult = generatedResults[activeResultIndex];
+
   return (
     <div className="min-h-screen bg-white">
-      {/* Header - Airbnb 简洁风格 */}
-      <div className="border-b border-gray-200 bg-white sticky top-14 md:top-16 z-10">
-        <div className="container py-4 md:py-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-sakura-50 flex items-center justify-center flex-shrink-0">
-              <Sparkles className="h-5 w-5 text-sakura-600" />
-            </div>
-            <div>
-              <h1 className="text-xl md:text-2xl font-semibold text-gray-900">
-                AI 和服试穿
-              </h1>
-              <p className="text-sm text-gray-600 mt-0.5">
-                上传照片，选择和服，立即查看效果
-              </p>
-            </div>
-          </div>
+      {/* 极简标题 */}
+      <div className="border-b border-gray-200">
+        <div className="container py-4">
+          <h1 className="text-2xl font-semibold text-gray-900 text-center">
+            AI 和服试穿
+          </h1>
         </div>
       </div>
 
-      {/* Main Content - Container 布局 */}
-      <div className="container py-6 md:py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
-          {/* Left: Canvas */}
-          <TryOnCanvas
-            userPhoto={userPhoto}
-            resultImage={resultImage}
-            isGenerating={isGenerating}
-            error={error}
-            onPhotoUpload={setUserPhoto}
-            onGenerate={handleGenerate}
-            canGenerate={!!userPhoto && !!selectedKimono && !isGenerating}
-          />
+      {/* 主内容 */}
+      <div className="container py-8 md:py-12 max-w-6xl">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left: Canvas + CTA */}
+          <div className="space-y-4">
+            <TryOnCanvas
+              userPhoto={userPhoto}
+              resultImage={activeResult?.resultImage || null}
+              isGenerating={isGenerating}
+              error={error}
+              onPhotoUpload={setUserPhoto}
+              onReset={handleReset}
+              onPhotoChange={handlePhotoChange}
+              generatedResults={generatedResults}
+              activeResultIndex={activeResultIndex}
+              onResultChange={setActiveResultIndex}
+            />
+
+            {/* 生成按钮 - 在对比图下方 */}
+            {userPhoto && (!activeResult || selectedKimono?.id !== activeResult.kimono.id) && (
+              <button
+                onClick={handleGenerate}
+                disabled={!selectedKimono || isGenerating}
+                className={`
+                  w-full py-4 rounded-xl font-semibold text-lg
+                  transition-all duration-200
+                  ${selectedKimono && !isGenerating
+                    ? 'bg-sakura-600 text-white hover:bg-sakura-700 active:scale-[0.98] shadow-lg hover:shadow-xl'
+                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  }
+                `}
+              >
+                {isGenerating ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>生成中...</span>
+                  </span>
+                ) : activeResult ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="text-xl">✨</span>
+                    <span>生成新和服效果</span>
+                  </span>
+                ) : (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="text-xl">✨</span>
+                    <span>生成试穿效果</span>
+                  </span>
+                )}
+              </button>
+            )}
+          </div>
 
           {/* Right: Kimono Selector */}
           <KimonoSelector
