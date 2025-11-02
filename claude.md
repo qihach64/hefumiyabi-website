@@ -1,483 +1,385 @@
-# 购物车集成预约系统 - 设计方案
+# CLAUDE.md
 
-## 📋 当前问题分析
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-### 现有预约流程的问题
-1. ❌ **冗余的时间字段**：需要填写租赁日期、归还日期、取衣时间、还衣时间（太复杂）
-2. ❌ **无购物车功能**：用户无法一次预约多个套餐或和服
-3. ❌ **缺少店铺筛选**：在套餐和活动页面无法按店铺过滤
-4. ❌ **分步流程繁琐**：4个步骤的向导式流程对简单预约来说太重
+## Project Overview
 
-### 用户需求
-- ✅ 只需选择**到店日期和时间**
-- ✅ 支持**购物车**功能，可以一次预约多个项目
-- ✅ 在套餐/活动页面可以**按店铺筛选**
-- ✅ 更简洁流畅的预约体验
+**江戸和装工房雅 (Edo Wasokobo Miyabi)** - A professional kimono rental e-commerce platform with marketplace capabilities, built with Next.js 15 App Router, TypeScript, Prisma, and PostgreSQL.
 
----
+## Tech Stack
 
-## 🎯 新设计方案
+- **Framework**: Next.js 15.5.5 with App Router, React 19.1.0, TypeScript 5 (strict mode)
+- **Database**: PostgreSQL + Prisma 6.17.1 ORM (hosted on Supabase for production)
+- **Authentication**: NextAuth.js 5.0 (beta) with email verification
+- **State Management**: Zustand 5.0 (cart) + React Query 5.90 (server state)
+- **Styling**: Tailwind CSS 4, Lucide React icons
+- **Email**: Nodemailer with SMTP
+- **AI Features**: Google Generative AI (chatbot), Replicate (virtual try-on)
+- **Build Tool**: Turbopack for fast development
 
-### 方案 A：购物车 + 简化预约流程 (推荐)
+## Development Commands
 
-#### 核心理念
-将和服租赁体验设计得像**电商购物**一样简单直观：
-- 浏览套餐 → 加入购物车 → 统一填写到店信息 → 确认预约
+```bash
+# Development
+pnpm dev                           # Start dev server with Turbopack
+pnpm build                         # Build for production (includes prisma generate)
+pnpm start                         # Start production server
 
-#### 数据模型设计
+# Database
+pnpm prisma generate               # Generate Prisma client
+pnpm prisma migrate dev            # Run migrations in development
+pnpm prisma db push                # Push schema changes without migrations
+pnpm prisma studio                 # Open Prisma Studio GUI
+pnpm db:seed                       # Seed database with sample data
+pnpm db:reset                      # Reset database and re-seed
 
-```typescript
-// 购物车项（存储在浏览器 localStorage 或用户账户）
-interface CartItem {
-  id: string;                    // 唯一ID
-  type: 'plan' | 'campaign';     // 套餐类型
-  planId?: string;               // 常规套餐ID
-  campaignPlanId?: string;       // 活动套餐ID
-  name: string;                  // 套餐名称
-  price: number;                 // 价格（分）
-  originalPrice?: number;        // 原价（活动套餐）
-  image?: string;                // 图片
-  storeId?: string;              // 预选店铺
-  storeName?: string;            // 店铺名称
-  quantity: number;              // 数量（支持多人预约）
-  addOns: string[];              // 附加服务
-  notes?: string;                // 备注
-}
+# Data Import Scripts
+pnpm tsx scripts/import-unified-plans.ts              # Import unified plans
+pnpm tsx scripts/import-unified-plans.ts --clear      # Clear and re-import
+pnpm tsx scripts/migrate-campaigns-to-plans.ts        # Migrate legacy campaigns
+pnpm tsx scripts/test-db-simple.ts                    # Test database connection
 
-// 简化的预约数据
-interface BookingData {
-  // 购物车项
-  items: CartItem[];
-
-  // 统一的到店信息
-  visitDate: Date;               // 到店日期
-  visitTime: string;             // 到店时间（如 "10:00"）
-  storeId: string;               // 店铺ID
-
-  // 联系信息
-  guestName?: string;
-  guestEmail?: string;
-  guestPhone?: string;
-
-  // 其他
-  specialRequests?: string;      // 特殊要求
-}
+# Testing
+pnpm tsx [script-path]             # Run any TypeScript script
 ```
 
-#### 用户流程
+## Architecture
+
+### Routing Structure
+
+The app uses Next.js App Router with route groups:
+
+- **`(main)/`** - Public site with shared header/footer layout
+  - `/` - Homepage with featured plans and campaigns
+  - `/plans` - Rental plans listing (filterable by store/category)
+  - `/plans/[id]` - Plan details with add-to-cart and quick book
+  - `/campaigns` - Promotional campaigns
+  - `/cart` - Shopping cart page
+  - `/booking` - Unified checkout (single-page, not multi-step wizard)
+  - `/booking/success` - Booking confirmation
+  - `/kimonos` - Kimono catalog
+  - `/stores` - Store locations
+  - `/profile` - User profile and booking history
+  - `/merchant/*` - Merchant portal (dashboard, listings, bookings)
+  - `/admin/*` - Admin dashboard
+  - `/virtual-tryon` - AI virtual try-on feature
+
+- **`(auth)/`** - Separate layout for authentication
+  - `/login`, `/register`, `/verify-email`
+
+- **`api/`** - API routes (see API section below)
+
+### Database Schema Key Models
+
+The Prisma schema has 24+ models. Critical relationships:
+
+**Core Business**:
+- `User` - Multi-method auth (email/phone), role-based (USER/ADMIN/STAFF/MERCHANT)
+- `Store` - Multi-location support with geolocation
+- `Kimono` - Catalog with images, categories, availability
+- `RentalPlan` - **Unified plan system** (regular + campaign plans via `isCampaign` flag)
+- `Campaign` - Promotional campaigns with date restrictions
+- `CampaignPlan` - **Legacy model** (being migrated to RentalPlan)
+
+**Shopping & Booking**:
+- `Cart` / `CartItem` - Shopping cart with user/session support and expiration
+- `Booking` / `BookingItem` - Bookings support guests and authenticated users
+- `BookingKimono` - Specific kimono selections per booking item
+
+**Marketplace**:
+- `Merchant` - Merchant accounts with verification status
+- `Listing` - Merchant-created rental listings (require approval)
+- `Payout` - Merchant payment processing
+- `MerchantReview` - Merchant ratings
+
+**User Features**:
+- `Favorite`, `Review`, `UserPreference`, `UserBehavior`, `VirtualTryOn`
+
+### Important Architectural Decisions
+
+1. **Unified Plan System**: Migration from separate `Campaign`/`CampaignPlan` to a single `RentalPlan` model with `isCampaign` flag. Both systems currently coexist during transition.
+
+2. **Shopping Cart Pattern**: E-commerce style cart using Zustand with localStorage persistence
+   - Location: `src/store/cart.ts`
+   - Same plan added multiple times increases quantity
+   - Each item can have different store assignments
+   - Quick booking feature clears cart and adds single item ("Buy Now" pattern)
+
+3. **Simplified Booking Flow**: Evolved from 4-step wizard to single-page checkout
+   - Old: Select Store → Personal Info → Add-ons → Confirm
+   - New: Unified checkout page with all fields visible
+   - Only requires: visit date + time (no rental/return dates complexity)
+   - Supports both guest and authenticated bookings
+
+4. **Multi-Store Architecture**:
+   - Each `BookingItem` has its own `storeId` (not at Booking level)
+   - Supports different stores per item in same booking
+   - Store filtering available on plans/campaigns pages
+
+5. **Marketplace Model**: Two operating modes
+   - Platform: Admin-managed stores and plans
+   - Merchant: Merchants create listings requiring approval
+   - Commission-based revenue split (15% default)
+
+### API Routes
+
+All API routes follow RESTful patterns:
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│ 1. 浏览页面（Plans / Campaigns）                              │
-│    - 按店铺筛选                                               │
-│    - 查看套餐详情                                             │
-│    - 点击"加入购物车"                                          │
-└─────────────────────────────────────────────────────────────┘
-                           ↓
-┌─────────────────────────────────────────────────────────────┐
-│ 2. 购物车页面 (/cart)                                          │
-│    - 查看所有已选项目                                          │
-│    - 调整数量 / 添加附加服务                                    │
-│    - 移除项目                                                 │
-│    - 查看总价                                                 │
-│    - 点击"去预约"                                             │
-└─────────────────────────────────────────────────────────────┘
-                           ↓
-┌─────────────────────────────────────────────────────────────┐
-│ 3. 预约页面 (/checkout)                                       │
-│    【单页表单 - 不再是多步骤向导】                              │
-│                                                               │
-│    ┌─────────────────────────────────────────┐              │
-│    │ 预约摘要                                  │              │
-│    │ - 显示购物车所有项目                       │              │
-│    │ - 总价                                    │              │
-│    └─────────────────────────────────────────┘              │
-│                                                               │
-│    ┌─────────────────────────────────────────┐              │
-│    │ 到店信息                                  │              │
-│    │ ☐ 选择店铺                                │              │
-│    │ ☐ 到店日期                                │              │
-│    │ ☐ 到店时间                                │              │
-│    └─────────────────────────────────────────┘              │
-│                                                               │
-│    ┌─────────────────────────────────────────┐              │
-│    │ 联系方式                                  │              │
-│    │ ☐ 姓名                                    │              │
-│    │ ☐ 邮箱                                    │              │
-│    │ ☐ 手机                                    │              │
-│    └─────────────────────────────────────────┘              │
-│                                                               │
-│    [ 确认预约 ]                                              │
-└─────────────────────────────────────────────────────────────┘
-                           ↓
-┌─────────────────────────────────────────────────────────────┐
-│ 4. 预约成功页面                                               │
-│    - 预约确认信息                                             │
-│    - 发送确认邮件                                             │
-└─────────────────────────────────────────────────────────────┘
+/api/auth/[...nextauth]          # NextAuth handlers
+/api/auth/register               # User registration
+/api/auth/verify-email           # Email verification
+/api/auth/send-verification      # Resend verification email
+
+/api/bookings                    # GET (list), POST (create)
+/api/bookings/[id]               # GET, PUT, DELETE
+/api/bookings/[id]/cancel        # POST - cancel booking
+
+/api/plans/[id]                  # GET plan details
+/api/campaign-plans/[id]         # GET campaign plan details (legacy)
+
+/api/kimonos                     # GET all kimonos
+/api/kimonos/[id]                # GET kimono details
+/api/kimonos/featured            # GET featured kimonos
+
+/api/stores                      # GET all stores
+/api/stores/[id]                 # GET store details
+
+/api/merchant/register           # POST - merchant registration
+/api/merchant/plans              # CRUD merchant plans
+/api/merchant/plans/[id]         # GET, PUT, DELETE
+
+/api/admin/bookings              # GET all bookings (admin only)
+/api/admin/inventory             # Inventory management
+/api/admin/merchants/[id]/approve  # Approve merchant
+/api/admin/merchants/[id]/reject   # Reject merchant
+
+/api/chatbot                     # POST - AI chatbot interactions
+/api/virtual-tryon               # POST - AI virtual try-on
 ```
 
-#### UI 组件设计
+### Authentication & Authorization
 
-##### 1. 套餐/活动页面的改进
+- **NextAuth.js** with Prisma adapter
+- Session-based auth with email verification
+- Role-based access: `USER`, `ADMIN`, `STAFF`, `MERCHANT`
+- Use `auth()` helper in Server Components and API routes
+- Guest checkout supported (no auth required for booking)
+
+### State Management Patterns
+
+1. **Cart State** (Zustand): `src/store/cart.ts`
+   - Persisted to localStorage as `cart-storage`
+   - Hydration handled client-side
+   - Access via `useCartStore()` hook
+
+2. **Server State** (React Query): For data fetching
+   - Cache management for API responses
+   - Optimistic updates where applicable
+
+3. **Form State** (React Hook Form): Forms use react-hook-form + Zod validation
+
+### Price Handling
+
+**CRITICAL**: All prices stored in database as **cents (分)** for precision
+- Display: Divide by 100 and format as ¥
+- Calculate discounts: `((originalPrice - price) / originalPrice) * 100`
+- Never use floating point for money calculations
+
+### Booking Constraints
+
+- All cart items must have `storeId` selected before checkout
+- Booking requires: visit date + visit time (no rental/return dates)
+- Guest bookings require: name, email, phone
+- User bookings auto-fill from session
+- Email confirmations sent asynchronously (non-blocking)
+
+### AI Features Implementation
+
+**Virtual Try-On** (`src/app/api/virtual-tryon/route.ts`):
+- Uses Replicate API or Google Gemini
+- Stores results in `VirtualTryOn` model with caching
+- Tracks costs, performance metrics, and status (PROCESSING/COMPLETED/FAILED)
+
+**AI Chatbot** (`src/app/api/chatbot/route.ts`):
+- Google Generative AI integration
+- Embedded component in main layout
+
+## Environment Variables
+
+Required in `.env.local`:
+
+```bash
+# Database (required)
+DATABASE_URL="postgresql://user:pass@host:5432/dbname"
+# Production: Add ?pgbouncer=true for connection pooling
+
+# NextAuth (required)
+NEXTAUTH_URL="http://localhost:3000"  # or production URL
+NEXTAUTH_SECRET="generate-with-openssl-rand-base64-32"
+
+# Email (required for verification)
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT="587"
+SMTP_USER="your-email@gmail.com"
+SMTP_PASSWORD="app-specific-password"
+SMTP_FROM="江戸和装工房雅 <your-email@gmail.com>"
+
+# AI Services (optional)
+GOOGLE_AI_API_KEY="your-gemini-api-key"
+REPLICATE_API_TOKEN="your-replicate-token"
+
+# Redis Cache (optional)
+UPSTASH_REDIS_URL="your-upstash-url"
+UPSTASH_REDIS_TOKEN="your-upstash-token"
+```
+
+## Database Connection Notes
+
+- **Development**: Direct PostgreSQL connection (port 5432)
+- **Production (Vercel)**: Use Supabase with connection pooling
+  - Connection pooler port: 6543
+  - Add `?pgbouncer=true` parameter to DATABASE_URL
+- **Build Time**: Prisma generate runs automatically via `postinstall` script
+- **Migrations**: Use `prisma migrate dev` locally, `prisma db push` for quick iteration
+
+## Code Conventions
+
+1. **TypeScript**: Strict mode enabled, use proper types (avoid `any`)
+2. **Path Aliases**: Use `@/` for `src/` directory
+3. **Component Pattern**: Prefer Server Components by default, mark Client Components with `'use client'`
+4. **API Responses**: Return JSON with proper HTTP status codes
+5. **Error Handling**: Use try-catch in API routes, return descriptive error messages
+6. **Prisma Queries**: Always use `include` to fetch relations instead of multiple queries
+7. **Image Optimization**: Use Next.js `<Image>` component, configure domains in `next.config.ts`
+
+## Common Patterns
+
+### Adding to Cart (Client Component)
 
 ```tsx
-// 店铺筛选器组件
-<StoreFilter
-  stores={stores}
-  selectedStoreId={selectedStoreId}
-  onStoreChange={(storeId) => setSelectedStoreId(storeId)}
-/>
+'use client';
+import { useCartStore } from '@/store/cart';
 
-// 套餐卡片的"加入购物车"按钮
-<ProductCard>
-  <button onClick={addToCart}>
-    🛒 加入购物车
-  </button>
-  <Link href={`/booking?planId=${plan.id}`}>
-    立即预约
-  </Link>
-</ProductCard>
-```
-
-##### 2. 购物车组件
-
-```tsx
-// 购物车图标（显示在导航栏）
-<CartIcon count={cartItems.length} />
-
-// 购物车页面
-<CartPage>
-  <CartItems items={cartItems} />
-  <CartSummary total={totalPrice} />
-  <CheckoutButton>去预约</CheckoutButton>
-</CartPage>
-```
-
-##### 3. 简化的预约页面
-
-```tsx
-<CheckoutPage>
-  {/* 左侧：预约表单 */}
-  <CheckoutForm>
-    <StoreSelection />
-    <DateTimePicker />
-    <ContactInfo />
-    <SpecialRequests />
-  </CheckoutForm>
-
-  {/* 右侧：订单摘要 */}
-  <OrderSummary items={cartItems} />
-</CheckoutPage>
-```
-
----
-
-### 方案 B：快速预约模式（保留原流程作为备选）
-
-保留现有的4步向导流程，但同时提供"快速预约"入口：
-
-```
-套餐卡片上的两个按钮：
-┌──────────────────────┐
-│ [🛒 加入购物车]        │  ← 新增
-│ [⚡ 立即预约]          │  ← 原有流程
-└──────────────────────┘
-```
-
----
-
-## 🗄️ 数据库修改建议
-
-### 1. 添加购物车表（可选 - 也可以只用 localStorage）
-
-```prisma
-model Cart {
-  id        String   @id @default(cuid())
-  userId    String?  // null 表示游客购物车
-  sessionId String?  // 游客使用 sessionId
-
-  items     CartItem[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  expiresAt DateTime // 购物车过期时间
-
-  @@index([userId])
-  @@index([sessionId])
-  @@map("carts")
-}
-
-model CartItem {
-  id              String  @id @default(cuid())
-  cartId          String
-  cart            Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
-
-  type            String  // 'plan' | 'campaign'
-  planId          String?
-  campaignPlanId  String?
-  storeId         String?
-
-  quantity        Int     @default(1)
-  addOns          String[]
-  notes           String?
-
-  createdAt       DateTime @default(now())
-
-  @@map("cart_items")
-}
-```
-
-### 2. 修改 Booking 表
-
-```prisma
-model Booking {
-  id String @id @default(cuid())
-
-  // 用户信息
-  userId     String?
-  user       User?   @relation(fields: [userId], references: [id])
-  guestName  String?
-  guestEmail String?
-  guestPhone String?
-
-  // 简化的时间信息
-  storeId    String
-  store      Store   @relation(fields: [storeId], references: [id])
-  visitDate  DateTime  // 到店日期
-  visitTime  String    // 到店时间 "10:00"
-
-  // 预约项（支持多个套餐）
-  items      BookingItem[]
-
-  // 支付和状态
-  totalAmount   Int
-  depositAmount Int
-  paidAmount    Int @default(0)
-  paymentStatus PaymentStatus @default(PENDING)
-  status        BookingStatus @default(PENDING)
-
-  // 备注
-  specialRequests String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("bookings")
-}
-
-model BookingItem {
-  id         String  @id @default(cuid())
-  bookingId  String
-  booking    Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-
-  type            String  // 'plan' | 'campaign'
-  planId          String?
-  plan            RentalPlan? @relation(fields: [planId], references: [id])
-  campaignPlanId  String?
-
-  quantity        Int     @default(1)
-  unitPrice       Int     // 单价（分）
-  totalPrice      Int     // 总价（分）
-
-  addOns          String[]
-  notes           String?
-
-  // 选择的和服（如果适用）
-  kimonos         BookingKimono[]
-
-  @@map("booking_items")
-}
-```
-
----
-
-## 🎨 UI/UX 改进点
-
-### 1. 导航栏添加购物车图标
-
-```tsx
-<Header>
-  <Logo />
-  <Nav>
-    <Link href="/">首页</Link>
-    <Link href="/plans">套餐</Link>
-    <Link href="/campaigns">优惠活动</Link>
-  </Nav>
-  <Actions>
-    <CartIcon count={3} />  {/* 显示购物车数量 */}
-    <UserMenu />
-  </Actions>
-</Header>
-```
-
-### 2. 套餐页面添加店铺筛选
-
-```tsx
-<PlansPage>
-  <Header>
-    <h1>租赁套餐</h1>
-    <StoreFilter>
-      <option value="">所有店铺</option>
-      <option value="store1">浅草本店</option>
-      <option value="store2">浅草站前店</option>
-      <option value="store3">京都清水寺店</option>
-    </StoreFilter>
-  </Header>
-
-  <PlanGrid>
-    {/* 套餐卡片 */}
-  </PlanGrid>
-</PlansPage>
-```
-
-### 3. 加入购物车动画效果
-
-```tsx
-// 点击"加入购物车"时的动画
-<button onClick={handleAddToCart}>
-  {isAdding ? (
-    <span className="animate-bounce">✓ 已加入</span>
-  ) : (
-    <span>🛒 加入购物车</span>
-  )}
-</button>
-
-// 商品飞入购物车的动画效果
-<AnimatedCartIcon />
-```
-
----
-
-## 📱 响应式设计考虑
-
-- 移动端：购物车以底部抽屉形式展示
-- 桌面端：购物车可以是右侧滑出面板或独立页面
-- 平板：类似桌面端但布局更紧凑
-
----
-
-## 🔄 状态管理方案
-
-### 选项 1：React Context + localStorage
-
-```tsx
-// contexts/CartContext.tsx
-export const CartProvider = ({ children }) => {
-  const [items, setItems] = useState<CartItem[]>([]);
-
-  const addToCart = (item: CartItem) => {
-    // 添加逻辑
-  };
-
-  const removeFromCart = (itemId: string) => {
-    // 移除逻辑
-  };
-
-  return (
-    <CartContext.Provider value={{ items, addToCart, removeFromCart }}>
-      {children}
-    </CartContext.Provider>
-  );
+const addToCart = () => {
+  useCartStore.getState().addItem({
+    type: 'PLAN',
+    planId: plan.id,
+    name: plan.name,
+    price: plan.price,
+    originalPrice: plan.originalPrice,
+    image: plan.images?.[0],
+    addOns: [],
+    isCampaign: plan.isCampaign,
+  });
 };
 ```
 
-### 选项 2：Zustand (更简洁)
+### Authenticated API Route
 
 ```tsx
-// store/cartStore.ts
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { auth } from '@/auth';
+import prisma from '@/lib/prisma';
 
-export const useCartStore = create(
-  persist(
-    (set) => ({
-      items: [],
-      addItem: (item) => set((state) => ({
-        items: [...state.items, item]
-      })),
-      removeItem: (id) => set((state) => ({
-        items: state.items.filter(item => item.id !== id)
-      })),
-    }),
-    { name: 'cart-storage' }
-  )
-);
+export async function GET(req: Request) {
+  const session = await auth();
+  if (!session?.user) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+
+  // Query database
+  const data = await prisma.booking.findMany({
+    where: { userId: session.user.id },
+    include: { items: true, store: true },
+  });
+
+  return Response.json(data);
+}
 ```
 
----
+### Server Component Data Fetching
 
-## ⚡ 实施优先级
+```tsx
+import prisma from '@/lib/prisma';
 
-### Phase 1：核心功能 (1-2 周)
-1. ✅ 简化预约表单（移除归还日期/时间）
-2. ✅ 创建购物车数据结构
-3. ✅ 实现"加入购物车"功能
-4. ✅ 创建购物车页面
+export default async function PlansPage() {
+  const plans = await prisma.rentalPlan.findMany({
+    where: { isActive: true },
+    include: { store: true },
+    orderBy: { priority: 'desc' },
+  });
 
-### Phase 2：筛选和优化 (1 周)
-1. ✅ 添加店铺筛选器
-2. ✅ 优化预约流程 UI
-3. ✅ 添加购物车动画
+  return <PlanGrid plans={plans} />;
+}
+```
 
-### Phase 3：高级功能 (可选)
-1. 保存购物车到数据库（登录用户）
-2. 购物车分享功能
-3. 预约历史和重新预约
+## Important Files
 
----
+- `prisma/schema.prisma` - Database schema (single source of truth)
+- `src/store/cart.ts` - Shopping cart state management
+- `src/lib/prisma.ts` - Prisma client singleton
+- `src/app/api/auth/[...nextauth]/route.ts` - NextAuth configuration
+- `next.config.ts` - Next.js configuration (image domains, build settings)
+- `tailwind.config.ts` - Tailwind theme customization
 
-## 🤔 需要讨论的问题
+## Deployment Notes
 
-### Q1: 购物车存储方式
-- **选项 A**：只用 localStorage（简单，适合游客）
-- **选项 B**：数据库 + localStorage（支持跨设备，需要登录）
-- **推荐**：先用 localStorage，后期扩展到数据库
+### Vercel Deployment
 
-### Q2: 是否允许跨店铺预约
-- **选项 A**：一次预约只能选一个店铺（简单）
-- **选项 B**：可以跨店铺，分别生成预约（复杂）
-- **推荐**：选项 A，购物车内所有项目共享同一个店铺和时间
+1. Database must be accessible from Vercel (use Supabase connection pooler)
+2. Set all environment variables in Vercel dashboard
+3. Build command: `pnpm build` (includes `prisma generate`)
+4. Output directory: `.next`
+5. Node version: 18.x or 20.x
 
-### Q3: 购物车中的同一套餐是否合并
-- **选项 A**：合并为一项，显示数量（节省空间）
-- **选项 B**：分开显示，方便个性化备注
-- **推荐**：选项 A，但支持为每个数量添加备注
+### Build Optimization
 
-### Q4: 现有预约流程如何处理
-- **选项 A**：完全替换为新流程
-- **选项 B**：保留两种入口（购物车 vs 立即预约）
-- **推荐**：选项 B，给用户更多选择
+- **Recent Change**: Removed database sync from build step to speed up deploys
+- Prisma generate happens in `postinstall` and `build` script
+- For production, ensure DATABASE_URL uses connection pooling
 
----
+## Testing
 
-## 🎯 最终推荐方案
+- Manual testing via browser (no automated tests yet)
+- Use Prisma Studio (`pnpm prisma studio`) to inspect database
+- Test database connection: `pnpm tsx scripts/test-db-simple.ts`
+- API testing: Use browser DevTools Network tab or tools like Postman
 
-**采用「方案 A：购物车 + 简化预约流程」+ 保留快速预约入口**
+## Troubleshooting
 
-### 核心改进：
-1. ✅ 只需填写到店日期和时间
-2. ✅ 支持购物车功能
-3. ✅ 套餐/活动页面支持店铺筛选
-4. ✅ 简化为单页预约表单（不是4步向导）
+**Email verification not sending**:
+- Check SMTP credentials in `.env.local`
+- For Gmail: use app-specific password, not regular password
+- Check spam folder
 
-### 技术栈：
-- 状态管理：Zustand + localStorage
-- 数据库：扩展现有 Booking 模型
-- UI：Tailwind CSS + Framer Motion（动画）
+**Database connection fails**:
+- Verify PostgreSQL is running
+- Check DATABASE_URL format
+- For Supabase: use direct connection locally, pooled in production
 
----
+**Cart not persisting**:
+- Check browser localStorage (key: `cart-storage`)
+- Verify client component has `'use client'` directive
+- Check for hydration mismatches
 
-## 📝 下一步行动
+**Build fails on Vercel**:
+- Ensure DATABASE_URL is set in environment variables
+- Check for TypeScript errors: `pnpm build` locally
+- Verify Prisma schema is valid: `pnpm prisma validate`
 
-**请反馈以下问题，我将开始实施：**
+## Recent Development Focus
 
-1. ✅ 是否同意采用购物车方案？
-2. ✅ 购物车存储用 localStorage 还是数据库？
-3. ✅ 是否允许跨店铺预约？
-4. ✅ 是否保留原有的"立即预约"流程？
-5. ✅ 有其他特殊需求吗？
+Based on recent commits and file structure:
 
----
+1. **Virtual Try-On Feature** - AI-powered kimono try-on (Gemini/Replicate)
+2. **Schema Migration** - Moving from legacy Campaign/CampaignPlan to unified RentalPlan
+3. **Build Optimization** - Removed database operations from build step for faster deploys
+4. **Scene Mode Testing** - Evaluating different AI providers for virtual try-on
 
-*Generated by Claude - 江戸和装工房雅 预约系统重构方案*
+## Design System
+
+- **Inspiration**: Airbnb-style UI with horizontal scrolling cards
+- **Image Ratio**: 3:4 for product images (kimono display)
+- **Font**: Noto Sans SC for Chinese/Japanese text
+- **Color Theme**: Sakura (cherry blossom) inspired palette
+- **Responsive**: Mobile-first approach, touch-friendly interactions
