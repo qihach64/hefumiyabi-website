@@ -34,11 +34,20 @@ const badgeVariants = cva(
         // 错误
         error: "bg-red-100 text-red-700",
 
+        // 危险（红色）
+        danger: "bg-red-100 text-red-700",
+
         // 信息
         info: "bg-blue-100 text-blue-700",
 
         // 轮廓样式
         outline: "border-2 border-current bg-transparent",
+
+        // 实心变体 - 更醒目的状态标签
+        "success-solid": "bg-green-600/90 text-white shadow-sm backdrop-blur-sm",
+        "secondary-solid": "bg-gray-600/90 text-white shadow-sm backdrop-blur-sm",
+        "warning-solid": "bg-amber-500/90 text-white shadow-sm backdrop-blur-sm",
+        "danger-solid": "bg-red-500/90 text-white shadow-sm backdrop-blur-sm",
       },
       size: {
         sm: "px-2 py-0.5 text-xs",

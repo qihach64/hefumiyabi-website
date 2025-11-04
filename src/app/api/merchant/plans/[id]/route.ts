@@ -17,7 +17,8 @@ const updatePlanSchema = z.object({
   imageUrl: z.union([z.string().url(), z.literal("")]).optional().nullable().transform(val => val || ""),
   storeName: z.string().optional().nullable().transform(val => val || ""),
   region: z.string().optional().nullable().transform(val => val || ""),
-  tags: z.array(z.string()),
+  tags: z.array(z.string()), // 保留旧数据兼容性
+  tagIds: z.array(z.string()).optional(), // 新标签系统
   isActive: z.boolean(),
   isFeatured: z.boolean(),
   isLimited: z.boolean(),
@@ -47,6 +48,20 @@ export async function GET(
           select: {
             id: true,
             title: true,
+          },
+        },
+        planTags: {
+          include: {
+            tag: {
+              select: {
+                id: true,
+                code: true,
+                name: true,
+                icon: true,
+                color: true,
+                categoryId: true,
+              },
+            },
           },
         },
       },
@@ -92,39 +107,69 @@ export async function PATCH(
     const body = await request.json();
     const validatedData = updatePlanSchema.parse(body);
 
-    // 更新套餐
-    const updatedPlan = await prisma.rentalPlan.update({
-      where: { id },
-      data: {
-        name: validatedData.name,
-        nameEn: validatedData.nameEn || null,
-        description: validatedData.description,
-        category: validatedData.category,
-        price: validatedData.price,
-        originalPrice: validatedData.originalPrice || null,
-        depositAmount: validatedData.depositAmount,
-        duration: validatedData.duration,
-        includes: validatedData.includes,
-        imageUrl: validatedData.imageUrl || null,
-        storeName: validatedData.storeName || null,
-        region: validatedData.region || null,
-        tags: validatedData.tags,
-        isActive: validatedData.isActive,
-        isFeatured: validatedData.isFeatured,
-        isLimited: validatedData.isLimited,
-        maxBookings: validatedData.maxBookings || null,
-        availableFrom: validatedData.availableFrom
-          ? new Date(validatedData.availableFrom)
-          : null,
-        availableUntil: validatedData.availableUntil
-          ? new Date(validatedData.availableUntil)
-          : null,
-      },
+    // 使用事务更新套餐和标签
+    const result = await prisma.$transaction(async (tx) => {
+      // 更新套餐
+      const updatedPlan = await tx.rentalPlan.update({
+        where: { id },
+        data: {
+          name: validatedData.name,
+          nameEn: validatedData.nameEn || null,
+          description: validatedData.description,
+          category: validatedData.category,
+          price: validatedData.price,
+          originalPrice: validatedData.originalPrice || null,
+          depositAmount: validatedData.depositAmount,
+          duration: validatedData.duration,
+          includes: validatedData.includes,
+          imageUrl: validatedData.imageUrl || null,
+          storeName: validatedData.storeName || null,
+          region: validatedData.region || null,
+          tags: validatedData.tags,
+          isActive: validatedData.isActive,
+          isFeatured: validatedData.isFeatured,
+          isLimited: validatedData.isLimited,
+          maxBookings: validatedData.maxBookings || null,
+          availableFrom: validatedData.availableFrom
+            ? new Date(validatedData.availableFrom)
+            : null,
+          availableUntil: validatedData.availableUntil
+            ? new Date(validatedData.availableUntil)
+            : null,
+        },
+      });
+
+      // 如果提供了新标签系统的 tagIds，同步 PlanTag 记录
+      if (validatedData.tagIds !== undefined) {
+        // 删除所有旧标签关联
+        await tx.planTag.deleteMany({
+          where: { planId: id },
+        });
+
+        // 创建新标签关联
+        if (validatedData.tagIds.length > 0) {
+          await tx.planTag.createMany({
+            data: validatedData.tagIds.map((tagId) => ({
+              planId: id,
+              tagId: tagId,
+              addedBy: session.user.id,
+            })),
+          });
+
+          // 更新标签使用次数
+          await tx.tag.updateMany({
+            where: { id: { in: validatedData.tagIds } },
+            data: { usageCount: { increment: 1 } },
+          });
+        }
+      }
+
+      return updatedPlan;
     });
 
     return NextResponse.json({
       message: "更新成功",
-      plan: updatedPlan,
+      plan: result,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

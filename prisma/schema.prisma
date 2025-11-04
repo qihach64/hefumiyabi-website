@@ -214,35 +214,36 @@ model RentalPlan {
   duration      Int
   includes      String[]
   imageUrl      String?
-  
+
   // 店铺和地区信息
   storeName String?
   region    String?
-  tags      String[]      @default([])
-  
+  tags      String[]      @default([])  // 保留旧字段，后续可移除
+
   // 活动关联（新增）
   campaignId String?
   campaign   Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
-  
+
   // 活动特性（新增）
   isCampaign      Boolean @default(false)
   isLimited       Boolean @default(false)
   maxBookings     Int?
   currentBookings Int     @default(0)
-  
+
   // 时间限制（新增）
   availableFrom  DateTime?
   availableUntil DateTime?
-  
+
   isActive   Boolean @default(true)
   isFeatured Boolean @default(false)
-  
+
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
-  
+
   // 关联
   bookingItems BookingItem[]
   cartItems    CartItem[]
+  planTags     PlanTag[]     // 新增：标签系统关联
 
   @@index([campaignId])
   @@index([isCampaign])
@@ -659,4 +660,69 @@ enum PayoutStatus {
   COMPLETED
   FAILED
   CANCELLED
+}
+
+// ============================================
+// 标签系统 (Tag System)
+// ============================================
+
+model TagCategory {
+  id             String   @id @default(cuid())
+  code           String   @unique
+  name           String
+  nameEn         String?  @map("name_en")
+  description    String?
+  icon           String?
+  color          String?
+  order          Int      @default(0)
+  isActive       Boolean  @default(true) @map("is_active")
+  showInFilter   Boolean  @default(true) @map("show_in_filter")
+  filterOrder    Int      @default(0) @map("filter_order")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  tags Tag[]
+
+  @@index([isActive, order])
+  @@index([showInFilter, filterOrder])
+  @@map("tag_categories")
+}
+
+model Tag {
+  id         String   @id @default(cuid())
+  categoryId String   @map("category_id")
+  code       String
+  name       String
+  nameEn     String?  @map("name_en")
+  icon       String?
+  color      String?
+  order      Int      @default(0)
+  isActive   Boolean  @default(true) @map("is_active")
+  usageCount Int      @default(0) @map("usage_count")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  category TagCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  plans    PlanTag[]
+
+  @@unique([categoryId, code])
+  @@index([categoryId, isActive, order])
+  @@index([usageCount])
+  @@map("tags")
+}
+
+model PlanTag {
+  id      String   @id @default(cuid())
+  planId  String   @map("plan_id")
+  tagId   String   @map("tag_id")
+  addedBy String?  @map("added_by")
+  addedAt DateTime @default(now()) @map("added_at")
+
+  plan RentalPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  tag  Tag        @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, tagId])
+  @@index([planId])
+  @@index([tagId])
+  @@map("plan_tags")
 }

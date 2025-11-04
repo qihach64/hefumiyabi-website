@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Badge } from "@/components/ui";
-import { Save, Loader2, Plus, X } from "lucide-react";
+import { Save, Loader2, Plus, X, Heart } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -76,6 +76,22 @@ export default function PlanEditForm({ plan }: PlanEditFormProps) {
   );
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
+  // 获取已选标签的完整信息（合并 plan.planTags 和 tagCategories）
+  const getSelectedTags = (): Tag[] => {
+    const allTags = [
+      ...(plan.planTags?.map(pt => pt.tag) || []),
+      ...tagCategories.flatMap(cat => cat.tags)
+    ];
+    // 去重并筛选已选标签
+    const uniqueTags = allTags.reduce((acc, tag) => {
+      if (!acc.find(t => t.id === tag.id) && selectedTagIds.includes(tag.id)) {
+        acc.push(tag);
+      }
+      return acc;
+    }, [] as Tag[]);
+    return uniqueTags;
+  };
+
   // 加载标签分类
   useEffect(() => {
     fetchTagCategories();
@@ -88,8 +104,13 @@ export default function PlanEditForm({ plan }: PlanEditFormProps) {
         const data = await response.json();
         const categories = data.categories || [];
         setTagCategories(categories);
-        // 默认展开所有分类
-        setExpandedCategories(new Set(categories.map((c: TagCategory) => c.id)));
+        // 只展开包含已选标签的分类
+        const categoriesToExpand = categories
+          .filter((cat: TagCategory) =>
+            cat.tags.some(tag => selectedTagIds.includes(tag.id))
+          )
+          .map((c: TagCategory) => c.id);
+        setExpandedCategories(new Set(categoriesToExpand));
       }
     } catch (error) {
       console.error('Failed to fetch tag categories:', error);
@@ -99,7 +120,6 @@ export default function PlanEditForm({ plan }: PlanEditFormProps) {
   // 表单状态
   const [formData, setFormData] = useState({
     name: plan.name,
-    nameEn: plan.nameEn || "",
     description: plan.description,
     category: plan.category,
     price: plan.price / 100, // 转换为元
@@ -108,24 +128,12 @@ export default function PlanEditForm({ plan }: PlanEditFormProps) {
     duration: plan.duration,
     includes: plan.includes,
     imageUrl: plan.imageUrl || "",
-    storeName: plan.storeName || "",
-    region: plan.region || "",
     tags: plan.tags, // 保留旧数据兼容性
     isActive: plan.isActive,
-    isFeatured: plan.isFeatured,
-    isLimited: plan.isLimited,
-    maxBookings: plan.maxBookings || "",
-    availableFrom: plan.availableFrom
-      ? new Date(plan.availableFrom).toISOString().slice(0, 16)
-      : "",
-    availableUntil: plan.availableUntil
-      ? new Date(plan.availableUntil).toISOString().slice(0, 16)
-      : "",
   });
 
   // 新增项输入
   const [newIncludeItem, setNewIncludeItem] = useState("");
-  const [newTag, setNewTag] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,21 +149,21 @@ export default function PlanEditForm({ plan }: PlanEditFormProps) {
         },
         body: JSON.stringify({
           ...formData,
-          tagIds: selectedTagIds, // 新增：使用新标签系统
+          tagIds: selectedTagIds, // 使用新标签系统
           price: Math.round(Number(formData.price) * 100), // 转换为分
           originalPrice: formData.originalPrice
             ? Math.round(Number(formData.originalPrice) * 100)
             : null,
           depositAmount: Math.round(Number(formData.depositAmount) * 100),
-          maxBookings: formData.maxBookings
-            ? Number(formData.maxBookings)
-            : null,
-          availableFrom: formData.availableFrom
-            ? new Date(formData.availableFrom).toISOString()
-            : "",
-          availableUntil: formData.availableUntil
-            ? new Date(formData.availableUntil).toISOString()
-            : "",
+          // 添加后端API需要的字段（商家不可控制，使用默认值）
+          isFeatured: false, // 精选由管理员控制
+          isLimited: false,  // 限量供应功能移除
+          maxBookings: null,
+          availableFrom: "",
+          availableUntil: "",
+          nameEn: "",
+          storeName: "",
+          region: "",
         }),
       });
 
@@ -171,9 +179,7 @@ export default function PlanEditForm({ plan }: PlanEditFormProps) {
         }
       }
 
-      // Parse successful response
-      const data = await response.json();
-
+      // Success
       setSuccess(true);
       // 滚动到页面顶部显示成功提示
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -227,28 +233,12 @@ export default function PlanEditForm({ plan }: PlanEditFormProps) {
     });
   };
 
-  // 旧标签系统函数（保留兼容性）
-  const addTag = () => {
-    if (newTag.trim()) {
-      setFormData({
-        ...formData,
-        tags: [...formData.tags, newTag.trim()],
-      });
-      setNewTag("");
-    }
-  };
-
-  const removeTag = (index: number) => {
-    setFormData({
-      ...formData,
-      tags: formData.tags.filter((_, i) => i !== index),
-    });
-  };
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
-      {/* 固定位置的成功提示 */}
-      {success && (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* 左侧：编辑表单 */}
+      <form onSubmit={handleSubmit} className="lg:col-span-2 space-y-6">
+        {/* 固定位置的成功提示 */}
+        {success && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-5 duration-300">
           <div className="bg-green-600 text-white px-6 py-4 rounded-xl shadow-lg flex items-center gap-3">
             <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
@@ -277,7 +267,7 @@ export default function PlanEditForm({ plan }: PlanEditFormProps) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* 套餐名称 */}
-          <div>
+          <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               套餐名称 <span className="text-red-500">*</span>
             </label>
@@ -287,21 +277,6 @@ export default function PlanEditForm({ plan }: PlanEditFormProps) {
               value={formData.name}
               onChange={(e) =>
                 setFormData({ ...formData, name: e.target.value })
-              }
-              className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sakura-500 focus:border-transparent"
-            />
-          </div>
-
-          {/* 英文名称 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              英文名称
-            </label>
-            <input
-              type="text"
-              value={formData.nameEn}
-              onChange={(e) =>
-                setFormData({ ...formData, nameEn: e.target.value })
               }
               className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sakura-500 focus:border-transparent"
             />
@@ -341,37 +316,6 @@ export default function PlanEditForm({ plan }: PlanEditFormProps) {
               onChange={(e) =>
                 setFormData({ ...formData, duration: Number(e.target.value) })
               }
-              className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sakura-500 focus:border-transparent"
-            />
-          </div>
-
-          {/* 店铺名称 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              店铺名称
-            </label>
-            <input
-              type="text"
-              value={formData.storeName}
-              onChange={(e) =>
-                setFormData({ ...formData, storeName: e.target.value })
-              }
-              className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sakura-500 focus:border-transparent"
-            />
-          </div>
-
-          {/* 地区 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              地区
-            </label>
-            <input
-              type="text"
-              value={formData.region}
-              onChange={(e) =>
-                setFormData({ ...formData, region: e.target.value })
-              }
-              placeholder="例如：东京、京都"
               className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sakura-500 focus:border-transparent"
             />
           </div>
@@ -462,8 +406,8 @@ export default function PlanEditForm({ plan }: PlanEditFormProps) {
       <div className="bg-white rounded-2xl border border-gray-200 p-6">
         <h2 className="text-xl font-bold text-gray-900 mb-6">套餐图片</h2>
 
-        <div className="space-y-4">
-          <div>
+        <div className="flex gap-4 items-start">
+          <div className="flex-1">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               图片URL
             </label>
@@ -478,9 +422,9 @@ export default function PlanEditForm({ plan }: PlanEditFormProps) {
             />
           </div>
 
-          {/* 图片预览 */}
+          {/* 图片预览缩略图 */}
           {formData.imageUrl && (
-            <div className="relative w-full h-64 bg-gray-100 rounded-xl overflow-hidden">
+            <div className="relative w-32 h-32 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0">
               <Image
                 src={formData.imageUrl}
                 alt="套餐图片预览"
@@ -654,111 +598,24 @@ export default function PlanEditForm({ plan }: PlanEditFormProps) {
         )}
       </div>
 
-      {/* 高级设置 */}
+      {/* 套餐状态 */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">高级设置</h2>
+        <h2 className="text-xl font-bold text-gray-900 mb-6">套餐状态</h2>
 
-        <div className="space-y-6">
-          {/* 状态开关 */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <label className="flex items-center gap-3 p-4 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50">
-              <input
-                type="checkbox"
-                checked={formData.isActive}
-                onChange={(e) =>
-                  setFormData({ ...formData, isActive: e.target.checked })
-                }
-                className="w-5 h-5 text-sakura-600 border-gray-300 rounded focus:ring-sakura-500"
-              />
-              <div>
-                <p className="font-medium text-gray-900">上架状态</p>
-                <p className="text-sm text-gray-600">套餐是否可预订</p>
-              </div>
-            </label>
-
-            <label className="flex items-center gap-3 p-4 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50">
-              <input
-                type="checkbox"
-                checked={formData.isFeatured}
-                onChange={(e) =>
-                  setFormData({ ...formData, isFeatured: e.target.checked })
-                }
-                className="w-5 h-5 text-sakura-600 border-gray-300 rounded focus:ring-sakura-500"
-              />
-              <div>
-                <p className="font-medium text-gray-900">精选套餐</p>
-                <p className="text-sm text-gray-600">在首页展示</p>
-              </div>
-            </label>
-
-            <label className="flex items-center gap-3 p-4 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50">
-              <input
-                type="checkbox"
-                checked={formData.isLimited}
-                onChange={(e) =>
-                  setFormData({ ...formData, isLimited: e.target.checked })
-                }
-                className="w-5 h-5 text-sakura-600 border-gray-300 rounded focus:ring-sakura-500"
-              />
-              <div>
-                <p className="font-medium text-gray-900">限量供应</p>
-                <p className="text-sm text-gray-600">限制预订数量</p>
-              </div>
-            </label>
+        <label className="flex items-center gap-3 p-4 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50">
+          <input
+            type="checkbox"
+            checked={formData.isActive}
+            onChange={(e) =>
+              setFormData({ ...formData, isActive: e.target.checked })
+            }
+            className="w-5 h-5 text-sakura-600 border-gray-300 rounded focus:ring-sakura-500"
+          />
+          <div>
+            <p className="font-medium text-gray-900">上架状态</p>
+            <p className="text-sm text-gray-600">开启后，用户可以查看并预订此套餐</p>
           </div>
-
-          {/* 限量设置 */}
-          {formData.isLimited && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                最大预订数
-              </label>
-              <input
-                type="number"
-                min="1"
-                value={formData.maxBookings}
-                onChange={(e) =>
-                  setFormData({ ...formData, maxBookings: e.target.value })
-                }
-                className="w-full md:w-1/3 px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sakura-500 focus:border-transparent"
-              />
-              <p className="mt-2 text-sm text-gray-600">
-                当前已预订: {plan.currentBookings}
-              </p>
-            </div>
-          )}
-
-          {/* 时间限制 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                开始时间
-              </label>
-              <input
-                type="datetime-local"
-                value={formData.availableFrom}
-                onChange={(e) =>
-                  setFormData({ ...formData, availableFrom: e.target.value })
-                }
-                className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sakura-500 focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                结束时间
-              </label>
-              <input
-                type="datetime-local"
-                value={formData.availableUntil}
-                onChange={(e) =>
-                  setFormData({ ...formData, availableUntil: e.target.value })
-                }
-                className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sakura-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-        </div>
+        </label>
       </div>
 
       {/* 操作按钮 */}
@@ -789,5 +646,135 @@ export default function PlanEditForm({ plan }: PlanEditFormProps) {
         </Link>
       </div>
     </form>
+
+      {/* 右侧：实时预览 */}
+      <div className="lg:col-span-1">
+        <div className="sticky top-24">
+          <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">用户预览</h3>
+            <p className="text-sm text-gray-600 mb-4">这是用户在套餐页面看到的效果</p>
+
+            {/* 套餐卡片预览 - 完全匹配 PlanCard 组件 */}
+            <div className="group">
+              <div className="relative">
+                {/* 图片容器 - Airbnb 3:4 比例 */}
+                <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-gray-100">
+                  {formData.imageUrl ? (
+                    <Image
+                      src={formData.imageUrl}
+                      alt={formData.name || "套餐预览"}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center bg-sakura-50">
+                      <span className="text-6xl opacity-20">👘</span>
+                    </div>
+                  )}
+
+                  {/* 收藏按钮 - Airbnb 风格（不可点击状态） */}
+                  <div className="absolute top-3 right-3 p-2 rounded-full bg-white/90 shadow-md">
+                    <Heart className="w-5 h-5 text-gray-400" />
+                  </div>
+
+                  {/* 优惠标签 */}
+                  {formData.originalPrice && Number(formData.originalPrice) > Number(formData.price) && (
+                    <div className="absolute top-3 left-3">
+                      <Badge variant="error" size="md" className="shadow-md">
+                        -{Math.round(((Number(formData.originalPrice) - Number(formData.price)) / Number(formData.originalPrice)) * 100)}%
+                      </Badge>
+                    </div>
+                  )}
+
+                  {/* 活动标签 - 根据 isCampaign 显示 */}
+                  {plan.isCampaign && (
+                    <div className="absolute bottom-3 left-3">
+                      <Badge variant="warning" size="sm" className="shadow-md">
+                        限时优惠
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+
+                {/* 信息区域 - 完全匹配 PlanCard */}
+                <div className="mt-3 space-y-1">
+                  {/* 套餐名称 */}
+                  <h3 className="font-semibold text-gray-900 line-clamp-2 group-hover:underline">
+                    {formData.name || "套餐名称"}
+                  </h3>
+
+                  {/* 套餐类型 + 时长 */}
+                  <p className="text-sm text-gray-600">
+                    {PLAN_CATEGORIES.find(cat => cat.value === formData.category)?.label || "套餐"} · {Math.round(formData.duration / 60)}小时
+                  </p>
+
+                  {/* 已选标签 */}
+                  {(() => {
+                    const selectedTags = getSelectedTags();
+                    return selectedTags.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {selectedTags.slice(0, 4).map(tag => (
+                          <Badge key={tag.id} variant="info" size="sm">
+                            {tag.icon && <span className="mr-1">{tag.icon}</span>}
+                            {tag.name}
+                          </Badge>
+                        ))}
+                        {selectedTags.length > 4 && (
+                          <Badge variant="default" size="sm">
+                            +{selectedTags.length - 4}
+                          </Badge>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {/* 价格 - Airbnb 风格 */}
+                  <div className="flex items-baseline gap-2 pt-1">
+                    <span className="text-lg font-semibold text-gray-900">
+                      ¥{formData.price ? Number(formData.price).toLocaleString() : "0"}
+                    </span>
+                    {formData.originalPrice && Number(formData.originalPrice) > Number(formData.price) && (
+                      <span className="text-sm text-gray-500 line-through">
+                        ¥{Number(formData.originalPrice).toLocaleString()}
+                      </span>
+                    )}
+                    <span className="text-sm text-gray-600">/ 人</span>
+                  </div>
+
+                  {/* 包含内容预览 */}
+                  {formData.includes.length > 0 && (
+                    <div className="pt-2 mt-2 border-t border-gray-100">
+                      <p className="text-xs font-semibold text-gray-700 mb-1.5">套餐包含：</p>
+                      <ul className="space-y-1">
+                        {formData.includes.slice(0, 4).map((item, index) => (
+                          <li key={index} className="text-xs text-gray-600 flex items-start gap-1.5">
+                            <span className="text-sakura-500 mt-0.5 flex-shrink-0">✓</span>
+                            <span className="line-clamp-1">{item}</span>
+                          </li>
+                        ))}
+                        {formData.includes.length > 4 && (
+                          <li className="text-xs text-gray-500 pl-4">
+                            还有 {formData.includes.length - 4} 项...
+                          </li>
+                        )}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* 状态提示（商家才看得到） */}
+            {!formData.isActive && (
+              <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <p className="text-xs text-amber-700 font-medium">
+                  ⚠️ 套餐当前已下架，用户无法看到此套餐
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

@@ -31,6 +31,21 @@ export default async function HomePage() {
           { price: "asc" },
         ],
         take: 8, // 每个分类显示8个套餐
+        include: {
+          planTags: {
+            include: {
+              tag: {
+                select: {
+                  id: true,
+                  code: true,
+                  name: true,
+                  icon: true,
+                  color: true,
+                },
+              },
+            },
+          },
+        },
       });
 
       return {
@@ -48,6 +63,8 @@ export default async function HomePage() {
           category: plan.category,
           duration: plan.duration,
           isCampaign: !!plan.originalPrice && plan.originalPrice > plan.price,
+          includes: plan.includes,
+          planTags: plan.planTags,
         })),
       };
     })

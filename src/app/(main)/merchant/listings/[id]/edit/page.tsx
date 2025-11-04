@@ -30,9 +30,25 @@ export default async function EditListingPage({ params }: EditListingPageProps) 
     redirect("/merchant/dashboard");
   }
 
-  // 获取套餐信息
+  // 获取套餐信息（包含标签关联）
   const plan = await prisma.rentalPlan.findUnique({
     where: { id },
+    include: {
+      planTags: {
+        include: {
+          tag: {
+            select: {
+              id: true,
+              code: true,
+              name: true,
+              icon: true,
+              color: true,
+              categoryId: true,
+            },
+          },
+        },
+      },
+    },
   });
 
   if (!plan) {
@@ -41,7 +57,7 @@ export default async function EditListingPage({ params }: EditListingPageProps) 
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="container py-8 max-w-5xl">
+      <div className="container py-8 max-w-7xl">
         {/* 返回按钮 */}
         <Link href="/merchant/listings" className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 transition-colors">
           <ArrowLeft className="w-4 h-4" />
@@ -56,7 +72,7 @@ export default async function EditListingPage({ params }: EditListingPageProps) 
           <p className="text-gray-600">{plan.name}</p>
         </div>
 
-        {/* 编辑表单 */}
+        {/* 编辑表单 - 传递plan数据用于预览 */}
         <PlanEditForm plan={plan} />
       </div>
     </div>

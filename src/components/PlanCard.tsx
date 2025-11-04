@@ -6,6 +6,14 @@ import Link from "next/link";
 import { Heart, MapPin, Star } from "lucide-react";
 import { Badge } from "@/components/ui";
 
+interface Tag {
+  id: string;
+  code: string;
+  name: string;
+  icon: string | null;
+  color: string | null;
+}
+
 interface PlanCardProps {
   plan: {
     id: string;
@@ -20,6 +28,8 @@ interface PlanCardProps {
     category: string;
     duration: number;
     isCampaign?: boolean;
+    includes?: string[];
+    planTags?: { tag: Tag }[];
   };
   showMerchant?: boolean; // 是否显示商家信息（平台模式）
 }
@@ -27,9 +37,9 @@ interface PlanCardProps {
 export default function PlanCard({ plan, showMerchant = false }: PlanCardProps) {
   const [isFavorited, setIsFavorited] = useState(false);
 
-  // 计算优惠百分比
-  const discountPercent = plan.originalPrice && plan.originalPrice > plan.price
-    ? Math.round(((plan.originalPrice - plan.price) / plan.originalPrice) * 100)
+  // 计算优惠金额
+  const discountAmount = plan.originalPrice && plan.originalPrice > plan.price
+    ? plan.originalPrice - plan.price
     : 0;
 
   // 分类标签
@@ -86,10 +96,10 @@ export default function PlanCard({ plan, showMerchant = false }: PlanCardProps) 
           </button>
 
           {/* 优惠标签 */}
-          {discountPercent > 0 && (
+          {discountAmount > 0 && (
             <div className="absolute top-3 left-3">
-              <Badge variant="error" size="md" className="shadow-md">
-                -{discountPercent}%
+              <Badge variant="error" size="md" className="shadow-md font-bold">
+                省¥{(discountAmount / 100).toLocaleString()}
               </Badge>
             </div>
           )}
@@ -136,18 +146,43 @@ export default function PlanCard({ plan, showMerchant = false }: PlanCardProps) 
             {getCategoryLabel(plan.category)} · {plan.duration}小时
           </p>
 
-          {/* 价格 - Airbnb 风格 */}
+          {/* 标签 */}
+          {plan.planTags && plan.planTags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {plan.planTags.slice(0, 4).map(({ tag }) => (
+                <Badge key={tag.id} variant="sakura" size="sm">
+                  {tag.icon && <span className="mr-1">{tag.icon}</span>}
+                  {tag.name}
+                </Badge>
+              ))}
+              {plan.planTags.length > 4 && (
+                <Badge variant="sakura" size="sm" className="opacity-60">
+                  +{plan.planTags.length - 4}
+                </Badge>
+              )}
+            </div>
+          )}
+
+          {/* 价格 - 简洁显示 */}
           <div className="flex items-baseline gap-2 pt-1">
             <span className="text-lg font-semibold text-gray-900">
               ¥{(plan.price / 100).toLocaleString()}
             </span>
             {plan.originalPrice && plan.originalPrice > plan.price && (
-              <span className="text-sm text-gray-500 line-through">
+              <span className="text-xs text-gray-400 line-through">
                 ¥{(plan.originalPrice / 100).toLocaleString()}
               </span>
             )}
             <span className="text-sm text-gray-600">/ 人</span>
           </div>
+
+          {/* 包含内容 - 简化为一行 */}
+          {plan.includes && plan.includes.length > 0 && (
+            <div className="pt-2 mt-1 text-xs text-gray-600">
+              含{plan.includes.slice(0, 2).join('·')}
+              {plan.includes.length > 2 && `等${plan.includes.length}项`} ›
+            </div>
+          )}
 
           {/* 评分 - 平台模式才显示（暂时模拟数据） */}
           {showMerchant && (

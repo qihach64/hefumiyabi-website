@@ -18,6 +18,28 @@ interface Campaign {
   description: string;
 }
 
+interface Tag {
+  id: string;
+  code: string;
+  name: string;
+  icon: string | null;
+  color: string | null;
+  categoryId?: string;
+}
+
+interface TagCategory {
+  id: string;
+  code: string;
+  name: string;
+  icon: string | null;
+  color: string | null;
+  tags: Tag[];
+}
+
+interface PlanTag {
+  tag: Tag;
+}
+
 interface RentalPlan {
   id: string;
   name: string;
@@ -31,8 +53,9 @@ interface RentalPlan {
   imageUrl?: string;
   storeName?: string; // 店铺名称
   region?: string; // 地区
-  tags?: string[]; // 标签
-  
+  tags?: string[]; // 旧的标签字段(兼容)
+  planTags?: PlanTag[]; // 新的标签关联
+
   // 活动相关字段
   isCampaign?: boolean;
   campaignId?: string;
@@ -48,18 +71,23 @@ interface PlansClientProps {
   plans: RentalPlan[];
   campaigns: Campaign[];
   stores: Store[];
+  tagCategories: TagCategory[];
 }
 
 export default function PlansClient({
   plans,
   campaigns,
   stores,
+  tagCategories,
 }: PlansClientProps) {
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
   const [showOnlyCampaigns, setShowOnlyCampaigns] = useState<boolean>(false);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
+    new Set(tagCategories.map(c => c.id)) // 默认全部展开
+  );
 
   // 所有套餐
   const allPlans = plans;
@@ -83,11 +111,6 @@ export default function PlansClient({
 
   // 提取所有唯一的地区
   const regions = Array.from(new Set(allPlans.map(p => p.region).filter(Boolean))) as string[];
-
-  // 提取所有唯一的标签
-  const allTags = Array.from(
-    new Set(allPlans.flatMap(p => p.tags || []).filter(Boolean))
-  ) as string[];
 
   // 只显示有对应套餐的活动
   const campaignsWithPlans = campaigns.filter(campaign => 
@@ -126,9 +149,10 @@ export default function PlansClient({
       return false;
     }
 
-    // 标签筛选
-    if (selectedTags.length > 0) {
-      if (!plan.tags || !selectedTags.some(tag => plan.tags?.includes(tag))) {
+    // 标签筛选 (使用新的标签系统)
+    if (selectedTagIds.length > 0) {
+      const planTagIds = plan.planTags?.map(pt => pt.tag.id) || [];
+      if (!selectedTagIds.some(tagId => planTagIds.includes(tagId))) {
         return false;
       }
     }
@@ -141,26 +165,39 @@ export default function PlansClient({
   const filteredRegularPlans = filteredPlans.filter(p => !isCampaignPlan(p));
 
   // 切换标签选择
-  const toggleTag = (tag: string) => {
-    setSelectedTags(prev =>
-      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+  const toggleTag = (tagId: string) => {
+    setSelectedTagIds(prev =>
+      prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]
     );
+  };
+
+  // 切换分类展开/折叠
+  const toggleCategory = (categoryId: string) => {
+    setExpandedCategories(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(categoryId)) {
+        newSet.delete(categoryId);
+      } else {
+        newSet.add(categoryId);
+      }
+      return newSet;
+    });
   };
 
   // 清除所有筛选
   const clearFilters = () => {
     setSelectedStoreId(null);
     setSelectedRegion(null);
-    setSelectedTags([]);
+    setSelectedTagIds([]);
     setSelectedCampaignId(null);
     setShowOnlyCampaigns(false);
   };
 
-  const hasActiveFilters = 
-    selectedStoreId || 
-    selectedRegion || 
-    selectedTags.length > 0 || 
-    selectedCampaignId || 
+  const hasActiveFilters =
+    selectedStoreId ||
+    selectedRegion ||
+    selectedTagIds.length > 0 ||
+    selectedCampaignId ||
     showOnlyCampaigns;
 
 
@@ -184,6 +221,62 @@ export default function PlansClient({
             </button>
           )}
         </div>
+
+        {/* 标签筛选 - 按分类分组(可折叠) */}
+        {tagCategories.map((category) => {
+          const isExpanded = expandedCategories.has(category.id);
+          const selectedCount = category.tags.filter(tag => selectedTagIds.includes(tag.id)).length;
+
+          return (
+            <div key={category.id}>
+              <button
+                onClick={() => toggleCategory(category.id)}
+                className="w-full text-sm font-semibold mb-3 flex items-center justify-between hover:opacity-70 transition-opacity"
+              >
+                <div className="flex items-center gap-2">
+                  {category.icon && <span className="text-base">{category.icon}</span>}
+                  <span style={{ color: category.color || undefined }}>{category.name}</span>
+                  {selectedCount > 0 && (
+                    <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
+                      {selectedCount}
+                    </span>
+                  )}
+                </div>
+                <svg
+                  className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {isExpanded && (
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {category.tags.map((tag) => (
+                    <button
+                      key={tag.id}
+                      onClick={() => toggleTag(tag.id)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
+                        selectedTagIds.includes(tag.id)
+                          ? 'text-white shadow-md scale-105'
+                          : 'bg-secondary hover:bg-secondary/80'
+                      }`}
+                      style={{
+                        backgroundColor: selectedTagIds.includes(tag.id)
+                          ? (tag.color || category.color || '#FF5580')
+                          : undefined
+                      }}
+                    >
+                      {tag.icon && <span className="mr-1">{tag.icon}</span>}
+                      {tag.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
 
         {/* 活动筛选 */}
         <div>
@@ -323,29 +416,6 @@ export default function PlansClient({
           </div>
         </div>
 
-        {/* 标签筛选 */}
-        <div>
-          <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-            <Tag className="w-4 h-4 text-amber-600" />
-            特色标签
-          </h3>
-          <div className="flex flex-wrap gap-2">
-            {allTags.map((tag) => (
-              <button
-                key={tag}
-                onClick={() => toggleTag(tag)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                  selectedTags.includes(tag)
-                    ? 'bg-amber-500 text-white'
-                    : 'bg-secondary hover:bg-secondary/80'
-                }`}
-              >
-                {tag}
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* 筛选结果统计 */}
         <div className="pt-4 border-t text-sm text-muted-foreground">
           找到 {filteredPlans.length} 个套餐
@@ -379,7 +449,7 @@ export default function PlansClient({
                     筛选条件
                     {hasActiveFilters && (
                       <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
-                        {(selectedStoreId ? 1 : 0) + (selectedRegion ? 1 : 0) + selectedTags.length}
+                        {(selectedStoreId ? 1 : 0) + (selectedRegion ? 1 : 0) + selectedTagIds.length}
                       </span>
                     )}
                   </span>
@@ -409,7 +479,7 @@ export default function PlansClient({
                       <PlanCard
                         key={plan.id}
                         plan={plan}
-                        showMerchant={false}
+                        showMerchant={true}
                       />
                     ))}
                   </div>
@@ -429,7 +499,7 @@ export default function PlansClient({
                       <PlanCard
                         key={plan.id}
                         plan={plan}
-                        showMerchant={false}
+                        showMerchant={true}
                       />
                     ))}
                   </div>
