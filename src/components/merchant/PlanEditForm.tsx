@@ -1,11 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Badge } from "@/components/ui";
-import { Save, Eye, Loader2, Plus, X } from "lucide-react";
+import { Save, Loader2, Plus, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+
+interface Tag {
+  id: string;
+  code: string;
+  name: string;
+  icon: string | null;
+  color: string | null;
+  categoryId: string;
+}
+
+interface TagCategory {
+  id: string;
+  code: string;
+  name: string;
+  icon: string | null;
+  color: string | null;
+  tags: Tag[];
+}
 
 interface PlanEditFormProps {
   plan: {
@@ -23,7 +41,8 @@ interface PlanEditFormProps {
     imageUrl?: string | null;
     storeName?: string | null;
     region?: string | null;
-    tags: string[];
+    tags: string[]; // 保留旧数据兼容性
+    planTags?: { tag: Tag }[]; // 新的标签系统
     isActive: boolean;
     isFeatured: boolean;
     isLimited: boolean;
@@ -50,6 +69,33 @@ export default function PlanEditForm({ plan }: PlanEditFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
+  // 标签系统
+  const [tagCategories, setTagCategories] = useState<TagCategory[]>([]);
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>(
+    plan.planTags?.map(pt => pt.tag.id) || []
+  );
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+
+  // 加载标签分类
+  useEffect(() => {
+    fetchTagCategories();
+  }, []);
+
+  async function fetchTagCategories() {
+    try {
+      const response = await fetch('/api/tags/categories');
+      if (response.ok) {
+        const data = await response.json();
+        const categories = data.categories || [];
+        setTagCategories(categories);
+        // 默认展开所有分类
+        setExpandedCategories(new Set(categories.map((c: TagCategory) => c.id)));
+      }
+    } catch (error) {
+      console.error('Failed to fetch tag categories:', error);
+    }
+  }
+
   // 表单状态
   const [formData, setFormData] = useState({
     name: plan.name,
@@ -64,7 +110,7 @@ export default function PlanEditForm({ plan }: PlanEditFormProps) {
     imageUrl: plan.imageUrl || "",
     storeName: plan.storeName || "",
     region: plan.region || "",
-    tags: plan.tags,
+    tags: plan.tags, // 保留旧数据兼容性
     isActive: plan.isActive,
     isFeatured: plan.isFeatured,
     isLimited: plan.isLimited,
@@ -95,6 +141,7 @@ export default function PlanEditForm({ plan }: PlanEditFormProps) {
         },
         body: JSON.stringify({
           ...formData,
+          tagIds: selectedTagIds, // 新增：使用新标签系统
           price: Math.round(Number(formData.price) * 100), // 转换为分
           originalPrice: formData.originalPrice
             ? Math.round(Number(formData.originalPrice) * 100)
@@ -128,9 +175,13 @@ export default function PlanEditForm({ plan }: PlanEditFormProps) {
       const data = await response.json();
 
       setSuccess(true);
+      // 滚动到页面顶部显示成功提示
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      // 显示成功提示后跳转回列表页
       setTimeout(() => {
+        router.push("/merchant/listings");
         router.refresh();
-      }, 1000);
+      }, 2000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "更新失败，请重试");
     } finally {
@@ -155,6 +206,28 @@ export default function PlanEditForm({ plan }: PlanEditFormProps) {
     });
   };
 
+  // 新标签系统函数
+  const toggleTag = (tagId: string) => {
+    setSelectedTagIds(prev =>
+      prev.includes(tagId)
+        ? prev.filter(id => id !== tagId)
+        : [...prev, tagId]
+    );
+  };
+
+  const toggleCategory = (categoryId: string) => {
+    setExpandedCategories(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(categoryId)) {
+        newSet.delete(categoryId);
+      } else {
+        newSet.add(categoryId);
+      }
+      return newSet;
+    });
+  };
+
+  // 旧标签系统函数（保留兼容性）
   const addTag = () => {
     if (newTag.trim()) {
       setFormData({
@@ -174,15 +247,27 @@ export default function PlanEditForm({ plan }: PlanEditFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
-      {/* 错误/成功提示 */}
+      {/* 固定位置的成功提示 */}
+      {success && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-5 duration-300">
+          <div className="bg-green-600 text-white px-6 py-4 rounded-xl shadow-lg flex items-center gap-3">
+            <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div>
+              <p className="font-semibold text-lg">保存成功！</p>
+              <p className="text-sm text-green-100">正在跳转到套餐列表...</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 错误提示 */}
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
           {error}
-        </div>
-      )}
-      {success && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl">
-          ✓ 更新成功！
         </div>
       )}
 
@@ -436,7 +521,7 @@ export default function PlanEditForm({ plan }: PlanEditFormProps) {
             type="text"
             value={newIncludeItem}
             onChange={(e) => setNewIncludeItem(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addIncludeItem())}
+            onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addIncludeItem())}
             placeholder="例如：和服租赁、专业着装服务"
             className="flex-1 px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sakura-500 focus:border-transparent"
           />
@@ -452,41 +537,121 @@ export default function PlanEditForm({ plan }: PlanEditFormProps) {
         </div>
       </div>
 
-      {/* 标签 */}
+      {/* 标签 - 新标签系统 */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">标签</h2>
+        <h2 className="text-xl font-bold text-gray-900 mb-6">套餐标签</h2>
+        <p className="text-sm text-gray-600 mb-4">
+          选择适合您套餐的标签，帮助用户更容易找到和筛选
+        </p>
 
-        {/* 已添加的标签 */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          {formData.tags.map((tag, index) => (
-            <Badge key={index} variant="info" size="md">
-              {tag}
-              <button
-                type="button"
-                onClick={() => removeTag(index)}
-                className="ml-2 hover:text-red-600"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </Badge>
-          ))}
+        {/* 已选标签预览 */}
+        {selectedTagIds.length > 0 && (
+          <div className="mb-6 p-4 bg-sakura-50 rounded-xl">
+            <p className="text-sm font-medium text-gray-700 mb-2">
+              已选择 {selectedTagIds.length} 个标签：
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {tagCategories.flatMap(cat => cat.tags)
+                .filter(tag => selectedTagIds.includes(tag.id))
+                .map(tag => (
+                  <Badge key={tag.id} variant="info" size="md">
+                    {tag.icon && <span className="mr-1">{tag.icon}</span>}
+                    {tag.name}
+                    <button
+                      type="button"
+                      onClick={() => toggleTag(tag.id)}
+                      className="ml-2 hover:text-red-600"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </Badge>
+                ))}
+            </div>
+          </div>
+        )}
+
+        {/* 标签分类选择器 */}
+        <div className="space-y-4">
+          {tagCategories.map((category) => {
+            const isExpanded = expandedCategories.has(category.id);
+            const selectedCount = category.tags.filter(tag =>
+              selectedTagIds.includes(tag.id)
+            ).length;
+
+            return (
+              <div key={category.id} className="border border-gray-200 rounded-xl overflow-hidden">
+                {/* 分类标题 */}
+                <button
+                  type="button"
+                  onClick={() => toggleCategory(category.id)}
+                  className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-3">
+                    {category.icon && (
+                      <span className="text-2xl">{category.icon}</span>
+                    )}
+                    <div className="text-left">
+                      <p className="font-semibold text-gray-900">{category.name}</p>
+                      <p className="text-xs text-gray-600">
+                        {category.tags.length} 个标签
+                        {selectedCount > 0 && ` · 已选 ${selectedCount} 个`}
+                      </p>
+                    </div>
+                  </div>
+                  <svg
+                    className={`w-5 h-5 text-gray-600 transition-transform duration-200 ${
+                      isExpanded ? 'rotate-180' : ''
+                    }`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {/* 标签列表 */}
+                {isExpanded && (
+                  <div className="p-4 bg-white">
+                    <div className="flex flex-wrap gap-2">
+                      {category.tags.map((tag) => {
+                        const isSelected = selectedTagIds.includes(tag.id);
+                        return (
+                          <button
+                            key={tag.id}
+                            type="button"
+                            onClick={() => toggleTag(tag.id)}
+                            className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                              isSelected
+                                ? 'text-white shadow-md scale-105'
+                                : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                            }`}
+                            style={{
+                              backgroundColor: isSelected
+                                ? (tag.color || category.color || '#FF5580')
+                                : undefined
+                            }}
+                          >
+                            {tag.icon && <span className="mr-1">{tag.icon}</span>}
+                            {tag.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
 
-        {/* 添加新标签 */}
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={newTag}
-            onChange={(e) => setNewTag(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
-            placeholder="例如：热门、推荐、樱花季"
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sakura-500 focus:border-transparent"
-          />
-          <Button type="button" onClick={addTag} variant="secondary" size="md">
-            <Plus className="w-4 h-4 mr-2" />
-            添加
-          </Button>
-        </div>
+        {/* 空状态 */}
+        {tagCategories.length === 0 && (
+          <div className="text-center py-8 text-gray-500">
+            <p>暂无可用标签分类</p>
+            <p className="text-sm mt-2">请联系管理员添加标签</p>
+          </div>
+        )}
       </div>
 
       {/* 高级设置 */}
@@ -617,15 +782,8 @@ export default function PlanEditForm({ plan }: PlanEditFormProps) {
           )}
         </Button>
 
-        <Link href={`/plans/${plan.slug}`} target="_blank">
-          <Button variant="secondary" size="lg">
-            <Eye className="w-5 h-5 mr-2" />
-            预览套餐
-          </Button>
-        </Link>
-
         <Link href="/merchant/listings">
-          <Button variant="secondary" size="lg">
+          <Button variant="secondary" size="lg" disabled={isLoading}>
             取消
           </Button>
         </Link>
