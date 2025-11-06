@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import PlanCard from "@/components/PlanCard";
+import PlanCardGrid from "@/components/PlanCard/PlanCardGrid";
 import HeroSearchBar from "@/components/HeroSearchBar";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
@@ -118,19 +119,13 @@ export default async function HomePage() {
 
                 {/* 水平滚动卡片容器 - Airbnb 风格 */}
                 <div className="relative -mx-4 px-4 md:mx-0 md:px-0">
-                  <div
-                    className="grid gap-3 md:gap-6 pb-2 overflow-x-auto scrollbar-hide overscroll-x-contain snap-x snap-mandatory"
-                    style={{
-                      gridAutoFlow: "column",
-                      gridAutoColumns: "min(260px, 75vw)",
-                    }}
-                  >
+                  <PlanCardGrid variant="horizontal-scroll">
                     {section.plans.map((plan) => (
                       <div key={plan.id} className="snap-start">
                         <PlanCard plan={plan} showMerchant={true} />
                       </div>
                     ))}
-                  </div>
+                  </PlanCardGrid>
                 </div>
               </div>
             </section>

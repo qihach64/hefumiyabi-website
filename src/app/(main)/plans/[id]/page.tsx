@@ -12,8 +12,9 @@ interface PlanDetailPageProps {
 }
 
 export default async function PlanDetailPage({ params }: PlanDetailPageProps) {
+  const { id } = await params;
   const plan = await prisma.rentalPlan.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       campaign: {
         select: {

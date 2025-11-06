@@ -69,7 +69,7 @@ export default function HeaderActions({ isLoggedIn, merchant }: HeaderActionsPro
 
         <Link
           href="/plans"
-          className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background bg-primary text-primary-foreground hover:bg-primary/90 h-9 md:h-10 px-3 md:px-4 py-2"
+          className="inline-flex items-center justify-center rounded-lg text-sm font-medium transition-colors bg-sakura-600 text-white hover:bg-sakura-700 active:scale-95 h-9 md:h-10 px-3 md:px-4 shadow-sm"
         >
           <span className="hidden sm:inline">立即预约</span>
           <span className="sm:hidden">预约</span>
@@ -87,7 +87,7 @@ export default function HeaderActions({ isLoggedIn, merchant }: HeaderActionsPro
             // 在商家页面，显示"切换到客户模式"
             <Link
               href="/"
-              className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-full text-sm font-medium transition-all hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
+              className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-full text-sm font-medium transition-all hover:bg-sakura-50 text-gray-700 hover:text-sakura-700"
             >
               <ArrowRight className="w-4 h-4 rotate-180" />
               <span className="hidden md:inline">客户模式</span>

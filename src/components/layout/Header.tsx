@@ -95,7 +95,7 @@ export default async function Header() {
               ) : (
                 <Link
                   href="/login"
-                  className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-gray-100 h-10 px-4 py-2"
+                  className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-sakura-50 hover:text-sakura-700 h-10 px-4 py-2"
                 >
                   登录
                 </Link>

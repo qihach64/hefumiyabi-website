@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import PlanCard from "@/components/PlanCard";
+import PlanCardGrid from "@/components/PlanCard/PlanCardGrid";
 import { Sparkles, MapPin, Store as StoreIcon, Tag, X, Filter } from "lucide-react";
 import { Button, Badge } from "@/components/ui";
 
@@ -474,7 +475,7 @@ export default function PlansClient({
                   </div>
 
                   {/* Airbnb 风格网格：更宽松的间距 */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  <PlanCardGrid variant="grid-4">
                     {filteredCampaignPlans.map((plan) => (
                       <PlanCard
                         key={plan.id}
@@ -482,7 +483,7 @@ export default function PlansClient({
                         showMerchant={true}
                       />
                     ))}
-                  </div>
+                  </PlanCardGrid>
                 </div>
               )}
 
@@ -494,7 +495,7 @@ export default function PlansClient({
                   )}
 
                   {/* Airbnb 风格网格 */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  <PlanCardGrid variant="grid-4">
                     {filteredRegularPlans.map((plan) => (
                       <PlanCard
                         key={plan.id}
@@ -502,7 +503,7 @@ export default function PlansClient({
                         showMerchant={true}
                       />
                     ))}
-                  </div>
+                  </PlanCardGrid>
                 </div>
               )}
 

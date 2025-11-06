@@ -8,6 +8,8 @@ import {
   Power, Copy, Trash2, Package, TrendingUp, Filter
 } from "lucide-react";
 import { Button, Badge } from "@/components/ui";
+import PlanCardManagement from "@/components/PlanCard/PlanCardManagement";
+import PlanCardGrid from "@/components/PlanCard/PlanCardGrid";
 
 interface Tag {
   id: string;
@@ -279,11 +281,11 @@ export default function ListingsClient({ plans, merchantId }: ListingsClientProp
 // 网格视图组件
 function GridView({ plans }: { plans: Plan[] }) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <PlanCardGrid variant="grid-3">
       {plans.map((plan) => (
-        <PlanCard key={plan.id} plan={plan} />
+        <PlanCardManagement key={plan.id} plan={plan} />
       ))}
-    </div>
+    </PlanCardGrid>
   );
 }
 
@@ -307,138 +309,6 @@ function ListView({ plans }: { plans: Plan[] }) {
           ))}
         </tbody>
       </table>
-    </div>
-  );
-}
-
-// 套餐卡片组件（网格视图）
-function PlanCard({ plan }: { plan: Plan }) {
-  const [showMenu, setShowMenu] = useState(false);
-
-  return (
-    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-lg transition-all group">
-      {/* 套餐图片 */}
-      <div className="relative aspect-[4/3] bg-gray-100">
-        {plan.imageUrl ? (
-          <Image
-            src={plan.imageUrl}
-            alt={plan.name}
-            fill
-            className="object-cover"
-          />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Package className="w-16 h-16 text-gray-300" />
-          </div>
-        )}
-
-        {/* 状态标签 */}
-        <div className="absolute top-3 left-3 flex gap-2">
-          <Badge variant={plan.isActive ? "success-solid" : "secondary-solid"} size="sm">
-            {plan.isActive ? "已上架" : "已下架"}
-          </Badge>
-          {plan.isFeatured && (
-            <Badge variant="warning-solid" size="sm">精选</Badge>
-          )}
-          {plan.isCampaign && (
-            <Badge variant="danger-solid" size="sm">活动</Badge>
-          )}
-        </div>
-
-        {/* 快速操作菜单 */}
-        <div className="absolute top-3 right-3">
-          <button
-            onClick={() => setShowMenu(!showMenu)}
-            className="p-2 rounded-full bg-white/90 hover:bg-white shadow-md transition-all"
-          >
-            <MoreVertical className="w-5 h-5 text-gray-700" />
-          </button>
-          {showMenu && (
-            <QuickMenu plan={plan} onClose={() => setShowMenu(false)} />
-          )}
-        </div>
-      </div>
-
-      {/* 套餐信息 */}
-      <div className="p-5">
-        <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 min-h-[3rem]">
-          {plan.name}
-        </h3>
-
-        <div className="flex items-baseline gap-2 mb-4">
-          <span className="text-2xl font-bold text-gray-900">
-            ¥{(plan.price / 100).toLocaleString()}
-          </span>
-          {plan.originalPrice && plan.originalPrice > plan.price && (
-            <span className="text-sm text-gray-500 line-through">
-              ¥{(plan.originalPrice / 100).toLocaleString()}
-            </span>
-          )}
-        </div>
-
-        <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
-          <span className="flex items-center gap-1">
-            <TrendingUp className="w-4 h-4" />
-            {plan.currentBookings} 次预订
-          </span>
-          <Badge variant="info" size="sm">
-            {CATEGORY_LABELS[plan.category] || plan.category}
-          </Badge>
-        </div>
-
-        {/* 标签 */}
-        {plan.planTags && plan.planTags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mb-3">
-            {plan.planTags.slice(0, 3).map(({ tag }) => (
-              <Badge key={tag.id} variant="sakura" size="sm">
-                {tag.icon && <span className="mr-1">{tag.icon}</span>}
-                {tag.name}
-              </Badge>
-            ))}
-            {plan.planTags.length > 3 && (
-              <Badge variant="sakura" size="sm" className="opacity-60">
-                +{plan.planTags.length - 3}
-              </Badge>
-            )}
-          </div>
-        )}
-
-        {/* 包含内容 */}
-        {plan.includes && plan.includes.length > 0 && (
-          <div className="pt-3 mb-3 border-t border-gray-100">
-            <p className="text-xs font-semibold text-gray-700 mb-1.5">套餐包含：</p>
-            <ul className="space-y-1">
-              {plan.includes.slice(0, 2).map((item, index) => (
-                <li key={index} className="text-xs text-gray-600 flex items-start gap-1.5">
-                  <span className="text-sakura-500 mt-0.5 flex-shrink-0">✓</span>
-                  <span className="line-clamp-1">{item}</span>
-                </li>
-              ))}
-              {plan.includes.length > 2 && (
-                <li className="text-xs text-gray-500 pl-4">
-                  还有 {plan.includes.length - 2} 项...
-                </li>
-              )}
-            </ul>
-          </div>
-        )}
-
-        {/* 操作按钮 */}
-        <div className="flex gap-2">
-          <Link href={`/plans/${plan.slug}`} target="_blank" className="flex-1">
-            <Button variant="secondary" size="sm" fullWidth>
-              <Eye className="w-4 h-4 mr-2" />
-              预览
-            </Button>
-          </Link>
-          <Link href={`/merchant/listings/${plan.id}/edit`} className="flex-1">
-            <Button variant="primary" size="sm" fullWidth>
-              <Edit className="w-4 h-4 mr-2" />
-              编辑
-            </Button>
-          </Link>
-        </div>
-      </div>
     </div>
   );
 }
@@ -553,7 +423,7 @@ function PlanRow({ plan }: { plan: Plan }) {
   );
 }
 
-// 快速操作菜单
+// 快速操作菜单（用于列表视图）
 function QuickMenu({ plan, onClose }: { plan: Plan; onClose: () => void }) {
   return (
     <>
