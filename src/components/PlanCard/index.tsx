@@ -3,8 +3,9 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Heart, MapPin, Star } from "lucide-react";
+import { ShoppingCart, MapPin, Star, Check } from "lucide-react";
 import { Badge } from "@/components/ui";
+import { useCartStore } from "@/store/cart";
 
 interface Tag {
   id: string;
@@ -35,12 +36,44 @@ interface PlanCardProps {
 }
 
 export default function PlanCard({ plan, showMerchant = false }: PlanCardProps) {
-  const [isFavorited, setIsFavorited] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
+  const [justAdded, setJustAdded] = useState(false);
+  const addItem = useCartStore((state) => state.addItem);
+  const items = useCartStore((state) => state.items);
+
+  // 检查是否已在购物车中
+  const isInCart = items.some(item => item.planId === plan.id);
 
   // 计算优惠金额
   const discountAmount = plan.originalPrice && plan.originalPrice > plan.price
     ? plan.originalPrice - plan.price
     : 0;
+
+  // 加入购物车
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    setIsAdding(true);
+    addItem({
+      type: 'PLAN',
+      planId: plan.id,
+      name: plan.name,
+      nameEn: plan.nameEn,
+      price: plan.price,
+      originalPrice: plan.originalPrice,
+      image: plan.imageUrl,
+      addOns: [],
+      isCampaign: plan.isCampaign,
+    });
+
+    // 显示成功反馈
+    setJustAdded(true);
+    setTimeout(() => {
+      setIsAdding(false);
+      setJustAdded(false);
+    }, 1500);
+  };
 
   // 分类标签
   const getCategoryLabel = (category: string) => {
@@ -77,22 +110,25 @@ export default function PlanCard({ plan, showMerchant = false }: PlanCardProps) 
             </div>
           )}
 
-          {/* 收藏按钮 - Airbnb 风格 */}
+          {/* 加入购物车按钮 - 快速操作 */}
           <button
-            onClick={(e) => {
-              e.preventDefault();
-              setIsFavorited(!isFavorited);
-            }}
-            className="absolute top-3 right-3 p-2 rounded-full bg-white/90 hover:bg-white hover:scale-110 transition-all shadow-md"
-            aria-label="收藏"
+            onClick={handleAddToCart}
+            disabled={isAdding}
+            className={`absolute top-3 right-3 p-2 rounded-full shadow-md transition-all ${
+              justAdded
+                ? 'bg-green-500 text-white scale-110'
+                : isInCart
+                ? 'bg-sakura-100 text-sakura-600 hover:bg-sakura-200'
+                : 'bg-white/90 text-gray-700 hover:bg-white hover:scale-110'
+            }`}
+            aria-label={isInCart ? "已在购物车" : "加入购物车"}
+            title={isInCart ? "已在购物车，点击增加数量" : "加入购物车"}
           >
-            <Heart
-              className={`w-5 h-5 ${
-                isFavorited
-                  ? 'fill-sakura-500 text-sakura-500'
-                  : 'text-gray-700'
-              }`}
-            />
+            {justAdded ? (
+              <Check className="w-5 h-5" />
+            ) : (
+              <ShoppingCart className="w-5 h-5" />
+            )}
           </button>
 
           {/* 优惠标签 */}
