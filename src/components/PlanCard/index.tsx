@@ -38,6 +38,7 @@ interface PlanCardProps {
 export default function PlanCard({ plan, showMerchant = false }: PlanCardProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [justChanged, setJustChanged] = useState(false);
+  const [lastAction, setLastAction] = useState<'add' | 'remove' | null>(null);
   const addItem = useCartStore((state) => state.addItem);
   const removeItem = useCartStore((state) => state.removeItem);
   const items = useCartStore((state) => state.items);
@@ -61,6 +62,7 @@ export default function PlanCard({ plan, showMerchant = false }: PlanCardProps) 
     if (isInCart && cartItem) {
       // 已在购物车：移除
       removeItem(cartItem.id);
+      setLastAction('remove');
     } else {
       // 不在购物车：添加
       addItem({
@@ -74,6 +76,7 @@ export default function PlanCard({ plan, showMerchant = false }: PlanCardProps) 
         addOns: [],
         isCampaign: plan.isCampaign,
       });
+      setLastAction('add');
     }
 
     // 显示操作反馈
@@ -81,6 +84,7 @@ export default function PlanCard({ plan, showMerchant = false }: PlanCardProps) 
     setTimeout(() => {
       setIsAdding(false);
       setJustChanged(false);
+      setLastAction(null);
     }, 1000);
   };
 
@@ -125,12 +129,12 @@ export default function PlanCard({ plan, showMerchant = false }: PlanCardProps) 
             disabled={isAdding}
             className={`absolute top-3 right-3 p-2 rounded-full shadow-md transition-all ${
               justChanged
-                ? isInCart
-                  ? 'bg-gray-400 text-white scale-110'
-                  : 'bg-green-500 text-white scale-110'
+                ? lastAction === 'add'
+                  ? 'bg-green-500 text-white scale-110'   // 刚添加 → 绿色
+                  : 'bg-gray-400 text-white scale-110'    // 刚移除 → 灰色
                 : isInCart
-                ? 'bg-sakura-500 text-white hover:bg-sakura-600'
-                : 'bg-white/90 text-gray-700 hover:bg-white hover:scale-110'
+                ? 'bg-sakura-500 text-white hover:bg-sakura-600'  // 已在购物车 → sakura
+                : 'bg-white/90 text-gray-700 hover:bg-white hover:scale-110'  // 未加入 → 白色
             }`}
             aria-label={isInCart ? "从购物车移除" : "加入购物车"}
             title={isInCart ? "点击从购物车移除" : "点击加入购物车"}
