@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { Store, Users, Calendar, DollarSign, AlertCircle, Settings } from "lucide-react";
+import { Store, Users, Calendar, DollarSign, AlertCircle, Settings, Tags } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui";
 
@@ -55,19 +55,22 @@ export default async function AdminDashboardPage() {
   });
 
   return (
-    <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">管理仪表板</h1>
-        <p className="text-gray-600 mt-2">平台运营数据总览</p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-b from-sakura-50/30 to-white">
+      <div className="container py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+            👘 管理仪表板
+          </h1>
+          <p className="text-gray-600 mt-2">江戸和装工房雅 · 平台运营数据总览</p>
+        </div>
 
       {/* 统计卡片 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {/* 总用户数 */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="bg-white rounded-2xl border border-sakura-200/50 p-6 hover:shadow-lg transition-all hover:border-sakura-300">
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-              <Users className="w-6 h-6 text-blue-600" />
+            <div className="w-12 h-12 bg-gradient-to-br from-sakura-100 to-sakura-200 rounded-xl flex items-center justify-center">
+              <Users className="w-6 h-6 text-sakura-700" />
             </div>
           </div>
           <h3 className="text-2xl font-bold text-gray-900 mb-1">
@@ -77,10 +80,10 @@ export default async function AdminDashboardPage() {
         </div>
 
         {/* 商家数量 */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="bg-white rounded-2xl border border-sakura-200/50 p-6 hover:shadow-lg transition-all hover:border-sakura-300">
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-sakura-100 rounded-xl flex items-center justify-center">
-              <Store className="w-6 h-6 text-sakura-600" />
+            <div className="w-12 h-12 bg-gradient-to-br from-sakura-200 to-sakura-300 rounded-xl flex items-center justify-center">
+              <Store className="w-6 h-6 text-sakura-800" />
             </div>
             {pendingMerchants > 0 && (
               <span className="px-2 py-1 bg-amber-100 text-amber-700 text-xs font-semibold rounded-full">
@@ -95,12 +98,12 @@ export default async function AdminDashboardPage() {
         </div>
 
         {/* 订单数量 */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="bg-white rounded-2xl border border-sakura-200/50 p-6 hover:shadow-lg transition-all hover:border-sakura-300">
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-              <Calendar className="w-6 h-6 text-green-600" />
+            <div className="w-12 h-12 bg-gradient-to-br from-pink-100 to-pink-200 rounded-xl flex items-center justify-center">
+              <Calendar className="w-6 h-6 text-pink-700" />
             </div>
-            <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
+            <span className="px-2 py-1 bg-sakura-100 text-sakura-700 text-xs font-semibold rounded-full">
               本月 {thisMonthBookings}
             </span>
           </div>
@@ -111,10 +114,10 @@ export default async function AdminDashboardPage() {
         </div>
 
         {/* 总收入 */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="bg-white rounded-2xl border border-sakura-200/50 p-6 hover:shadow-lg transition-all hover:border-sakura-300">
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
-              <DollarSign className="w-6 h-6 text-amber-600" />
+            <div className="w-12 h-12 bg-gradient-to-br from-amber-100 to-amber-200 rounded-xl flex items-center justify-center">
+              <DollarSign className="w-6 h-6 text-amber-700" />
             </div>
           </div>
           <h3 className="text-2xl font-bold text-gray-900 mb-1">
@@ -126,11 +129,11 @@ export default async function AdminDashboardPage() {
 
       {/* 待审核商家 */}
       {pendingMerchantsList.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-8">
+        <div className="bg-white rounded-2xl border border-amber-200/50 p-6 mb-8 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
-                <AlertCircle className="w-5 h-5 text-amber-600" />
+              <div className="w-10 h-10 bg-gradient-to-br from-amber-100 to-amber-200 rounded-lg flex items-center justify-center">
+                <AlertCircle className="w-5 h-5 text-amber-700" />
               </div>
               <div>
                 <h2 className="text-xl font-bold text-gray-900">待审核商家</h2>
@@ -151,10 +154,10 @@ export default async function AdminDashboardPage() {
               <Link
                 key={merchant.id}
                 href={`/admin/merchants`}
-                className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+                className="flex items-center justify-between p-4 bg-gradient-to-r from-sakura-50/50 to-amber-50/30 rounded-xl hover:from-sakura-100/50 hover:to-amber-100/30 transition-all border border-transparent hover:border-sakura-200"
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
+                  <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center overflow-hidden shadow-sm">
                     {merchant.logo ? (
                       <img
                         src={merchant.logo}
@@ -162,7 +165,7 @@ export default async function AdminDashboardPage() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <Store className="w-6 h-6 text-gray-500" />
+                      <Store className="w-6 h-6 text-sakura-600" />
                     )}
                   </div>
                   <div>
@@ -178,7 +181,7 @@ export default async function AdminDashboardPage() {
                   <p className="text-sm text-gray-500">
                     {new Date(merchant.createdAt).toLocaleDateString("zh-CN")}
                   </p>
-                  <span className="text-xs text-amber-600 font-medium">
+                  <span className="text-xs text-amber-700 font-semibold bg-amber-100 px-2 py-1 rounded-full">
                     待审核
                   </span>
                 </div>
@@ -189,13 +192,13 @@ export default async function AdminDashboardPage() {
       )}
 
       {/* 快捷操作 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Link
           href="/admin/merchants"
-          className="bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-lg transition-shadow"
+          className="bg-white rounded-2xl border border-sakura-200/50 p-6 hover:shadow-lg transition-all hover:border-sakura-300 group"
         >
-          <div className="w-12 h-12 bg-sakura-100 rounded-xl flex items-center justify-center mb-4">
-            <Store className="w-6 h-6 text-sakura-600" />
+          <div className="w-12 h-12 bg-gradient-to-br from-sakura-100 to-sakura-200 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <Store className="w-6 h-6 text-sakura-700" />
           </div>
           <h3 className="text-lg font-bold text-gray-900 mb-2">商家管理</h3>
           <p className="text-sm text-gray-600">
@@ -205,25 +208,37 @@ export default async function AdminDashboardPage() {
 
         <Link
           href="/admin/users"
-          className="bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-lg transition-shadow"
+          className="bg-white rounded-2xl border border-sakura-200/50 p-6 hover:shadow-lg transition-all hover:border-sakura-300 group"
         >
-          <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4">
-            <Users className="w-6 h-6 text-blue-600" />
+          <div className="w-12 h-12 bg-gradient-to-br from-pink-100 to-pink-200 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <Users className="w-6 h-6 text-pink-700" />
           </div>
           <h3 className="text-lg font-bold text-gray-900 mb-2">用户管理</h3>
           <p className="text-sm text-gray-600">查看和管理平台用户信息</p>
         </Link>
 
         <Link
-          href="/admin/settings"
-          className="bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-lg transition-shadow"
+          href="/admin/tags"
+          className="bg-white rounded-2xl border border-sakura-200/50 p-6 hover:shadow-lg transition-all hover:border-sakura-300 group"
         >
-          <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mb-4">
-            <Settings className="w-6 h-6 text-gray-600" />
+          <div className="w-12 h-12 bg-gradient-to-br from-amber-100 to-amber-200 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <Tags className="w-6 h-6 text-amber-700" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 mb-2">标签管理</h3>
+          <p className="text-sm text-gray-600">管理套餐标签和分类体系</p>
+        </Link>
+
+        <Link
+          href="/admin/settings"
+          className="bg-white rounded-2xl border border-sakura-200/50 p-6 hover:shadow-lg transition-all hover:border-sakura-300 group"
+        >
+          <div className="w-12 h-12 bg-gradient-to-br from-purple-100 to-purple-200 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <Settings className="w-6 h-6 text-purple-700" />
           </div>
           <h3 className="text-lg font-bold text-gray-900 mb-2">系统设置</h3>
           <p className="text-sm text-gray-600">配置平台参数和功能选项</p>
         </Link>
+      </div>
       </div>
     </div>
   );

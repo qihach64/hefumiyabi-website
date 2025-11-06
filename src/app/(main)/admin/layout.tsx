@@ -47,25 +47,29 @@ export default async function AdminLayout({
   return (
     <div className="min-h-screen bg-gray-50">
       {/* 管理后台顶部栏 */}
-      <div className="bg-gray-900 text-white">
+      <div className="bg-gradient-to-r from-sakura-300 via-sakura-400 to-pink-400 text-white shadow-lg">
         <div className="container py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Shield className="w-6 h-6 text-sakura-400" />
-              <h1 className="text-xl font-bold">管理后台</h1>
+              <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                <Shield className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold">👘 管理后台</h1>
+              </div>
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-300">
+              <span className="text-sm text-white/90">
                 {session.user.name || session.user.email}
               </span>
-              <span className="px-3 py-1 bg-sakura-600 text-white text-xs font-semibold rounded-full">
+              <span className="px-3 py-1 bg-white/20 backdrop-blur-sm text-white text-xs font-semibold rounded-full border border-white/30">
                 {session.user.role === "ADMIN" ? "管理员" : "员工"}
               </span>
               <Link
                 href="/"
-                className="text-sm text-gray-300 hover:text-white transition-colors"
+                className="text-sm text-white/90 hover:text-white transition-colors flex items-center gap-1 hover:underline"
               >
-                返回前台
+                返回前台 →
               </Link>
             </div>
           </div>
