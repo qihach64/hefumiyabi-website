@@ -37,42 +37,51 @@ interface PlanCardProps {
 
 export default function PlanCard({ plan, showMerchant = false }: PlanCardProps) {
   const [isAdding, setIsAdding] = useState(false);
-  const [justAdded, setJustAdded] = useState(false);
+  const [justChanged, setJustChanged] = useState(false);
   const addItem = useCartStore((state) => state.addItem);
+  const removeItem = useCartStore((state) => state.removeItem);
   const items = useCartStore((state) => state.items);
 
-  // 检查是否已在购物车中
-  const isInCart = items.some(item => item.planId === plan.id);
+  // 检查是否已在购物车中，并获取 cartItemId
+  const cartItem = items.find(item => item.planId === plan.id);
+  const isInCart = !!cartItem;
 
   // 计算优惠金额
   const discountAmount = plan.originalPrice && plan.originalPrice > plan.price
     ? plan.originalPrice - plan.price
     : 0;
 
-  // 加入购物车
-  const handleAddToCart = (e: React.MouseEvent) => {
+  // 切换购物车状态（添加/移除）
+  const handleToggleCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
     setIsAdding(true);
-    addItem({
-      type: 'PLAN',
-      planId: plan.id,
-      name: plan.name,
-      nameEn: plan.nameEn,
-      price: plan.price,
-      originalPrice: plan.originalPrice,
-      image: plan.imageUrl,
-      addOns: [],
-      isCampaign: plan.isCampaign,
-    });
 
-    // 显示成功反馈
-    setJustAdded(true);
+    if (isInCart && cartItem) {
+      // 已在购物车：移除
+      removeItem(cartItem.id);
+    } else {
+      // 不在购物车：添加
+      addItem({
+        type: 'PLAN',
+        planId: plan.id,
+        name: plan.name,
+        nameEn: plan.nameEn,
+        price: plan.price,
+        originalPrice: plan.originalPrice,
+        image: plan.imageUrl,
+        addOns: [],
+        isCampaign: plan.isCampaign,
+      });
+    }
+
+    // 显示操作反馈
+    setJustChanged(true);
     setTimeout(() => {
       setIsAdding(false);
-      setJustAdded(false);
-    }, 1500);
+      setJustChanged(false);
+    }, 1000);
   };
 
   // 分类标签
@@ -110,24 +119,28 @@ export default function PlanCard({ plan, showMerchant = false }: PlanCardProps) 
             </div>
           )}
 
-          {/* 加入购物车按钮 - 快速操作 */}
+          {/* 加入购物车按钮 - 切换开关 */}
           <button
-            onClick={handleAddToCart}
+            onClick={handleToggleCart}
             disabled={isAdding}
             className={`absolute top-3 right-3 p-2 rounded-full shadow-md transition-all ${
-              justAdded
-                ? 'bg-green-500 text-white scale-110'
+              justChanged
+                ? isInCart
+                  ? 'bg-gray-400 text-white scale-110'
+                  : 'bg-green-500 text-white scale-110'
                 : isInCart
-                ? 'bg-sakura-100 text-sakura-600 hover:bg-sakura-200'
+                ? 'bg-sakura-500 text-white hover:bg-sakura-600'
                 : 'bg-white/90 text-gray-700 hover:bg-white hover:scale-110'
             }`}
-            aria-label={isInCart ? "已在购物车" : "加入购物车"}
-            title={isInCart ? "已在购物车，点击增加数量" : "加入购物车"}
+            aria-label={isInCart ? "从购物车移除" : "加入购物车"}
+            title={isInCart ? "点击从购物车移除" : "点击加入购物车"}
           >
-            {justAdded ? (
+            {justChanged ? (
               <Check className="w-5 h-5" />
             ) : (
-              <ShoppingCart className="w-5 h-5" />
+              <ShoppingCart
+                className={`w-5 h-5 ${isInCart ? 'fill-current' : ''}`}
+              />
             )}
           </button>
 
