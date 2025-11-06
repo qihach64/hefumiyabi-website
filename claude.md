@@ -121,6 +121,189 @@ The Prisma schema has 24+ models. Critical relationships:
    - Merchant: Merchants create listings requiring approval
    - Commission-based revenue split (15% default)
 
+## Product Design Philosophy
+
+### Reducing Choice Paralysis Through Standardization
+
+**Core Problem Statement:**
+
+> "选择困难 <-- 设计标准化套餐
+>
+> 游客没有时间、精力和耐性去筛选和定制和服套餐。
+>
+> 商家没有时间、精力和方法来管理种类繁多的库存和预约。"
+
+### Current Rental Plan Model
+
+The platform adopts a **pre-packaged plan approach** rather than a build-your-own customization model:
+
+**RentalPlan Structure:**
+```typescript
+model RentalPlan {
+  // Core identification
+  name         String    // Clear, descriptive plan name (e.g., "经典女士套餐")
+  category     Category  // LADIES | MENS | COUPLE | FAMILY | GROUP | SPECIAL
+
+  // Fixed pricing
+  price        Int       // Single price point (in cents)
+  originalPrice Int?     // Optional for discount display
+
+  // Fixed duration
+  duration     Int       // Hours included (e.g., 4, 6, 8 hours)
+
+  // Pre-defined inclusions
+  includes     String[]  // What's included (e.g., ["和服租赁", "专业着装", "发型设计"])
+
+  // Curated presentation
+  imageUrl     String?   // Professional photo
+  description  String    // Clear explanation
+  tags         Tag[]     // Filterable attributes
+
+  // Operational
+  isActive     Boolean   // On/off switch
+  isCampaign   Boolean   // Campaign pricing
+  isFeatured   Boolean   // Homepage prominence
+}
+```
+
+### How This Reduces Decision Burden
+
+**For Users (Guests/Tourists):**
+
+1. **Quick Comparison**: All plans in same category show same info structure
+   - Price, duration, and inclusions are immediately visible
+   - No hidden costs or surprise add-ons
+   - Filter by category (女士/男士/情侣) and region
+
+2. **Transparent Expectations**: `includes[]` array clearly states what you get
+   - No need to understand kimono types or accessories
+   - No decision fatigue from 50+ individual options
+   - "和服租赁 + 专业着装 + 发型设计" is self-explanatory
+
+3. **Trust Through Standards**: Plans are merchant-curated, not user-assembled
+   - Merchants pre-select coordinated kimonos and accessories
+   - Professional styling advice is included by default
+   - Reduces risk of "wrong choice" anxiety
+
+4. **Fast Booking Flow**: Single-page checkout, minimal steps
+   - Add to cart → Select date/time → Confirm
+   - No multi-step wizard with 10 decision points
+   - Guest checkout supported (no mandatory registration)
+
+**For Merchants:**
+
+1. **Simplified Inventory Management**:
+   - Create 5-10 standard plans instead of managing 100+ individual items
+   - Each plan represents a "package" they can reliably prepare
+   - `includes[]` serves as operational checklist
+
+2. **Standardized Pricing**:
+   - Fixed price points eliminate negotiation
+   - `originalPrice` supports controlled discounts
+   - `isCampaign` flag for promotional periods
+
+3. **Predictable Operations**:
+   - `duration` field sets clear time expectations
+   - `category` helps with resource allocation (women's vs men's dressing rooms)
+   - `isActive` allows instant on/off without deletion
+
+4. **Marketplace-Ready**:
+   - Platform can enforce quality standards through approval
+   - Commission calculation is straightforward (% of `price`)
+   - Consistent presentation across all merchants
+
+### Design Trade-offs & Discussion Points
+
+**✅ Current Strengths:**
+
+1. **Simplicity Over Flexibility**
+   - Users make 2-3 decisions (category, date, store) vs 20+ item selections
+   - 80% of users want "just give me a good kimono experience"
+   - Mirrors successful models: Airbnb "Instant Book", Apple product tiers
+
+2. **Operational Scalability**
+   - Merchants can scale to 100+ bookings/day with standardized plans
+   - Staff training is easier ("prepare Plan A" vs "check 15 customization options")
+   - Reduced errors from miscommunication
+
+3. **Price Transparency**
+   - Single price point reduces checkout abandonment
+   - No "bait and switch" from add-on costs
+   - Competitive comparison is straightforward
+
+**⚠️ Current Limitations & Open Questions:**
+
+1. **Limited Personalization**
+   - **Question**: Should we allow "plan customization" (e.g., add extra accessories for ¥500)?
+   - **Trade-off**: Flexibility vs maintaining simplicity
+   - **Current approach**: Use `tags` for personalization signals (e.g., "适合拍照", "传统风格")
+
+2. **Kimono Selection Control**
+   - **Question**: Do users want to pre-select specific kimono designs before arrival?
+   - **Trade-off**: Choice control vs logistical complexity
+   - **Current approach**: `imageUrl` shows representative kimono, actual selection happens in-store
+   - **Future consideration**: Add `BookingKimono` selection during booking (already in schema)
+
+3. **Add-ons vs All-Inclusive**
+   - **Question**: Should high-margin items (professional photography, hair extensions) be separate add-ons?
+   - **Trade-off**: Revenue optimization vs decision fatigue
+   - **Current approach**: Core items in `includes[]`, premium services could be optional
+   - **Schema support**: `addOns` field exists in cart system but underutilized
+
+4. **Multi-Plan Bookings**
+   - **Question**: If a couple books together, should they select 2 separate plans or 1 "couple plan"?
+   - **Trade-off**: Flexibility (different preferences) vs simplicity (one checkout)
+   - **Current approach**: Both supported via cart system, but couple plans encouraged
+
+5. **Merchant Plan Proliferation**
+   - **Question**: How many plans should one merchant be allowed to create?
+   - **Risk**: Too many plans recreates choice paralysis
+   - **Current approach**: No enforcement, but UI shows plans in compact grid
+   - **Consideration**: Recommend 3-5 plans per category, use `isFeatured` to highlight best sellers
+
+6. **Time-based Pricing**
+   - **Question**: Should peak hours (weekends, holidays) have dynamic pricing?
+   - **Trade-off**: Revenue optimization vs pricing transparency
+   - **Current approach**: `isCampaign` for promotional periods, but no surge pricing
+   - **Schema limitation**: Single `price` field, no date-based pricing rules
+
+### Recommended Best Practices
+
+**For Platform Operations:**
+- Encourage merchants to create 3-8 total plans (not 30+)
+- Each plan should be meaningfully different (price/duration/inclusions)
+- Use `tags` for soft personalization (search/filter) rather than plan multiplication
+
+**For Merchant Onboarding:**
+- Template plans provided: "基础套餐", "豪华套餐", "全日体验"
+- Guidance: "What would first-time kimono renters want?"
+- Discourage: Individual kimono selection, à la carte pricing
+
+**For User Experience:**
+- Homepage shows 8-12 featured plans (horizontal scroll)
+- Category pages show 12-20 plans in grid
+- Filters are assistive, not required (region, price range, tags)
+- Plan detail page emphasizes `includes[]` with visual checkmarks
+
+### Future Considerations
+
+1. **Guided Recommendations**: AI chatbot suggests plans based on:
+   - Occasion (photoshoot, festival, casual)
+   - Group composition (solo, couple, family)
+   - Budget and time constraints
+
+2. **Smart Bundling**: Auto-suggest complementary plans
+   - "Your friend also selected a plan, save ¥500 as a couple"
+   - Cart-level optimization vs individual plan selection
+
+3. **Plan Templates**: Admin-curated "starter packs" for merchants
+   - Reduces merchant decision fatigue too
+   - Ensures platform quality consistency
+
+4. **Performance Metrics**: Track which plans convert best
+   - `currentBookings` field already exists
+   - Use data to recommend merchants simplify underperforming plans
+
 ### API Routes
 
 All API routes follow RESTful patterns:
