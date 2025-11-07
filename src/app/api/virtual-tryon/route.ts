@@ -5,6 +5,7 @@ import { auth } from '@/auth';
 import { TryOnStatus } from '@prisma/client';
 import fs from 'fs';
 import path from 'path';
+import { DEFAULT_PROMPT } from '@/lib/virtual-tryon-prompts';
 
 // 初始化 Google GenAI
 const ai = new GoogleGenAI({
@@ -45,11 +46,26 @@ export async function POST(req: NextRequest) {
                       `guest-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     const body = await req.json();
-    const { personImageBase64, planId, kimonoId, kimonoImageUrl } = body;
+    const { personImageBase64, planId, kimonoId, kimonoImageUrl, customPrompt } = body;
 
     if (!personImageBase64) {
       return NextResponse.json(
         { error: 'missing_image', message: '请上传照片' },
+        { status: 400 }
+      );
+    }
+
+    // 验证自定义prompt（如果提供）
+    const prompt = customPrompt || DEFAULT_PROMPT;
+    if (prompt.length > 5000) {
+      return NextResponse.json(
+        { error: 'prompt_too_long', message: 'Prompt长度不能超过5000字符' },
+        { status: 400 }
+      );
+    }
+    if (prompt.length < 10) {
+      return NextResponse.json(
+        { error: 'prompt_too_short', message: 'Prompt长度至少10字符' },
         { status: 400 }
       );
     }
@@ -88,31 +104,6 @@ export async function POST(req: NextRequest) {
         { status: 404 }
       );
     }
-
-    // 优化的 prompt - 确保全身照、正面姿势、手部可见
-    const prompt = `You are a professional fashion photographer and digital artist. Replace the clothing in the first image with the complete kimono outfit from the second image.
-
-TASK: Create a realistic full-body virtual try-on where the person from image 1 wears the complete kimono from image 2.
-
-REQUIREMENTS:
-1. Generate a FULL-BODY photograph showing the person from head to toe, FACING THE CAMERA directly
-2. The person must be in a front-facing pose with their body oriented towards the viewer
-3. BOTH HANDS must be clearly visible in the final image (not hidden or cropped)
-4. Replace ALL clothing with the complete kimono outfit - including the top garment AND the bottom (hakama/skirt)
-5. The kimono must cover the ENTIRE body appropriately:
-   - Upper body: kimono top with proper collar and sleeves
-   - Lower body: kimono bottom/hakama extending to ankles
-   - Obi (belt) positioned correctly at waist level
-   - Sleeves should show the hands naturally
-6. Preserve the image1's person's face, body proportions, and background exactly as they are
-7. Adjust the pose if needed to ensure front-facing orientation with visible hands
-8. Make the kimono drape naturally with realistic fabric folds and movement
-9. Accurately transfer the kimono's colors, patterns, and textures from the reference image
-10. Match the original photo's lighting, shadows, and atmosphere
-11. Ensure the complete traditional kimono styling is visible from head to toe
-12. Create a seamless, photorealistic full-body result
-
-The output must be a complete full-body photograph showing this person FACING FORWARD, wearing the entire kimono outfit with BOTH HANDS VISIBLE, in their original setting, as if professionally photographed.`.trim();
 
     // 解析 base64 图片
     const personImageData = personImageBase64.replace(/^data:image\/\w+;base64,/, '');
@@ -201,6 +192,15 @@ The output must be a complete full-body photograph showing this person FACING FO
         duration,
         remainingQuota: -1, // 无限制
         quality: 'premium',
+        debugInfo: {
+          model: 'gemini-2.5-flash-image',
+          promptLength: prompt.length,
+          personImageSize: personImageData.length,
+          kimonoImageSize: kimonoImageBase64.length,
+          resultImageSize: resultBuffer.length,
+          timestamp: new Date().toISOString(),
+          isCustomPrompt: !!customPrompt,
+        },
       });
 
       // 设置 session cookie

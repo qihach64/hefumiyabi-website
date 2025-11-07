@@ -50,10 +50,7 @@ export default function TryOnCanvas({
     reader.onload = (event) => {
       const dataUrl = event.target?.result as string;
       onPhotoUpload(dataUrl);
-      // 更换照片后清除之前的结果
-      if (resultImage) {
-        onPhotoChange();
-      }
+      // onPhotoUpload 已经处理了切换到新照片状态
     };
     reader.readAsDataURL(file);
   };
@@ -122,25 +119,30 @@ export default function TryOnCanvas({
             {/* User Photo */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <p className="text-xs font-medium text-gray-600">原图</p>
-                {userPhoto && (
-                  <button
-                    onClick={() => {
-                      fileInputRef.current?.click();
-                    }}
-                    className="text-xs text-sakura-600 hover:text-sakura-700 font-medium flex items-center gap-1"
-                  >
-                    <Upload className="h-3 w-3" />
-                    更换
-                  </button>
-                )}
+                <p className="text-xs font-medium text-gray-600">
+                  原图
+                  {generatedResults.length > 0 && activeResultIndex >= 0 && activeResultIndex < generatedResults.length && (
+                    <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">
+                      历史记录 #{activeResultIndex + 1}
+                    </span>
+                  )}
+                </p>
+                <button
+                  onClick={() => {
+                    fileInputRef.current?.click();
+                  }}
+                  className="text-xs text-sakura-600 hover:text-sakura-700 font-medium flex items-center gap-1"
+                >
+                  <Upload className="h-3 w-3" />
+                  {generatedResults.length > 0 ? '上传新照片' : '更换'}
+                </button>
               </div>
               <div className="relative aspect-[3/4] rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
                 <Image
                   src={userPhoto}
                   alt="Your photo"
                   fill
-                  className="object-cover"
+                  className="object-contain"
                 />
                 <input
                   ref={fileInputRef}
@@ -154,7 +156,14 @@ export default function TryOnCanvas({
 
             {/* Result */}
             <div className="space-y-2">
-              <p className="text-xs font-medium text-sakura-600">试穿效果</p>
+              <p className="text-xs font-medium text-sakura-600">
+                试穿效果
+                {activeResultIndex >= 0 && generatedResults.length > 0 && (
+                  <span className="ml-2 text-xs bg-sakura-100 text-sakura-700 px-1.5 py-0.5 rounded">
+                    #{activeResultIndex + 1}
+                  </span>
+                )}
+              </p>
               <div className="relative aspect-[3/4] rounded-xl overflow-hidden border-2 border-sakura-400 bg-gray-50">
                 {isGenerating ? (
                   <div className="absolute inset-0 flex flex-col items-center justify-center bg-white">
@@ -167,7 +176,7 @@ export default function TryOnCanvas({
                     src={resultImage}
                     alt="Try-on result"
                     fill
-                    className="object-cover"
+                    className="object-contain"
                   />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center text-gray-300">
@@ -189,12 +198,12 @@ export default function TryOnCanvas({
             </div>
           )}
 
-          {/* Results Switcher - 和服对比切换 */}
-          {generatedResults.length > 1 && (
+          {/* Results Switcher - 试穿结果对比切换 */}
+          {generatedResults.length > 0 && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold text-gray-900">试穿对比 ({generatedResults.length} 个和服)</p>
-                <p className="text-xs text-gray-500">点击切换</p>
+                <p className="text-sm font-semibold text-gray-900">试穿历史 ({generatedResults.length} 个结果)</p>
+                <p className="text-xs text-gray-500">点击查看 · 自动保留</p>
               </div>
               <div className="flex gap-3 overflow-x-auto pb-2">
                 {generatedResults.map((result, index) => (
@@ -206,24 +215,24 @@ export default function TryOnCanvas({
                     `}
                   >
                     <div className={`
-                      relative w-20 h-24 rounded-lg overflow-hidden border-2 transition-all
+                      relative w-24 h-32 rounded-lg overflow-hidden border-2 transition-all
                       ${activeResultIndex === index
                         ? 'border-sakura-600 ring-4 ring-sakura-200 shadow-lg scale-105'
                         : 'border-gray-200 hover:border-sakura-300 hover:shadow-md'
                       }
                     `}>
                       <Image
-                        src={result.kimono.imageUrl}
-                        alt={result.kimono.name}
+                        src={result.resultImage}
+                        alt={`试穿结果 ${index + 1}`}
                         fill
-                        className="object-cover"
+                        className="object-contain bg-white"
                       />
                       {activeResultIndex === index && (
                         <div className="absolute inset-0 bg-sakura-600/10"></div>
                       )}
                     </div>
                     <p className={`
-                      text-xs font-medium text-center truncate w-20
+                      text-xs font-medium text-center truncate w-24
                       ${activeResultIndex === index
                         ? 'text-sakura-600'
                         : 'text-gray-600'
@@ -267,10 +276,11 @@ export default function TryOnCanvas({
                 </button>
                 <button
                   onClick={onReset}
-                  className="flex-1 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 py-2.5 border border-red-300 rounded-lg text-sm font-medium text-red-700 hover:bg-red-50 transition-colors flex items-center justify-center gap-2"
+                  title="清空所有照片和历史记录"
                 >
                   <RotateCcw className="h-4 w-4" />
-                  重置
+                  清空全部
                 </button>
               </div>
             </div>
