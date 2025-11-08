@@ -33,9 +33,12 @@ interface PlanCardProps {
     planTags?: { tag: Tag }[];
   };
   showMerchant?: boolean; // 是否显示商家信息（平台模式）
+  isRecommended?: boolean; // 是否为推荐套餐
+  hideCampaignBadge?: boolean; // 隐藏活动标签（区域标题已说明时）
+  hideDiscountBadge?: boolean; // 隐藏优惠标签（仅在限时优惠区域显示）
 }
 
-export default function PlanCard({ plan, showMerchant = false }: PlanCardProps) {
+export default function PlanCard({ plan, showMerchant = false, isRecommended = false, hideCampaignBadge = false, hideDiscountBadge = false }: PlanCardProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [justChanged, setJustChanged] = useState(false);
   const [lastAction, setLastAction] = useState<'add' | 'remove' | null>(null);
@@ -148,8 +151,8 @@ export default function PlanCard({ plan, showMerchant = false }: PlanCardProps) 
             )}
           </button>
 
-          {/* 优惠标签 */}
-          {discountAmount > 0 && (
+          {/* 优惠标签 - 仅在限时优惠区域显示 */}
+          {discountAmount > 0 && !hideDiscountBadge && (
             <div className="absolute top-3 left-3">
               <Badge variant="error" size="md" className="shadow-md font-bold">
                 省¥{(discountAmount / 100).toLocaleString()}
@@ -157,12 +160,22 @@ export default function PlanCard({ plan, showMerchant = false }: PlanCardProps) 
             </div>
           )}
 
-          {/* 活动标签 */}
-          {plan.isCampaign && (
-            <div className="absolute bottom-3 left-3">
-              <Badge variant="warning" size="sm" className="shadow-md">
-                限时优惠
-              </Badge>
+          {/* 底部标签组 */}
+          {(isRecommended || (plan.isCampaign && !hideCampaignBadge)) && (
+            <div className="absolute bottom-3 left-3 flex flex-col gap-2">
+              {/* 推荐标签 */}
+              {isRecommended && (
+                <Badge variant="warning" size="sm" className="shadow-md font-semibold">
+                  ⭐ 为您推荐
+                </Badge>
+              )}
+
+              {/* 活动标签（仅在未隐藏时显示） */}
+              {plan.isCampaign && !hideCampaignBadge && (
+                <Badge variant="error" size="sm" className="shadow-md">
+                  限时优惠
+                </Badge>
+              )}
             </div>
           )}
         </div>
