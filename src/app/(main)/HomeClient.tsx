@@ -443,12 +443,15 @@ export default function HomeClient({
             {isSearchMode && (
               <button
                 onClick={() => setIsFilterModalOpen(true)}
-                className="relative flex-shrink-0 w-12 h-12 flex items-center justify-center border border-gray-300 rounded-xl hover:border-gray-900 transition-all duration-200 bg-white active:scale-95 shadow-sm hover:shadow-md"
+                className="relative flex-shrink-0 w-12 h-12 flex items-center justify-center border border-gray-200 rounded-full hover:border-gray-300 transition-all duration-200 bg-white active:scale-95 shadow-sm hover:shadow-md"
+                style={{
+                  background: 'linear-gradient(180deg, #ffffff 39.9%, #f8f8f8 100%)',
+                }}
                 aria-label="筛选"
               >
                 <Filter className="w-4 h-4 text-gray-700" />
                 {hasActiveFilters && (
-                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-sakura-600 rounded-full border-2 border-white"></span>
+                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-sakura-600 rounded-full border border-white"></span>
                 )}
               </button>
             )}

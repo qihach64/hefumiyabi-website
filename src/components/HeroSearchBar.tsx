@@ -3,20 +3,37 @@
 import { useState, useEffect, useRef } from "react";
 import { Search, MapPin, Calendar, Users, X } from "lucide-react";
 import { Button } from "@/components/ui";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import GuestsDropdown, { GuestsDetail } from "@/components/GuestsDropdown";
 
-export default function HeroSearchBar() {
+interface HeroSearchBarProps {
+  initialLocation?: string;
+  initialDate?: string;
+  initialGuests?: number;
+  initialGuestsDetail?: GuestsDetail;
+}
+
+export default function HeroSearchBar({
+  initialLocation = "",
+  initialDate = "",
+  initialGuests = 1,
+  initialGuestsDetail,
+}: HeroSearchBarProps = {}) {
   const router = useRouter();
-  const [location, setLocation] = useState("");
-  const [date, setDate] = useState("");
-  const [guests, setGuests] = useState(1);
-  const [guestsDetail, setGuestsDetail] = useState<GuestsDetail>({
-    total: 1,
-    men: 0,
-    women: 1,
-    children: 0,
-  });
+  const searchParams = useSearchParams();
+
+  // 从URL参数初始化
+  const [location, setLocation] = useState(initialLocation || searchParams.get('location') || "");
+  const [date, setDate] = useState(initialDate || searchParams.get('date') || "");
+  const [guests, setGuests] = useState(initialGuests || parseInt(searchParams.get('guests') || '1'));
+  const [guestsDetail, setGuestsDetail] = useState<GuestsDetail>(
+    initialGuestsDetail || {
+      total: parseInt(searchParams.get('guests') || '1'),
+      men: parseInt(searchParams.get('men') || '0'),
+      women: parseInt(searchParams.get('women') || '1'),
+      children: parseInt(searchParams.get('children') || '0'),
+    }
+  );
   const [mobileExpanded, setMobileExpanded] = useState(false);
 
   // 自动补全相关状态
@@ -177,16 +194,14 @@ export default function HeroSearchBar() {
           <GuestsDropdown value={guests} onChange={setGuests} onDetailChange={setGuestsDetail} />
         </div>
 
-        {/* 搜索按钮 */}
-        <Button
-          variant="primary"
-          size="lg"
+        {/* 搜索按钮 - 仅图标 */}
+        <button
           onClick={handleSearch}
-          className="rounded-full px-8 flex items-center gap-2 shadow-md hover:shadow-lg active:scale-95 transition-all duration-200"
+          className="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-sakura-600 hover:bg-sakura-700 rounded-full shadow-md hover:shadow-lg active:scale-95 transition-all duration-200"
+          aria-label="搜索"
         >
-          <Search className="w-5 h-5" />
-          搜索
-        </Button>
+          <Search className="w-5 h-5 text-white" />
+        </button>
       </div>
 
       {/* 移动端：紧凑搜索按钮 */}
