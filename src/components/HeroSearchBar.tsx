@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Search, MapPin, Calendar, Users, X } from "lucide-react";
 import { Button } from "@/components/ui";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -36,6 +37,7 @@ export default function HeroSearchBar({
   );
   const [mobileExpanded, setMobileExpanded] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   // 自动补全相关状态
   const [allLocations, setAllLocations] = useState<string[]>([]);
@@ -43,6 +45,11 @@ export default function HeroSearchBar({
   const [showDropdown, setShowDropdown] = useState(false);
   const locationInputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Check if component is mounted (for portal)
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // 获取所有地区数据
   useEffect(() => {
@@ -145,25 +152,28 @@ export default function HeroSearchBar({
     }
   }, [isSearching]);
 
+  // Loading overlay component
+  const loadingOverlay = isSearching && mounted && (
+    <div
+      className="fixed inset-0 flex items-center justify-center bg-white/95 backdrop-blur-md"
+      style={{ zIndex: 9999 }}
+    >
+      <div className="text-center animate-in fade-in zoom-in-95 duration-300">
+        {/* 加载动画 - 旋转的樱花图标 */}
+        <div className="relative w-20 h-20 mx-auto mb-6">
+          <div className="absolute inset-0 border-[6px] border-sakura-100 rounded-full"></div>
+          <div className="absolute inset-0 border-[6px] border-transparent border-t-sakura-500 border-r-sakura-400 rounded-full animate-spin"></div>
+        </div>
+        <p className="text-xl font-semibold text-gray-900 mb-2">正在搜索套餐</p>
+        <p className="text-sm text-gray-500">请稍候...</p>
+      </div>
+    </div>
+  );
+
   return (
     <>
-      {/* Loading Overlay - Portal到body */}
-      {isSearching && (
-        <div
-          className="fixed inset-0 flex items-center justify-center bg-white/95 backdrop-blur-md"
-          style={{ zIndex: 9999 }}
-        >
-          <div className="text-center animate-in fade-in zoom-in-95 duration-300">
-            {/* 加载动画 - 旋转的樱花图标 */}
-            <div className="relative w-20 h-20 mx-auto mb-6">
-              <div className="absolute inset-0 border-[6px] border-sakura-100 rounded-full"></div>
-              <div className="absolute inset-0 border-[6px] border-transparent border-t-sakura-500 border-r-sakura-400 rounded-full animate-spin"></div>
-            </div>
-            <p className="text-xl font-semibold text-gray-900 mb-2">正在搜索套餐</p>
-            <p className="text-sm text-gray-500">请稍候...</p>
-          </div>
-        </div>
-      )}
+      {/* Portal loading overlay to document body */}
+      {mounted && isSearching && createPortal(loadingOverlay, document.body)}
 
       <div className="w-full max-w-4xl mx-auto">
       {/* 桌面端：横向展开搜索框 - Airbnb 风格渐变 */}
