@@ -112,10 +112,14 @@ export default function HeroSearchBar() {
 
   return (
     <div className="w-full max-w-4xl mx-auto">
-      {/* 桌面端：横向展开搜索框 */}
-      <div className="hidden md:flex bg-white rounded-full shadow-xl p-2 gap-2 items-center hover:shadow-2xl transition-shadow">
+      {/* 桌面端：横向展开搜索框 - Airbnb 风格渐变 */}
+      <div className="hidden md:flex rounded-full shadow-xl p-2 gap-2 items-center hover:shadow-2xl transition-all duration-300 relative"
+           style={{
+             background: 'linear-gradient(180deg, #ffffff 39.9%, #f8f8f8 100%)',
+             border: '1px solid #e5e5e5'
+           }}>
         {/* 目的地 */}
-        <div className="flex-1 px-6 py-3 rounded-full hover:bg-gray-50 transition-colors cursor-pointer relative">
+        <div className="flex-1 px-6 py-3 rounded-full hover:bg-gray-100/50 transition-all duration-200 cursor-pointer relative group">
           <label className="block text-xs font-semibold text-gray-700 mb-1">
             目的地
           </label>
@@ -126,20 +130,20 @@ export default function HeroSearchBar() {
             value={location}
             onChange={(e) => handleLocationChange(e.target.value)}
             onFocus={handleLocationFocus}
-            className="w-full text-sm text-gray-900 placeholder-gray-400 bg-transparent border-none outline-none"
+            className="w-full text-sm text-gray-900 placeholder-gray-400 bg-transparent border-none outline-none focus:ring-0"
           />
 
-          {/* 下拉菜单 */}
+          {/* 下拉菜单 - Airbnb 风格 */}
           {showDropdown && filteredLocations.length > 0 && (
             <div
               ref={dropdownRef}
-              className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 max-h-80 overflow-y-auto"
+              className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 max-h-80 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200"
             >
               {filteredLocations.map((loc, index) => (
                 <button
                   key={index}
                   onClick={() => handleLocationSelect(loc)}
-                  className="w-full px-6 py-3 text-left text-sm text-gray-900 hover:bg-sakura-50 transition-colors flex items-center gap-3 border-b border-gray-100 last:border-b-0"
+                  className="w-full px-6 py-3 text-left text-sm text-gray-900 hover:bg-gray-100 active:bg-gray-200 transition-all duration-150 flex items-center gap-3 border-b border-gray-100 last:border-b-0 first:rounded-t-2xl last:rounded-b-2xl"
                 >
                   <MapPin className="w-4 h-4 text-sakura-500 flex-shrink-0" />
                   <span>{loc}</span>
@@ -153,7 +157,7 @@ export default function HeroSearchBar() {
         <div className="h-8 w-px bg-gray-200"></div>
 
         {/* 日期 */}
-        <div className="flex-1 px-6 py-3 rounded-full hover:bg-gray-50 transition-colors cursor-pointer">
+        <div className="flex-1 px-6 py-3 rounded-full hover:bg-gray-100/50 transition-all duration-200 cursor-pointer group">
           <label className="block text-xs font-semibold text-gray-700 mb-1">
             到店日期
           </label>
@@ -161,15 +165,15 @@ export default function HeroSearchBar() {
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="w-full text-sm text-gray-900 placeholder-gray-400 bg-transparent border-none outline-none"
+            className="w-full text-sm text-gray-900 placeholder-gray-400 bg-transparent border-none outline-none focus:ring-0"
           />
         </div>
 
         {/* 分隔线 */}
-        <div className="h-8 w-px bg-gray-200"></div>
+        <div className="h-8 w-px bg-gray-300"></div>
 
         {/* 人数 */}
-        <div className="flex-1 px-6 py-3 rounded-full hover:bg-gray-50 transition-colors">
+        <div className="flex-1 px-6 py-3 rounded-full hover:bg-gray-100/50 transition-all duration-200 group">
           <GuestsDropdown value={guests} onChange={setGuests} onDetailChange={setGuestsDetail} />
         </div>
 
@@ -178,7 +182,7 @@ export default function HeroSearchBar() {
           variant="primary"
           size="lg"
           onClick={handleSearch}
-          className="rounded-full px-8 flex items-center gap-2 shadow-md"
+          className="rounded-full px-8 flex items-center gap-2 shadow-md hover:shadow-lg active:scale-95 transition-all duration-200"
         >
           <Search className="w-5 h-5" />
           搜索
@@ -188,10 +192,14 @@ export default function HeroSearchBar() {
       {/* 移动端：紧凑搜索按钮 */}
       <div className="md:hidden">
         {!mobileExpanded ? (
-          // 紧凑搜索按钮
+          // 紧凑搜索按钮 - Airbnb 风格
           <button
             onClick={() => setMobileExpanded(true)}
-            className="w-full bg-white rounded-full shadow-lg p-3 flex items-center gap-3 active:scale-[0.98] transition-transform"
+            className="w-full rounded-full shadow-lg p-3 flex items-center gap-3 active:scale-[0.98] transition-all duration-200 hover:shadow-xl"
+            style={{
+              background: 'linear-gradient(180deg, #ffffff 39.9%, #f8f8f8 100%)',
+              border: '1px solid #e5e5e5'
+            }}
           >
             <Search className="w-5 h-5 text-gray-400 flex-shrink-0" />
             <div className="flex-1 text-left">
@@ -215,10 +223,10 @@ export default function HeroSearchBar() {
 
             {/* 目的地 */}
             <div className="relative">
-              <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-xl focus-within:border-sakura-500 transition-colors">
+              <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-xl focus-within:border-sakura-500 focus-within:ring-2 focus-within:ring-sakura-100 transition-all duration-200">
                 <MapPin className="w-5 h-5 text-sakura-500 flex-shrink-0" />
                 <div className="flex-1">
-                  <label className="block text-xs font-medium text-gray-600 mb-0.5">
+                  <label className="block text-xs font-semibold text-gray-700 mb-0.5">
                     目的地
                   </label>
                   <input
@@ -227,7 +235,7 @@ export default function HeroSearchBar() {
                     value={location}
                     onChange={(e) => handleLocationChange(e.target.value)}
                     onFocus={handleLocationFocus}
-                    className="w-full text-sm text-gray-900 placeholder-gray-400 bg-transparent border-none outline-none"
+                    className="w-full text-sm text-gray-900 placeholder-gray-400 bg-transparent border-none outline-none focus:ring-0"
                   />
                 </div>
               </div>
@@ -250,23 +258,23 @@ export default function HeroSearchBar() {
             </div>
 
             {/* 日期 */}
-            <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-xl focus-within:border-sakura-500 transition-colors">
+            <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-xl focus-within:border-sakura-500 focus-within:ring-2 focus-within:ring-sakura-100 transition-all duration-200">
               <Calendar className="w-5 h-5 text-sakura-500 flex-shrink-0" />
               <div className="flex-1">
-                <label className="block text-xs font-medium text-gray-600 mb-0.5">
+                <label className="block text-xs font-semibold text-gray-700 mb-0.5">
                   到店日期
                 </label>
                 <input
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="w-full text-sm text-gray-900 placeholder-gray-400 bg-transparent border-none outline-none"
+                  className="w-full text-sm text-gray-900 placeholder-gray-400 bg-transparent border-none outline-none focus:ring-0"
                 />
               </div>
             </div>
 
             {/* 人数 */}
-            <div className="p-4 border border-gray-200 rounded-xl hover:border-sakura-500 transition-colors">
+            <div className="p-4 border border-gray-200 rounded-xl hover:border-sakura-500 hover:ring-2 hover:ring-sakura-100 transition-all duration-200">
               <GuestsDropdown value={guests} onChange={setGuests} onDetailChange={setGuestsDetail} />
             </div>
 

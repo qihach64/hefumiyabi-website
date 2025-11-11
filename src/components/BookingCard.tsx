@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { Calendar, Users, Clock, Shield, X } from "lucide-react";
 import { Button, Badge } from "@/components/ui";
 
@@ -17,10 +18,28 @@ interface BookingCardProps {
 }
 
 export default function BookingCard({ plan }: BookingCardProps) {
+  // 读取URL搜索参数
+  const searchParams = useSearchParams();
+  const searchDate = searchParams.get('date');
+  const searchGuests = searchParams.get('guests');
+
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [guests, setGuests] = useState(1);
   const [showMobileModal, setShowMobileModal] = useState(false);
+
+  // 自动填充搜索参数
+  useEffect(() => {
+    if (searchDate) {
+      setDate(searchDate);
+    }
+    if (searchGuests) {
+      const guestsNum = parseInt(searchGuests);
+      if (guestsNum > 0 && guestsNum <= 10) {
+        setGuests(guestsNum);
+      }
+    }
+  }, [searchDate, searchGuests]);
 
   // 计算优惠百分比
   const discountPercent = plan.originalPrice && plan.originalPrice > plan.price
@@ -87,11 +106,14 @@ export default function BookingCard({ plan }: BookingCardProps) {
       {/* 预订表单 */}
       <div className="space-y-4 mb-6">
         {/* 日期选择 */}
-        <div className="border border-gray-300 rounded-xl overflow-hidden hover:border-gray-900 transition-colors">
+        <div className={`border rounded-xl overflow-hidden transition-colors ${date && searchDate ? 'border-green-500 bg-green-50/30' : 'border-gray-300 hover:border-gray-900'}`}>
           <div className="p-3">
             <label className="flex items-center gap-2 text-xs font-semibold text-gray-700 mb-2">
               <Calendar className="w-4 h-4 text-sakura-500" />
               到店日期
+              {date && searchDate && (
+                <span className="ml-auto text-xs text-green-600 font-normal">✓ 已从搜索预填</span>
+              )}
             </label>
             <input
               type="date"

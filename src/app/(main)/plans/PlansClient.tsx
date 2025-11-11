@@ -590,49 +590,86 @@ export default function PlansClient({
 
   return (
     <>
-      {/* 搜索上下文提示条 */}
+      {/* 搜索上下文提示条 - Airbnb 风格 */}
       {(searchLocation || searchDate || guestsNum > 0) && (
-        <div className="sticky top-16 z-20 bg-sakura-50 border-b border-sakura-200 py-3 shadow-sm">
+        <div className="sticky top-16 z-20 bg-white border-b border-gray-200 py-3 shadow-sm">
           <div className="container">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3 flex-wrap">
-                <span className="text-sm font-medium text-gray-700">根据您的搜索：</span>
-                {guestsNum > 0 && (
-                  <Badge variant="secondary" className="gap-1">
-                    <Users className="w-3 h-3" />
-                    {guestsNum}人
-                  </Badge>
-                )}
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm font-medium text-gray-700">搜索条件：</span>
                 {searchLocation && (
-                  <Badge variant="secondary" className="gap-1">
-                    <MapPin className="w-3 h-3" />
-                    {searchLocation}
-                  </Badge>
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-200 hover:bg-gray-300 rounded-full text-sm transition-all duration-150 group">
+                    <MapPin className="w-3.5 h-3.5 text-gray-700" />
+                    <span className="font-medium text-gray-900">{searchLocation}</span>
+                    <button
+                      onClick={() => {
+                        const params = new URLSearchParams(window.location.search);
+                        params.delete('location');
+                        window.location.href = `/plans?${params.toString()}`;
+                      }}
+                      className="ml-0.5 w-4 h-4 flex items-center justify-center rounded-full hover:bg-gray-400 text-gray-600 hover:text-gray-900 transition-all duration-150"
+                      aria-label="移除地点筛选"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
                 )}
                 {searchDate && (
-                  <Badge variant="secondary" className="gap-1">
-                    <Calendar className="w-3 h-3" />
-                    {new Date(searchDate).toLocaleDateString('zh-CN', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
-                  </Badge>
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-200 hover:bg-gray-300 rounded-full text-sm transition-all duration-150 group">
+                    <Calendar className="w-3.5 h-3.5 text-gray-700" />
+                    <span className="font-medium text-gray-900">
+                      {new Date(searchDate).toLocaleDateString('zh-CN', {
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </span>
+                    <button
+                      onClick={() => {
+                        const params = new URLSearchParams(window.location.search);
+                        params.delete('date');
+                        window.location.href = `/plans?${params.toString()}`;
+                      }}
+                      className="ml-0.5 w-4 h-4 flex items-center justify-center rounded-full hover:bg-gray-400 text-gray-600 hover:text-gray-900 transition-all duration-150"
+                      aria-label="移除日期筛选"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                )}
+                {guestsNum > 0 && (
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-200 hover:bg-gray-300 rounded-full text-sm transition-all duration-150 group">
+                    <Users className="w-3.5 h-3.5 text-gray-700" />
+                    <span className="font-medium text-gray-900">{guestsNum}位客人</span>
+                    <button
+                      onClick={() => {
+                        const params = new URLSearchParams(window.location.search);
+                        params.delete('guests');
+                        params.delete('men');
+                        params.delete('women');
+                        params.delete('children');
+                        window.location.href = `/plans?${params.toString()}`;
+                      }}
+                      className="ml-0.5 w-4 h-4 flex items-center justify-center rounded-full hover:bg-gray-400 text-gray-600 hover:text-gray-900 transition-all duration-150"
+                      aria-label="移除客人筛选"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
                 )}
                 {guestsNum > 0 && recommendedCategories.length > 0 && (
-                  <Badge variant="warning" className="gap-1">
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-sakura-100 hover:bg-sakura-200 rounded-full text-sm transition-all duration-150">
                     <span>⭐</span>
-                    <span>
-                      为您推荐：{recommendedCategories.map(cat => getCategoryName(cat)).join('、')}
+                    <span className="font-semibold text-sakura-700">
+                      推荐：{recommendedCategories.map(cat => getCategoryName(cat)).join('、')}
                     </span>
-                  </Badge>
+                  </div>
                 )}
               </div>
               <button
                 onClick={() => window.location.href = '/plans'}
-                className="text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                className="text-sm text-gray-700 hover:text-gray-900 font-semibold underline hover:no-underline transition-all duration-150 whitespace-nowrap"
               >
-                清除搜索
+                清除全部
               </button>
             </div>
           </div>
@@ -670,6 +707,42 @@ export default function PlansClient({
 
             {/* 右侧内容区域 */}
             <div className="flex-1 min-w-0">
+              {/* 地点筛选反馈 - Airbnb 风格 */}
+              {searchLocation && (
+                <div className="bg-white border border-gray-200 rounded-xl p-4 mb-6 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-sakura-100 rounded-full flex items-center justify-center">
+                        <MapPin className="w-5 h-5 text-sakura-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">正在显示</p>
+                        <p className="text-lg font-semibold text-gray-900">
+                          {searchLocation} 的套餐
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const params = new URLSearchParams(window.location.search);
+                        params.delete('location');
+                        window.location.href = `/plans?${params.toString()}`;
+                      }}
+                      className="text-sm text-gray-500 hover:text-gray-900 underline transition-colors"
+                    >
+                      清除地点
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* 结果数量和排序 */}
+              <div className="flex items-center justify-between mb-6">
+                <p className="text-sm text-gray-600">
+                  找到 <span className="font-semibold text-gray-900">{filteredPlans.length}</span> 个符合条件的套餐
+                </p>
+              </div>
+
               {/* 1️⃣ 为您推荐区域 */}
               {recommendedPlans.length > 0 && (
                 <div className="mb-12">

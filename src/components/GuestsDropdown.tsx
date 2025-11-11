@@ -137,7 +137,7 @@ export default function GuestsDropdown({ value, onChange, onDetailChange, classN
       {showDropdown && (
         <div
           ref={dropdownRef}
-          className="absolute top-full left-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 w-80 p-4"
+          className="absolute top-full right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 w-80 p-4 animate-in fade-in slide-in-from-top-2 duration-200"
         >
           {/* 男士 */}
           <div className="flex items-center justify-between py-4 border-b border-gray-200">

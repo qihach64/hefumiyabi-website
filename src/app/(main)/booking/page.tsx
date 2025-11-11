@@ -1,7 +1,7 @@
 "use client";
 
-import { Suspense, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useCartStore } from "@/store/cart";
 import Image from "next/image";
@@ -12,6 +12,11 @@ function BookingContent() {
   const router = useRouter();
   const { data: session } = useSession();
   const { items, clearCart, getTotalPrice } = useCartStore();
+  const searchParams = useSearchParams();
+
+  // 读取URL搜索参数
+  const searchDate = searchParams.get('date');
+  const searchTime = searchParams.get('time');
 
   const [visitDate, setVisitDate] = useState<Date | null>(null);
   const [visitTime, setVisitTime] = useState("");
@@ -21,6 +26,16 @@ function BookingContent() {
   const [specialRequests, setSpecialRequests] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  // 自动填充搜索参数
+  useEffect(() => {
+    if (searchDate) {
+      setVisitDate(new Date(searchDate));
+    }
+    if (searchTime) {
+      setVisitTime(searchTime);
+    }
+  }, [searchDate, searchTime]);
 
   // 如果购物车为空，引导用户选择套餐
   if (items.length === 0) {
@@ -229,9 +244,12 @@ function BookingContent() {
                 <h2 className="text-xl font-semibold mb-4">到店信息</h2>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
+                    <label className="flex items-center text-sm font-medium text-foreground mb-2">
                       <Calendar className="w-4 h-4 inline mr-1" />
-                      到店日期 <span className="text-destructive">*</span>
+                      到店日期 <span className="text-destructive ml-1">*</span>
+                      {visitDate && searchDate && (
+                        <span className="ml-auto text-xs text-green-600 font-normal">✓ 已从搜索预填</span>
+                      )}
                     </label>
                     <input
                       type="date"
@@ -239,20 +257,31 @@ function BookingContent() {
                       onChange={(e) => setVisitDate(e.target.value ? new Date(e.target.value) : null)}
                       min={new Date().toISOString().split("T")[0]}
                       required
-                      className="w-full px-4 py-3 rounded-md border border-input bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-transparent outline-none transition"
+                      className={`w-full px-4 py-3 rounded-md border text-foreground focus:ring-2 focus:ring-ring focus:border-transparent outline-none transition ${
+                        visitDate && searchDate
+                          ? 'border-green-500 bg-green-50/30'
+                          : 'border-input bg-background'
+                      }`}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
+                    <label className="flex items-center text-sm font-medium text-foreground mb-2">
                       <Clock className="w-4 h-4 inline mr-1" />
-                      到店时间 <span className="text-destructive">*</span>
+                      到店时间 <span className="text-destructive ml-1">*</span>
+                      {visitTime && searchTime && (
+                        <span className="ml-auto text-xs text-green-600 font-normal">✓ 已从搜索预填</span>
+                      )}
                     </label>
                     <input
                       type="time"
                       value={visitTime}
                       onChange={(e) => setVisitTime(e.target.value)}
                       required
-                      className="w-full px-4 py-3 rounded-md border border-input bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-transparent outline-none transition"
+                      className={`w-full px-4 py-3 rounded-md border text-foreground focus:ring-2 focus:ring-ring focus:border-transparent outline-none transition ${
+                        visitTime && searchTime
+                          ? 'border-green-500 bg-green-50/30'
+                          : 'border-input bg-background'
+                      }`}
                     />
                   </div>
                 </div>
