@@ -65,7 +65,7 @@ export default async function KimonoDetailPage({
       <div className="grid lg:grid-cols-2 gap-8">
         {/* 左侧：图片 */}
         <div>
-          <div className="relative aspect-[3/4] rounded-lg overflow-hidden bg-gray-100">
+          <div className="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
             {mainImage ? (
               <Image
                 src={mainImage.url}

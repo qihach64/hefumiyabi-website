@@ -109,8 +109,8 @@ export default function PlanCardManagement({
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-all group">
-      {/* 套餐图片 - 保持 3:4 比例（和服标准） */}
-      <div className="relative aspect-[3/4] bg-gray-100">
+      {/* 套餐图片 - 正方形比例（参考 Airbnb） */}
+      <div className="relative aspect-square bg-gray-100">
         {plan.imageUrl ? (
           <Image
             src={plan.imageUrl}

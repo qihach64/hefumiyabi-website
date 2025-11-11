@@ -206,7 +206,7 @@ export default async function StorePage({ params }: StorePageProps) {
                           href={`/kimonos/${kimono.id}`}
                           className="group relative overflow-hidden rounded-lg border bg-card hover:shadow-lg transition-all duration-300"
                         >
-                          <div className="relative aspect-[3/4] overflow-hidden bg-secondary">
+                          <div className="relative aspect-square overflow-hidden bg-secondary">
                             {mainImage ? (
                               <Image
                                 src={mainImage.url}

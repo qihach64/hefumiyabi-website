@@ -110,8 +110,8 @@ export default function PlanCard({ plan, showMerchant = false, isRecommended = f
       className="group block"
     >
       <div className="relative">
-        {/* 图片容器 - Airbnb 3:4 比例（和服更适合竖版） */}
-        <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-gray-100">
+        {/* 图片容器 - 1:1 正方形（参考 Airbnb 的 20:19 接近正方形设计） */}
+        <div className="relative aspect-square overflow-hidden rounded-xl bg-gray-100">
           {plan.imageUrl ? (
             <Image
               src={plan.imageUrl}

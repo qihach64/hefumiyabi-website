@@ -22,7 +22,7 @@ export default function KimonoCard({ kimono }: KimonoCardProps) {
       href={`/kimonos/${kimono.id}`}
       className="group block overflow-hidden rounded-lg border bg-card transition-all hover:shadow-lg"
     >
-      <div className="relative aspect-[3/4] overflow-hidden bg-gray-100">
+      <div className="relative aspect-square overflow-hidden bg-gray-100">
         {mainImage ? (
           <Image
             src={mainImage.url}

@@ -1,9 +1,8 @@
 import prisma from "@/lib/prisma";
 import PlanCard from "@/components/PlanCard";
-import PlanCardGrid from "@/components/PlanCard/PlanCardGrid";
 import HeroSearchBar from "@/components/HeroSearchBar";
+import ScrollableSection from "@/components/ScrollableSection";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
 
 // 禁用静态生成，在运行时动态渲染（主页需要实时套餐数据）
 export const dynamic = 'force-dynamic';
@@ -92,41 +91,21 @@ export default async function HomePage() {
               className={index < categorySections.length - 1 ? "mb-6 md:mb-12" : ""}
             >
               <div className="container">
-                {/* 分类标题 */}
-                <div className="flex items-center justify-between mb-3 md:mb-6 px-1">
-                  <div className="flex items-center gap-2 md:gap-3">
-                    <span className="text-xl md:text-3xl">{section.icon}</span>
-                    <div>
-                      <h2 className="text-lg md:text-2xl font-semibold text-gray-900">
-                        {section.label}
-                      </h2>
-                      <p className="text-xs md:text-sm text-gray-500 mt-0.5 hidden sm:block">
-                        {section.description}
-                      </p>
+                <ScrollableSection
+                  title={section.label}
+                  description={section.description}
+                  icon={section.icon}
+                  scrollerClassName="flex gap-3 md:gap-4 overflow-x-auto scroll-smooth pb-4 -mb-4 scrollbar-hide snap-x snap-mandatory px-4 md:px-0"
+                >
+                  {section.plans.map((plan) => (
+                    <div
+                      key={plan.id}
+                      className="snap-start flex-shrink-0 w-[240px] sm:w-[260px] md:w-[240px] lg:w-[260px]"
+                    >
+                      <PlanCard plan={plan} showMerchant={true} />
                     </div>
-                  </div>
-
-                  {/* 查看更多链接 */}
-                  <Link
-                    href={`/plans?category=${section.id}`}
-                    className="flex items-center gap-1 text-sakura-600 hover:text-sakura-700 font-medium transition-colors text-xs md:text-sm shrink-0"
-                  >
-                    <span className="hidden sm:inline">查看更多</span>
-                    <span className="sm:hidden">更多</span>
-                    <ChevronRight className="w-3 h-3 md:w-4 md:h-4" />
-                  </Link>
-                </div>
-
-                {/* 水平滚动卡片容器 - Airbnb 风格 */}
-                <div className="relative -mx-4 px-4 md:mx-0 md:px-0">
-                  <PlanCardGrid variant="horizontal-scroll">
-                    {section.plans.map((plan) => (
-                      <div key={plan.id} className="snap-start">
-                        <PlanCard plan={plan} showMerchant={true} />
-                      </div>
-                    ))}
-                  </PlanCardGrid>
-                </div>
+                  ))}
+                </ScrollableSection>
               </div>
             </section>
           );
