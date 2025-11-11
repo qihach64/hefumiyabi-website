@@ -133,19 +133,34 @@ export default function HeroSearchBar({
     // 注意：loading状态会在组件卸载或新页面加载时自动清除
   };
 
+  // 在路由开始时显示loading
+  useEffect(() => {
+    if (isSearching) {
+      // 添加body样式防止滚动
+      document.body.style.overflow = 'hidden';
+
+      return () => {
+        document.body.style.overflow = '';
+      };
+    }
+  }, [isSearching]);
+
   return (
     <>
-      {/* Loading Overlay */}
+      {/* Loading Overlay - Portal到body */}
       {isSearching && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="text-center">
+        <div
+          className="fixed inset-0 flex items-center justify-center bg-white/95 backdrop-blur-md"
+          style={{ zIndex: 9999 }}
+        >
+          <div className="text-center animate-in fade-in zoom-in-95 duration-300">
             {/* 加载动画 - 旋转的樱花图标 */}
-            <div className="relative w-16 h-16 mx-auto mb-4">
-              <div className="absolute inset-0 border-4 border-sakura-200 rounded-full"></div>
-              <div className="absolute inset-0 border-4 border-transparent border-t-sakura-600 rounded-full animate-spin"></div>
+            <div className="relative w-20 h-20 mx-auto mb-6">
+              <div className="absolute inset-0 border-[6px] border-sakura-100 rounded-full"></div>
+              <div className="absolute inset-0 border-[6px] border-transparent border-t-sakura-500 border-r-sakura-400 rounded-full animate-spin"></div>
             </div>
-            <p className="text-lg font-medium text-gray-900">正在搜索套餐...</p>
-            <p className="text-sm text-gray-500 mt-2">请稍候</p>
+            <p className="text-xl font-semibold text-gray-900 mb-2">正在搜索套餐</p>
+            <p className="text-sm text-gray-500">请稍候...</p>
           </div>
         </div>
       )}
