@@ -160,9 +160,6 @@ export default function HomeClient({
   const [isStoreExpanded, setIsStoreExpanded] = useState(true);
   const [isRegionExpanded, setIsRegionExpanded] = useState(true);
 
-  // 过滤器弹窗状态
-  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
-
   // 判断是否处于"搜索模式"
   const isSearchMode = !!(searchLocation || searchDate || guestsNum > 0 || selectedStoreId || selectedRegion || selectedTagIds.length > 0);
 
@@ -260,9 +257,26 @@ export default function HomeClient({
     setSelectedTagIds([]);
   };
 
-  // 过滤器侧边栏组件 - Modal内容版本
+  // 过滤器侧边栏组件
   const FilterSidebar = () => (
-    <div className="space-y-6">
+    <aside className="lg:sticky lg:top-24">
+      <div className="bg-card rounded-lg border p-6 space-y-6">
+        {/* 筛选器标题 */}
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold flex items-center gap-2">
+            <Filter className="w-5 h-5" />
+            筛选条件
+          </h2>
+          {hasActiveFilters && (
+            <button
+              onClick={clearFilters}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+            >
+              <X className="w-3 h-3" />
+              清除
+            </button>
+          )}
+        </div>
 
         {/* 店铺筛选 - 可折叠风格 */}
         {stores.length > 0 && (
@@ -423,107 +437,54 @@ export default function HomeClient({
             </div>
           );
         })}
-    </div>
+      </div>
+    </aside>
   );
 
   const hasActiveFilters = !!(selectedStoreId || selectedRegion || selectedTagIds.length > 0);
 
   return (
     <div className="min-h-screen bg-white">
-      {/* 搜索栏 + 过滤按钮 - Sticky,同行布局 */}
+      {/* 搜索栏 - Sticky,始终可见可编辑 */}
       <section className="sticky top-14 md:top-16 z-30 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 border-b border-gray-100 shadow-sm">
         <div className="container py-2 md:py-4">
-          <div className="flex items-center gap-3">
-            {/* 搜索栏 */}
-            <div className="flex-1">
-              <HeroSearchBar />
-            </div>
-
-            {/* 过滤按钮 - 仅在搜索模式显示 */}
-            {isSearchMode && (
-              <button
-                onClick={() => setIsFilterModalOpen(true)}
-                className="relative flex-shrink-0 w-12 h-12 flex items-center justify-center border border-gray-200 rounded-full hover:border-gray-300 transition-all duration-200 bg-white active:scale-95 shadow-sm hover:shadow-md"
-                style={{
-                  background: 'linear-gradient(180deg, #ffffff 39.9%, #f8f8f8 100%)',
-                }}
-                aria-label="筛选"
-              >
-                <Filter className="w-4 h-4 text-gray-700" />
-                {hasActiveFilters && (
-                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-sakura-600 rounded-full border border-white"></span>
-                )}
-              </button>
-            )}
-          </div>
+          <HeroSearchBar />
         </div>
       </section>
 
-      {/* 过滤器弹窗 Modal */}
-      {isFilterModalOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
-          onClick={() => setIsFilterModalOpen(false)}
-        >
-          <div
-            className="w-full max-w-2xl mt-20 mx-4 bg-white rounded-2xl shadow-2xl max-h-[80vh] overflow-hidden flex flex-col animate-in slide-in-from-top-4 duration-300"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
-              <h2 className="text-lg font-bold flex items-center gap-2">
-                <Filter className="w-5 h-5" />
-                筛选条件
-              </h2>
-              <div className="flex items-center gap-3">
-                {hasActiveFilters && (
-                  <button
-                    onClick={clearFilters}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors underline"
-                  >
-                    清除全部
-                  </button>
-                )}
-                <button
-                  onClick={() => setIsFilterModalOpen(false)}
-                  className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-
-            {/* Modal Content - 可滚动区域 */}
-            <div className="flex-1 overflow-y-auto p-6">
-              <FilterSidebar />
-            </div>
-
-            {/* Modal Footer */}
-            <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4 flex items-center justify-between rounded-b-2xl">
-              <button
-                onClick={clearFilters}
-                className="text-sm font-medium underline hover:text-gray-900 transition-colors"
-              >
-                清除全部
-              </button>
-              <Button
-                variant="primary"
-                onClick={() => setIsFilterModalOpen(false)}
-                className="px-6"
-              >
-                显示 {filteredPlans.length} 个结果
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* 主内容区域 - 根据模式切换布局 */}
       {isSearchMode ? (
-        /* 🔍 搜索模式 - 全宽网格布局 */
+        /* 🔍 搜索模式 - 侧边栏 + 网格 */
         <section className="py-6 bg-background min-h-screen">
           <div className="container">
-            <div className="w-full">
+            <div className="flex flex-col lg:flex-row gap-6">
+              {/* 左侧筛选器（桌面端） */}
+              <div className="hidden lg:block lg:w-64 flex-shrink-0">
+                <FilterSidebar />
+              </div>
+
+              {/* 移动端筛选器（折叠） */}
+              <div className="lg:hidden">
+                <details className="bg-card rounded-lg border mb-6">
+                  <summary className="px-4 py-3 cursor-pointer flex items-center justify-between font-medium">
+                    <span className="flex items-center gap-2">
+                      <Filter className="w-4 h-4" />
+                      筛选条件
+                      {hasActiveFilters && (
+                        <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
+                          {(selectedStoreId ? 1 : 0) + (selectedRegion ? 1 : 0) + selectedTagIds.length}
+                        </span>
+                      )}
+                    </span>
+                  </summary>
+                  <div className="px-4 pb-4">
+                    <FilterSidebar />
+                  </div>
+                </details>
+              </div>
+
+              {/* 右侧内容区域 */}
+              <div className="flex-1 min-w-0">
                 {/* 结果数量和推荐提示 */}
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-4">
@@ -575,18 +536,19 @@ export default function HomeClient({
                   </div>
                 )}
 
-              {/* 无结果提示 */}
-              {filteredPlans.length === 0 && (
-                <div className="text-center py-16">
-                  <p className="text-gray-500 mb-4">没有找到符合条件的套餐</p>
-                  <Button
-                    variant="primary"
-                    onClick={() => window.location.href = '/'}
-                  >
-                    查看全部套餐
-                  </Button>
-                </div>
-              )}
+                {/* 无结果提示 */}
+                {filteredPlans.length === 0 && (
+                  <div className="text-center py-16">
+                    <p className="text-gray-500 mb-4">没有找到符合条件的套餐</p>
+                    <Button
+                      variant="primary"
+                      onClick={() => window.location.href = '/'}
+                    >
+                      查看全部套餐
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </section>
