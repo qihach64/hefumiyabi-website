@@ -66,14 +66,6 @@ export default function HeaderActions({ isLoggedIn, merchant }: HeaderActionsPro
         )}
 
         <CartIcon />
-
-        <Link
-          href="/plans"
-          className="inline-flex items-center justify-center rounded-lg text-sm font-medium transition-colors bg-sakura-600 text-white hover:bg-sakura-700 active:scale-95 h-9 md:h-10 px-3 md:px-4 shadow-sm"
-        >
-          <span className="hidden sm:inline">立即预约</span>
-          <span className="sm:hidden">预约</span>
-        </Link>
       </div>
     );
   }
@@ -134,17 +126,6 @@ export default function HeaderActions({ isLoggedIn, merchant }: HeaderActionsPro
 
       {/* 购物车图标 - 仅在客户模式显示 */}
       {!isMerchantPage && <CartIcon />}
-
-      {/* 预约按钮 - 引导到套餐页面 - 仅在客户模式显示 */}
-      {!isMerchantPage && (
-        <Link
-          href="/plans"
-          className="inline-flex items-center justify-center rounded-lg text-sm font-medium transition-colors bg-sakura-600 text-white hover:bg-sakura-700 active:scale-95 h-9 md:h-10 px-3 md:px-4 shadow-sm"
-        >
-          <span className="hidden sm:inline">立即预约</span>
-          <span className="sm:hidden">预约</span>
-        </Link>
-      )}
     </div>
   );
 }
