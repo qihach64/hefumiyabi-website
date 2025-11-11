@@ -1,92 +1,28 @@
-import prisma from "@/lib/prisma";
-import PlansClient from "./PlansClient";
+import { redirect } from 'next/navigation';
 
-export default async function PlansPage() {
-  // 获取所有租赁套餐（包括活动套餐、标签关联和包含内容）
-  const allPlans = await prisma.rentalPlan.findMany({
-    include: {
-      campaign: {
-        select: {
-          id: true,
-          slug: true,
-          title: true,
-          description: true,
-        },
-      },
-      planTags: {
-        include: {
-          tag: {
-            select: {
-              id: true,
-              code: true,
-              name: true,
-              icon: true,
-              color: true,
-              categoryId: true,
-            },
-          },
-        },
-      },
-    },
-    orderBy: [
-      { isCampaign: 'desc' }, // 活动套餐优先
-      { price: 'asc' },
-    ],
-  });
+export default async function PlansPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  // Next.js 15 要求 await searchParams
+  const resolvedParams = await searchParams;
 
-  // 获取所有活跃的优惠活动
-  const activeCampaigns = await prisma.campaign.findMany({
-    where: {
-      isActive: true,
-      endDate: {
-        gte: new Date(),
-      },
-    },
-    orderBy: {
-      priority: 'desc',
-    },
-  });
+  // 将所有查询参数转发到主页
+  const params = new URLSearchParams();
 
-  // 获取店铺列表
-  const stores = await prisma.store.findMany({
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-    },
-    orderBy: {
-      name: 'asc',
-    },
-  });
+  for (const [key, value] of Object.entries(resolvedParams)) {
+    if (value) {
+      if (Array.isArray(value)) {
+        value.forEach(v => params.append(key, v));
+      } else {
+        params.set(key, value);
+      }
+    }
+  }
 
-  // 获取用于筛选器的标签分类和标签
-  const tagCategories = await prisma.tagCategory.findMany({
-    where: {
-      isActive: true,
-      showInFilter: true,
-    },
-    include: {
-      tags: {
-        where: {
-          isActive: true,
-        },
-        select: {
-          id: true,
-          code: true,
-          name: true,
-          icon: true,
-          color: true,
-        },
-      },
-    },
-  });
+  const queryString = params.toString();
+  const redirectUrl = queryString ? `/?${queryString}` : '/';
 
-  return (
-    <PlansClient
-      plans={allPlans}
-      campaigns={activeCampaigns}
-      stores={stores}
-      tagCategories={tagCategories}
-    />
-  );
+  redirect(redirectUrl);
 }
