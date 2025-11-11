@@ -35,6 +35,7 @@ export default function HeroSearchBar({
     }
   );
   const [mobileExpanded, setMobileExpanded] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
 
   // 自动补全相关状态
   const [allLocations, setAllLocations] = useState<string[]>([]);
@@ -110,6 +111,9 @@ export default function HeroSearchBar({
   };
 
   const handleSearch = () => {
+    // 设置loading状态
+    setIsSearching(true);
+
     // 构建查询参数
     const params = new URLSearchParams();
     if (location) params.set("location", location);
@@ -125,10 +129,28 @@ export default function HeroSearchBar({
     // 跳转到套餐列表页
     router.push(`/plans?${params.toString()}`);
     setMobileExpanded(false); // 关闭移动端展开状态
+
+    // 注意：loading状态会在组件卸载或新页面加载时自动清除
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
+    <>
+      {/* Loading Overlay */}
+      {isSearching && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="text-center">
+            {/* 加载动画 - 旋转的樱花图标 */}
+            <div className="relative w-16 h-16 mx-auto mb-4">
+              <div className="absolute inset-0 border-4 border-sakura-200 rounded-full"></div>
+              <div className="absolute inset-0 border-4 border-transparent border-t-sakura-600 rounded-full animate-spin"></div>
+            </div>
+            <p className="text-lg font-medium text-gray-900">正在搜索套餐...</p>
+            <p className="text-sm text-gray-500 mt-2">请稍候</p>
+          </div>
+        </div>
+      )}
+
+      <div className="w-full max-w-4xl mx-auto">
       {/* 桌面端：横向展开搜索框 - Airbnb 风格渐变 */}
       <div className="hidden md:flex rounded-full shadow-xl p-2 gap-2 items-center hover:shadow-2xl transition-all duration-300 relative"
            style={{
@@ -306,6 +328,7 @@ export default function HeroSearchBar({
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 }
