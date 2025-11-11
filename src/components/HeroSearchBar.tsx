@@ -133,8 +133,9 @@ export default function HeroSearchBar({
       params.set("children", guestsDetail.children.toString());
     }
 
-    // 跳转到套餐列表页
-    router.push(`/plans?${params.toString()}`);
+    // 直接跳转到主页 (不再使用 /plans 中间层)
+    const queryString = params.toString();
+    router.push(queryString ? `/?${queryString}` : '/');
     setMobileExpanded(false); // 关闭移动端展开状态
 
     // 注意：loading状态会在组件卸载或新页面加载时自动清除
