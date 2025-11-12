@@ -140,9 +140,9 @@ export default function HomeClient({
   tagCategories,
 }: HomeClientProps) {
   const searchParams = useSearchParams();
-  const { isSearching, stopSearch } = useSearchLoading();
+  const { isSearching, searchTarget, stopSearch } = useSearchLoading();
 
-  console.log('🟢 HomeClient: isSearching =', isSearching);
+  console.log('🟢 HomeClient: isSearching =', isSearching, 'searchTarget =', searchTarget, 'current params =', searchParams.toString());
 
   // 搜索参数
   const searchLocation = searchParams.get('location') || '';
@@ -164,18 +164,17 @@ export default function HomeClient({
   const [isStoreExpanded, setIsStoreExpanded] = useState(true);
   const [isRegionExpanded, setIsRegionExpanded] = useState(true);
 
-  // 当组件渲染且数据更新后,停止加载
+  // 当URL参数匹配目标参数时,停止加载
   useEffect(() => {
-    console.log('🟡 HomeClient useEffect: isSearching =', isSearching, 'allPlans.length =', allPlans.length);
-    if (isSearching) {
-      // 延迟停止,确保DOM已更新
-      const timer = setTimeout(() => {
-        console.log('🟡 HomeClient: calling stopSearch after 100ms delay');
-        stopSearch();
-      }, 100);
-      return () => clearTimeout(timer);
+    const currentParams = searchParams.toString();
+    console.log('🟡 HomeClient useEffect: isSearching =', isSearching, 'searchTarget =', searchTarget, 'currentParams =', currentParams);
+
+    // 如果当前处于加载状态,且当前URL参数与目标参数匹配
+    if (isSearching && searchTarget && currentParams === searchTarget) {
+      console.log('🟡 HomeClient: 参数匹配!停止加载');
+      stopSearch();
     }
-  }, [allPlans, isSearching, stopSearch]);
+  }, [searchParams, isSearching, searchTarget, stopSearch]);
 
   // 判断是否处于"搜索模式"
   const isSearchMode = !!(searchLocation || searchDate || guestsNum > 0 || selectedStoreId || selectedRegion || selectedTagIds.length > 0);
