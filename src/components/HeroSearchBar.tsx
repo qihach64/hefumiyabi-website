@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Search, MapPin, Calendar, Users, X } from "lucide-react";
+import { Search, MapPin, Calendar, Users, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui";
 import { useRouter, useSearchParams } from "next/navigation";
 import GuestsDropdown, { GuestsDetail } from "@/components/GuestsDropdown";
@@ -35,6 +35,7 @@ export default function HeroSearchBar({
     }
   );
   const [mobileExpanded, setMobileExpanded] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
 
   // 自动补全相关状态
   const [allLocations, setAllLocations] = useState<string[]>([]);
@@ -110,6 +111,9 @@ export default function HeroSearchBar({
   };
 
   const handleSearch = () => {
+    // 设置加载状态
+    setIsSearching(true);
+
     // 构建查询参数
     const params = new URLSearchParams();
     if (location) params.set("location", location);
@@ -126,6 +130,9 @@ export default function HeroSearchBar({
     const queryString = params.toString();
     router.push(queryString ? `/?${queryString}` : '/');
     setMobileExpanded(false); // 关闭移动端展开状态
+
+    // 导航后清除加载状态
+    setTimeout(() => setIsSearching(false), 500);
   };
 
   return (
@@ -200,10 +207,15 @@ export default function HeroSearchBar({
         {/* 搜索按钮 - 仅图标 */}
         <button
           onClick={handleSearch}
-          className="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-sakura-600 hover:bg-sakura-700 rounded-full shadow-md hover:shadow-lg active:scale-95 transition-all duration-200"
+          disabled={isSearching}
+          className="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-sakura-600 hover:bg-sakura-700 rounded-full shadow-md hover:shadow-lg active:scale-95 transition-all duration-200 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
           aria-label="搜索"
         >
-          <Search className="w-5 h-5 text-white" />
+          {isSearching ? (
+            <Loader2 className="w-5 h-5 text-white animate-spin" />
+          ) : (
+            <Search className="w-5 h-5 text-white" />
+          )}
         </button>
       </div>
 
@@ -301,10 +313,20 @@ export default function HeroSearchBar({
               variant="primary"
               size="lg"
               onClick={handleSearch}
-              className="w-full flex items-center justify-center gap-2 py-3 text-sm"
+              disabled={isSearching}
+              className="w-full flex items-center justify-center gap-2 py-3 text-sm cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              <Search className="w-4 h-4" />
-              搜索
+              {isSearching ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  搜索中...
+                </>
+              ) : (
+                <>
+                  <Search className="w-4 h-4" />
+                  搜索
+                </>
+              )}
             </Button>
           </div>
         )}
