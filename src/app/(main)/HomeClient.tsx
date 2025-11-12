@@ -609,25 +609,21 @@ export default function HomeClient({
                     key={section.id}
                     className={index < searchCategorySections.length - 1 ? "mb-6 md:mb-12" : ""}
                   >
-                    <div className="mb-4 md:mb-6 flex items-center gap-3 px-4 lg:px-0">
-                      {section.isRecommended && (
+                    {/* 推荐徽章（如果是推荐分区） */}
+                    {section.isRecommended && (
+                      <div className="mb-3 px-4 lg:px-0">
                         <Badge variant="warning" size="lg" className="shadow-lg">
                           <span className="text-lg">⭐</span>
                           为您推荐
                         </Badge>
-                      )}
-                      <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2 md:gap-3">
-                        <span className="text-2xl md:text-3xl">{section.icon}</span>
-                        <span className="bg-gradient-to-r from-sakura-600 to-sakura-500 bg-clip-text text-transparent">
-                          {section.label}
-                        </span>
-                      </h2>
-                    </div>
-                    <p className="text-sm md:text-base text-muted-foreground mb-4 md:mb-6 px-4 lg:px-0">
-                      {section.description}
-                    </p>
+                      </div>
+                    )}
+
                     <ScrollableSection
-                      scrollerClassName="flex gap-3 md:gap-4 overflow-x-auto scroll-smooth pb-4 -mb-4 scrollbar-hide snap-x snap-mandatory px-4 lg:px-0"
+                      title={section.label}
+                      description={section.description}
+                      icon={section.icon}
+                      scrollerClassName="flex gap-3 md:gap-4 overflow-x-auto scroll-smooth pb-4 -mb-4 scrollbar-hide snap-x snap-mandatory px-4 md:px-0"
                     >
                       {section.plans.map((plan) => (
                         <div
