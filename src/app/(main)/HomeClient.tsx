@@ -77,6 +77,7 @@ interface CategorySection {
   label: string;
   description: string;
   plans: RentalPlan[];
+  isRecommended?: boolean; // 标记是否为推荐分区
 }
 
 interface HomeClientProps {
@@ -261,6 +262,50 @@ export default function HomeClient({
     if (recommendedCategories.length === 0) return filteredPlans;
     return filteredPlans.filter((plan) => !recommendedCategories.includes(plan.category));
   }, [filteredPlans, recommendedCategories]);
+
+  // 搜索模式的分类sections（按分类分组,推荐置顶）
+  const searchCategorySections = useMemo(() => {
+    const sections: CategorySection[] = [];
+
+    // 1. 推荐分区
+    if (recommendedPlans.length > 0 && recommendedCategories.length > 0) {
+      recommendedCategories.forEach(categoryId => {
+        const categoryInfo = categorySections.find(c => c.id === categoryId);
+        const categoryPlans = recommendedPlans.filter(p => p.category === categoryId);
+
+        if (categoryInfo && categoryPlans.length > 0) {
+          sections.push({
+            ...categoryInfo,
+            plans: categoryPlans,
+            isRecommended: true, // 标记为推荐
+          });
+        }
+      });
+    }
+
+    // 2. 其他分类（按 category 分组）
+    const categoryMap = new Map<string, typeof filteredPlans>();
+    otherPlans.forEach(plan => {
+      if (!categoryMap.has(plan.category)) {
+        categoryMap.set(plan.category, []);
+      }
+      categoryMap.get(plan.category)!.push(plan);
+    });
+
+    // 按照 categorySections 的顺序添加其他分类
+    categorySections.forEach(categoryInfo => {
+      const plans = categoryMap.get(categoryInfo.id);
+      if (plans && plans.length > 0) {
+        sections.push({
+          ...categoryInfo,
+          plans,
+          isRecommended: false,
+        });
+      }
+    });
+
+    return sections;
+  }, [filteredPlans, recommendedPlans, recommendedCategories, otherPlans, categorySections]);
 
   // 地区列表
   const regions = useMemo(() => {
@@ -507,7 +552,7 @@ export default function HomeClient({
           </div>
         </section>
       ) : isSearchMode ? (
-        /* 🔍 搜索模式 - 侧边栏 + 网格 */
+        /* 🔍 搜索模式 - 侧边栏 + 分类横向滚动 */
         <section className="py-6 bg-background min-h-screen">
           <div className="container">
             <div className="flex flex-col lg:flex-row gap-6">
@@ -538,56 +583,12 @@ export default function HomeClient({
 
               {/* 右侧内容区域 */}
               <div className="flex-1 min-w-0">
-                  {/* 结果数量和推荐提示 */}
-                    <div className="flex items-center justify-between mb-6">
-                      <div className="flex items-center gap-4">
-                        <p className="text-sm text-gray-600">
-                          找到 <span className="font-semibold text-gray-900">{filteredPlans.length}</span> 个符合条件的套餐
-                        </p>
-                        {guestsNum > 0 && recommendedCategories.length > 0 && (
-                          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-sakura-100 rounded-full text-sm">
-                            <span>⭐</span>
-                            <span className="font-semibold text-sakura-700">
-                              为您推荐：{recommendedCategories.map(cat => getCategoryName(cat)).join('、')}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                {/* 推荐区域 */}
-                {recommendedPlans.length > 0 && (
-                  <div className="mb-12">
-                    <div className="flex items-center gap-4 mb-8">
-                      <Badge variant="warning" size="lg" className="shadow-lg">
-                        <span className="text-lg">⭐</span>
-                        为您推荐
-                      </Badge>
-                      <span className="text-2xl font-bold text-gray-900">
-                        {recommendedCategories.map(cat => getCategoryName(cat)).join('、')}
-                      </span>
-                    </div>
-                    <PlanCardGrid variant="grid-4">
-                      {recommendedPlans.map((plan) => (
-                        <PlanCard key={plan.id} plan={plan} showMerchant={true} />
-                      ))}
-                    </PlanCardGrid>
-                  </div>
-                )}
-
-                {/* 其他套餐 */}
-                {otherPlans.length > 0 && (
-                  <div>
-                    {recommendedPlans.length > 0 && (
-                      <h2 className="text-xl font-semibold text-gray-900 mb-6">其他套餐</h2>
-                    )}
-                    <PlanCardGrid variant="grid-4">
-                      {otherPlans.map((plan) => (
-                        <PlanCard key={plan.id} plan={plan} showMerchant={true} />
-                      ))}
-                    </PlanCardGrid>
-                  </div>
-                )}
+                {/* 结果数量提示 */}
+                <div className="mb-6">
+                  <p className="text-sm text-gray-600">
+                    找到 <span className="font-semibold text-gray-900">{filteredPlans.length}</span> 个符合条件的套餐
+                  </p>
+                </div>
 
                 {/* 无结果提示 */}
                 {filteredPlans.length === 0 && (
@@ -600,7 +601,40 @@ export default function HomeClient({
                       查看全部套餐
                     </Button>
                   </div>
-                  )}
+                )}
+
+                {/* 分类sections（横向滚动） */}
+                {searchCategorySections.map((section, index) => (
+                  <div
+                    key={section.id}
+                    className={index < searchCategorySections.length - 1 ? "mb-6 md:mb-12" : ""}
+                  >
+                    <div className="container">
+                      <div className="mb-4 md:mb-6 flex items-center gap-3">
+                        {section.isRecommended && (
+                          <Badge variant="warning" size="lg" className="shadow-lg">
+                            <span className="text-lg">⭐</span>
+                            为您推荐
+                          </Badge>
+                        )}
+                        <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2 md:gap-3">
+                          <span className="text-2xl md:text-3xl">{section.icon}</span>
+                          <span className="bg-gradient-to-r from-sakura-600 to-sakura-500 bg-clip-text text-transparent">
+                            {section.label}
+                          </span>
+                        </h2>
+                      </div>
+                      <p className="text-sm md:text-base text-muted-foreground mb-4 md:mb-6">
+                        {section.description}
+                      </p>
+                      <ScrollableSection>
+                        {section.plans.map((plan) => (
+                          <PlanCard key={plan.id} plan={plan} showMerchant={true} />
+                        ))}
+                      </ScrollableSection>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
