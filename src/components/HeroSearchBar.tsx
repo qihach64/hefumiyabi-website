@@ -19,6 +19,7 @@ export default function HeroSearchBar() {
   const [allLocations, setAllLocations] = useState<string[]>([]);
   const [filteredLocations, setFilteredLocations] = useState<string[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
   const locationInputRef = useRef<HTMLInputElement>(null);
   const dateInputRef = useRef<HTMLInputElement>(null);
   const guestsButtonRef = useRef<HTMLDivElement>(null);
@@ -72,7 +73,25 @@ export default function HeroSearchBar() {
   // 选择地区
   const handleLocationSelect = (selectedLocation: string) => {
     setLocation(selectedLocation);
-    setShowDropdown(false);
+
+    // 先播放关闭动画
+    setIsClosing(true);
+
+    // 等待动画完成后再关闭下拉菜单
+    setTimeout(() => {
+      setShowDropdown(false);
+      setIsClosing(false);
+    }, 300);
+
+    // 自动切换到日期选择器（Airbnb风格）
+    setTimeout(() => {
+      dateInputRef.current?.click();
+      try {
+        dateInputRef.current?.showPicker?.();
+      } catch (error) {
+        dateInputRef.current?.focus();
+      }
+    }, 400); // 等待下拉菜单关闭动画完成 (300ms) + 一点缓冲
   };
 
   // 聚焦时显示下拉菜单
@@ -146,7 +165,9 @@ export default function HeroSearchBar() {
                 border border-gray-100/50
                 dropdown-scrollbar"
               style={{
-                animation: 'dropdown-appear 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                animation: isClosing
+                  ? 'dropdown-disappear 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+                  : 'dropdown-appear 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
               }}
             >
               <div className="py-2">
