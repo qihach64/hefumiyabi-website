@@ -5,6 +5,7 @@ import { Search, MapPin, Calendar, Users, X } from "lucide-react";
 import { Button } from "@/components/ui";
 import { useRouter, useSearchParams } from "next/navigation";
 import GuestsDropdown, { GuestsDetail } from "@/components/GuestsDropdown";
+import { useSearchLoading } from "@/contexts/SearchLoadingContext";
 
 interface HeroSearchBarProps {
   initialLocation?: string;
@@ -21,6 +22,7 @@ export default function HeroSearchBar({
 }: HeroSearchBarProps = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { startSearch } = useSearchLoading();
 
   // 从URL参数初始化
   const [location, setLocation] = useState(initialLocation || searchParams.get('location') || "");
@@ -110,6 +112,9 @@ export default function HeroSearchBar({
   };
 
   const handleSearch = () => {
+    // 立即启动加载状态
+    startSearch();
+
     // 构建查询参数
     const params = new URLSearchParams();
     if (location) params.set("location", location);

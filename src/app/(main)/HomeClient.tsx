@@ -8,6 +8,7 @@ import HeroSearchBar from "@/components/HeroSearchBar";
 import ScrollableSection from "@/components/ScrollableSection";
 import { Sparkles, MapPin, Store as StoreIcon, Tag, X, Filter, Users, Calendar, Loader2 } from "lucide-react";
 import { Button, Badge } from "@/components/ui";
+import { useSearchLoading } from "@/contexts/SearchLoadingContext";
 
 // 类型定义 (从 PlansClient 复制)
 interface Store {
@@ -139,7 +140,7 @@ export default function HomeClient({
   tagCategories,
 }: HomeClientProps) {
   const searchParams = useSearchParams();
-  const [isLoading, setIsLoading] = useState(false);
+  const { isSearching, stopSearch } = useSearchLoading();
 
   // 搜索参数
   const searchLocation = searchParams.get('location') || '';
@@ -161,12 +162,14 @@ export default function HomeClient({
   const [isStoreExpanded, setIsStoreExpanded] = useState(true);
   const [isRegionExpanded, setIsRegionExpanded] = useState(true);
 
-  // 监听搜索参数变化,显示加载状态
+  // 当组件渲染完成后,停止加载状态
   useEffect(() => {
-    setIsLoading(true);
-    const timer = setTimeout(() => setIsLoading(false), 300);
-    return () => clearTimeout(timer);
-  }, [searchLocation, searchDate, guestsNum, selectedStoreId, selectedRegion, selectedTagIds.join(',')]);
+    if (isSearching) {
+      // 延迟一点停止,确保内容已渲染
+      const timer = setTimeout(() => stopSearch(), 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isSearching, stopSearch]);
 
   // 判断是否处于"搜索模式"
   const isSearchMode = !!(searchLocation || searchDate || guestsNum > 0 || selectedStoreId || selectedRegion || selectedTagIds.length > 0);
@@ -493,7 +496,7 @@ export default function HomeClient({
 
               {/* 右侧内容区域 */}
               <div className="flex-1 min-w-0">
-                {isLoading ? (
+                {isSearching ? (
                   /* 加载状态 */
                   <div className="flex flex-col items-center justify-center py-20">
                     <div className="relative w-16 h-16 mb-6">
