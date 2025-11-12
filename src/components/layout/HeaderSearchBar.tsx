@@ -131,8 +131,12 @@ export default function HeaderSearchBar() {
     }
 
     const queryString = params.toString();
-    // 使用页面重载而不是客户端导航
-    window.location.href = queryString ? `/?${queryString}` : '/';
+
+    // 开始搜索（显示 loading 状态）
+    startSearch(queryString);
+
+    // 使用客户端路由导航（平滑过渡，无页面重载）
+    router.push(queryString ? `/?${queryString}` : '/');
   };
 
   if (!isSearchBarExpanded) {

@@ -529,21 +529,25 @@ export default function HomeClient({
   const hasActiveFilters = !!(selectedStoreId || selectedRegion || selectedTagIds.length > 0);
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* 主内容区域 - 根据模式切换布局 */}
-      {isSearching ? (
-        /* 加载状态 */
-        <section className="py-20 bg-background min-h-screen">
-          <div className="container flex flex-col items-center justify-center">
-            <div className="relative w-16 h-16 mb-6">
+    <div className="min-h-screen bg-white relative">
+      {/* 搜索加载覆盖层 - 平滑过渡 */}
+      {isSearching && (
+        <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-40 flex items-center justify-center transition-opacity duration-300">
+          <div className="flex flex-col items-center gap-4">
+            <div className="relative w-16 h-16">
               <div className="absolute inset-0 border-4 border-sakura-100 rounded-full"></div>
               <div className="absolute inset-0 border-4 border-transparent border-t-sakura-500 border-r-sakura-400 rounded-full animate-spin"></div>
             </div>
-            <p className="text-lg font-semibold text-gray-900 mb-2">正在搜索套餐</p>
-            <p className="text-sm text-gray-500">请稍候...</p>
+            <div className="text-center">
+              <p className="text-lg font-semibold text-gray-900 mb-1">正在搜索套餐</p>
+              <p className="text-sm text-gray-500">即将为您呈现结果...</p>
+            </div>
           </div>
-        </section>
-      ) : isSearchMode ? (
+        </div>
+      )}
+
+      {/* 主内容区域 - 根据模式切换布局 */}
+      {isSearchMode ? (
         /* 🔍 搜索模式 - 侧边栏 + 分类横向滚动 */
         <section className="py-6 bg-background min-h-screen">
           <div className="container">

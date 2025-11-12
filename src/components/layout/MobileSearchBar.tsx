@@ -1,12 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Search, MapPin, X, Calendar, Users, Minus, Plus } from "lucide-react";
 import { useSearchState } from "@/contexts/SearchStateContext";
+import { useSearchLoading } from "@/contexts/SearchLoadingContext";
 import type { GuestsDetail } from "@/components/GuestsDropdown";
 
 export default function MobileSearchBar() {
+  const router = useRouter();
   const { searchState, setLocation, setDate, setGuests, setGuestsDetail } = useSearchState();
+  const { startSearch } = useSearchLoading();
   const [isMobileModalOpen, setIsMobileModalOpen] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [allLocations, setAllLocations] = useState<string[]>([]);
@@ -71,7 +75,12 @@ export default function MobileSearchBar() {
     }
 
     const queryString = params.toString();
-    window.location.href = queryString ? `/?${queryString}` : '/';
+
+    // 开始搜索（显示 loading 状态）
+    startSearch(queryString);
+
+    // 使用客户端路由导航（平滑过渡，无页面重载）
+    router.push(queryString ? `/?${queryString}` : '/');
   };
 
   // 生成按钮文本 - 只显示已选中的值

@@ -14,12 +14,30 @@ export const categories = [
   { id: "SPECIAL", icon: "✨", label: "特别套餐", description: "独特主题和服体验" },
 ];
 
-export default async function HomePage() {
-  // 获取所有租赁套餐(包括活动套餐、标签关联)
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  // 解析搜索参数（服务端预过滤）
+  const params = await searchParams;
+  const searchLocation = typeof params.location === 'string' ? params.location : '';
+
+  // 构建 where 条件 - 根据搜索参数预过滤
+  const whereConditions: any = {
+    isActive: true,
+  };
+
+  // 如果有地点搜索，预过滤地区
+  if (searchLocation) {
+    whereConditions.region = {
+      contains: searchLocation,
+    };
+  }
+
+  // 获取租赁套餐(服务端预过滤 + 包括活动套餐、标签关联)
   const allPlans = await prisma.rentalPlan.findMany({
-    where: {
-      isActive: true,
-    },
+    where: whereConditions,
     include: {
       campaign: {
         select: {
