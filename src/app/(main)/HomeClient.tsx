@@ -142,6 +142,8 @@ export default function HomeClient({
   const searchParams = useSearchParams();
   const { isSearching, stopSearch } = useSearchLoading();
 
+  console.log('🟢 HomeClient: isSearching =', isSearching);
+
   // 搜索参数
   const searchLocation = searchParams.get('location') || '';
   const searchDate = searchParams.get('date') || '';
@@ -164,9 +166,11 @@ export default function HomeClient({
 
   // 当组件渲染且数据更新后,停止加载
   useEffect(() => {
+    console.log('🟡 HomeClient useEffect: isSearching =', isSearching, 'allPlans.length =', allPlans.length);
     if (isSearching) {
       // 延迟停止,确保DOM已更新
       const timer = setTimeout(() => {
+        console.log('🟡 HomeClient: calling stopSearch after 100ms delay');
         stopSearch();
       }, 100);
       return () => clearTimeout(timer);

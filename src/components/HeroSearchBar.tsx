@@ -112,8 +112,10 @@ export default function HeroSearchBar({
   };
 
   const handleSearch = () => {
+    console.log('🟣 HeroSearchBar: handleSearch called');
     // 立即启动加载状态
     startSearch();
+    console.log('🟣 HeroSearchBar: startSearch called');
 
     // 构建查询参数
     const params = new URLSearchParams();

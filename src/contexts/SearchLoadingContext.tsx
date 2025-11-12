@@ -18,11 +18,15 @@ export function SearchLoadingProvider({ children }: { children: ReactNode }) {
   const [isSearching, setIsSearching] = useState(false);
 
   const startSearch = () => {
+    console.log('🔵 SearchLoadingContext: startSearch called');
     setIsSearching(true);
+    console.log('🔵 SearchLoadingContext: isSearching set to true');
   };
 
   const stopSearch = () => {
+    console.log('🔴 SearchLoadingContext: stopSearch called');
     setIsSearching(false);
+    console.log('🔴 SearchLoadingContext: isSearching set to false');
   };
 
   return (
