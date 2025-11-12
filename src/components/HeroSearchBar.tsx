@@ -177,8 +177,8 @@ export default function HeroSearchBar() {
                     onClick={() => handleLocationSelect(loc)}
                     className="w-full px-5 py-3.5 text-left flex items-center gap-4
                       transition-all duration-200 ease-out
-                      hover:bg-gray-50/80 active:bg-gray-100/90 active:scale-[0.98]
-                      group relative"
+                      hover:bg-sakura-50/60 hover:shadow-md active:bg-sakura-100/80 active:scale-[0.98]
+                      group relative rounded-2xl cursor-pointer"
                   >
                     {/* 图标容器 - 添加悬停动画 */}
                     <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center
@@ -338,7 +338,7 @@ export default function HeroSearchBar() {
                     <button
                       key={index}
                       onClick={() => handleLocationSelect(loc)}
-                      className="w-full px-4 py-3 text-left text-sm text-gray-900 hover:bg-sakura-50 active:bg-sakura-100 transition-colors flex items-center gap-3 border-b border-gray-100 last:border-b-0"
+                      className="w-full px-4 py-3 text-left text-sm text-gray-900 hover:bg-sakura-50 hover:shadow-sm active:bg-sakura-100 transition-all duration-200 flex items-center gap-3 border-b border-gray-100 last:border-b-0 rounded-lg cursor-pointer"
                     >
                       <MapPin className="w-4 h-4 text-sakura-500 flex-shrink-0" />
                       <span>{loc}</span>
