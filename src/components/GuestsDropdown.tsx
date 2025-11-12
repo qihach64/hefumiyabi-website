@@ -117,14 +117,18 @@ export default function GuestsDropdown({ value, onChange, onDetailChange, classN
   const hasGuests = totalGuests > 0;
 
   return (
-    <div className={`relative ${className}`}>
+    <>
       {/* 触发按钮 */}
       <div
         ref={buttonRef}
-        onClick={() => setShowDropdown(!showDropdown)}
-        className="cursor-pointer"
+        data-guests-trigger
+        onClick={(e) => {
+          e.stopPropagation();
+          setShowDropdown(!showDropdown);
+        }}
+        className={`cursor-pointer ${className}`}
       >
-        <label className="flex items-center gap-2 text-xs font-semibold text-gray-700 mb-1">
+        <label className="flex items-center gap-2 text-xs font-semibold text-gray-700 mb-1 cursor-pointer">
           <Users className="w-4 h-4 text-sakura-500" />
           人数
         </label>
@@ -133,32 +137,51 @@ export default function GuestsDropdown({ value, onChange, onDetailChange, classN
         </div>
       </div>
 
-      {/* 下拉面板 - Airbnb 风格 */}
+      {/* 下拉面板 - Airbnb 风格优化（右对齐到容器） */}
       {showDropdown && (
         <div
           ref={dropdownRef}
-          className="absolute top-full right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 w-80 p-4 animate-in fade-in slide-in-from-top-2 duration-200"
+          className="absolute top-full right-0 mt-3 bg-white rounded-3xl overflow-hidden z-50 w-80 p-5
+            shadow-[0_8px_28px_0_rgba(0,0,0,0.12)]
+            border border-gray-100/50
+            dropdown-scrollbar"
+          style={{
+            animation: 'dropdown-appear 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+          }}
         >
           {/* 男士 */}
-          <div className="flex items-center justify-between py-4 border-b border-gray-200">
+          <div className="flex items-center justify-between py-4 border-b border-gray-100/80">
             <div className="flex-1">
               <div className="text-sm font-semibold text-gray-900">👨 男士</div>
               <div className="text-xs text-gray-500 mt-0.5">13岁及以上</div>
             </div>
             <div className="flex items-center gap-3">
               <button
-                onClick={decrementMen}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  decrementMen();
+                }}
                 disabled={men <= 0}
-                className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:border-gray-900 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-gray-300"
+                className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center
+                  hover:border-sakura-500 hover:bg-sakura-50/50
+                  active:scale-95
+                  transition-all duration-200
+                  disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-gray-300 disabled:hover:bg-transparent"
               >
                 <Minus className="w-4 h-4 text-gray-600" />
               </button>
-              <span className="w-8 text-center text-sm font-medium text-gray-900">
+              <span className="w-10 text-center text-sm font-medium text-gray-900">
                 {men}
               </span>
               <button
-                onClick={incrementMen}
-                className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:border-gray-900 transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  incrementMen();
+                }}
+                className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center
+                  hover:border-sakura-500 hover:bg-sakura-50/50
+                  active:scale-95
+                  transition-all duration-200"
               >
                 <Plus className="w-4 h-4 text-gray-600" />
               </button>
@@ -166,25 +189,38 @@ export default function GuestsDropdown({ value, onChange, onDetailChange, classN
           </div>
 
           {/* 女士 */}
-          <div className="flex items-center justify-between py-4 border-b border-gray-200">
+          <div className="flex items-center justify-between py-4 border-b border-gray-100/80">
             <div className="flex-1">
               <div className="text-sm font-semibold text-gray-900">👩 女士</div>
               <div className="text-xs text-gray-500 mt-0.5">13岁及以上</div>
             </div>
             <div className="flex items-center gap-3">
               <button
-                onClick={decrementWomen}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  decrementWomen();
+                }}
                 disabled={women <= 0}
-                className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:border-gray-900 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-gray-300"
+                className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center
+                  hover:border-sakura-500 hover:bg-sakura-50/50
+                  active:scale-95
+                  transition-all duration-200
+                  disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-gray-300 disabled:hover:bg-transparent"
               >
                 <Minus className="w-4 h-4 text-gray-600" />
               </button>
-              <span className="w-8 text-center text-sm font-medium text-gray-900">
+              <span className="w-10 text-center text-sm font-medium text-gray-900">
                 {women}
               </span>
               <button
-                onClick={incrementWomen}
-                className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:border-gray-900 transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  incrementWomen();
+                }}
+                className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center
+                  hover:border-sakura-500 hover:bg-sakura-50/50
+                  active:scale-95
+                  transition-all duration-200"
               >
                 <Plus className="w-4 h-4 text-gray-600" />
               </button>
@@ -199,18 +235,31 @@ export default function GuestsDropdown({ value, onChange, onDetailChange, classN
             </div>
             <div className="flex items-center gap-3">
               <button
-                onClick={decrementChildren}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  decrementChildren();
+                }}
                 disabled={children <= 0}
-                className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:border-gray-900 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-gray-300"
+                className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center
+                  hover:border-sakura-500 hover:bg-sakura-50/50
+                  active:scale-95
+                  transition-all duration-200
+                  disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-gray-300 disabled:hover:bg-transparent"
               >
                 <Minus className="w-4 h-4 text-gray-600" />
               </button>
-              <span className="w-8 text-center text-sm font-medium text-gray-900">
+              <span className="w-10 text-center text-sm font-medium text-gray-900">
                 {children}
               </span>
               <button
-                onClick={incrementChildren}
-                className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:border-gray-900 transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  incrementChildren();
+                }}
+                className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center
+                  hover:border-sakura-500 hover:bg-sakura-50/50
+                  active:scale-95
+                  transition-all duration-200"
               >
                 <Plus className="w-4 h-4 text-gray-600" />
               </button>
@@ -218,13 +267,13 @@ export default function GuestsDropdown({ value, onChange, onDetailChange, classN
           </div>
 
           {/* 提示信息 */}
-          <div className="mt-2 pt-4 border-t border-gray-200">
+          <div className="mt-2 pt-4 border-t border-gray-100/80">
             <p className="text-xs text-gray-500">
-              至少选择1位客人，最多可预约10位
+              💡 至少选择1位客人，最多可预约10位
             </p>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
