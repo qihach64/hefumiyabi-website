@@ -1,26 +1,237 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Search, MapPin, Calendar, X } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import GuestsDropdown, { GuestsDetail } from "@/components/GuestsDropdown";
+import { useSearchLoading } from "@/contexts/SearchLoadingContext";
 
-interface HeaderSearchBarProps {
-  onExpand: () => void;
-}
+export default function HeaderSearchBar() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { startSearch } = useSearchLoading();
 
-export default function HeaderSearchBar({ onExpand }: HeaderSearchBarProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [location, setLocation] = useState(searchParams.get('location') || "");
+  const [date, setDate] = useState(searchParams.get('date') || "");
+  const [guests, setGuests] = useState(parseInt(searchParams.get('guests') || '1'));
+  const [guestsDetail, setGuestsDetail] = useState<GuestsDetail>({
+    total: parseInt(searchParams.get('guests') || '1'),
+    men: parseInt(searchParams.get('men') || '0'),
+    women: parseInt(searchParams.get('women') || '1'),
+    children: parseInt(searchParams.get('children') || '0'),
+  });
+
+  // 自动补全相关
+  const [allLocations, setAllLocations] = useState<string[]>([]);
+  const [filteredLocations, setFilteredLocations] = useState<string[]>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const locationInputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // 获取所有地区数据
+  useEffect(() => {
+    fetch('/api/locations')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.locations) {
+          setAllLocations(data.locations);
+        }
+      })
+      .catch((error) => {
+        console.error('Failed to fetch locations:', error);
+      });
+  }, []);
+
+  // 点击外部关闭
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setIsExpanded(false);
+        setShowDropdown(false);
+      }
+    };
+
+    if (isExpanded) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isExpanded]);
+
+  const handleLocationChange = (value: string) => {
+    setLocation(value);
+    if (value.trim() === '') {
+      setFilteredLocations(allLocations.slice(0, 10));
+    } else {
+      const filtered = allLocations.filter((loc) =>
+        loc.toLowerCase().includes(value.toLowerCase())
+      );
+      setFilteredLocations(filtered.slice(0, 10));
+    }
+    setShowDropdown(true);
+  };
+
+  const handleLocationSelect = (selectedLocation: string) => {
+    setLocation(selectedLocation);
+    setShowDropdown(false);
+  };
+
+  const handleLocationFocus = () => {
+    if (allLocations.length > 0) {
+      if (location.trim() === '') {
+        setFilteredLocations(allLocations.slice(0, 10));
+      } else {
+        const filtered = allLocations.filter((loc) =>
+          loc.toLowerCase().includes(location.toLowerCase())
+        );
+        setFilteredLocations(filtered.slice(0, 10));
+      }
+      setShowDropdown(true);
+    }
+  };
+
+  const handleExpand = () => {
+    setIsExpanded(true);
+    // 延迟聚焦到输入框
+    setTimeout(() => {
+      locationInputRef.current?.focus();
+    }, 100);
+  };
+
+  const handleCollapse = () => {
+    setIsExpanded(false);
+    setShowDropdown(false);
+  };
+
+  const handleSearch = () => {
+    const params = new URLSearchParams();
+    if (location) params.set("location", location);
+    if (date) params.set("date", date);
+    if (guests > 0) {
+      params.set("guests", guests.toString());
+      params.set("men", guestsDetail.men.toString());
+      params.set("women", guestsDetail.women.toString());
+      params.set("children", guestsDetail.children.toString());
+    }
+
+    const queryString = params.toString();
+    startSearch(queryString);
+    router.push(queryString ? `/?${queryString}` : '/');
+    setIsExpanded(false);
+  };
+
+  if (!isExpanded) {
+    // 紧凑模式
+    return (
+      <button
+        onClick={handleExpand}
+        className="hidden md:flex items-center gap-3 border border-gray-300 rounded-full px-4 py-2 hover:shadow-md transition-all duration-200 bg-white"
+        type="button"
+      >
+        <span className="text-sm font-medium text-gray-700">目的地</span>
+        <div className="w-px h-6 bg-gray-300"></div>
+        <span className="text-sm font-medium text-gray-700">日期</span>
+        <div className="w-px h-6 bg-gray-300"></div>
+        <span className="text-sm font-medium text-gray-700">人数</span>
+        <div className="w-8 h-8 bg-sakura-500 rounded-full flex items-center justify-center ml-2">
+          <Search className="w-4 h-4 text-white" />
+        </div>
+      </button>
+    );
+  }
+
+  // 展开模式 - 显示完整搜索框
   return (
-    <button
-      onClick={onExpand}
-      className="hidden md:flex items-center gap-3 border border-gray-300 rounded-full px-4 py-2 hover:shadow-md transition-all duration-200 bg-white"
-      type="button"
-    >
-      <span className="text-sm font-medium text-gray-700">目的地</span>
-      <div className="w-px h-6 bg-gray-300"></div>
-      <span className="text-sm font-medium text-gray-700">日期</span>
-      <div className="w-px h-6 bg-gray-300"></div>
-      <span className="text-sm font-medium text-gray-700">人数</span>
-      <div className="w-8 h-8 bg-sakura-500 rounded-full flex items-center justify-center ml-2">
-        <Search className="w-4 h-4 text-white" />
+    <div ref={containerRef} className="hidden md:block w-full max-w-4xl">
+      {/* 背景遮罩 */}
+      <div className="fixed inset-0 bg-black/20 z-40" onClick={handleCollapse} />
+
+      {/* 展开的搜索框 */}
+      <div className="relative z-50 rounded-full shadow-xl p-2 gap-2 flex items-center bg-white border border-gray-200">
+        {/* 目的地 */}
+        <div className="flex-1 px-6 py-3 rounded-full hover:bg-gray-100/50 transition-all duration-200 relative group">
+          <label className="block text-xs font-semibold text-gray-700 mb-1">
+            目的地
+          </label>
+          <input
+            ref={locationInputRef}
+            type="text"
+            placeholder="东京、京都..."
+            value={location}
+            onChange={(e) => handleLocationChange(e.target.value)}
+            onFocus={handleLocationFocus}
+            className="w-full text-sm text-gray-900 placeholder-gray-400 bg-transparent border-none outline-none focus:ring-0"
+          />
+
+          {/* 下拉菜单 */}
+          {showDropdown && filteredLocations.length > 0 && (
+            <div
+              ref={dropdownRef}
+              className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 max-h-80 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200"
+            >
+              {filteredLocations.map((loc, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleLocationSelect(loc)}
+                  className="w-full px-6 py-3 text-left text-sm text-gray-900 hover:bg-gray-100 active:bg-gray-200 transition-all duration-150 flex items-center gap-3 border-b border-gray-100 last:border-b-0 first:rounded-t-2xl last:rounded-b-2xl"
+                >
+                  <MapPin className="w-4 h-4 text-sakura-500 flex-shrink-0" />
+                  <span>{loc}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* 分隔线 */}
+        <div className="h-8 w-px bg-gray-200"></div>
+
+        {/* 日期 */}
+        <div className="flex-1 px-6 py-3 rounded-full hover:bg-gray-100/50 transition-all duration-200 group">
+          <label className="block text-xs font-semibold text-gray-700 mb-1">
+            到店日期
+          </label>
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="w-full text-sm text-gray-900 placeholder-gray-400 bg-transparent border-none outline-none focus:ring-0"
+          />
+        </div>
+
+        {/* 分隔线 */}
+        <div className="h-8 w-px bg-gray-300"></div>
+
+        {/* 人数 */}
+        <div className="flex-1 px-6 py-3 rounded-full hover:bg-gray-100/50 transition-all duration-200 group">
+          <GuestsDropdown value={guests} onChange={setGuests} onDetailChange={setGuestsDetail} />
+        </div>
+
+        {/* 搜索按钮 */}
+        <button
+          onClick={handleSearch}
+          className="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-sakura-600 hover:bg-sakura-700 rounded-full shadow-md hover:shadow-lg active:scale-95 transition-all duration-200"
+          aria-label="搜索"
+        >
+          <Search className="w-5 h-5 text-white" />
+        </button>
+
+        {/* 关闭按钮 */}
+        <button
+          onClick={handleCollapse}
+          className="flex-shrink-0 w-10 h-10 flex items-center justify-center hover:bg-gray-100 rounded-full transition-all duration-200"
+          aria-label="关闭"
+        >
+          <X className="w-5 h-5 text-gray-500" />
+        </button>
       </div>
-    </button>
+    </div>
   );
 }

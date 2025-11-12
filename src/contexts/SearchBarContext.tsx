@@ -5,8 +5,6 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 interface SearchBarContextType {
   isHeaderSearchVisible: boolean;  // Header 中的小搜索框
   isMainSearchVisible: boolean;     // 页面主搜索框
-  isSearchBarExpanded: boolean;
-  expandSearchBar: () => void;
 }
 
 const SearchBarContext = createContext<SearchBarContextType | undefined>(undefined);
@@ -14,7 +12,6 @@ const SearchBarContext = createContext<SearchBarContextType | undefined>(undefin
 export function SearchBarProvider({ children }: { children: ReactNode }) {
   const [isHeaderSearchVisible, setIsHeaderSearchVisible] = useState(false); // 初始隐藏
   const [isMainSearchVisible, setIsMainSearchVisible] = useState(true);      // 初始显示
-  const [isSearchBarExpanded, setIsSearchBarExpanded] = useState(false);
 
   // 监听滚动事件来控制搜索框的显示/隐藏
   useEffect(() => {
@@ -47,19 +44,11 @@ export function SearchBarProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const expandSearchBar = () => {
-    setIsSearchBarExpanded(true);
-    // 滚动到顶部以显示完整的搜索框
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
   return (
     <SearchBarContext.Provider
       value={{
         isHeaderSearchVisible,
         isMainSearchVisible,
-        isSearchBarExpanded,
-        expandSearchBar,
       }}
     >
       {children}

@@ -13,7 +13,7 @@ import { useSearchBar } from "@/contexts/SearchBarContext";
 
 export default function Header() {
   const { data: session } = useSession();
-  const { expandSearchBar, isHeaderSearchVisible } = useSearchBar();
+  const { isHeaderSearchVisible } = useSearchBar();
   const [merchant, setMerchant] = useState<any>(null);
 
   // 检查用户是否有商家账户
@@ -82,9 +82,7 @@ export default function Header() {
 
           {/* 中间：搜索栏（桌面端，滚动时显示） */}
           <div className="flex-1 flex justify-center max-w-2xl mx-4">
-            {isHeaderSearchVisible && (
-              <HeaderSearchBar onExpand={expandSearchBar} />
-            )}
+            {isHeaderSearchVisible && <HeaderSearchBar />}
           </div>
 
           {/* 右侧：菜单和用户 */}
