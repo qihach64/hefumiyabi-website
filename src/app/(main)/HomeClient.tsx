@@ -500,10 +500,11 @@ export default function HomeClient({
         </div>
       </section>
 
-      {/* 全局加载覆盖层 */}
-      {isSearching && (
-        <div className="fixed inset-0 top-14 md:top-16 bg-white/80 backdrop-blur-sm z-40 flex items-center justify-center">
-          <div className="flex flex-col items-center justify-center">
+      {/* 主内容区域 - 根据模式切换布局 */}
+      {isSearching ? (
+        /* 加载状态 */
+        <section className="py-20 bg-background min-h-screen">
+          <div className="container flex flex-col items-center justify-center">
             <div className="relative w-16 h-16 mb-6">
               <div className="absolute inset-0 border-4 border-sakura-100 rounded-full"></div>
               <div className="absolute inset-0 border-4 border-transparent border-t-sakura-500 border-r-sakura-400 rounded-full animate-spin"></div>
@@ -511,11 +512,8 @@ export default function HomeClient({
             <p className="text-lg font-semibold text-gray-900 mb-2">正在搜索套餐</p>
             <p className="text-sm text-gray-500">请稍候...</p>
           </div>
-        </div>
-      )}
-
-      {/* 主内容区域 - 根据模式切换布局 */}
-      {isSearchMode ? (
+        </section>
+      ) : isSearchMode ? (
         /* 🔍 搜索模式 - 侧边栏 + 网格 */
         <section className="py-6 bg-background min-h-screen">
           <div className="container">
