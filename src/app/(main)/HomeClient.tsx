@@ -162,14 +162,13 @@ export default function HomeClient({
   const [isStoreExpanded, setIsStoreExpanded] = useState(true);
   const [isRegionExpanded, setIsRegionExpanded] = useState(true);
 
-  // 当组件渲染完成后,停止加载状态
+  // 当搜索参数变化时,停止加载状态(说明新数据已经加载)
   useEffect(() => {
     if (isSearching) {
-      // 延迟一点停止,确保内容已渲染
-      const timer = setTimeout(() => stopSearch(), 100);
-      return () => clearTimeout(timer);
+      // 搜索参数已经更新,数据已准备好,停止加载
+      stopSearch();
     }
-  }, [isSearching, stopSearch]);
+  }, [searchLocation, searchDate, guestsNum, selectedStoreId, selectedRegion, selectedTagIds.join(','), isSearching, stopSearch]);
 
   // 判断是否处于"搜索模式"
   const isSearchMode = !!(searchLocation || searchDate || guestsNum > 0 || selectedStoreId || selectedRegion || selectedTagIds.length > 0);
