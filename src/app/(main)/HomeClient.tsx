@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import PlanCard from "@/components/PlanCard";
 import PlanCardGrid from "@/components/PlanCard/PlanCardGrid";
 import HeroSearchBar from "@/components/HeroSearchBar";
 import ScrollableSection from "@/components/ScrollableSection";
-import { Sparkles, MapPin, Store as StoreIcon, Tag, X, Filter, Users, Calendar } from "lucide-react";
+import { Sparkles, MapPin, Store as StoreIcon, Tag, X, Filter, Users, Calendar, Loader2 } from "lucide-react";
 import { Button, Badge } from "@/components/ui";
 
 // 类型定义 (从 PlansClient 复制)
@@ -139,6 +139,7 @@ export default function HomeClient({
   tagCategories,
 }: HomeClientProps) {
   const searchParams = useSearchParams();
+  const [isLoading, setIsLoading] = useState(false);
 
   // 搜索参数
   const searchLocation = searchParams.get('location') || '';
@@ -159,6 +160,13 @@ export default function HomeClient({
   // 店铺和地区分类的展开/折叠状态
   const [isStoreExpanded, setIsStoreExpanded] = useState(true);
   const [isRegionExpanded, setIsRegionExpanded] = useState(true);
+
+  // 监听搜索参数变化,显示加载状态
+  useEffect(() => {
+    setIsLoading(true);
+    const timer = setTimeout(() => setIsLoading(false), 300);
+    return () => clearTimeout(timer);
+  }, [searchLocation, searchDate, guestsNum, selectedStoreId, selectedRegion, selectedTagIds.join(',')]);
 
   // 判断是否处于"搜索模式"
   const isSearchMode = !!(searchLocation || searchDate || guestsNum > 0 || selectedStoreId || selectedRegion || selectedTagIds.length > 0);
@@ -485,22 +493,34 @@ export default function HomeClient({
 
               {/* 右侧内容区域 */}
               <div className="flex-1 min-w-0">
-                {/* 结果数量和推荐提示 */}
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-4">
-                    <p className="text-sm text-gray-600">
-                      找到 <span className="font-semibold text-gray-900">{filteredPlans.length}</span> 个符合条件的套餐
-                    </p>
-                    {guestsNum > 0 && recommendedCategories.length > 0 && (
-                      <div className="flex items-center gap-1.5 px-3 py-1.5 bg-sakura-100 rounded-full text-sm">
-                        <span>⭐</span>
-                        <span className="font-semibold text-sakura-700">
-                          为您推荐：{recommendedCategories.map(cat => getCategoryName(cat)).join('、')}
-                        </span>
-                      </div>
-                    )}
+                {isLoading ? (
+                  /* 加载状态 */
+                  <div className="flex flex-col items-center justify-center py-20">
+                    <div className="relative w-16 h-16 mb-6">
+                      <div className="absolute inset-0 border-4 border-sakura-100 rounded-full"></div>
+                      <div className="absolute inset-0 border-4 border-transparent border-t-sakura-500 border-r-sakura-400 rounded-full animate-spin"></div>
+                    </div>
+                    <p className="text-lg font-semibold text-gray-900 mb-2">正在搜索套餐</p>
+                    <p className="text-sm text-gray-500">请稍候...</p>
                   </div>
-                </div>
+                ) : (
+                  <>
+                    {/* 结果数量和推荐提示 */}
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center gap-4">
+                        <p className="text-sm text-gray-600">
+                          找到 <span className="font-semibold text-gray-900">{filteredPlans.length}</span> 个符合条件的套餐
+                        </p>
+                        {guestsNum > 0 && recommendedCategories.length > 0 && (
+                          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-sakura-100 rounded-full text-sm">
+                            <span>⭐</span>
+                            <span className="font-semibold text-sakura-700">
+                              为您推荐：{recommendedCategories.map(cat => getCategoryName(cat)).join('、')}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
 
                 {/* 推荐区域 */}
                 {recommendedPlans.length > 0 && (
@@ -547,6 +567,8 @@ export default function HomeClient({
                       查看全部套餐
                     </Button>
                   </div>
+                  )}
+                  </>
                 )}
               </div>
             </div>
