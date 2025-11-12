@@ -4,8 +4,9 @@ import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import UserMenu from "./UserMenu";
 import HeaderActions from "./HeaderActions";
-import NavLink from "./NavLink";
 import MobileMenu from "./MobileMenu";
+import HeaderSearchBar from "./HeaderSearchBar";
+import NavMenuButton from "./NavMenuButton";
 
 export default async function Header() {
   const session = await auth();
@@ -23,7 +24,7 @@ export default async function Header() {
     });
   }
 
-  // 导航链接配置（仅用于桌面端）
+  // 导航链接配置
   const navLinks = [
     {
       href: "/virtual-tryon",
@@ -36,10 +37,10 @@ export default async function Header() {
   ];
 
   return (
-    <header className="w-full bg-white shadow-sm sticky top-0 z-50">
+    <header className="w-full bg-white border-b border-gray-200 sticky top-0 z-50">
       <div className="container">
-        <div className="flex h-14 md:h-16 items-center justify-between gap-2 md:gap-4">
-          {/* 左侧：移动端菜单 + Logo */}
+        <div className="flex h-16 md:h-20 items-center justify-between gap-4">
+          {/* 左侧：Logo */}
           <div className="flex items-center gap-2 md:gap-3">
             {/* 移动端汉堡菜单 */}
             <MobileMenu
@@ -66,35 +67,29 @@ export default async function Header() {
             </Link>
           </div>
 
-          {/* 中间：桌面端导航 */}
-          <nav className="hidden lg:flex items-center space-x-1 flex-1 justify-center">
-            {navLinks.map((link) => (
-              <NavLink
-                key={link.href}
-                href={link.href}
-                special={link.special}
-              >
-                {link.label}
-              </NavLink>
-            ))}
-          </nav>
+          {/* 中间：搜索栏（桌面端） */}
+          <div className="flex-1 flex justify-center max-w-2xl mx-4">
+            <HeaderSearchBar />
+          </div>
 
-          {/* 右侧：操作按钮 */}
-          <div className="flex items-center gap-1 md:gap-2 shrink-0">
-            {/* 购物车和预约按钮 */}
+          {/* 右侧：菜单和用户 */}
+          <div className="flex items-center gap-2 md:gap-3 shrink-0">
+            {/* 购物车按钮 */}
             <HeaderActions
               isLoggedIn={!!session?.user}
               merchant={merchant}
             />
 
-            {/* 用户菜单 / 登录按钮 - 桌面端显示 */}
-            <div className="hidden md:flex">
+            {/* 导航菜单 + 用户头像（合并按钮，Airbnb 风格） */}
+            <div className="hidden md:flex items-center gap-2 relative">
+              <NavMenuButton navLinks={navLinks} />
+
               {session?.user ? (
                 <UserMenu user={session.user} />
               ) : (
                 <Link
                   href="/login"
-                  className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-sakura-50 hover:text-sakura-700 h-10 px-4 py-2"
+                  className="inline-flex items-center justify-center rounded-full text-sm font-medium transition-colors hover:bg-sakura-50 hover:text-sakura-700 h-10 px-4 border border-gray-300"
                 >
                   登录
                 </Link>
