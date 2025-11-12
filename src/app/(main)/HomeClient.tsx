@@ -494,8 +494,8 @@ export default function HomeClient({
 
               {/* 右侧内容区域 */}
               <div className="flex-1 min-w-0">
-                {isSearching ? (
-                  /* 加载状态 */
+                {/* 加载状态覆盖层 */}
+                {isSearching && (
                   <div className="flex flex-col items-center justify-center py-20">
                     <div className="relative w-16 h-16 mb-6">
                       <div className="absolute inset-0 border-4 border-sakura-100 rounded-full"></div>
@@ -504,9 +504,11 @@ export default function HomeClient({
                     <p className="text-lg font-semibold text-gray-900 mb-2">正在搜索套餐</p>
                     <p className="text-sm text-gray-500">请稍候...</p>
                   </div>
-                ) : (
-                  <>
-                    {/* 结果数量和推荐提示 */}
+                )}
+
+                {/* 内容区域 - 加载时隐藏 */}
+                <div className={isSearching ? 'hidden' : ''}>
+                  {/* 结果数量和推荐提示 */}
                     <div className="flex items-center justify-between mb-6">
                       <div className="flex items-center gap-4">
                         <p className="text-sm text-gray-600">
@@ -569,8 +571,7 @@ export default function HomeClient({
                     </Button>
                   </div>
                   )}
-                  </>
-                )}
+                </div>
               </div>
             </div>
           </div>
