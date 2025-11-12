@@ -164,15 +164,35 @@ export default function HomeClient({
   const [isStoreExpanded, setIsStoreExpanded] = useState(true);
   const [isRegionExpanded, setIsRegionExpanded] = useState(true);
 
-  // 当URL参数匹配目标参数时,停止加载
+  // 记录加载开始时间
+  const loadingStartTimeRef = useRef<number>(0);
+
+  // 当开始加载时记录时间
+  useEffect(() => {
+    if (isSearching && loadingStartTimeRef.current === 0) {
+      loadingStartTimeRef.current = Date.now();
+      console.log('⏱️ 开始计时');
+    }
+  }, [isSearching]);
+
+  // 当URL参数匹配目标参数时,停止加载(但至少显示500ms)
   useEffect(() => {
     const currentParams = searchParams.toString();
     console.log('🟡 HomeClient useEffect: isSearching =', isSearching, 'searchTarget =', searchTarget, 'currentParams =', currentParams);
 
     // 如果当前处于加载状态,且当前URL参数与目标参数匹配
     if (isSearching && searchTarget && currentParams === searchTarget) {
-      console.log('🟡 HomeClient: 参数匹配!停止加载');
-      stopSearch();
+      const elapsedTime = Date.now() - loadingStartTimeRef.current;
+      const minDisplayTime = 500; // 最小显示时间 500ms
+      const remainingTime = Math.max(0, minDisplayTime - elapsedTime);
+
+      console.log('🟡 HomeClient: 参数匹配! 已显示', elapsedTime, 'ms, 还需等待', remainingTime, 'ms');
+
+      setTimeout(() => {
+        console.log('🟡 HomeClient: 停止加载');
+        stopSearch();
+        loadingStartTimeRef.current = 0; // 重置计时器
+      }, remainingTime);
     }
   }, [searchParams, isSearching, searchTarget, stopSearch]);
 
