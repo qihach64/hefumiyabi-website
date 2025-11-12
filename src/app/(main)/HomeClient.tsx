@@ -166,19 +166,18 @@ export default function HomeClient({
 
   // 记录加载开始时间
   const loadingStartTimeRef = useRef<number>(0);
+  const stopTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 当开始加载时记录时间
-  useEffect(() => {
-    if (isSearching && loadingStartTimeRef.current === 0) {
-      loadingStartTimeRef.current = Date.now();
-      console.log('⏱️ 开始计时');
-    }
-  }, [isSearching]);
-
-  // 当URL参数匹配目标参数时,停止加载(但至少显示500ms)
+  // 统一管理加载状态
   useEffect(() => {
     const currentParams = searchParams.toString();
     console.log('🟡 HomeClient useEffect: isSearching =', isSearching, 'searchTarget =', searchTarget, 'currentParams =', currentParams);
+
+    // 开始加载
+    if (isSearching && loadingStartTimeRef.current === 0) {
+      loadingStartTimeRef.current = Date.now();
+      console.log('⏱️ 开始计时:', loadingStartTimeRef.current);
+    }
 
     // 如果当前处于加载状态,且当前URL参数与目标参数匹配
     if (isSearching && searchTarget && currentParams === searchTarget) {
@@ -188,12 +187,25 @@ export default function HomeClient({
 
       console.log('🟡 HomeClient: 参数匹配! 已显示', elapsedTime, 'ms, 还需等待', remainingTime, 'ms');
 
-      setTimeout(() => {
+      // 清除之前的定时器(如果有)
+      if (stopTimeoutRef.current) {
+        clearTimeout(stopTimeoutRef.current);
+      }
+
+      stopTimeoutRef.current = setTimeout(() => {
         console.log('🟡 HomeClient: 停止加载');
         stopSearch();
         loadingStartTimeRef.current = 0; // 重置计时器
+        stopTimeoutRef.current = null;
       }, remainingTime);
     }
+
+    // 清理函数
+    return () => {
+      if (stopTimeoutRef.current) {
+        clearTimeout(stopTimeoutRef.current);
+      }
+    };
   }, [searchParams, isSearching, searchTarget, stopSearch]);
 
   // 判断是否处于"搜索模式"
@@ -488,6 +500,20 @@ export default function HomeClient({
         </div>
       </section>
 
+      {/* 全局加载覆盖层 */}
+      {isSearching && (
+        <div className="fixed inset-0 top-14 md:top-16 bg-white/80 backdrop-blur-sm z-40 flex items-center justify-center">
+          <div className="flex flex-col items-center justify-center">
+            <div className="relative w-16 h-16 mb-6">
+              <div className="absolute inset-0 border-4 border-sakura-100 rounded-full"></div>
+              <div className="absolute inset-0 border-4 border-transparent border-t-sakura-500 border-r-sakura-400 rounded-full animate-spin"></div>
+            </div>
+            <p className="text-lg font-semibold text-gray-900 mb-2">正在搜索套餐</p>
+            <p className="text-sm text-gray-500">请稍候...</p>
+          </div>
+        </div>
+      )}
+
       {/* 主内容区域 - 根据模式切换布局 */}
       {isSearchMode ? (
         /* 🔍 搜索模式 - 侧边栏 + 网格 */
@@ -521,20 +547,6 @@ export default function HomeClient({
 
               {/* 右侧内容区域 */}
               <div className="flex-1 min-w-0">
-                {/* 加载状态覆盖层 */}
-                {isSearching && (
-                  <div className="flex flex-col items-center justify-center py-20">
-                    <div className="relative w-16 h-16 mb-6">
-                      <div className="absolute inset-0 border-4 border-sakura-100 rounded-full"></div>
-                      <div className="absolute inset-0 border-4 border-transparent border-t-sakura-500 border-r-sakura-400 rounded-full animate-spin"></div>
-                    </div>
-                    <p className="text-lg font-semibold text-gray-900 mb-2">正在搜索套餐</p>
-                    <p className="text-sm text-gray-500">请稍候...</p>
-                  </div>
-                )}
-
-                {/* 内容区域 - 加载时隐藏 */}
-                <div className={isSearching ? 'hidden' : ''}>
                   {/* 结果数量和推荐提示 */}
                     <div className="flex items-center justify-between mb-6">
                       <div className="flex items-center gap-4">
@@ -598,7 +610,6 @@ export default function HomeClient({
                     </Button>
                   </div>
                   )}
-                </div>
               </div>
             </div>
           </div>
