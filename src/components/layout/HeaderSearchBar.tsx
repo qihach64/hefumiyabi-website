@@ -90,17 +90,11 @@ export default function HeaderSearchBar() {
   };
 
   const handleExpand = () => {
-    // 先滚动到顶部
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-
-    // 延迟展开和聚焦，等待滚动开始
+    setIsExpanded(true);
+    // 自动聚焦到输入框，打开下拉菜单
     setTimeout(() => {
-      setIsExpanded(true);
-      // 再延迟聚焦到输入框
-      setTimeout(() => {
-        locationInputRef.current?.focus();
-      }, 100);
-    }, 300);
+      locationInputRef.current?.focus();
+    }, 100);
   };
 
   const handleCollapse = () => {
@@ -120,9 +114,8 @@ export default function HeaderSearchBar() {
     }
 
     const queryString = params.toString();
-    startSearch(queryString);
-    router.push(queryString ? `/?${queryString}` : '/');
-    setIsExpanded(false);
+    // 使用页面重载而不是客户端导航
+    window.location.href = queryString ? `/?${queryString}` : '/';
   };
 
   if (!isExpanded) {

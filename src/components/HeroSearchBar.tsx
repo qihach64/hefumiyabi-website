@@ -103,12 +103,8 @@ export default function HeroSearchBar() {
 
     const queryString = params.toString();
 
-    // 立即启动加载状态,并传递目标参数
-    startSearch(queryString);
-
-    // 直接跳转到主页 (不再使用 /plans 中间层)
-    router.push(queryString ? `/?${queryString}` : '/');
-    setMobileExpanded(false); // 关闭移动端展开状态
+    // 使用页面重载而不是客户端导航
+    window.location.href = queryString ? `/?${queryString}` : '/';
   };
 
   return (
