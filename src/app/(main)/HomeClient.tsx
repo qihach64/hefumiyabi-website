@@ -605,35 +605,40 @@ export default function HomeClient({
 
                 {/* 分类sections（横向滚动） */}
                 {searchCategorySections.map((section, index) => (
-                  <div
+                  <section
                     key={section.id}
                     className={index < searchCategorySections.length - 1 ? "mb-6 md:mb-12" : ""}
                   >
-                    <div className="container">
-                      <div className="mb-4 md:mb-6 flex items-center gap-3">
-                        {section.isRecommended && (
-                          <Badge variant="warning" size="lg" className="shadow-lg">
-                            <span className="text-lg">⭐</span>
-                            为您推荐
-                          </Badge>
-                        )}
-                        <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2 md:gap-3">
-                          <span className="text-2xl md:text-3xl">{section.icon}</span>
-                          <span className="bg-gradient-to-r from-sakura-600 to-sakura-500 bg-clip-text text-transparent">
-                            {section.label}
-                          </span>
-                        </h2>
-                      </div>
-                      <p className="text-sm md:text-base text-muted-foreground mb-4 md:mb-6">
-                        {section.description}
-                      </p>
-                      <ScrollableSection>
-                        {section.plans.map((plan) => (
-                          <PlanCard key={plan.id} plan={plan} showMerchant={true} />
-                        ))}
-                      </ScrollableSection>
+                    <div className="mb-4 md:mb-6 flex items-center gap-3 px-4 lg:px-0">
+                      {section.isRecommended && (
+                        <Badge variant="warning" size="lg" className="shadow-lg">
+                          <span className="text-lg">⭐</span>
+                          为您推荐
+                        </Badge>
+                      )}
+                      <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2 md:gap-3">
+                        <span className="text-2xl md:text-3xl">{section.icon}</span>
+                        <span className="bg-gradient-to-r from-sakura-600 to-sakura-500 bg-clip-text text-transparent">
+                          {section.label}
+                        </span>
+                      </h2>
                     </div>
-                  </div>
+                    <p className="text-sm md:text-base text-muted-foreground mb-4 md:mb-6 px-4 lg:px-0">
+                      {section.description}
+                    </p>
+                    <ScrollableSection
+                      scrollerClassName="flex gap-3 md:gap-4 overflow-x-auto scroll-smooth pb-4 -mb-4 scrollbar-hide snap-x snap-mandatory px-4 lg:px-0"
+                    >
+                      {section.plans.map((plan) => (
+                        <div
+                          key={plan.id}
+                          className="snap-start flex-shrink-0 w-[240px] sm:w-[260px] md:w-[240px] lg:w-[260px]"
+                        >
+                          <PlanCard plan={plan} showMerchant={true} />
+                        </div>
+                      ))}
+                    </ScrollableSection>
+                  </section>
                 ))}
               </div>
             </div>
