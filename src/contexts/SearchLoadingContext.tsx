@@ -21,17 +21,13 @@ export function SearchLoadingProvider({ children }: { children: ReactNode }) {
   const [searchTarget, setSearchTarget] = useState('');
 
   const startSearch = (targetParams: string) => {
-    console.log('🔵 SearchLoadingContext: startSearch called with target =', targetParams);
     setSearchTarget(targetParams);
     setIsSearching(true);
-    console.log('🔵 SearchLoadingContext: isSearching set to true');
   };
 
   const stopSearch = () => {
-    console.log('🔴 SearchLoadingContext: stopSearch called');
     setIsSearching(false);
     setSearchTarget('');
-    console.log('🔴 SearchLoadingContext: isSearching set to false');
   };
 
   return (

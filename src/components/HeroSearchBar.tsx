@@ -112,8 +112,6 @@ export default function HeroSearchBar({
   };
 
   const handleSearch = () => {
-    console.log('🟣 HeroSearchBar: handleSearch called');
-
     // 构建查询参数
     const params = new URLSearchParams();
     if (location) params.set("location", location);
@@ -127,11 +125,9 @@ export default function HeroSearchBar({
     }
 
     const queryString = params.toString();
-    console.log('🟣 HeroSearchBar: target query string =', queryString);
 
     // 立即启动加载状态,并传递目标参数
     startSearch(queryString);
-    console.log('🟣 HeroSearchBar: startSearch called with target');
 
     // 直接跳转到主页 (不再使用 /plans 中间层)
     router.push(queryString ? `/?${queryString}` : '/');

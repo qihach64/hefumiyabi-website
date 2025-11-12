@@ -142,8 +142,6 @@ export default function HomeClient({
   const searchParams = useSearchParams();
   const { isSearching, searchTarget, stopSearch } = useSearchLoading();
 
-  console.log('🟢 HomeClient: isSearching =', isSearching, 'searchTarget =', searchTarget, 'current params =', searchParams.toString());
-
   // 搜索参数
   const searchLocation = searchParams.get('location') || '';
   const searchDate = searchParams.get('date') || '';
@@ -171,12 +169,10 @@ export default function HomeClient({
   // 统一管理加载状态
   useEffect(() => {
     const currentParams = searchParams.toString();
-    console.log('🟡 HomeClient useEffect: isSearching =', isSearching, 'searchTarget =', searchTarget, 'currentParams =', currentParams);
 
     // 开始加载
     if (isSearching && loadingStartTimeRef.current === 0) {
       loadingStartTimeRef.current = Date.now();
-      console.log('⏱️ 开始计时:', loadingStartTimeRef.current);
     }
 
     // 如果当前处于加载状态,且当前URL参数与目标参数匹配
@@ -185,15 +181,12 @@ export default function HomeClient({
       const minDisplayTime = 500; // 最小显示时间 500ms
       const remainingTime = Math.max(0, minDisplayTime - elapsedTime);
 
-      console.log('🟡 HomeClient: 参数匹配! 已显示', elapsedTime, 'ms, 还需等待', remainingTime, 'ms');
-
       // 清除之前的定时器(如果有)
       if (stopTimeoutRef.current) {
         clearTimeout(stopTimeoutRef.current);
       }
 
       stopTimeoutRef.current = setTimeout(() => {
-        console.log('🟡 HomeClient: 停止加载');
         stopSearch();
         loadingStartTimeRef.current = 0; // 重置计时器
         stopTimeoutRef.current = null;

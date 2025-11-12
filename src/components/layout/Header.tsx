@@ -25,7 +25,6 @@ export default async function Header() {
 
   // 导航链接配置（仅用于桌面端）
   const navLinks = [
-    { href: "/plans", label: "租赁套餐" },
     {
       href: "/virtual-tryon",
       label: "AI 试穿",
