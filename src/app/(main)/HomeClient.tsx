@@ -143,7 +143,7 @@ export default function HomeClient({
 }: HomeClientProps) {
   const searchParams = useSearchParams();
   const { isSearching, searchTarget, stopSearch } = useSearchLoading();
-  const { isSearchBarVisible } = useSearchBar();
+  const { isMainSearchVisible } = useSearchBar();
 
   // 搜索参数
   const searchLocation = searchParams.get('location') || '';
@@ -538,7 +538,7 @@ export default function HomeClient({
         className={`
           sticky top-14 md:top-16 z-30 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 border-b border-gray-100 shadow-sm
           transition-all duration-300 ease-in-out
-          ${isSearchBarVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full pointer-events-none'}
+          ${isMainSearchVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full pointer-events-none'}
         `}
       >
         <div className="container py-2 md:py-4">
