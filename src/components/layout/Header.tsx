@@ -13,7 +13,7 @@ import { useSearchBar } from "@/contexts/SearchBarContext";
 
 export default function Header() {
   const { data: session } = useSession();
-  const { isHeaderSearchVisible } = useSearchBar();
+  const { isSearchBarExpanded } = useSearchBar();
   const [merchant, setMerchant] = useState<any>(null);
 
   // 检查用户是否有商家账户
@@ -50,7 +50,7 @@ export default function Header() {
   ];
 
   return (
-    <header className={`w-full bg-white sticky top-0 z-50 ${isHeaderSearchVisible ? 'border-b border-gray-200' : ''}`}>
+    <header className={`w-full bg-white sticky top-0 z-50 border-b transition-all duration-300 ${!isSearchBarExpanded ? 'border-gray-200' : 'border-transparent'}`}>
       <div className="container">
         <div className="flex h-16 md:h-20 items-center justify-between gap-4">
           {/* 左侧：Logo */}
@@ -80,9 +80,9 @@ export default function Header() {
             </Link>
           </div>
 
-          {/* 中间：搜索栏（桌面端，滚动时显示） */}
+          {/* 中间：搜索栏（始终显示，根据滚动状态展开/收起） */}
           <div className="flex-1 flex justify-center max-w-2xl mx-4">
-            {isHeaderSearchVisible && <HeaderSearchBar />}
+            <HeaderSearchBar />
           </div>
 
           {/* 右侧：菜单和用户 */}

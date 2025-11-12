@@ -6,13 +6,13 @@ import { useRouter } from "next/navigation";
 import GuestsDropdown from "@/components/GuestsDropdown";
 import { useSearchLoading } from "@/contexts/SearchLoadingContext";
 import { useSearchState } from "@/contexts/SearchStateContext";
+import { useSearchBar } from "@/contexts/SearchBarContext";
 
 export default function HeaderSearchBar() {
   const router = useRouter();
   const { startSearch } = useSearchLoading();
   const { searchState, setLocation, setDate, setGuests, setGuestsDetail } = useSearchState();
-
-  const [isExpanded, setIsExpanded] = useState(false);
+  const { isSearchBarExpanded, expandManually } = useSearchBar();
 
   // 自动补全相关
   const [allLocations, setAllLocations] = useState<string[]>([]);
@@ -23,7 +23,6 @@ export default function HeaderSearchBar() {
   const dateInputRef = useRef<HTMLInputElement>(null);
   const guestsButtonRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   // 获取所有地区数据
   useEffect(() => {
@@ -39,26 +38,6 @@ export default function HeaderSearchBar() {
       });
   }, []);
 
-  // 点击外部关闭
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
-      ) {
-        setIsExpanded(false);
-        setShowDropdown(false);
-      }
-    };
-
-    if (isExpanded) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isExpanded]);
 
   const handleLocationChange = (value: string) => {
     setLocation(value);
@@ -111,12 +90,15 @@ export default function HeaderSearchBar() {
   };
 
   const handleExpand = (focusField?: 'location' | 'date' | 'guests' | 'none') => {
-    setIsExpanded(true);
+    // 手动展开搜索栏（会设置锁定标志，防止滚动自动收起）
+    expandManually();
+
     // 根据点击的字段，聚焦到对应的输入框
     if (focusField === 'none') {
       // 只展开，不聚焦任何字段
       return;
     }
+
     setTimeout(() => {
       if (focusField === 'date') {
         dateInputRef.current?.click();
@@ -137,11 +119,6 @@ export default function HeaderSearchBar() {
     }, 100);
   };
 
-  const handleCollapse = () => {
-    setIsExpanded(false);
-    setShowDropdown(false);
-  };
-
   const handleSearch = () => {
     const params = new URLSearchParams();
     if (searchState.location) params.set("location", searchState.location);
@@ -158,7 +135,7 @@ export default function HeaderSearchBar() {
     window.location.href = queryString ? `/?${queryString}` : '/';
   };
 
-  if (!isExpanded) {
+  if (!isSearchBarExpanded) {
     // 紧凑模式 - Airbnb 风格
     return (
       <div className="hidden md:flex items-center gap-3 border border-gray-300 rounded-full px-4 py-2 bg-white
@@ -206,12 +183,9 @@ export default function HeaderSearchBar() {
 
   // 展开模式 - 显示完整搜索框
   return (
-    <div ref={containerRef} className="hidden md:block w-full max-w-4xl">
-      {/* 背景遮罩 */}
-      <div className="fixed inset-0 bg-black/20 z-40 backdrop-blur-sm transition-all duration-300" onClick={handleCollapse} />
-
+    <div className="hidden md:block w-full max-w-4xl">
       {/* 展开的搜索框 - Airbnb 风格优化 */}
-      <div className="relative z-50 rounded-full p-2 gap-2 flex items-center bg-white border border-gray-200
+      <div className="rounded-full p-2 gap-2 flex items-center bg-white border border-gray-200
         shadow-[0_8px_24px_0_rgba(0,0,0,0.1)]
         transition-all duration-300 ease-out">
         {/* 目的地 */}
@@ -375,15 +349,6 @@ export default function HeaderSearchBar() {
           aria-label="搜索"
         >
           <Search className="w-5 h-5 text-white" />
-        </button>
-
-        {/* 关闭按钮 */}
-        <button
-          onClick={handleCollapse}
-          className="flex-shrink-0 w-10 h-10 flex items-center justify-center hover:bg-gray-100 rounded-full transition-all duration-200"
-          aria-label="关闭"
-        >
-          <X className="w-5 h-5 text-gray-500" />
         </button>
       </div>
     </div>

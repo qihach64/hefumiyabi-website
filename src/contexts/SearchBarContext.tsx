@@ -1,40 +1,47 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 
 interface SearchBarContextType {
-  isHeaderSearchVisible: boolean;  // Header 中的小搜索框
-  isMainSearchVisible: boolean;     // 页面主搜索框
+  isSearchBarExpanded: boolean;  // Header 搜索栏是否展开（大搜索栏）
+  setIsSearchBarExpanded: (expanded: boolean) => void;
+  expandManually: () => void; // 手动展开搜索栏
 }
 
 const SearchBarContext = createContext<SearchBarContextType | undefined>(undefined);
 
 export function SearchBarProvider({ children }: { children: ReactNode }) {
-  const [isHeaderSearchVisible, setIsHeaderSearchVisible] = useState(false); // 初始隐藏
-  const [isMainSearchVisible, setIsMainSearchVisible] = useState(true);      // 初始显示
+  const [isSearchBarExpanded, setIsSearchBarExpanded] = useState(true); // 初始展开（大搜索栏）
+  const manuallyExpandedRef = useRef(false); // 记录是否手动展开
+  const expandedScrollYRef = useRef(0); // 记录手动展开时的滚动位置
 
-  // 监听滚动事件来控制搜索框的显示/隐藏
+  // 监听滚动事件来控制搜索框的展开/收起
   useEffect(() => {
-    let lastScrollY = window.scrollY;
     const threshold = 100; // 滚动阈值
+    const scrollDelta = 50; // 手动展开后需要滚动的距离才能自动收起
 
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
 
-      if (currentScrollY > threshold) {
-        // 向下滚动超过阈值时
-        if (currentScrollY > lastScrollY) {
-          // 继续向下滚动：隐藏主搜索框，显示Header搜索框
-          setIsMainSearchVisible(false);
-          setIsHeaderSearchVisible(true);
+      // 如果是手动展开的，检查是否滚动超过一定距离
+      if (manuallyExpandedRef.current) {
+        const scrolledDistance = Math.abs(currentScrollY - expandedScrollYRef.current);
+        if (scrolledDistance > scrollDelta) {
+          // 用户滚动超过阈值，解除手动展开锁定
+          manuallyExpandedRef.current = false;
+        } else {
+          // 仍在锁定期间，保持展开状态
+          return;
         }
-      } else {
-        // 回到顶部时：显示主搜索框，隐藏Header搜索框
-        setIsMainSearchVisible(true);
-        setIsHeaderSearchVisible(false);
       }
 
-      lastScrollY = currentScrollY;
+      if (currentScrollY > threshold) {
+        // 向下滚动超过阈值：收起搜索栏（小搜索栏）
+        setIsSearchBarExpanded(false);
+      } else {
+        // 回到顶部：展开搜索栏（大搜索栏）
+        setIsSearchBarExpanded(true);
+      }
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -44,11 +51,19 @@ export function SearchBarProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  // 手动展开方法
+  const expandManually = () => {
+    setIsSearchBarExpanded(true);
+    manuallyExpandedRef.current = true;
+    expandedScrollYRef.current = window.scrollY;
+  };
+
   return (
     <SearchBarContext.Provider
       value={{
-        isHeaderSearchVisible,
-        isMainSearchVisible,
+        isSearchBarExpanded,
+        setIsSearchBarExpanded,
+        expandManually,
       }}
     >
       {children}
