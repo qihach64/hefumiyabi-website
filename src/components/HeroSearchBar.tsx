@@ -146,15 +146,31 @@ export default function HeroSearchBar() {
             <MapPin className="w-4 h-4 text-sakura-500" />
             目的地
           </label>
-          <input
-            ref={locationInputRef}
-            type="text"
-            placeholder="东京、京都..."
-            value={searchState.location}
-            onChange={(e) => handleLocationChange(e.target.value)}
-            onFocus={handleLocationFocus}
-            className="w-full text-sm text-gray-900 placeholder-gray-400 bg-transparent border-none outline-none focus:ring-0 cursor-text"
-          />
+          <div className="relative flex items-center">
+            <input
+              ref={locationInputRef}
+              type="text"
+              placeholder="东京、京都..."
+              value={searchState.location}
+              onChange={(e) => handleLocationChange(e.target.value)}
+              onFocus={handleLocationFocus}
+              className="w-full text-sm text-gray-900 placeholder-gray-400 bg-transparent border-none outline-none focus:ring-0 cursor-text pr-6"
+            />
+            {/* 清空按钮 */}
+            {searchState.location && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setLocation('');
+                  setShowDropdown(false);
+                }}
+                className="absolute right-0 p-1 hover:bg-gray-200 rounded-full transition-colors"
+                aria-label="清空目的地"
+              >
+                <X className="w-3.5 h-3.5 text-gray-500" />
+              </button>
+            )}
+          </div>
 
           {/* 下拉菜单 - Airbnb 风格优化 */}
           {showDropdown && filteredLocations.length > 0 && (
@@ -316,7 +332,7 @@ export default function HeroSearchBar() {
             <div className="relative">
               <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-xl focus-within:border-sakura-500 focus-within:ring-2 focus-within:ring-sakura-100 transition-all duration-200">
                 <MapPin className="w-5 h-5 text-sakura-500 flex-shrink-0" />
-                <div className="flex-1">
+                <div className="flex-1 relative">
                   <label className="block text-xs font-semibold text-gray-700 mb-0.5">
                     目的地
                   </label>
@@ -326,8 +342,22 @@ export default function HeroSearchBar() {
                     value={searchState.location}
                     onChange={(e) => handleLocationChange(e.target.value)}
                     onFocus={handleLocationFocus}
-                    className="w-full text-sm text-gray-900 placeholder-gray-400 bg-transparent border-none outline-none focus:ring-0"
+                    className="w-full text-sm text-gray-900 placeholder-gray-400 bg-transparent border-none outline-none focus:ring-0 pr-6"
                   />
+                  {/* 清空按钮 */}
+                  {searchState.location && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setLocation('');
+                        setShowDropdown(false);
+                      }}
+                      className="absolute right-0 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-200 rounded-full transition-colors"
+                      aria-label="清空目的地"
+                    >
+                      <X className="w-3.5 h-3.5 text-gray-500" />
+                    </button>
+                  )}
                 </div>
               </div>
 

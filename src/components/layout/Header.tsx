@@ -50,7 +50,7 @@ export default function Header() {
   ];
 
   return (
-    <header className="w-full bg-white border-b border-gray-200 sticky top-0 z-50">
+    <header className={`w-full bg-white sticky top-0 z-50 ${isHeaderSearchVisible ? 'border-b border-gray-200' : ''}`}>
       <div className="container">
         <div className="flex h-16 md:h-20 items-center justify-between gap-4">
           {/* 左侧：Logo */}

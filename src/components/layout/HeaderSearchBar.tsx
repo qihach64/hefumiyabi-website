@@ -110,9 +110,13 @@ export default function HeaderSearchBar() {
     }
   };
 
-  const handleExpand = (focusField?: 'location' | 'date' | 'guests') => {
+  const handleExpand = (focusField?: 'location' | 'date' | 'guests' | 'none') => {
     setIsExpanded(true);
     // 根据点击的字段，聚焦到对应的输入框
+    if (focusField === 'none') {
+      // 只展开，不聚焦任何字段
+      return;
+    }
     setTimeout(() => {
       if (focusField === 'date') {
         dateInputRef.current?.click();
@@ -126,8 +130,8 @@ export default function HeaderSearchBar() {
         if (guestsButton) {
           guestsButton.click();
         }
-      } else {
-        // 默认聚焦到目的地
+      } else if (focusField === 'location') {
+        // 聚焦到目的地
         locationInputRef.current?.focus();
       }
     }, 100);
@@ -186,11 +190,16 @@ export default function HeaderSearchBar() {
           <Users className="w-4 h-4 text-sakura-500" />
           <span className="text-sm font-medium text-gray-700 transition-colors duration-200">人数</span>
         </button>
-        <div className="w-8 h-8 bg-sakura-500 rounded-full flex items-center justify-center ml-2
-          hover:bg-sakura-600 transition-all duration-200
-          hover:scale-110 active:scale-95">
+        <button
+          onClick={() => handleExpand('none')}
+          className="w-8 h-8 bg-sakura-500 rounded-full flex items-center justify-center ml-2
+            hover:bg-sakura-600 transition-all duration-200
+            hover:scale-110 active:scale-95 cursor-pointer"
+          type="button"
+          aria-label="展开搜索"
+        >
           <Search className="w-4 h-4 text-white" />
-        </div>
+        </button>
       </div>
     );
   }
@@ -214,15 +223,31 @@ export default function HeaderSearchBar() {
             <MapPin className="w-4 h-4 text-sakura-500" />
             目的地
           </label>
-          <input
-            ref={locationInputRef}
-            type="text"
-            placeholder="东京、京都..."
-            value={searchState.location}
-            onChange={(e) => handleLocationChange(e.target.value)}
-            onFocus={handleLocationFocus}
-            className="w-full text-sm text-gray-900 placeholder-gray-400 bg-transparent border-none outline-none focus:ring-0 cursor-text"
-          />
+          <div className="relative flex items-center">
+            <input
+              ref={locationInputRef}
+              type="text"
+              placeholder="东京、京都..."
+              value={searchState.location}
+              onChange={(e) => handleLocationChange(e.target.value)}
+              onFocus={handleLocationFocus}
+              className="w-full text-sm text-gray-900 placeholder-gray-400 bg-transparent border-none outline-none focus:ring-0 cursor-text pr-6"
+            />
+            {/* 清空按钮 */}
+            {searchState.location && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setLocation('');
+                  setShowDropdown(false);
+                }}
+                className="absolute right-0 p-1 hover:bg-gray-200 rounded-full transition-colors"
+                aria-label="清空目的地"
+              >
+                <X className="w-3.5 h-3.5 text-gray-500" />
+              </button>
+            )}
+          </div>
 
           {/* 下拉菜单 - Airbnb 风格优化 */}
           {showDropdown && filteredLocations.length > 0 && (
