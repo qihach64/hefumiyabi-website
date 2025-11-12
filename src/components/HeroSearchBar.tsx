@@ -267,7 +267,7 @@ export default function HeroSearchBar() {
             }
           }}
         >
-          <GuestsDropdown value={searchState.guests} onChange={setGuests} onDetailChange={setGuestsDetail} />
+          <GuestsDropdown value={searchState.guests} onChange={setGuests} onDetailChange={setGuestsDetail} initialDetail={searchState.guestsDetail} />
         </div>
 
         {/* 搜索按钮 - 仅图标 */}
@@ -366,7 +366,7 @@ export default function HeroSearchBar() {
 
             {/* 人数 */}
             <div className="p-4 border border-gray-200 rounded-xl hover:border-sakura-500 hover:ring-2 hover:ring-sakura-100 transition-all duration-200">
-              <GuestsDropdown value={searchState.guests} onChange={setGuests} onDetailChange={setGuestsDetail} />
+              <GuestsDropdown value={searchState.guests} onChange={setGuests} onDetailChange={setGuestsDetail} initialDetail={searchState.guestsDetail} />
             </div>
 
             {/* 搜索按钮 */}

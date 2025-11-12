@@ -110,11 +110,26 @@ export default function HeaderSearchBar() {
     }
   };
 
-  const handleExpand = () => {
+  const handleExpand = (focusField?: 'location' | 'date' | 'guests') => {
     setIsExpanded(true);
-    // 自动聚焦到输入框，打开下拉菜单
+    // 根据点击的字段，聚焦到对应的输入框
     setTimeout(() => {
-      locationInputRef.current?.focus();
+      if (focusField === 'date') {
+        dateInputRef.current?.click();
+        try {
+          dateInputRef.current?.showPicker?.();
+        } catch (error) {
+          dateInputRef.current?.focus();
+        }
+      } else if (focusField === 'guests') {
+        const guestsButton = guestsButtonRef.current?.querySelector('[data-guests-trigger]') as HTMLElement;
+        if (guestsButton) {
+          guestsButton.click();
+        }
+      } else {
+        // 默认聚焦到目的地
+        locationInputRef.current?.focus();
+      }
     }, 100);
   };
 
@@ -142,34 +157,41 @@ export default function HeaderSearchBar() {
   if (!isExpanded) {
     // 紧凑模式 - Airbnb 风格
     return (
-      <button
-        onClick={handleExpand}
-        className="hidden md:flex items-center gap-3 border border-gray-300 rounded-full px-4 py-2 bg-white
-          hover:shadow-[0_4px_12px_0_rgba(0,0,0,0.1)]
-          transition-all duration-300 ease-out
-          active:scale-[0.98]"
-        type="button"
-      >
-        <div className="flex items-center gap-2">
+      <div className="hidden md:flex items-center gap-3 border border-gray-300 rounded-full px-4 py-2 bg-white
+        hover:shadow-[0_4px_12px_0_rgba(0,0,0,0.1)]
+        transition-all duration-300 ease-out">
+        <button
+          onClick={() => handleExpand('location')}
+          className="flex items-center gap-2 hover:bg-gray-50 px-2 py-1 rounded-full transition-colors cursor-pointer"
+          type="button"
+        >
           <MapPin className="w-4 h-4 text-sakura-500" />
           <span className="text-sm font-medium text-gray-700 transition-colors duration-200">目的地</span>
-        </div>
+        </button>
         <div className="w-px h-6 bg-gray-300"></div>
-        <div className="flex items-center gap-2">
+        <button
+          onClick={() => handleExpand('date')}
+          className="flex items-center gap-2 hover:bg-gray-50 px-2 py-1 rounded-full transition-colors cursor-pointer"
+          type="button"
+        >
           <Calendar className="w-4 h-4 text-sakura-500" />
           <span className="text-sm font-medium text-gray-700 transition-colors duration-200">日期</span>
-        </div>
+        </button>
         <div className="w-px h-6 bg-gray-300"></div>
-        <div className="flex items-center gap-2">
+        <button
+          onClick={() => handleExpand('guests')}
+          className="flex items-center gap-2 hover:bg-gray-50 px-2 py-1 rounded-full transition-colors cursor-pointer"
+          type="button"
+        >
           <Users className="w-4 h-4 text-sakura-500" />
           <span className="text-sm font-medium text-gray-700 transition-colors duration-200">人数</span>
-        </div>
+        </button>
         <div className="w-8 h-8 bg-sakura-500 rounded-full flex items-center justify-center ml-2
           hover:bg-sakura-600 transition-all duration-200
           hover:scale-110 active:scale-95">
           <Search className="w-4 h-4 text-white" />
         </div>
-      </button>
+      </div>
     );
   }
 
@@ -317,6 +339,7 @@ export default function HeaderSearchBar() {
             value={searchState.guests}
             onChange={setGuests}
             onDetailChange={setGuestsDetail}
+            initialDetail={searchState.guestsDetail}
           />
         </div>
 

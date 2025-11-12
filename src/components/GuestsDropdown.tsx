@@ -14,26 +14,17 @@ interface GuestsDropdownProps {
   value: number;
   onChange: (value: number) => void;
   onDetailChange?: (detail: GuestsDetail) => void;
+  initialDetail?: GuestsDetail;
   className?: string;
 }
 
-export default function GuestsDropdown({ value, onChange, onDetailChange, className = "" }: GuestsDropdownProps) {
+export default function GuestsDropdown({ value, onChange, onDetailChange, initialDetail, className = "" }: GuestsDropdownProps) {
   const [showDropdown, setShowDropdown] = useState(false);
-  const [men, setMen] = useState(0);
-  const [women, setWomen] = useState(1);
-  const [children, setChildren] = useState(0);
+  const [men, setMen] = useState(initialDetail?.men || 0);
+  const [women, setWomen] = useState(initialDetail?.women || 1);
+  const [children, setChildren] = useState(initialDetail?.children || 0);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLDivElement>(null);
-
-  // 从 value 初始化人数
-  useEffect(() => {
-    if (value > 0) {
-      // 简单策略：默认假设是女士
-      setWomen(value);
-      setMen(0);
-      setChildren(0);
-    }
-  }, []);
 
   // 监听点击外部关闭下拉菜单
   useEffect(() => {
