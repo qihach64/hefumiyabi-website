@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { GuestsDetail } from '@/components/GuestsDropdown';
 
 interface SearchState {
@@ -21,41 +22,35 @@ interface SearchStateContextType {
 
 const SearchStateContext = createContext<SearchStateContextType | undefined>(undefined);
 
-const getInitialGuestsDetail = (): GuestsDetail => {
-  if (typeof window === 'undefined') {
-    return { total: 1, men: 0, women: 1, children: 0 };
-  }
-
-  const params = new URLSearchParams(window.location.search);
-  return {
-    total: parseInt(params.get('guests') || '1'),
-    men: parseInt(params.get('men') || '0'),
-    women: parseInt(params.get('women') || '1'),
-    children: parseInt(params.get('children') || '0'),
-  };
-};
-
-const getInitialSearchState = (): SearchState => {
-  if (typeof window === 'undefined') {
-    return {
-      location: '',
-      date: '',
-      guests: 1,
-      guestsDetail: { total: 1, men: 0, women: 1, children: 0 },
-    };
-  }
-
-  const params = new URLSearchParams(window.location.search);
-  return {
-    location: params.get('location') || '',
-    date: params.get('date') || '',
-    guests: parseInt(params.get('guests') || '1'),
-    guestsDetail: getInitialGuestsDetail(),
-  };
-};
-
 export function SearchStateProvider({ children }: { children: ReactNode }) {
-  const [searchState, setSearchState] = useState<SearchState>(getInitialSearchState);
+  const searchParams = useSearchParams();
+
+  const [searchState, setSearchState] = useState<SearchState>(() => ({
+    location: searchParams.get('location') || '',
+    date: searchParams.get('date') || '',
+    guests: parseInt(searchParams.get('guests') || '1'),
+    guestsDetail: {
+      total: parseInt(searchParams.get('guests') || '1'),
+      men: parseInt(searchParams.get('men') || '0'),
+      women: parseInt(searchParams.get('women') || '1'),
+      children: parseInt(searchParams.get('children') || '0'),
+    },
+  }));
+
+  // 监听 URL 参数变化，同步到状态
+  useEffect(() => {
+    setSearchState({
+      location: searchParams.get('location') || '',
+      date: searchParams.get('date') || '',
+      guests: parseInt(searchParams.get('guests') || '1'),
+      guestsDetail: {
+        total: parseInt(searchParams.get('guests') || '1'),
+        men: parseInt(searchParams.get('men') || '0'),
+        women: parseInt(searchParams.get('women') || '1'),
+        children: parseInt(searchParams.get('children') || '0'),
+      },
+    });
+  }, [searchParams]);
 
   const setLocation = (location: string) => {
     setSearchState(prev => ({ ...prev, location }));
