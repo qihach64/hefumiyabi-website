@@ -3,39 +3,16 @@
 import { useState, useEffect, useRef } from "react";
 import { Search, MapPin, Calendar, Users, X } from "lucide-react";
 import { Button } from "@/components/ui";
-import { useRouter, useSearchParams } from "next/navigation";
-import GuestsDropdown, { GuestsDetail } from "@/components/GuestsDropdown";
+import { useRouter } from "next/navigation";
+import GuestsDropdown from "@/components/GuestsDropdown";
 import { useSearchLoading } from "@/contexts/SearchLoadingContext";
+import { useSearchState } from "@/contexts/SearchStateContext";
 
-interface HeroSearchBarProps {
-  initialLocation?: string;
-  initialDate?: string;
-  initialGuests?: number;
-  initialGuestsDetail?: GuestsDetail;
-}
-
-export default function HeroSearchBar({
-  initialLocation = "",
-  initialDate = "",
-  initialGuests = 1,
-  initialGuestsDetail,
-}: HeroSearchBarProps = {}) {
+export default function HeroSearchBar() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { startSearch } = useSearchLoading();
+  const { searchState, setLocation, setDate, setGuests, setGuestsDetail } = useSearchState();
 
-  // 从URL参数初始化
-  const [location, setLocation] = useState(initialLocation || searchParams.get('location') || "");
-  const [date, setDate] = useState(initialDate || searchParams.get('date') || "");
-  const [guests, setGuests] = useState(initialGuests || parseInt(searchParams.get('guests') || '1'));
-  const [guestsDetail, setGuestsDetail] = useState<GuestsDetail>(
-    initialGuestsDetail || {
-      total: parseInt(searchParams.get('guests') || '1'),
-      men: parseInt(searchParams.get('men') || '0'),
-      women: parseInt(searchParams.get('women') || '1'),
-      children: parseInt(searchParams.get('children') || '0'),
-    }
-  );
   const [mobileExpanded, setMobileExpanded] = useState(false);
 
   // 自动补全相关状态
@@ -99,11 +76,11 @@ export default function HeroSearchBar({
   // 聚焦时显示下拉菜单
   const handleLocationFocus = () => {
     if (allLocations.length > 0) {
-      if (location.trim() === '') {
+      if (searchState.location.trim() === '') {
         setFilteredLocations(allLocations.slice(0, 10));
       } else {
         const filtered = allLocations.filter((loc) =>
-          loc.toLowerCase().includes(location.toLowerCase())
+          loc.toLowerCase().includes(searchState.location.toLowerCase())
         );
         setFilteredLocations(filtered.slice(0, 10));
       }
@@ -114,14 +91,14 @@ export default function HeroSearchBar({
   const handleSearch = () => {
     // 构建查询参数
     const params = new URLSearchParams();
-    if (location) params.set("location", location);
-    if (date) params.set("date", date);
-    if (guests > 0) {
-      params.set("guests", guests.toString());
+    if (searchState.location) params.set("location", searchState.location);
+    if (searchState.date) params.set("date", searchState.date);
+    if (searchState.guests > 0) {
+      params.set("guests", searchState.guests.toString());
       // 传递详细的性别和年龄信息
-      params.set("men", guestsDetail.men.toString());
-      params.set("women", guestsDetail.women.toString());
-      params.set("children", guestsDetail.children.toString());
+      params.set("men", searchState.guestsDetail.men.toString());
+      params.set("women", searchState.guestsDetail.women.toString());
+      params.set("children", searchState.guestsDetail.children.toString());
     }
 
     const queryString = params.toString();
@@ -153,7 +130,7 @@ export default function HeroSearchBar({
             ref={locationInputRef}
             type="text"
             placeholder="东京、京都..."
-            value={location}
+            value={searchState.location}
             onChange={(e) => handleLocationChange(e.target.value)}
             onFocus={handleLocationFocus}
             className="w-full text-sm text-gray-900 placeholder-gray-400 bg-transparent border-none outline-none focus:ring-0"
@@ -189,7 +166,7 @@ export default function HeroSearchBar({
           </label>
           <input
             type="date"
-            value={date}
+            value={searchState.date}
             onChange={(e) => setDate(e.target.value)}
             className="w-full text-sm text-gray-900 placeholder-gray-400 bg-transparent border-none outline-none focus:ring-0"
           />
@@ -200,7 +177,7 @@ export default function HeroSearchBar({
 
         {/* 人数 */}
         <div className="flex-1 px-6 py-3 rounded-full hover:bg-gray-100/50 transition-all duration-200 group">
-          <GuestsDropdown value={guests} onChange={setGuests} onDetailChange={setGuestsDetail} />
+          <GuestsDropdown value={searchState.guests} onChange={setGuests} onDetailChange={setGuestsDetail} />
         </div>
 
         {/* 搜索按钮 - 仅图标 */}
@@ -256,7 +233,7 @@ export default function HeroSearchBar({
                   <input
                     type="text"
                     placeholder="东京、京都..."
-                    value={location}
+                    value={searchState.location}
                     onChange={(e) => handleLocationChange(e.target.value)}
                     onFocus={handleLocationFocus}
                     className="w-full text-sm text-gray-900 placeholder-gray-400 bg-transparent border-none outline-none focus:ring-0"
@@ -290,7 +267,7 @@ export default function HeroSearchBar({
                 </label>
                 <input
                   type="date"
-                  value={date}
+                  value={searchState.date}
                   onChange={(e) => setDate(e.target.value)}
                   className="w-full text-sm text-gray-900 placeholder-gray-400 bg-transparent border-none outline-none focus:ring-0"
                 />
@@ -299,7 +276,7 @@ export default function HeroSearchBar({
 
             {/* 人数 */}
             <div className="p-4 border border-gray-200 rounded-xl hover:border-sakura-500 hover:ring-2 hover:ring-sakura-100 transition-all duration-200">
-              <GuestsDropdown value={guests} onChange={setGuests} onDetailChange={setGuestsDetail} />
+              <GuestsDropdown value={searchState.guests} onChange={setGuests} onDetailChange={setGuestsDetail} />
             </div>
 
             {/* 搜索按钮 */}

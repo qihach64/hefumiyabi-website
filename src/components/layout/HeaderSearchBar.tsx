@@ -1,26 +1,18 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Search, MapPin, Calendar, X } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
-import GuestsDropdown, { GuestsDetail } from "@/components/GuestsDropdown";
+import { Search, MapPin, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import GuestsDropdown from "@/components/GuestsDropdown";
 import { useSearchLoading } from "@/contexts/SearchLoadingContext";
+import { useSearchState } from "@/contexts/SearchStateContext";
 
 export default function HeaderSearchBar() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { startSearch } = useSearchLoading();
+  const { searchState, setLocation, setDate, setGuests, setGuestsDetail } = useSearchState();
 
   const [isExpanded, setIsExpanded] = useState(false);
-  const [location, setLocation] = useState(searchParams.get('location') || "");
-  const [date, setDate] = useState(searchParams.get('date') || "");
-  const [guests, setGuests] = useState(parseInt(searchParams.get('guests') || '1'));
-  const [guestsDetail, setGuestsDetail] = useState<GuestsDetail>({
-    total: parseInt(searchParams.get('guests') || '1'),
-    men: parseInt(searchParams.get('men') || '0'),
-    women: parseInt(searchParams.get('women') || '1'),
-    children: parseInt(searchParams.get('children') || '0'),
-  });
 
   // 自动补全相关
   const [allLocations, setAllLocations] = useState<string[]>([]);
@@ -85,11 +77,11 @@ export default function HeaderSearchBar() {
 
   const handleLocationFocus = () => {
     if (allLocations.length > 0) {
-      if (location.trim() === '') {
+      if (searchState.location.trim() === '') {
         setFilteredLocations(allLocations.slice(0, 10));
       } else {
         const filtered = allLocations.filter((loc) =>
-          loc.toLowerCase().includes(location.toLowerCase())
+          loc.toLowerCase().includes(searchState.location.toLowerCase())
         );
         setFilteredLocations(filtered.slice(0, 10));
       }
@@ -112,13 +104,13 @@ export default function HeaderSearchBar() {
 
   const handleSearch = () => {
     const params = new URLSearchParams();
-    if (location) params.set("location", location);
-    if (date) params.set("date", date);
-    if (guests > 0) {
-      params.set("guests", guests.toString());
-      params.set("men", guestsDetail.men.toString());
-      params.set("women", guestsDetail.women.toString());
-      params.set("children", guestsDetail.children.toString());
+    if (searchState.location) params.set("location", searchState.location);
+    if (searchState.date) params.set("date", searchState.date);
+    if (searchState.guests > 0) {
+      params.set("guests", searchState.guests.toString());
+      params.set("men", searchState.guestsDetail.men.toString());
+      params.set("women", searchState.guestsDetail.women.toString());
+      params.set("children", searchState.guestsDetail.children.toString());
     }
 
     const queryString = params.toString();
@@ -164,7 +156,7 @@ export default function HeaderSearchBar() {
             ref={locationInputRef}
             type="text"
             placeholder="东京、京都..."
-            value={location}
+            value={searchState.location}
             onChange={(e) => handleLocationChange(e.target.value)}
             onFocus={handleLocationFocus}
             className="w-full text-sm text-gray-900 placeholder-gray-400 bg-transparent border-none outline-none focus:ring-0"
@@ -200,7 +192,7 @@ export default function HeaderSearchBar() {
           </label>
           <input
             type="date"
-            value={date}
+            value={searchState.date}
             onChange={(e) => setDate(e.target.value)}
             className="w-full text-sm text-gray-900 placeholder-gray-400 bg-transparent border-none outline-none focus:ring-0"
           />
@@ -211,7 +203,11 @@ export default function HeaderSearchBar() {
 
         {/* 人数 */}
         <div className="flex-1 px-6 py-3 rounded-full hover:bg-gray-100/50 transition-all duration-200 group">
-          <GuestsDropdown value={guests} onChange={setGuests} onDetailChange={setGuestsDetail} />
+          <GuestsDropdown
+            value={searchState.guests}
+            onChange={setGuests}
+            onDetailChange={setGuestsDetail}
+          />
         </div>
 
         {/* 搜索按钮 */}
