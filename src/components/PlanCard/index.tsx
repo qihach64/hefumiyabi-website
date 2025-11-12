@@ -181,20 +181,20 @@ export default function PlanCard({ plan, showMerchant = false, isRecommended = f
         </div>
 
         {/* 信息区域 */}
-        <div className="mt-3 space-y-1">
+        <div className="mt-3 space-y-1.5">
           {/* 商家信息 + 地区 - 平台模式才显示 */}
           {showMerchant && (
-            <div className="flex items-center gap-2 text-sm text-gray-600">
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
               {plan.storeName && (
-                <span className="font-semibold">
+                <span className="font-semibold truncate">
                   {plan.storeName}
                 </span>
               )}
               {plan.region && (
                 <>
                   <span className="text-gray-400">·</span>
-                  <span className="flex items-center gap-1">
-                    <MapPin className="w-3 h-3" />
+                  <span className="flex items-center gap-1 truncate">
+                    <MapPin className="w-3 h-3 flex-shrink-0" />
                     {plan.region}
                   </span>
                 </>
@@ -203,12 +203,12 @@ export default function PlanCard({ plan, showMerchant = false, isRecommended = f
           )}
 
           {/* 套餐名称 */}
-          <h3 className="font-semibold text-gray-900 line-clamp-2 group-hover:underline">
+          <h3 className="font-semibold text-base sm:text-lg text-gray-900 line-clamp-2 group-hover:underline leading-snug">
             {plan.name}
           </h3>
 
           {/* 套餐类型 + 时长 */}
-          <p className="text-sm text-gray-600">
+          <p className="text-xs sm:text-sm text-gray-600">
             {getCategoryLabel(plan.category)} · {plan.duration}小时
           </p>
 
@@ -230,23 +230,23 @@ export default function PlanCard({ plan, showMerchant = false, isRecommended = f
           )}
 
           {/* 价格 - 简洁显示 */}
-          <div className="flex items-baseline gap-2 pt-1">
-            <span className="text-lg font-semibold text-gray-900">
+          <div className="flex items-baseline gap-2 pt-0.5">
+            <span className="text-xl sm:text-2xl font-bold text-gray-900">
               ¥{(plan.price / 100).toLocaleString()}
             </span>
             {plan.originalPrice && plan.originalPrice > plan.price && (
-              <span className="text-xs text-gray-400 line-through">
+              <span className="text-xs sm:text-sm text-gray-400 line-through">
                 ¥{(plan.originalPrice / 100).toLocaleString()}
               </span>
             )}
-            <span className="text-sm text-gray-600">/ 人</span>
+            <span className="text-xs sm:text-sm text-gray-600">/ 人</span>
           </div>
 
           {/* 包含内容 - 简化为一行 */}
           {plan.includes && plan.includes.length > 0 && (
-            <div className="pt-2 mt-1 text-xs text-gray-600">
+            <div className="pt-1 text-xs text-gray-600 line-clamp-1">
               含{plan.includes.slice(0, 2).join('·')}
-              {plan.includes.length > 2 && `等${plan.includes.length}项`} ›
+              {plan.includes.length > 2 && `等${plan.includes.length}项`}
             </div>
           )}
 

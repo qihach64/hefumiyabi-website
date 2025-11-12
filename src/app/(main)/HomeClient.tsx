@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import PlanCard from "@/components/PlanCard";
 import PlanCardGrid from "@/components/PlanCard/PlanCardGrid";
 import ScrollableSection from "@/components/ScrollableSection";
+import MobileFilterDrawer from "@/components/MobileFilterDrawer";
 import { Sparkles, MapPin, Store as StoreIcon, Tag, X, Filter, Users, Calendar, Loader2 } from "lucide-react";
 import { Button, Badge } from "@/components/ui";
 import { useSearchLoading } from "@/contexts/SearchLoadingContext";
@@ -161,6 +162,9 @@ export default function HomeClient({
   // 店铺和地区分类的展开/折叠状态
   const [isStoreExpanded, setIsStoreExpanded] = useState(true);
   const [isRegionExpanded, setIsRegionExpanded] = useState(true);
+
+  // 移动端过滤器抽屉状态
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
   // 记录加载开始时间
   const loadingStartTimeRef = useRef<number>(0);
@@ -557,25 +561,41 @@ export default function HomeClient({
                 <FilterSidebar />
               </div>
 
-              {/* 移动端筛选器（折叠） */}
-              <div className="lg:hidden">
-                <details className="bg-card rounded-lg border mb-6">
-                  <summary className="px-4 py-3 cursor-pointer flex items-center justify-between font-medium">
-                    <span className="flex items-center gap-2">
-                      <Filter className="w-4 h-4" />
-                      筛选条件
-                      {hasActiveFilters && (
-                        <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
-                          {(selectedStoreId ? 1 : 0) + (selectedRegion ? 1 : 0) + selectedTagIds.length}
-                        </span>
-                      )}
-                    </span>
-                  </summary>
-                  <div className="px-4 pb-4">
-                    <FilterSidebar />
-                  </div>
-                </details>
+              {/* 移动端筛选器按钮 */}
+              <div className="lg:hidden mb-6">
+                <button
+                  onClick={() => setIsMobileFilterOpen(true)}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 active:scale-[0.98] transition-all shadow-sm"
+                >
+                  <span className="flex items-center gap-2 font-medium text-gray-900">
+                    <Filter className="w-5 h-5 text-sakura-500" />
+                    筛选条件
+                    {hasActiveFilters && (
+                      <span className="bg-sakura-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full">
+                        {(selectedStoreId ? 1 : 0) + (selectedRegion ? 1 : 0) + selectedTagIds.length}
+                      </span>
+                    )}
+                  </span>
+                  <span className="text-sm text-gray-500">点击筛选</span>
+                </button>
               </div>
+
+              {/* 移动端筛选抽屉 */}
+              <MobileFilterDrawer
+                isOpen={isMobileFilterOpen}
+                onClose={() => setIsMobileFilterOpen(false)}
+                onApply={() => {
+                  // 应用筛选逻辑已在状态中，直接关闭即可
+                }}
+                onReset={() => {
+                  setSelectedStoreId('');
+                  setSelectedRegion('');
+                  setSelectedTagIds([]);
+                }}
+                activeFiltersCount={(selectedStoreId ? 1 : 0) + (selectedRegion ? 1 : 0) + selectedTagIds.length}
+              >
+                <FilterSidebar />
+              </MobileFilterDrawer>
 
               {/* 右侧内容区域 */}
               <div className="flex-1 min-w-0">
@@ -624,7 +644,7 @@ export default function HomeClient({
                       {section.plans.map((plan) => (
                         <div
                           key={plan.id}
-                          className="snap-start flex-shrink-0 w-[240px] sm:w-[260px] md:w-[240px] lg:w-[260px]"
+                          className="snap-start flex-shrink-0 w-[75vw] max-w-[280px] sm:w-[280px] md:w-[260px] lg:w-[280px]"
                         >
                           <PlanCard plan={plan} showMerchant={true} />
                         </div>
@@ -655,7 +675,7 @@ export default function HomeClient({
                     {section.plans.map((plan) => (
                       <div
                         key={plan.id}
-                        className="snap-start flex-shrink-0 w-[240px] sm:w-[260px] md:w-[240px] lg:w-[260px]"
+                        className="snap-start flex-shrink-0 w-[75vw] max-w-[280px] sm:w-[280px] md:w-[260px] lg:w-[280px]"
                       >
                         <PlanCard plan={plan} showMerchant={true} />
                       </div>
