@@ -1,6 +1,7 @@
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { SearchLoadingProvider } from "@/contexts/SearchLoadingContext";
+import { SearchBarProvider } from "@/contexts/SearchBarContext";
 
 export default function MainLayout({
   children,
@@ -9,11 +10,13 @@ export default function MainLayout({
 }) {
   return (
     <SearchLoadingProvider>
-      <div className="flex min-h-screen flex-col">
-        <Header />
-        <main className="flex-1">{children}</main>
-        <Footer />
-      </div>
+      <SearchBarProvider>
+        <div className="flex min-h-screen flex-col">
+          <Header />
+          <main className="flex-1">{children}</main>
+          <Footer />
+        </div>
+      </SearchBarProvider>
     </SearchLoadingProvider>
   );
 }

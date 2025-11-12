@@ -9,6 +9,7 @@ import ScrollableSection from "@/components/ScrollableSection";
 import { Sparkles, MapPin, Store as StoreIcon, Tag, X, Filter, Users, Calendar, Loader2 } from "lucide-react";
 import { Button, Badge } from "@/components/ui";
 import { useSearchLoading } from "@/contexts/SearchLoadingContext";
+import { useSearchBar } from "@/contexts/SearchBarContext";
 
 // 类型定义 (从 PlansClient 复制)
 interface Store {
@@ -142,6 +143,7 @@ export default function HomeClient({
 }: HomeClientProps) {
   const searchParams = useSearchParams();
   const { isSearching, searchTarget, stopSearch } = useSearchLoading();
+  const { isSearchBarVisible } = useSearchBar();
 
   // 搜索参数
   const searchLocation = searchParams.get('location') || '';
@@ -531,8 +533,14 @@ export default function HomeClient({
 
   return (
     <div className="min-h-screen bg-white">
-      {/* 搜索栏 - Sticky,始终可见可编辑 */}
-      <section className="sticky top-14 md:top-16 z-30 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 border-b border-gray-100 shadow-sm">
+      {/* 搜索栏 - Sticky,根据滚动状态显示/隐藏 */}
+      <section
+        className={`
+          sticky top-14 md:top-16 z-30 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 border-b border-gray-100 shadow-sm
+          transition-all duration-300 ease-in-out
+          ${isSearchBarVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full pointer-events-none'}
+        `}
+      >
         <div className="container py-2 md:py-4">
           <HeroSearchBar />
         </div>

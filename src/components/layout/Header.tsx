@@ -1,28 +1,41 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
-import { auth } from "@/auth";
-import prisma from "@/lib/prisma";
+import { useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
 import UserMenu from "./UserMenu";
 import HeaderActions from "./HeaderActions";
 import MobileMenu from "./MobileMenu";
 import HeaderSearchBar from "./HeaderSearchBar";
 import NavMenuButton from "./NavMenuButton";
+import { useSearchBar } from "@/contexts/SearchBarContext";
 
-export default async function Header() {
-  const session = await auth();
+export default function Header() {
+  const { data: session } = useSession();
+  const { expandSearchBar } = useSearchBar();
+  const [merchant, setMerchant] = useState<any>(null);
 
   // 检查用户是否有商家账户
-  let merchant = null;
-  if (session?.user?.id) {
-    merchant = await prisma.merchant.findUnique({
-      where: { ownerId: session.user.id },
-      select: {
-        id: true,
-        status: true,
-        businessName: true,
-      },
-    });
-  }
+  useEffect(() => {
+    const fetchMerchant = async () => {
+      if (session?.user?.id) {
+        try {
+          const response = await fetch('/api/merchant/profile');
+          if (response.ok) {
+            const data = await response.json();
+            setMerchant(data.merchant);
+          }
+        } catch (error) {
+          console.error('Failed to fetch merchant:', error);
+        }
+      } else {
+        setMerchant(null);
+      }
+    };
+
+    fetchMerchant();
+  }, [session?.user?.id]);
 
   // 导航链接配置
   const navLinks = [
@@ -69,7 +82,7 @@ export default async function Header() {
 
           {/* 中间：搜索栏（桌面端） */}
           <div className="flex-1 flex justify-center max-w-2xl mx-4">
-            <HeaderSearchBar />
+            <HeaderSearchBar onExpand={expandSearchBar} />
           </div>
 
           {/* 右侧：菜单和用户 */}

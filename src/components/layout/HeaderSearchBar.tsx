@@ -1,22 +1,17 @@
 "use client";
 
-import { useState } from "react";
 import { Search } from "lucide-react";
-import { useRouter } from "next/navigation";
 
-export default function HeaderSearchBar() {
-  const router = useRouter();
-  const [isExpanded, setIsExpanded] = useState(false);
+interface HeaderSearchBarProps {
+  onExpand: () => void;
+}
 
-  const handleClick = () => {
-    // 点击后跳转到首页，让用户使用完整的搜索栏
-    router.push('/');
-  };
-
+export default function HeaderSearchBar({ onExpand }: HeaderSearchBarProps) {
   return (
     <button
-      onClick={handleClick}
-      className="hidden md:flex items-center gap-3 border border-gray-300 rounded-full px-4 py-2 hover:shadow-md transition-all duration-200 bg-white cursor-pointer"
+      onClick={onExpand}
+      className="hidden md:flex items-center gap-3 border border-gray-300 rounded-full px-4 py-2 hover:shadow-md transition-all duration-200 bg-white"
+      type="button"
     >
       <span className="text-sm font-medium text-gray-700">目的地</span>
       <div className="w-px h-6 bg-gray-300"></div>
