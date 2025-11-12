@@ -90,11 +90,17 @@ export default function HeaderSearchBar() {
   };
 
   const handleExpand = () => {
-    setIsExpanded(true);
-    // 延迟聚焦到输入框
+    // 先滚动到顶部
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // 延迟展开和聚焦，等待滚动开始
     setTimeout(() => {
-      locationInputRef.current?.focus();
-    }, 100);
+      setIsExpanded(true);
+      // 再延迟聚焦到输入框
+      setTimeout(() => {
+        locationInputRef.current?.focus();
+      }, 100);
+    }, 300);
   };
 
   const handleCollapse = () => {
