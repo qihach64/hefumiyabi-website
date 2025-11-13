@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { Calendar, Users, Clock, Shield, X, Sparkles } from "lucide-react";
-import { Button, Badge } from "@/components/ui";
+import { Badge } from "@/components/ui";
 import TryOnModal from "@/components/TryOnModal";
 
 interface BookingCardProps {
@@ -192,24 +192,24 @@ export default function BookingCard({ plan }: BookingCardProps) {
       </div>
 
       {/* 试穿按钮（主 CTA） */}
-      <Button
+      <button
         onClick={() => setShowTryOnModal(true)}
-        className="w-full mb-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 rounded-xl transition-all shadow-md hover:shadow-lg"
+        className="w-full mb-3 bg-gray-900 hover:bg-gray-800 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
       >
-        <Sparkles className="w-5 h-5 mr-2" />
-        试穿看看
-      </Button>
+        <span className="flex items-center justify-center gap-2">
+          <Sparkles className="w-5 h-5" />
+          试穿看看
+        </span>
+      </button>
 
       {/* 预订按钮（次要选项） */}
-      <Button
-        variant="outline"
-        size="lg"
+      <button
         onClick={handleBooking}
         disabled={!isBookingEnabled}
-        className="w-full mb-4"
+        className="w-full mb-4 bg-white hover:bg-gray-50 text-gray-900 font-semibold py-3 px-6 rounded-lg border border-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
       >
         直接预订
-      </Button>
+      </button>
 
       {/* 提示信息 */}
       <div className="text-center text-sm text-gray-600 mb-6">
@@ -296,14 +296,12 @@ export default function BookingCard({ plan }: BookingCardProps) {
                 </Badge>
               )}
             </div>
-            <Button
-              variant="primary"
-              size="lg"
+            <button
               onClick={() => setShowMobileModal(true)}
-              className="px-8"
+              className="bg-gray-900 hover:bg-gray-800 text-white font-semibold py-3 px-8 rounded-lg transition-colors"
             >
               预订
-            </Button>
+            </button>
           </div>
         </div>
 
