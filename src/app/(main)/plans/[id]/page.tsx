@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
-import { MapPin, Clock, Users, Star, Shield, Check } from "lucide-react";
+import { MapPin, Clock, Users, Star, Shield, Check, Heart } from "lucide-react";
 import prisma from "@/lib/prisma";
 import BookingCard from "@/components/BookingCard";
 import { Badge } from "@/components/ui";
@@ -44,176 +44,191 @@ export default async function PlanDetailPage({ params }: PlanDetailPageProps) {
     return labels[category] || "套餐";
   };
 
+  // 模拟多张图片（实际应该从数据库获取）
+  const images = plan.imageUrl
+    ? [plan.imageUrl, plan.imageUrl, plan.imageUrl, plan.imageUrl, plan.imageUrl]
+    : [];
+
   return (
-    <div className="bg-gray-50 min-h-screen">
-      <div className="container py-8 pb-32 lg:pb-8">
+    <div className="bg-white min-h-screen">
+      {/* 顶部容器 - 最大宽度 1280px */}
+      <div className="max-w-[1280px] mx-auto px-6 md:px-10 lg:px-20 pt-6 pb-12">
+
         {/* 标题区域 */}
         <div className="mb-6">
-          <div className="flex items-center gap-3 mb-3">
-            <h1 className="text-3xl font-bold text-gray-900">{plan.name}</h1>
-            {plan.isCampaign && (
-              <Badge variant="warning" size="lg">
-                限时优惠
-              </Badge>
-            )}
-          </div>
+          <h1 className="text-[26px] md:text-[32px] font-semibold text-gray-900 mb-2 leading-tight">
+            {plan.name}
+          </h1>
 
-          <div className="flex items-center gap-4 text-sm text-gray-600">
-            {/* 评分 - 模拟数据 */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* 评分 */}
             <div className="flex items-center gap-1">
               <Star className="w-4 h-4 fill-gray-900 text-gray-900" />
-              <span className="font-semibold text-gray-900">4.8</span>
-              <span>(128条评价)</span>
+              <span className="font-semibold text-[15px]">4.8</span>
+              <span className="text-[15px] text-gray-600 underline cursor-pointer">(128条评价)</span>
             </div>
+
+            <span className="text-gray-400">·</span>
 
             {/* 地区 */}
             {plan.region && (
               <>
-                <span>·</span>
                 <div className="flex items-center gap-1">
-                  <MapPin className="w-4 h-4" />
-                  <span>{plan.region}</span>
+                  <span className="text-[15px] text-gray-900 underline cursor-pointer font-semibold">
+                    {plan.region}
+                  </span>
                 </div>
               </>
             )}
 
-            {/* 店铺 */}
-            {plan.storeName && (
+            {/* 限时优惠标签 */}
+            {plan.isCampaign && (
               <>
-                <span>·</span>
-                <span className="font-semibold">{plan.storeName}</span>
+                <span className="text-gray-400">·</span>
+                <Badge variant="error" size="sm">
+                  限时优惠
+                </Badge>
               </>
             )}
           </div>
         </div>
 
-        {/* 主图区域 - Airbnb 风格大图 */}
-        <div className="relative aspect-[21/9] w-full overflow-hidden rounded-2xl bg-gray-100 mb-12">
-          {plan.imageUrl ? (
-            <Image
-              src={plan.imageUrl}
-              alt={plan.name}
-              fill
-              className="object-cover"
-              priority
-            />
+        {/* 图片画廊 - Airbnb 风格 2大3小网格 */}
+        <div className="relative mb-12">
+          {images.length > 0 ? (
+            <div className="grid grid-cols-4 gap-2 h-[400px] md:h-[480px] rounded-xl overflow-hidden">
+              {/* 左侧大图 */}
+              <div className="col-span-4 md:col-span-2 row-span-2 relative">
+                <Image
+                  src={images[0]}
+                  alt={`${plan.name} - 图片1`}
+                  fill
+                  className="object-cover hover:brightness-95 transition-all"
+                  priority
+                />
+              </div>
+
+              {/* 右侧4小图 */}
+              {images.slice(1, 5).map((img, idx) => (
+                <div key={idx} className="col-span-2 md:col-span-1 relative">
+                  <Image
+                    src={img}
+                    alt={`${plan.name} - 图片${idx + 2}`}
+                    fill
+                    className="object-cover hover:brightness-95 transition-all"
+                  />
+                </div>
+              ))}
+            </div>
           ) : (
-            <div className="absolute inset-0 flex items-center justify-center bg-sakura-50">
+            <div className="h-[400px] md:h-[480px] rounded-xl bg-sakura-50 flex items-center justify-center">
               <span className="text-9xl opacity-20">👘</span>
             </div>
           )}
+
+          {/* 查看全部照片按钮 */}
+          <button className="absolute bottom-6 right-6 px-4 py-2 bg-white border border-gray-900 rounded-lg text-sm font-semibold hover:bg-gray-50 transition-colors shadow-md">
+            显示所有照片
+          </button>
         </div>
 
-        {/* 两栏布局：左侧内容 + 右侧预订卡片 */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-          {/* 左侧内容区域 */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* 套餐信息卡片 */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-6">
-              <h2 className="text-xl font-bold mb-4">
+        {/* 两栏布局 */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 lg:gap-24">
+          {/* 左侧主内容区 - 占 2/3 */}
+          <div className="lg:col-span-2">
+
+            {/* 基础信息 */}
+            <div className="pb-8 border-b border-gray-200">
+              <h2 className="text-[22px] font-semibold text-gray-900 mb-6">
                 {getCategoryLabel(plan.category)}套餐 · {plan.duration}小时体验
               </h2>
 
-              <div className="flex items-center gap-6 text-sm text-gray-600">
+              <div className="flex items-center gap-6 text-gray-700">
                 <div className="flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-sakura-500" />
+                  <Clock className="w-5 h-5" />
                   <span>{plan.duration} 小时</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Users className="w-5 h-5 text-sakura-500" />
+                  <Users className="w-5 h-5" />
                   <span>最多10人</span>
                 </div>
               </div>
             </div>
 
             {/* 套餐描述 */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-6">
-              <h2 className="text-xl font-bold mb-4">套餐介绍</h2>
-              <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+            <div className="py-8 border-b border-gray-200">
+              <h2 className="text-[22px] font-semibold text-gray-900 mb-4">套餐介绍</h2>
+              <p className="text-[16px] text-gray-700 leading-relaxed whitespace-pre-line">
                 {plan.description}
               </p>
             </div>
 
             {/* 套餐包含项目 */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-6">
-              <h2 className="text-xl font-bold mb-4">套餐包含</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="py-8 border-b border-gray-200">
+              <h2 className="text-[22px] font-semibold text-gray-900 mb-6">套餐包含</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {plan.includes.map((item, index) => (
                   <div key={index} className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-sakura-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Check className="w-4 h-4 text-sakura-600" />
-                    </div>
-                    <span className="text-gray-700">{item}</span>
+                    <Check className="w-6 h-6 text-gray-900 flex-shrink-0 mt-0.5" />
+                    <span className="text-[16px] text-gray-700">{item}</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* 标签 */}
-            {plan.tags.length > 0 && (
-              <div className="bg-white rounded-2xl border border-gray-200 p-6">
-                <h2 className="text-xl font-bold mb-4">特色标签</h2>
-                <div className="flex flex-wrap gap-2">
-                  {plan.tags.map((tag, index) => (
-                    <Badge key={index} variant="secondary" size="md">
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* 活动信息 */}
             {plan.campaign && (
-              <div className="bg-amber-50 rounded-2xl border border-amber-200 p-6">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full bg-amber-500 flex items-center justify-center flex-shrink-0">
-                    <span className="text-white text-xl">🎊</span>
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-bold text-amber-900 mb-2">
-                      {plan.campaign.title}
-                    </h3>
-                    <p className="text-amber-800 leading-relaxed">
-                      {plan.campaign.description}
-                    </p>
-                    {plan.availableUntil && (
-                      <p className="text-sm text-amber-700 mt-3">
-                        活动截止日期：{new Date(plan.availableUntil).toLocaleDateString('zh-CN')}
+              <div className="py-8 border-b border-gray-200">
+                <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl p-6 border border-amber-200">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center flex-shrink-0">
+                      <span className="text-white text-2xl">🎊</span>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-[18px] font-semibold text-amber-900 mb-2">
+                        {plan.campaign.title}
+                      </h3>
+                      <p className="text-[15px] text-amber-800 leading-relaxed">
+                        {plan.campaign.description}
                       </p>
-                    )}
+                      {plan.availableUntil && (
+                        <p className="text-[14px] text-amber-700 mt-3 font-medium">
+                          活动截止：{new Date(plan.availableUntil).toLocaleDateString('zh-CN')}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
             )}
 
             {/* 预订须知 */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-6">
-              <h2 className="text-xl font-bold mb-4">预订须知</h2>
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <Shield className="w-5 h-5 text-sakura-500 flex-shrink-0 mt-1" />
+            <div className="py-8 border-b border-gray-200">
+              <h2 className="text-[22px] font-semibold text-gray-900 mb-6">预订须知</h2>
+              <div className="space-y-6">
+                <div className="flex items-start gap-4">
+                  <Shield className="w-6 h-6 text-gray-700 flex-shrink-0 mt-1" />
                   <div>
-                    <h3 className="font-semibold text-gray-900 mb-1">取消政策</h3>
-                    <p className="text-sm text-gray-600">
+                    <h3 className="font-semibold text-[16px] text-gray-900 mb-2">取消政策</h3>
+                    <p className="text-[15px] text-gray-600 leading-relaxed">
                       到店日期前7天可免费取消，7天内取消将扣除定金
                     </p>
                   </div>
                 </div>
-                <div className="flex items-start gap-3">
-                  <Clock className="w-5 h-5 text-sakura-500 flex-shrink-0 mt-1" />
+                <div className="flex items-start gap-4">
+                  <Clock className="w-6 h-6 text-gray-700 flex-shrink-0 mt-1" />
                   <div>
-                    <h3 className="font-semibold text-gray-900 mb-1">营业时间</h3>
-                    <p className="text-sm text-gray-600">
+                    <h3 className="font-semibold text-[16px] text-gray-900 mb-2">营业时间</h3>
+                    <p className="text-[15px] text-gray-600 leading-relaxed">
                       每天 09:00 - 18:00（最晚入店时间16:00）
                     </p>
                   </div>
                 </div>
-                <div className="flex items-start gap-3">
-                  <Users className="w-5 h-5 text-sakura-500 flex-shrink-0 mt-1" />
+                <div className="flex items-start gap-4">
+                  <Users className="w-6 h-6 text-gray-700 flex-shrink-0 mt-1" />
                   <div>
-                    <h3 className="font-semibold text-gray-900 mb-1">人数限制</h3>
-                    <p className="text-sm text-gray-600">
+                    <h3 className="font-semibold text-[16px] text-gray-900 mb-2">人数限制</h3>
+                    <p className="text-[15px] text-gray-600 leading-relaxed">
                       单次预订最多10人，团体预订请提前联系客服
                     </p>
                   </div>
@@ -221,15 +236,16 @@ export default async function PlanDetailPage({ params }: PlanDetailPageProps) {
               </div>
             </div>
 
-            {/* 评价区域 - 模拟数据 */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-6">
-              <div className="flex items-center gap-3 mb-6">
-                <Star className="w-6 h-6 fill-gray-900 text-gray-900" />
-                <h2 className="text-xl font-bold">4.8 · 128条评价</h2>
+            {/* 评价区域 */}
+            <div className="py-8">
+              <div className="flex items-center gap-2 mb-8">
+                <Star className="w-7 h-7 fill-gray-900 text-gray-900" />
+                <h2 className="text-[22px] font-semibold text-gray-900">
+                  4.8 · 128条评价
+                </h2>
               </div>
 
-              <div className="space-y-6">
-                {/* 评价项 - 模拟 */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-10">
                 {[
                   {
                     name: "小红",
@@ -248,31 +264,41 @@ export default async function PlanDetailPage({ params }: PlanDetailPageProps) {
                     date: "2024年9月",
                     rating: 4,
                     comment: "不错的体验，和服质量很好，价格也合理。就是周末人有点多，需要等待。"
+                  },
+                  {
+                    name: "王小姐",
+                    date: "2024年9月",
+                    rating: 5,
+                    comment: "第二次来了，依然很满意！和服保养得很好，服务态度也一如既往的好。"
                   }
                 ].map((review, index) => (
-                  <div key={index} className="border-b border-gray-100 last:border-0 pb-6 last:pb-0">
+                  <div key={index}>
                     <div className="flex items-center gap-3 mb-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sakura-400 to-sakura-500 flex items-center justify-center text-white font-bold">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sakura-400 to-sakura-600 flex items-center justify-center text-white font-semibold">
                         {review.name.charAt(0)}
                       </div>
                       <div>
-                        <p className="font-semibold text-gray-900">{review.name}</p>
-                        <p className="text-sm text-gray-600">{review.date}</p>
+                        <p className="font-semibold text-[15px] text-gray-900">{review.name}</p>
+                        <p className="text-[14px] text-gray-600">{review.date}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1 mb-2">
+                    <div className="flex items-center gap-1 mb-3">
                       {Array.from({ length: review.rating }).map((_, i) => (
-                        <Star key={i} className="w-4 h-4 fill-gray-900 text-gray-900" />
+                        <Star key={i} className="w-3 h-3 fill-gray-900 text-gray-900" />
                       ))}
                     </div>
-                    <p className="text-gray-700 leading-relaxed">{review.comment}</p>
+                    <p className="text-[15px] text-gray-700 leading-relaxed">{review.comment}</p>
                   </div>
                 ))}
               </div>
+
+              <button className="mt-10 px-6 py-3 border border-gray-900 rounded-lg text-[16px] font-semibold hover:bg-gray-50 transition-colors">
+                显示全部128条评价
+              </button>
             </div>
           </div>
 
-          {/* 右侧预订卡片 - Sticky */}
+          {/* 右侧预订卡片 - 占 1/3，Sticky定位 */}
           <div className="lg:col-span-1">
             <BookingCard plan={plan} />
           </div>
