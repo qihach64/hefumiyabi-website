@@ -1,6 +1,13 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+export interface TryOnPhoto {
+  originalPhoto: string; // 用户原始照片 (base64 or URL)
+  resultPhoto: string; // 试穿结果照片 (URL)
+  timestamp: Date; // 试穿时间
+  planImageUrl: string; // 对应的套餐图片
+}
+
 export interface CartItem {
   id: string; // 唯一ID（自生成）
   type: "PLAN"; // 统一使用 PLAN 类型（包括活动套餐）
@@ -17,6 +24,7 @@ export interface CartItem {
   storeName?: string; // 用户选择的店铺名称
   planStoreName?: string; // 套餐所属的店铺名称
   isCampaign?: boolean; // 是否为活动套餐
+  tryOnPhoto?: TryOnPhoto; // AI 试穿照片
 }
 
 interface CartStore {

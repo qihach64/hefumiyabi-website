@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { Calendar, Users, Clock, Shield, X } from "lucide-react";
+import { Calendar, Users, Clock, Shield, X, Sparkles } from "lucide-react";
 import { Button, Badge } from "@/components/ui";
+import TryOnModal from "@/components/TryOnModal";
 
 interface BookingCardProps {
   plan: {
@@ -14,6 +15,7 @@ interface BookingCardProps {
     duration: number;
     depositAmount: number;
     isCampaign?: boolean;
+    imageUrl?: string;
   };
 }
 
@@ -27,6 +29,7 @@ export default function BookingCard({ plan }: BookingCardProps) {
   const [time, setTime] = useState("");
   const [guests, setGuests] = useState(1);
   const [showMobileModal, setShowMobileModal] = useState(false);
+  const [showTryOnModal, setShowTryOnModal] = useState(false);
 
   // 自动填充搜索参数
   useEffect(() => {
@@ -188,15 +191,24 @@ export default function BookingCard({ plan }: BookingCardProps) {
         </div>
       </div>
 
-      {/* 预订按钮 */}
+      {/* 试穿按钮（主 CTA） */}
       <Button
-        variant="primary"
+        onClick={() => setShowTryOnModal(true)}
+        className="w-full mb-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 rounded-xl transition-all shadow-md hover:shadow-lg"
+      >
+        <Sparkles className="w-5 h-5 mr-2" />
+        试穿看看
+      </Button>
+
+      {/* 预订按钮（次要选项） */}
+      <Button
+        variant="outline"
         size="lg"
         onClick={handleBooking}
         disabled={!isBookingEnabled}
         className="w-full mb-4"
       >
-        立即预订
+        直接预订
       </Button>
 
       {/* 提示信息 */}
@@ -252,6 +264,13 @@ export default function BookingCard({ plan }: BookingCardProps) {
 
   return (
     <>
+      {/* 试穿弹窗 */}
+      <TryOnModal
+        isOpen={showTryOnModal}
+        onClose={() => setShowTryOnModal(false)}
+        plan={plan}
+      />
+
       {/* 桌面端：Sticky侧边栏 */}
       <div className="hidden lg:block sticky top-24">
         <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
