@@ -194,7 +194,7 @@ export default function BookingCard({ plan }: BookingCardProps) {
       {/* 试穿按钮（主 CTA） */}
       <button
         onClick={() => setShowTryOnModal(true)}
-        className="w-full mb-3 bg-gray-900 hover:bg-gray-800 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+        className="w-full mb-3 bg-sakura-600 hover:bg-sakura-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
       >
         <span className="flex items-center justify-center gap-2">
           <Sparkles className="w-5 h-5" />
@@ -206,7 +206,7 @@ export default function BookingCard({ plan }: BookingCardProps) {
       <button
         onClick={handleBooking}
         disabled={!isBookingEnabled}
-        className="w-full mb-4 bg-white hover:bg-gray-50 text-gray-900 font-semibold py-3 px-6 rounded-lg border border-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
+        className="w-full mb-4 bg-white hover:bg-sakura-50 text-sakura-600 font-semibold py-3 px-6 rounded-lg border border-sakura-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
       >
         直接预订
       </button>
@@ -298,7 +298,7 @@ export default function BookingCard({ plan }: BookingCardProps) {
             </div>
             <button
               onClick={() => setShowMobileModal(true)}
-              className="bg-gray-900 hover:bg-gray-800 text-white font-semibold py-3 px-8 rounded-lg transition-colors"
+              className="bg-sakura-600 hover:bg-sakura-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors"
             >
               预订
             </button>
