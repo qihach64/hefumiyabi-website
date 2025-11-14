@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { GuestsDetail } from '@/components/GuestsDropdown';
 
@@ -22,7 +22,8 @@ interface SearchStateContextType {
 
 const SearchStateContext = createContext<SearchStateContextType | undefined>(undefined);
 
-export function SearchStateProvider({ children }: { children: ReactNode }) {
+// 内部组件，使用 useSearchParams
+function SearchStateProviderInner({ children }: { children: ReactNode }) {
   const searchParams = useSearchParams();
 
   const [searchState, setSearchState] = useState<SearchState>(() => ({
@@ -94,6 +95,35 @@ export function SearchStateProvider({ children }: { children: ReactNode }) {
     >
       {children}
     </SearchStateContext.Provider>
+  );
+}
+
+// 外部组件，包裹 Suspense
+export function SearchStateProvider({ children }: { children: ReactNode }) {
+  return (
+    <Suspense fallback={
+      <SearchStateContext.Provider
+        value={{
+          searchState: {
+            location: '',
+            date: '',
+            guests: 1,
+            guestsDetail: { total: 1, men: 0, women: 1, children: 0 },
+          },
+          setLocation: () => {},
+          setDate: () => {},
+          setGuests: () => {},
+          setGuestsDetail: () => {},
+          resetSearchState: () => {},
+        }}
+      >
+        {children}
+      </SearchStateContext.Provider>
+    }>
+      <SearchStateProviderInner>
+        {children}
+      </SearchStateProviderInner>
+    </Suspense>
   );
 }
 
