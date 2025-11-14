@@ -109,12 +109,8 @@ export default function TryOnModal({ isOpen, onClose, plan }: TryOnModalProps) {
       image: plan.imageUrl,
       addOns: [],
       isCampaign: plan.isCampaign,
-      tryOnPhoto: resultPhoto && userPhoto ? {
-        originalPhoto: userPhoto,
-        resultPhoto: resultPhoto,
-        timestamp: new Date(),
-        planImageUrl: plan.imageUrl || "",
-      } : undefined,
+      // 不存储 tryOnPhoto 到购物车，避免 localStorage quota 超限
+      // 试穿记录已保存在 useTryOnStore 中，可通过 planId 获取
     });
 
     setShowSuccess(true);
