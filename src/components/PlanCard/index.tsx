@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ShoppingCart, MapPin, Star, Check, Sparkles, RotateCcw } from "lucide-react";
@@ -46,6 +46,7 @@ export default function PlanCard({ plan, showMerchant = false, isRecommended = f
   const [justChanged, setJustChanged] = useState(false);
   const [lastAction, setLastAction] = useState<'add' | 'remove' | null>(null);
   const [showTryOnModal, setShowTryOnModal] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   const addItem = useCartStore((state) => state.addItem);
   const removeItem = useCartStore((state) => state.removeItem);
@@ -58,9 +59,14 @@ export default function PlanCard({ plan, showMerchant = false, isRecommended = f
   const cartItem = items.find(item => item.planId === plan.id);
   const isInCart = !!cartItem;
 
-  // 检查是否有试穿记录
-  const tryOnResult = getTryOnResult(plan.id);
+  // 检查是否有试穿记录（仅在客户端）
+  const tryOnResult = mounted ? getTryOnResult(plan.id) : null;
   const hasTryOn = !!tryOnResult;
+
+  // 客户端挂载后设置 mounted
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // 计算优惠金额
   const discountAmount = plan.originalPrice && plan.originalPrice > plan.price
