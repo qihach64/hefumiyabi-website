@@ -236,6 +236,8 @@ export default function TryOnModal({ isOpen, onClose, plan }: TryOnModalProps) {
                     alt={plan.name}
                     fill
                     className="object-cover"
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    priority={true}
                   />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center">
