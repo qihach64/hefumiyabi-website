@@ -191,11 +191,11 @@ export default function PlanCard({ plan, showMerchant = false, isRecommended = f
             {!hasTryOn && (
               <button
                 onClick={handleTryOn}
-                className="absolute top-3 right-3 p-2 rounded-full bg-white/90 hover:bg-white shadow-md hover:scale-110 transition-all z-10"
+                className="absolute top-3 right-3 p-2 rounded-full bg-white/90 hover:bg-white text-gray-700 shadow-md hover:scale-110 transition-all z-10"
                 aria-label="AI试穿"
                 title="点击试穿看看"
               >
-                <span className="text-2xl leading-none">👘</span>
+                <Sparkles className="w-5 h-5" />
               </button>
             )}
 
