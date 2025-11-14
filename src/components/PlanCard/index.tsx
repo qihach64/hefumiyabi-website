@@ -187,14 +187,15 @@ export default function PlanCard({ plan, showMerchant = false, isRecommended = f
               </>
             )}
 
-            {/* 试穿按钮 - 顶部居中（方案B） */}
+            {/* 试穿按钮 - 右上角，与购物车对齐 */}
             {!hasTryOn && (
               <button
                 onClick={handleTryOn}
-                className="absolute top-3 left-1/2 -translate-x-1/2 px-4 py-2 bg-sakura-600 hover:bg-sakura-700 text-white text-sm font-semibold rounded-full shadow-lg hover:shadow-xl transition-all z-10"
+                className="absolute top-3 right-3 p-2 rounded-full bg-white/90 hover:bg-white shadow-md hover:scale-110 transition-all z-10"
+                aria-label="AI试穿"
+                title="点击试穿看看"
               >
-                <Sparkles className="w-4 h-4 inline mr-1.5" />
-                试穿看看
+                <span className="text-2xl leading-none">👘</span>
               </button>
             )}
 
@@ -202,14 +203,15 @@ export default function PlanCard({ plan, showMerchant = false, isRecommended = f
             {hasTryOn && (
               <button
                 onClick={handleRetry}
-                className="absolute top-3 left-3 px-3 py-1.5 bg-white/90 hover:bg-white text-sakura-600 text-sm font-semibold rounded-full shadow-md hover:shadow-lg transition-all z-10"
+                className="absolute top-3 right-3 p-2 rounded-full bg-white/90 hover:bg-white shadow-md hover:scale-110 transition-all z-10"
+                aria-label="重新试穿"
+                title="点击重新试穿"
               >
-                <RotateCcw className="w-3.5 h-3.5 inline mr-1" />
-                重新试穿
+                <RotateCcw className="w-5 h-5 text-sakura-600" />
               </button>
             )}
 
-            {/* 购物车按钮 - 右下角（方案B） */}
+            {/* 购物车按钮 - 右下角 */}
             <button
               onClick={handleToggleCart}
               disabled={isAdding}
