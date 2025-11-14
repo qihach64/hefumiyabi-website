@@ -160,7 +160,13 @@ export default function PlanCard({ plan, showMerchant = false, isRecommended = f
           <div className="relative aspect-square overflow-hidden rounded-xl bg-gray-100">
             {hasTryOn && tryOnResult ? (
               /* 已试穿：显示对比图 */
-              <div className="absolute inset-0">
+              <div
+                className="absolute inset-0"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+              >
                 <ImageComparison
                   beforeImage={plan.imageUrl || ''}
                   afterImage={tryOnResult.resultPhoto}

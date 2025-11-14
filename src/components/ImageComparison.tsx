@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 
 interface ImageComparisonProps {
@@ -19,47 +19,75 @@ export default function ImageComparison({
   const [sliderPosition, setSliderPosition] = useState(50);
   const [isDragging, setIsDragging] = useState(false);
   const [activeTab, setActiveTab] = useState<"before" | "after">("after");
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // 处理滑块拖动（桌面端）
-  const handleMouseDown = () => {
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     setIsDragging(true);
   };
 
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+  useEffect(() => {
     if (!isDragging) return;
 
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const percentage = (x / rect.width) * 100;
-    setSliderPosition(Math.max(0, Math.min(100, percentage)));
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!containerRef.current) return;
+
+      const rect = containerRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const percentage = (x / rect.width) * 100;
+      setSliderPosition(Math.max(0, Math.min(100, percentage)));
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    // 添加全局监听器
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isDragging]);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    setIsDragging(true);
   };
 
   const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (!isDragging) return;
+    if (!isDragging || !containerRef.current) return;
 
-    const rect = e.currentTarget.getBoundingClientRect();
+    const rect = containerRef.current.getBoundingClientRect();
     const x = e.touches[0].clientX - rect.left;
     const percentage = (x / rect.width) * 100;
     setSliderPosition(Math.max(0, Math.min(100, percentage)));
   };
 
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+  };
+
   return (
     <>
       {/* 桌面端：滑块对比 */}
-      <div className="hidden md:block relative aspect-square overflow-hidden rounded-xl bg-gray-100">
+      <div
+        className="hidden md:block relative aspect-square overflow-hidden rounded-xl bg-gray-100"
+        onClick={(e) => e.preventDefault()}
+      >
         <div
-          className="relative w-full h-full cursor-ew-resize select-none"
+          ref={containerRef}
+          className={`relative w-full h-full select-none ${
+            isDragging ? "cursor-grabbing" : "cursor-grab"
+          }`}
           onMouseDown={handleMouseDown}
-          onMouseUp={handleMouseUp}
-          onMouseMove={handleMouseMove}
-          onMouseLeave={handleMouseUp}
-          onTouchStart={() => setIsDragging(true)}
-          onTouchEnd={handleMouseUp}
+          onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
         >
           {/* Before 图片（底层，完整显示） */}
           <div className="absolute inset-0">
@@ -118,11 +146,15 @@ export default function ImageComparison({
       </div>
 
       {/* 移动端：Tab 切换 */}
-      <div className="md:hidden">
+      <div className="md:hidden" onClick={(e) => e.preventDefault()}>
         {/* Tab 按钮 */}
         <div className="flex items-center gap-2 mb-2">
           <button
-            onClick={() => setActiveTab("before")}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setActiveTab("before");
+            }}
             className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-colors ${
               activeTab === "before"
                 ? "bg-sakura-600 text-white"
@@ -132,7 +164,11 @@ export default function ImageComparison({
             {beforeLabel}
           </button>
           <button
-            onClick={() => setActiveTab("after")}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setActiveTab("after");
+            }}
             className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-colors ${
               activeTab === "after"
                 ? "bg-sakura-600 text-white"
@@ -144,7 +180,10 @@ export default function ImageComparison({
         </div>
 
         {/* 图片显示 */}
-        <div className="relative aspect-square overflow-hidden rounded-xl bg-gray-100">
+        <div
+          className="relative aspect-square overflow-hidden rounded-xl bg-gray-100"
+          onClick={(e) => e.stopPropagation()}
+        >
           <Image
             src={activeTab === "before" ? beforeImage : afterImage}
             alt={activeTab === "before" ? beforeLabel : afterLabel}
