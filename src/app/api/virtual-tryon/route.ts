@@ -3,9 +3,8 @@ import { GoogleGenAI } from '@google/genai';
 import prisma from '@/lib/prisma';
 import { auth } from '@/auth';
 import { TryOnStatus } from '@prisma/client';
-import fs from 'fs';
-import path from 'path';
 import { DEFAULT_PROMPT } from '@/lib/virtual-tryon-prompts';
+import { uploadToSupabase, generateStoragePath } from '@/lib/upload';
 
 // 初始化 Google GenAI
 const ai = new GoogleGenAI({
@@ -28,13 +27,7 @@ async function checkUserQuota(userId: string | null, sessionId: string): Promise
   return { allowed: true, remaining: -1 }; // -1 表示无限
 }
 
-// 上传图片到临时存储（实际项目中应该上传到 R2/S3）
-async function uploadImage(buffer: Buffer, mimeType: string): Promise<string> {
-  // TODO: 实现实际的图片上传逻辑
-  // 现在返回 base64 作为临时方案
-  const base64 = buffer.toString('base64');
-  return `data:${mimeType};base64,${base64}`;
-}
+// 移除旧的 uploadImage 函数，使用 Supabase Storage
 
 export async function POST(req: NextRequest) {
   try {
@@ -73,9 +66,6 @@ export async function POST(req: NextRequest) {
     // 检查额度 - 已禁用
     const quota = await checkUserQuota(userId, sessionId);
     // quota 检查已在函数内部跳过
-
-    // TODO: 临时跳过数据库记录创建和缓存检查
-    console.log('⚠️ Skipping database operations for virtualTryOn');
 
     // 获取和服图片URL
     let kimonoImageUrlToUse = kimonoImageUrl;
@@ -178,16 +168,33 @@ export async function POST(req: NextRequest) {
       const imageBytes = imagePart.inlineData.data;
       console.log('📷 Generated image size:', imageBytes.length, 'bytes');
 
-      // 上传结果图片
+      // 上传结果图片到 Supabase Storage
       const resultBuffer = Buffer.from(imageBytes, 'base64');
-      const resultUrl = await uploadImage(resultBuffer, 'image/png');
+      const storagePath = generateStoragePath(userId, 'jpg');
+      const resultUrl = await uploadToSupabase(resultBuffer, storagePath, 'image/jpeg');
 
-      // TODO: 跳过数据库更新记录
-      console.log('✅ Image generated successfully, skipping database update');
+      console.log('✅ Image uploaded to Supabase:', resultUrl);
+
+      // 保存到数据库
+      const tryOnRecord = await prisma.virtualTryOn.create({
+        data: {
+          userId,
+          sessionId,
+          planId,
+          kimonoId,
+          resultImageUrl: resultUrl,
+          status: TryOnStatus.COMPLETED,
+          duration,
+          modelVersion: 'gemini-2.5-flash-image',
+          prompt: customPrompt ? prompt : null,
+        },
+      });
+
+      console.log('✅ VirtualTryOn record created:', tryOnRecord.id);
 
       const response = NextResponse.json({
         success: true,
-        id: 'temp-' + Date.now(), // 临时 ID
+        id: tryOnRecord.id,
         imageUrl: resultUrl,
         duration,
         remainingQuota: -1, // 无限制
@@ -216,8 +223,23 @@ export async function POST(req: NextRequest) {
     } catch (aiError: any) {
       console.error('Gemini AI error:', aiError);
 
-      // TODO: 跳过数据库错误记录
-      console.log('⚠️ AI error occurred, skipping database error logging');
+      // 记录失败到数据库
+      try {
+        await prisma.virtualTryOn.create({
+          data: {
+            userId,
+            sessionId,
+            planId,
+            kimonoId,
+            resultImageUrl: '',
+            status: TryOnStatus.FAILED,
+            errorMessage: aiError.message || '未知错误',
+            modelVersion: 'gemini-2.5-flash-image',
+          },
+        });
+      } catch (dbError) {
+        console.error('Failed to log error to database:', dbError);
+      }
 
       // AI API 错误处理
       if (aiError.message?.includes('quota') || aiError.message?.includes('rate limit')) {

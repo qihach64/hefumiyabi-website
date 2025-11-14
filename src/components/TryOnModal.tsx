@@ -81,12 +81,11 @@ export default function TryOnModal({ isOpen, onClose, plan }: TryOnModalProps) {
       // 替换用户照片为试穿结果
       setResultPhoto(data.imageUrl);
 
-      // 保存试穿结果到 store
+      // 保存试穿结果到 store（仅缓存 resultPhoto，不存 originalPhoto）
       addTryOnResult({
         planId: plan.id,
         planName: plan.name,
         planImageUrl: plan.imageUrl || "",
-        originalPhoto: userPhoto,
         resultPhoto: data.imageUrl,
         timestamp: Date.now(),
       });

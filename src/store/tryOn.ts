@@ -5,8 +5,8 @@ export interface TryOnResult {
   planId: string;
   planName: string;
   planImageUrl: string;
-  originalPhoto: string; // 用户原始照片 (base64)
-  resultPhoto: string; // 试穿结果照片 (URL)
+  // 移除 originalPhoto，节省 localStorage 空间（1-2MB）
+  resultPhoto: string; // 试穿结果照片 (URL，从 Supabase Storage)
   timestamp: number; // 试穿时间戳
 }
 
@@ -36,12 +36,23 @@ export const useTryOnStore = create<TryOnStore>()(
       tryOnCache: {},
 
       addTryOnResult: (result) => {
-        set((state) => ({
-          tryOnCache: {
-            ...state.tryOnCache,
-            [result.planId]: result,
-          },
-        }));
+        set((state) => {
+          const cache = { ...state.tryOnCache };
+          const keys = Object.keys(cache);
+
+          // 限制最多存储 10 条记录（避免 localStorage quota 超限）
+          if (keys.length >= 10 && !cache[result.planId]) {
+            // 删除最老的记录
+            const oldest = keys.reduce((min, key) =>
+              cache[key].timestamp < cache[min].timestamp ? key : min
+            );
+            delete cache[oldest];
+            console.log('🗑️ Removed oldest try-on result:', oldest);
+          }
+
+          cache[result.planId] = result;
+          return { tryOnCache: cache };
+        });
       },
 
       getTryOnResult: (planId) => {

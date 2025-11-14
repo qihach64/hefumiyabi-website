@@ -425,6 +425,41 @@ model UserBehavior {
   @@map("user_behaviors")
 }
 
+model VirtualTryOn {
+  id               String       @id @default(cuid())
+  userId           String?      // 可为 null（游客）
+  sessionId        String       // Cookie session ID（用于追踪游客）
+
+  // 关联信息
+  planId           String?
+  kimonoId         String?
+
+  // 图片 URL（存储在 Supabase Storage）
+  personImageUrl   String?      // 用户原始照片（可选，需用户同意）
+  resultImageUrl   String       // 试穿结果（必存）
+
+  // 状态和性能
+  status           TryOnStatus  @default(PROCESSING)
+  duration         Int?         // 生成耗时（秒）
+  cost             Float?       // API 成本（美元）
+  fromCache        Boolean      @default(false)
+
+  // 元数据
+  prompt           String?      @db.Text // 使用的 prompt
+  modelVersion     String?      // AI 模型版本（如 "gemini-2.5-flash-image"）
+  errorMessage     String?      @db.Text // 错误信息（如果失败）
+
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@index([userId])
+  @@index([sessionId])
+  @@index([planId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("virtual_tryons")
+}
+
 model Campaign {
   id             String         @id @default(cuid())
   slug           String         @unique
@@ -544,6 +579,12 @@ enum BehaviorEvent {
   KIMONO_FAVORITE
   BOOKING_START
   BOOKING_COMPLETE
+}
+
+enum TryOnStatus {
+  PROCESSING
+  COMPLETED
+  FAILED
 }
 
 enum CampaignType {
