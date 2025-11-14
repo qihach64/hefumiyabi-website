@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ShoppingCart, MapPin, Star, Check, Sparkles, RotateCcw } from "lucide-react";
@@ -46,7 +46,6 @@ export default function PlanCard({ plan, showMerchant = false, isRecommended = f
   const [justChanged, setJustChanged] = useState(false);
   const [lastAction, setLastAction] = useState<'add' | 'remove' | null>(null);
   const [showTryOnModal, setShowTryOnModal] = useState(false);
-  const [mounted, setMounted] = useState(false);
 
   const addItem = useCartStore((state) => state.addItem);
   const removeItem = useCartStore((state) => state.removeItem);
@@ -59,14 +58,9 @@ export default function PlanCard({ plan, showMerchant = false, isRecommended = f
   const cartItem = items.find(item => item.planId === plan.id);
   const isInCart = !!cartItem;
 
-  // 检查是否有试穿记录（仅在客户端）
-  const tryOnResult = mounted ? getTryOnResult(plan.id) : null;
+  // 检查是否有试穿记录（直接读取，使用 suppressHydrationWarning）
+  const tryOnResult = getTryOnResult(plan.id);
   const hasTryOn = !!tryOnResult;
-
-  // 客户端挂载后设置 mounted
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   // 计算优惠金额
   const discountAmount = plan.originalPrice && plan.originalPrice > plan.price
@@ -163,7 +157,7 @@ export default function PlanCard({ plan, showMerchant = false, isRecommended = f
       >
         <div className="relative">
           {/* 图片容器 */}
-          <div className="relative aspect-square overflow-hidden rounded-xl bg-gray-100">
+          <div className="relative aspect-square overflow-hidden rounded-xl bg-gray-100" suppressHydrationWarning>
             {hasTryOn && tryOnResult ? (
               /* 已试穿：显示对比图 */
               <div

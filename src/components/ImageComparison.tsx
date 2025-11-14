@@ -127,21 +127,18 @@ export default function ImageComparison({
             className="absolute top-0 bottom-0 w-1 bg-white shadow-lg z-10"
             style={{ left: `${sliderPosition}%` }}
           >
-            {/* 圆形拖动手柄 */}
+            {/* 圆形拖动手柄 - 左右箭头 */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-full shadow-xl flex items-center justify-center">
-              <div className="flex items-center gap-0.5">
-                <div className="w-1 h-4 bg-gray-400 rounded-full" />
-                <div className="w-1 h-4 bg-gray-400 rounded-full" />
+              <div className="flex items-center gap-0.5 text-gray-600">
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15 19l-7-7 7-7" />
+                </svg>
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" />
+                </svg>
               </div>
             </div>
           </div>
-
-          {/* 提示文字 */}
-          {!isDragging && (
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-black/60 text-white text-xs font-medium rounded-full pointer-events-none">
-              ← 拖动滑块查看对比 →
-            </div>
-          )}
         </div>
       </div>
 
