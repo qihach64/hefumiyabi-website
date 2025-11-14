@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { X, Upload, Sparkles, Loader2, Check, AlertCircle } from "lucide-react";
 import Image from "next/image";
 import { useCartStore } from "@/store/cart";
+import { useTryOnStore } from "@/store/tryOn";
 
 interface TryOnModalProps {
   isOpen: boolean;
@@ -26,6 +27,7 @@ export default function TryOnModal({ isOpen, onClose, plan }: TryOnModalProps) {
   const [showSuccess, setShowSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const addItem = useCartStore((state) => state.addItem);
+  const addTryOnResult = useTryOnStore((state) => state.addTryOnResult);
 
   if (!isOpen) return null;
 
@@ -77,6 +79,16 @@ export default function TryOnModal({ isOpen, onClose, plan }: TryOnModalProps) {
       }
 
       setResultPhoto(data.imageUrl);
+
+      // 保存试穿结果到 store
+      addTryOnResult({
+        planId: plan.id,
+        planName: plan.name,
+        planImageUrl: plan.imageUrl || "",
+        originalPhoto: userPhoto,
+        resultPhoto: data.imageUrl,
+        timestamp: Date.now(),
+      });
     } catch (err: any) {
       console.error("Generation error:", err);
       setError(err.message || "生成失败，请重试");
