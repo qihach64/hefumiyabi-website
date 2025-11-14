@@ -89,13 +89,14 @@ export default function ImageComparison({
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
-          {/* Before 图片（底层，完整显示） */}
+          {/* Before 图片（底层，完整显示 - 和服套餐原图，居中显示） */}
           <div className="absolute inset-0">
             <Image
               src={beforeImage}
               alt={beforeLabel}
               fill
               className="object-cover"
+              style={{ objectPosition: 'center' }}
               sizes="(max-width: 768px) 100vw, 33vw"
             />
             <div className="absolute top-3 left-3 px-3 py-1 bg-black/60 text-white text-xs font-semibold rounded-full">
@@ -103,7 +104,7 @@ export default function ImageComparison({
             </div>
           </div>
 
-          {/* After 图片（顶层，通过 clip-path 裁剪） */}
+          {/* After 图片（顶层，通过 clip-path 裁剪 - 试穿效果，优先显示脸部） */}
           <div
             className="absolute inset-0"
             style={{
@@ -115,6 +116,7 @@ export default function ImageComparison({
               alt={afterLabel}
               fill
               className="object-cover"
+              style={{ objectPosition: 'top center' }}
               sizes="(max-width: 768px) 100vw, 33vw"
             />
             <div className="absolute top-3 right-3 px-3 py-1 bg-black/60 text-white text-xs font-semibold rounded-full">
@@ -176,7 +178,7 @@ export default function ImageComparison({
           </button>
         </div>
 
-        {/* 图片显示 */}
+        {/* 图片显示 - 移动端 */}
         <div
           className="relative aspect-square overflow-hidden rounded-xl bg-gray-100"
           onClick={(e) => e.stopPropagation()}
@@ -186,6 +188,9 @@ export default function ImageComparison({
             alt={activeTab === "before" ? beforeLabel : afterLabel}
             fill
             className="object-cover"
+            style={{
+              objectPosition: activeTab === "after" ? 'top center' : 'center'
+            }}
             sizes="100vw"
           />
         </div>
