@@ -24,6 +24,7 @@ export default function TryOnModal({ isOpen, onClose, plan }: TryOnModalProps) {
   const [userPhoto, setUserPhoto] = useState<string | null>(null);
   const [resultPhoto, setResultPhoto] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isLoadingImage, setIsLoadingImage] = useState(false); // 图片加载状态
   const [error, setError] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showCacheTip, setShowCacheTip] = useState(false);
@@ -95,7 +96,29 @@ export default function TryOnModal({ isOpen, onClose, plan }: TryOnModalProps) {
         throw new Error(data.message || "生成失败");
       }
 
-      // 替换用户照片为试穿结果
+      // 预加载图片，确保加载完成后再显示
+      console.log('🖼️ 开始预加载合成图片...');
+      setIsLoadingImage(true);
+
+      await new Promise<void>((resolve, reject) => {
+        const img = new window.Image();
+
+        img.onload = () => {
+          console.log('✅ 合成图片加载完成');
+          resolve();
+        };
+
+        img.onerror = () => {
+          console.error('❌ 合成图片加载失败');
+          reject(new Error('图片加载失败'));
+        };
+
+        // 开始加载
+        img.src = data.imageUrl;
+      });
+
+      // 图片加载完成后再显示
+      setIsLoadingImage(false);
       setResultPhoto(data.imageUrl);
 
       // 保存试穿结果到 store（仅缓存 resultPhoto，不存 originalPhoto）
@@ -111,6 +134,7 @@ export default function TryOnModal({ isOpen, onClose, plan }: TryOnModalProps) {
       setError(err.message || "生成失败，请重试");
     } finally {
       setIsGenerating(false);
+      setIsLoadingImage(false);
     }
   };
 
@@ -263,16 +287,25 @@ export default function TryOnModal({ isOpen, onClose, plan }: TryOnModalProps) {
                         生成成功
                       </div>
                     )}
-                    {/* 生成中遮罩 */}
-                    {isGenerating && (
+                    {/* 生成中/加载中遮罩 */}
+                    {(isGenerating || isLoadingImage) && (
                       <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-4">
                         <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
-                        <div className="text-white font-semibold">
-                          AI 正在生成试穿效果...
-                        </div>
-                        <div className="text-white/80 text-sm">
-                          大约需要 15 秒
-                        </div>
+                        {isGenerating && !isLoadingImage && (
+                          <>
+                            <div className="text-white font-semibold">
+                              AI 正在生成试穿效果...
+                            </div>
+                            <div className="text-white/80 text-sm">
+                              大约需要 15 秒
+                            </div>
+                          </>
+                        )}
+                        {isLoadingImage && (
+                          <div className="text-white font-semibold animate-pulse">
+                            图片加载中，马上就好...
+                          </div>
+                        )}
                       </div>
                     )}
                   </>
@@ -333,7 +366,7 @@ export default function TryOnModal({ isOpen, onClose, plan }: TryOnModalProps) {
 
           {/* 底部操作按钮 */}
           <div className="mt-6 flex gap-3">
-            {userPhoto && !resultPhoto && !isGenerating && (
+            {userPhoto && !resultPhoto && !isGenerating && !isLoadingImage && (
               <button
                 onClick={handleGenerate}
                 className="flex-1 py-4 bg-gradient-to-r from-sakura-500 to-pink-500 text-white rounded-xl font-semibold text-lg hover:from-sakura-600 hover:to-pink-600 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
@@ -343,7 +376,7 @@ export default function TryOnModal({ isOpen, onClose, plan }: TryOnModalProps) {
               </button>
             )}
 
-            {resultPhoto && (
+            {resultPhoto && !isLoadingImage && (
               <button
                 onClick={handleAddToCart}
                 className="flex-1 py-4 bg-sakura-600 text-white rounded-xl font-semibold text-lg hover:bg-sakura-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
