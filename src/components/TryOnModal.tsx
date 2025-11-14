@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { X, Upload, Sparkles, RotateCcw } from "lucide-react";
 import Image from "next/image";
 import { useCartStore } from "@/store/cart";
 import { useTryOnStore } from "@/store/tryOn";
+import { useUserPhotoStore } from "@/store/userPhoto";
 
 interface TryOnModalProps {
   isOpen: boolean;
@@ -25,9 +26,22 @@ export default function TryOnModal({ isOpen, onClose, plan }: TryOnModalProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showCacheTip, setShowCacheTip] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const addItem = useCartStore((state) => state.addItem);
   const addTryOnResult = useTryOnStore((state) => state.addTryOnResult);
+
+  // 会话照片缓存
+  const { photo: cachedPhoto, setPhoto: setCachedPhoto } = useUserPhotoStore();
+
+  // 智能预填充：打开弹窗时自动加载缓存照片
+  useEffect(() => {
+    if (isOpen && cachedPhoto && !userPhoto && !resultPhoto) {
+      setUserPhoto(cachedPhoto);
+      setShowCacheTip(true);
+      console.log('✨ 自动加载缓存照片');
+    }
+  }, [isOpen, cachedPhoto]);
 
   if (!isOpen) return null;
 
@@ -43,9 +57,12 @@ export default function TryOnModal({ isOpen, onClose, plan }: TryOnModalProps) {
 
     const reader = new FileReader();
     reader.onload = (event) => {
-      setUserPhoto(event.target?.result as string);
+      const photoData = event.target?.result as string;
+      setUserPhoto(photoData);
+      setCachedPhoto(photoData); // 保存到会话缓存
       setResultPhoto(null); // 清除之前的结果
       setError(null);
+      setShowCacheTip(false); // 隐藏缓存提示
     };
     reader.readAsDataURL(file);
   };
@@ -124,6 +141,7 @@ export default function TryOnModal({ isOpen, onClose, plan }: TryOnModalProps) {
     setUserPhoto(null);
     setResultPhoto(null);
     setError(null);
+    setShowCacheTip(false);
   };
 
   // 当前显示的照片：试穿结果 > 用户照片 > null
@@ -211,6 +229,11 @@ export default function TryOnModal({ isOpen, onClose, plan }: TryOnModalProps) {
                     {resultPhoto ? '✨' : displayPhoto ? '📸' : '⬆️'}
                   </span>
                   {resultPhoto ? '试穿效果' : displayPhoto ? '您的照片' : '上传照片'}
+                  {showCacheTip && userPhoto && !resultPhoto && (
+                    <span className="text-xs font-normal text-sakura-600 bg-sakura-50 px-2 py-0.5 rounded-full">
+                      已自动加载
+                    </span>
+                  )}
                 </h3>
                 {displayPhoto && (
                   <button
@@ -218,7 +241,7 @@ export default function TryOnModal({ isOpen, onClose, plan }: TryOnModalProps) {
                     className="text-xs text-gray-500 hover:text-sakura-600 flex items-center gap-1 transition-colors"
                   >
                     <RotateCcw className="w-3 h-3" />
-                    重新上传
+                    更换照片
                   </button>
                 )}
               </div>
@@ -286,6 +309,19 @@ export default function TryOnModal({ isOpen, onClose, plan }: TryOnModalProps) {
                 )}
               </div>
 
+              {/* 缓存提示 */}
+              {showCacheTip && userPhoto && !resultPhoto && (
+                <div className="mt-4 p-3 bg-gradient-to-br from-sakura-50 to-pink-50 border border-sakura-200 rounded-lg animate-in slide-in-from-top-2 duration-300">
+                  <p className="text-sm text-gray-700 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-sakura-500" />
+                    <span className="font-semibold">已自动加载您之前上传的照片</span>
+                  </p>
+                  <p className="text-xs text-gray-600 mt-1 ml-6">
+                    点击"更换照片"可重新上传，或直接点击"生成试穿效果"
+                  </p>
+                </div>
+              )}
+
               {/* 错误提示 */}
               {error && (
                 <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800">
@@ -319,7 +355,7 @@ export default function TryOnModal({ isOpen, onClose, plan }: TryOnModalProps) {
           </div>
 
           {/* 使用提示 */}
-          {!userPhoto && (
+          {!userPhoto && !cachedPhoto && (
             <div className="mt-6 p-4 bg-gradient-to-br from-sakura-50 to-pink-50 rounded-xl border border-sakura-200">
               <h4 className="font-semibold text-gray-900 mb-2 text-sm flex items-center gap-2">
                 <span className="text-sakura-500">💡</span>
@@ -338,7 +374,24 @@ export default function TryOnModal({ isOpen, onClose, plan }: TryOnModalProps) {
                   <span className="text-sakura-400">•</span>
                   <span>全身或半身照都可以</span>
                 </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-sakura-400">•</span>
+                  <span>照片会保存到本次会话，方便试穿其他和服</span>
+                </li>
               </ul>
+            </div>
+          )}
+
+          {/* 首次上传成功提示 */}
+          {userPhoto && !showCacheTip && !resultPhoto && !cachedPhoto && (
+            <div className="mt-6 p-4 bg-gradient-to-br from-sakura-50 to-pink-50 rounded-xl border border-sakura-200 animate-in slide-in-from-bottom-2 duration-300">
+              <p className="text-sm text-gray-700 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-sakura-500" />
+                <span className="font-semibold">照片已保存！</span>
+              </p>
+              <p className="text-xs text-gray-600 mt-1">
+                试穿其他和服时无需重新上传。关闭标签页后自动清除。
+              </p>
             </div>
           )}
         </div>
