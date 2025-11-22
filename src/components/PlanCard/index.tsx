@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { ShoppingCart, MapPin, Star, Check, Sparkles, RotateCcw } from "lucide-react";
 import { Badge } from "@/components/ui";
 import { useCartStore } from "@/store/cart";
@@ -48,6 +49,7 @@ export default function PlanCard({ plan, showMerchant = false, isRecommended = f
   const [showTryOnModal, setShowTryOnModal] = useState(false);
   const [mounted, setMounted] = useState(false);
 
+  const searchParams = useSearchParams();
   const addItem = useCartStore((state) => state.addItem);
   const removeItem = useCartStore((state) => state.removeItem);
   const items = useCartStore((state) => state.items);
@@ -62,6 +64,32 @@ export default function PlanCard({ plan, showMerchant = false, isRecommended = f
   // 检查是否有试穿记录（只在客户端挂载后读取）
   const tryOnResult = mounted ? getTryOnResult(plan.id) : null;
   const hasTryOn = !!tryOnResult;
+
+  // 构建详情页链接 - 保留搜索参数
+  const planDetailHref = useMemo(() => {
+    const params = new URLSearchParams();
+
+    // 保留日期参数
+    const date = searchParams.get('date');
+    if (date) params.set('date', date);
+
+    // 保留人数参数
+    const guests = searchParams.get('guests');
+    if (guests) params.set('guests', guests);
+
+    // 保留详细人数参数
+    const men = searchParams.get('men');
+    if (men) params.set('men', men);
+
+    const women = searchParams.get('women');
+    if (women) params.set('women', women);
+
+    const children = searchParams.get('children');
+    if (children) params.set('children', children);
+
+    const queryString = params.toString();
+    return queryString ? `/plans/${plan.id}?${queryString}` : `/plans/${plan.id}`;
+  }, [plan.id, searchParams]);
 
   // 客户端挂载标记
   useEffect(() => {
@@ -158,7 +186,7 @@ export default function PlanCard({ plan, showMerchant = false, isRecommended = f
       />
 
       <Link
-        href={`/plans/${plan.id}`}
+        href={planDetailHref}
         className="group block"
       >
         <div className="relative">

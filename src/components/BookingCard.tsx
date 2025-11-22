@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Calendar, Users, Clock, Shield, X, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui";
 import TryOnModal from "@/components/TryOnModal";
+import GuestsDropdown, { GuestsDetail } from "@/components/GuestsDropdown";
 
 interface BookingCardProps {
   plan: {
@@ -24,10 +25,19 @@ export default function BookingCard({ plan }: BookingCardProps) {
   const searchParams = useSearchParams();
   const searchDate = searchParams.get('date');
   const searchGuests = searchParams.get('guests');
+  const searchMen = searchParams.get('men');
+  const searchWomen = searchParams.get('women');
+  const searchChildren = searchParams.get('children');
 
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [guests, setGuests] = useState(1);
+  const [guestsDetail, setGuestsDetail] = useState<GuestsDetail>({
+    total: 1,
+    men: 0,
+    women: 1,
+    children: 0,
+  });
   const [showMobileModal, setShowMobileModal] = useState(false);
   const [showTryOnModal, setShowTryOnModal] = useState(false);
 
@@ -42,7 +52,25 @@ export default function BookingCard({ plan }: BookingCardProps) {
         setGuests(guestsNum);
       }
     }
-  }, [searchDate, searchGuests]);
+    // 填充详细人数信息
+    if (searchMen || searchWomen || searchChildren) {
+      const men = searchMen ? parseInt(searchMen) : 0;
+      const women = searchWomen ? parseInt(searchWomen) : 0;
+      const children = searchChildren ? parseInt(searchChildren) : 0;
+      const total = men + women + children;
+
+      setGuestsDetail({
+        total: total || 1,
+        men,
+        women,
+        children,
+      });
+
+      if (total > 0) {
+        setGuests(total);
+      }
+    }
+  }, [searchDate, searchGuests, searchMen, searchWomen, searchChildren]);
 
   // 计算优惠百分比
   const discountPercent = plan.originalPrice && plan.originalPrice > plan.price
@@ -109,9 +137,32 @@ export default function BookingCard({ plan }: BookingCardProps) {
       {/* 预订表单 */}
       <div className="space-y-4 mb-6">
         {/* 日期选择 */}
-        <div className={`border rounded-xl overflow-hidden transition-colors ${date && searchDate ? 'border-green-500 bg-green-50/30' : 'border-gray-300 hover:border-gray-900'}`}>
+        <div
+          className={`border rounded-xl transition-colors cursor-pointer ${date && searchDate ? 'border-green-500 bg-green-50/30' : 'border-gray-300 hover:border-gray-900'}`}
+          onClick={() => {
+            const input = document.getElementById('booking-date-input') as HTMLInputElement;
+            input?.focus();
+            try {
+              input?.showPicker?.();
+            } catch (error) {
+              input?.click();
+            }
+          }}
+        >
           <div className="p-3">
-            <label className="flex items-center gap-2 text-xs font-semibold text-gray-700 mb-2">
+            <label
+              className="flex items-center gap-2 text-xs font-semibold text-gray-700 mb-2 cursor-pointer"
+              onClick={(e) => {
+                e.preventDefault();
+                const input = document.getElementById('booking-date-input') as HTMLInputElement;
+                input?.focus();
+                try {
+                  input?.showPicker?.();
+                } catch (error) {
+                  input?.click();
+                }
+              }}
+            >
               <Calendar className="w-4 h-4 text-sakura-500" />
               到店日期
               {date && searchDate && (
@@ -119,26 +170,31 @@ export default function BookingCard({ plan }: BookingCardProps) {
               )}
             </label>
             <input
+              id="booking-date-input"
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full text-sm text-gray-900 bg-transparent border-none outline-none"
+              className="w-full text-sm text-gray-900 bg-transparent border-none outline-none cursor-pointer"
               min={new Date().toISOString().split('T')[0]}
             />
           </div>
         </div>
 
         {/* 时间选择 */}
-        <div className="border border-gray-300 rounded-xl overflow-hidden hover:border-gray-900 transition-colors">
+        <div className="border border-gray-300 rounded-xl hover:border-gray-900 transition-colors cursor-pointer relative">
           <div className="p-3">
-            <label className="flex items-center gap-2 text-xs font-semibold text-gray-700 mb-2">
+            <label
+              htmlFor="booking-time-select"
+              className="flex items-center gap-2 text-xs font-semibold text-gray-700 mb-2 cursor-pointer"
+            >
               <Clock className="w-4 h-4 text-sakura-500" />
               到店时间
             </label>
             <select
+              id="booking-time-select"
               value={time}
               onChange={(e) => setTime(e.target.value)}
-              className="w-full text-sm text-gray-900 bg-transparent border-none outline-none"
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
             >
               <option value="">请选择时间</option>
               <option value="09:00">上午 9:00</option>
@@ -156,37 +212,29 @@ export default function BookingCard({ plan }: BookingCardProps) {
               <option value="15:30">下午 3:30</option>
               <option value="16:00">下午 4:00</option>
             </select>
+            <div className="text-sm text-gray-900 pointer-events-none">
+              {time ? (
+                <>
+                  {time.startsWith('09') || time.startsWith('10') || time.startsWith('11') ? '上午' :
+                   time === '12:00' ? '中午' : '下午'} {time}
+                </>
+              ) : (
+                '请选择时间'
+              )}
+            </div>
           </div>
         </div>
 
         {/* 人数选择 */}
-        <div className="border border-gray-300 rounded-xl overflow-hidden hover:border-gray-900 transition-colors">
-          <div className="p-3">
-            <label className="flex items-center gap-2 text-xs font-semibold text-gray-700 mb-2">
-              <Users className="w-4 h-4 text-sakura-500" />
-              人数
-            </label>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-900">
-                {guests} 位客人
-              </span>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setGuests(Math.max(1, guests - 1))}
-                  className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:border-gray-900 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                  disabled={guests <= 1}
-                >
-                  −
-                </button>
-                <button
-                  onClick={() => setGuests(Math.min(10, guests + 1))}
-                  className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:border-gray-900 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                  disabled={guests >= 10}
-                >
-                  +
-                </button>
-              </div>
-            </div>
+        <div className="border border-gray-300 rounded-xl hover:border-gray-900 transition-colors relative cursor-pointer">
+          <div className="p-3 cursor-pointer">
+            <GuestsDropdown
+              value={guests}
+              onChange={setGuests}
+              onDetailChange={setGuestsDetail}
+              initialDetail={guestsDetail}
+              dropdownClassName="left-0 right-0 w-auto"
+            />
           </div>
         </div>
       </div>
@@ -271,8 +319,8 @@ export default function BookingCard({ plan }: BookingCardProps) {
         plan={plan}
       />
 
-      {/* 桌面端：Sticky侧边栏 */}
-      <div className="hidden lg:block sticky top-24">
+      {/* 桌面端：侧边栏 */}
+      <div className="hidden lg:block">
         <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
           <BookingFormContent />
         </div>

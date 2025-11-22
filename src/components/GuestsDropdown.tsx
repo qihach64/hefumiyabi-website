@@ -16,9 +16,10 @@ interface GuestsDropdownProps {
   onDetailChange?: (detail: GuestsDetail) => void;
   initialDetail?: GuestsDetail;
   className?: string;
+  dropdownClassName?: string;
 }
 
-export default function GuestsDropdown({ value, onChange, onDetailChange, initialDetail, className = "" }: GuestsDropdownProps) {
+export default function GuestsDropdown({ value, onChange, onDetailChange, initialDetail, className = "", dropdownClassName = "" }: GuestsDropdownProps) {
   const [showDropdown, setShowDropdown] = useState(false);
   const [men, setMen] = useState(initialDetail?.men || 0);
   const [women, setWomen] = useState(initialDetail?.women || 1);
@@ -132,10 +133,10 @@ export default function GuestsDropdown({ value, onChange, onDetailChange, initia
       {showDropdown && (
         <div
           ref={dropdownRef}
-          className="absolute top-full right-0 mt-3 bg-white rounded-3xl overflow-hidden z-50 w-80 p-5
+          className={`absolute top-full mt-3 bg-white rounded-3xl overflow-hidden z-50 w-80 p-5
             shadow-[0_8px_28px_0_rgba(0,0,0,0.12)]
             border border-gray-100/50
-            dropdown-scrollbar"
+            dropdown-scrollbar ${dropdownClassName || 'right-0'}`}
           style={{
             animation: 'dropdown-appear 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
           }}
