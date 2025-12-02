@@ -201,12 +201,53 @@ model KimonoStore {
   @@map("kimono_stores")
 }
 
+// ============================================
+// 主题系统 (Theme System)
+// ============================================
+
+model Theme {
+  id           String       @id @default(cuid())
+  slug         String       @unique  // trendy-photo, formal-ceremony...
+
+  // 默认语言（中文）
+  name         String                // 潮流出片
+  description  String?      @db.Text // 详细说明
+
+  // 多语言翻译 JSON: { "en": { "name": "...", "description": "..." }, "ja": { ... } }
+  translations Json?
+
+  icon         String?               // emoji 或 lucide icon name
+  color        String?               // 主题色 hex，如 #FF6B6B
+  coverImage   String?               // 主题封面图
+  displayOrder Int          @default(0)
+  isActive     Boolean      @default(true)
+
+  // 季节限定控制（主题级别）
+  seasonStart  DateTime?    // 季节开始日期
+  seasonEnd    DateTime?    // 季节结束日期
+
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  plans        RentalPlan[]
+
+  @@index([isActive, displayOrder])
+  @@index([seasonStart, seasonEnd])
+  @@map("themes")
+}
+
 model RentalPlan {
   id            String        @id @default(cuid())
   slug          String        @unique
+
+  // 默认语言（中文）
   name          String
-  nameEn        String?
   description   String
+  highlights    String?       // 核心卖点描述
+
+  // 多语言翻译 JSON: { "en": { "name": "...", "description": "..." }, "ja": { ... } }
+  translations  Json?
+
   category      PlanCategory
   price         Int
   originalPrice Int?
@@ -214,28 +255,34 @@ model RentalPlan {
   duration      Int
   includes      String[]
   imageUrl      String?
+  images        String[]      @default([])  // 多图支持
+
+  // 主题关联
+  themeId  String?
+  theme    Theme?    @relation(fields: [themeId], references: [id], onDelete: SetNull)
 
   // 店铺和地区信息
   storeName String?
   region    String?
   tags      String[]      @default([])  // 保留旧字段，后续可移除
 
-  // 活动关联（新增）
+  // 活动关联
   campaignId String?
   campaign   Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
 
-  // 活动特性（新增）
+  // 活动特性
   isCampaign      Boolean @default(false)
   isLimited       Boolean @default(false)
   maxBookings     Int?
   currentBookings Int     @default(0)
 
-  // 时间限制（新增）
+  // 时间/季节限制（套餐级别，覆盖 Theme 级别）
   availableFrom  DateTime?
   availableUntil DateTime?
 
-  isActive   Boolean @default(true)
-  isFeatured Boolean @default(false)
+  isActive     Boolean @default(true)
+  isFeatured   Boolean @default(false)
+  displayOrder Int     @default(0)  // 在主题内的排序
 
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
@@ -243,8 +290,10 @@ model RentalPlan {
   // 关联
   bookingItems BookingItem[]
   cartItems    CartItem[]
-  planTags     PlanTag[]     // 新增：标签系统关联
+  planTags     PlanTag[]
 
+  @@index([themeId])
+  @@index([themeId, isActive, displayOrder])
   @@index([campaignId])
   @@index([isCampaign])
   @@index([availableFrom, availableUntil])
