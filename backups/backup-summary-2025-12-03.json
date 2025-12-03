@@ -1,0 +1,58 @@
+{
+  "timestamp": "2025-12-03T06:32:10.935Z",
+  "plans": {
+    "total": 93,
+    "active": 91,
+    "inactive": 2,
+    "campaign": 8,
+    "featured": 4
+  },
+  "tags": {
+    "total": 7,
+    "byCategory": [
+      {
+        "category": "使用场景",
+        "count": 4
+      },
+      {
+        "category": "服务等级",
+        "count": 3
+      }
+    ]
+  },
+  "themes": {
+    "total": 6,
+    "distribution": [
+      {
+        "theme": "潮流出片",
+        "plans": 3
+      },
+      {
+        "theme": "盛大礼遇",
+        "plans": 3
+      },
+      {
+        "theme": "亲友同行",
+        "plans": 4
+      },
+      {
+        "theme": "季节限定",
+        "plans": 4
+      },
+      {
+        "theme": "特色套餐",
+        "plans": 3
+      },
+      {
+        "theme": "轻装漫步",
+        "plans": 0
+      }
+    ]
+  },
+  "files": {
+    "plans": "/Users/jinchenyu/hefumiyabi-website/backups/plans-backup-2025-12-03.json",
+    "tags": "/Users/jinchenyu/hefumiyabi-website/backups/tags-backup-2025-12-03.json",
+    "categories": "/Users/jinchenyu/hefumiyabi-website/backups/tag-categories-backup-2025-12-03.json",
+    "themes": "/Users/jinchenyu/hefumiyabi-website/backups/themes-backup-2025-12-03.json"
+  }
+}

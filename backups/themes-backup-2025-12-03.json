@@ -1,0 +1,231 @@
+[
+  {
+    "id": "cmioftqib0000yc2hhb2joxda",
+    "slug": "trendy-photo",
+    "name": "潮流出片",
+    "description": "追求时尚与个性的你，这里有最适合拍照打卡的和服套餐。专业造型搭配，让你成为朋友圈最靓的仔！",
+    "translations": {
+      "en": {
+        "name": "Trendy Photo",
+        "description": "Perfect for fashion-forward travelers seeking Instagram-worthy kimono experiences."
+      },
+      "ja": {
+        "name": "トレンドフォト",
+        "description": "SNS映え間違いなし！トレンド感のある着物体験。"
+      }
+    },
+    "icon": "Camera",
+    "color": "#FF6B6B",
+    "coverImage": null,
+    "displayOrder": 1,
+    "isActive": true,
+    "seasonStart": null,
+    "seasonEnd": null,
+    "createdAt": "2025-12-02T10:31:02.003Z",
+    "updatedAt": "2025-12-02T10:31:02.003Z",
+    "plans": [
+      {
+        "id": "cmioftvhc0007yc2hbslt9p6q",
+        "name": "经典和风·五款发型任选（轻奢畅选方案）"
+      },
+      {
+        "id": "cmioftwvu0009yc2h40pakpy5",
+        "name": "妆造全包·出门即拍（造型师全包方案）"
+      },
+      {
+        "id": "cmioftya6000byc2hy0am5ss6",
+        "name": "专属跟拍·9图精修（出片无忧方案）"
+      }
+    ]
+  },
+  {
+    "id": "cmioftr7k0001yc2h0jr28c8a",
+    "slug": "formal-ceremony",
+    "name": "盛大礼遇",
+    "description": "人生重要时刻，值得最隆重的仪式感。成人式、毕业典礼、婚礼...我们为您的特别日子提供顶级和服体验。",
+    "translations": {
+      "en": {
+        "name": "Formal Ceremony",
+        "description": "Premium kimono experiences for life's most important moments."
+      },
+      "ja": {
+        "name": "盛大なおもてなし",
+        "description": "人生の特別な日にふさわしい、最高級の着物体験。"
+      }
+    },
+    "icon": "Crown",
+    "color": "#9B59B6",
+    "coverImage": null,
+    "displayOrder": 2,
+    "isActive": true,
+    "seasonStart": null,
+    "seasonEnd": null,
+    "createdAt": "2025-12-02T10:31:02.913Z",
+    "updatedAt": "2025-12-02T10:31:02.913Z",
+    "plans": [
+      {
+        "id": "cmiofu12x000fyc2hyjrbbvyh",
+        "name": "振袖华礼·二十岁纪念（振袖华礼方案）"
+      },
+      {
+        "id": "cmiofu2mi000hyc2hlghdwdsa",
+        "name": "袴装毕业典礼套袴礼·毕业典礼专属（毕业袴礼方案）餐"
+      },
+      {
+        "id": "cmiofu418000jyc2hfclu8tb9",
+        "name": "留袖正装套餐访问着·正式场合首选（访问着礼遇方案）"
+      }
+    ]
+  },
+  {
+    "id": "cmioftrws0002yc2hpcyvu8m8",
+    "slug": "together",
+    "name": "亲友同行",
+    "description": "和家人、闺蜜、情侣一起创造美好回忆。我们有专为多人设计的超值套餐，人越多越划算！",
+    "translations": {
+      "en": {
+        "name": "Together",
+        "description": "Special packages designed for couples, families, and friends."
+      },
+      "ja": {
+        "name": "一緒に",
+        "description": "カップル、家族、友人向けの特別プラン。"
+      }
+    },
+    "icon": "Users",
+    "color": "#E91E63",
+    "coverImage": null,
+    "displayOrder": 3,
+    "isActive": true,
+    "seasonStart": null,
+    "seasonEnd": null,
+    "createdAt": "2025-12-02T10:31:03.821Z",
+    "updatedAt": "2025-12-02T10:31:03.821Z",
+    "plans": [
+      {
+        "id": "cmiofu5fo000lyc2hb9xtqsnh",
+        "name": "情侣浪漫套餐"
+      },
+      {
+        "id": "cmiofu6tw000nyc2hl6q5mhmd",
+        "name": "闺蜜同行套餐"
+      },
+      {
+        "id": "cmiofu883000pyc2hcjjdolgc",
+        "name": "亲子欢乐套餐"
+      },
+      {
+        "id": "cmiofu9ma000ryc2hbt61t71k",
+        "name": "团体派对套餐"
+      }
+    ]
+  },
+  {
+    "id": "cmioftslr0003yc2h1s0nxpgg",
+    "slug": "seasonal",
+    "name": "季节限定",
+    "description": "春樱、夏祭、秋枫、冬雪...每个季节都有专属的限定套餐，错过等一年！",
+    "translations": {
+      "en": {
+        "name": "Seasonal",
+        "description": "Limited-time packages celebrating Japan's beautiful seasons."
+      },
+      "ja": {
+        "name": "季節限定",
+        "description": "四季折々の限定プラン。"
+      }
+    },
+    "icon": "Leaf",
+    "color": "#4CAF50",
+    "coverImage": null,
+    "displayOrder": 4,
+    "isActive": true,
+    "seasonStart": null,
+    "seasonEnd": null,
+    "createdAt": "2025-12-02T10:31:04.720Z",
+    "updatedAt": "2025-12-02T10:31:04.720Z",
+    "plans": [
+      {
+        "id": "cmiofucf1000vyc2h8yjvecsa",
+        "name": "夏日祭典限定"
+      },
+      {
+        "id": "cmiofub0j000tyc2htto94ngg",
+        "name": "春日樱花限定"
+      },
+      {
+        "id": "cmiofudt6000xyc2h31tne9me",
+        "name": "秋枫红叶限定"
+      },
+      {
+        "id": "cmiofufcg000zyc2hr442jm6j",
+        "name": "新年初诣限定"
+      }
+    ]
+  },
+  {
+    "id": "cmioftu040005yc2hu2h4jjxz",
+    "slug": "specialty",
+    "name": "特色套餐",
+    "description": "大码和服、儿童和服、特殊尺寸...我们照顾到每一位客人的特别需求。",
+    "translations": {
+      "en": {
+        "name": "Specialty",
+        "description": "Unique packages for men, children, and special requirements."
+      },
+      "ja": {
+        "name": "特別プラン",
+        "description": "男性、お子様、特別なご要望にお応えします。"
+      }
+    },
+    "icon": "Sparkles",
+    "color": "#FF9800",
+    "coverImage": null,
+    "displayOrder": 6,
+    "isActive": true,
+    "seasonStart": null,
+    "seasonEnd": null,
+    "createdAt": "2025-12-02T10:31:06.533Z",
+    "updatedAt": "2025-12-02T10:31:06.533Z",
+    "plans": [
+      {
+        "id": "cmiofukxo0017yc2hk2ihqauz",
+        "name": "男士袴装套餐"
+      },
+      {
+        "id": "cmiofumbs0019yc2hvxkxueq2",
+        "name": "儿童和服套餐"
+      },
+      {
+        "id": "cmiofunpz001byc2h9wwy6q5l",
+        "name": "大码和服套餐"
+      }
+    ]
+  },
+  {
+    "id": "cmiofttat0004yc2h4jv7m8r3",
+    "slug": "casual-stroll",
+    "name": "轻装漫步",
+    "description": "不想太正式？轻便和服让你舒适自在地逛街、吃小吃、拍照留念。性价比超高的入门之选！",
+    "translations": {
+      "en": {
+        "name": "Casual Stroll",
+        "description": "Comfortable and affordable yukata options for a relaxed experience."
+      },
+      "ja": {
+        "name": "気軽なお散歩",
+        "description": "気軽に楽しめる浴衣プラン。"
+      }
+    },
+    "icon": "Footprints",
+    "color": "#00BCD4",
+    "coverImage": null,
+    "displayOrder": 5,
+    "isActive": true,
+    "seasonStart": null,
+    "seasonEnd": null,
+    "createdAt": "2025-12-02T10:31:05.622Z",
+    "updatedAt": "2025-12-02T10:31:05.622Z",
+    "plans": []
+  }
+]
