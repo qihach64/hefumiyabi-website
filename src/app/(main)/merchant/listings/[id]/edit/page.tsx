@@ -55,6 +55,11 @@ export default async function EditListingPage({ params }: EditListingPageProps) 
     notFound();
   }
 
+  // 验证套餐所有权
+  if (plan.merchantId !== merchant.id) {
+    redirect("/merchant/listings");
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container py-8 max-w-7xl">

@@ -107,6 +107,23 @@ export async function PATCH(
     const body = await request.json();
     const validatedData = updatePlanSchema.parse(body);
 
+    // 验证套餐所有权
+    const plan = await prisma.rentalPlan.findUnique({
+      where: { id },
+      select: { merchantId: true },
+    });
+
+    if (!plan) {
+      return NextResponse.json({ message: "套餐不存在" }, { status: 404 });
+    }
+
+    if (plan.merchantId !== merchant.id) {
+      return NextResponse.json(
+        { message: "无权限操作此套餐" },
+        { status: 403 }
+      );
+    }
+
     // 使用事务更新套餐和标签
     const result = await prisma.$transaction(async (tx) => {
       // 更新套餐
@@ -229,6 +246,23 @@ export async function DELETE(
     if (!merchant || merchant.status !== "APPROVED") {
       return NextResponse.json(
         { message: "无权限执行此操作" },
+        { status: 403 }
+      );
+    }
+
+    // 验证套餐所有权
+    const plan = await prisma.rentalPlan.findUnique({
+      where: { id },
+      select: { merchantId: true },
+    });
+
+    if (!plan) {
+      return NextResponse.json({ message: "套餐不存在" }, { status: 404 });
+    }
+
+    if (plan.merchantId !== merchant.id) {
+      return NextResponse.json(
+        { message: "无权限操作此套餐" },
         { status: 403 }
       );
     }

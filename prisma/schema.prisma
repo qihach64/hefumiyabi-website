@@ -154,6 +154,7 @@ model Merchant {
   owner          User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   stores         Store[]
   listings       Listing[]
+  rentalPlans    RentalPlan[]
   bookings       Booking[]
   reviews        MerchantReview[]
   payouts        Payout[]
@@ -261,6 +262,11 @@ model RentalPlan {
   themeId  String?
   theme    Theme?    @relation(fields: [themeId], references: [id], onDelete: SetNull)
 
+  // 商家所有权
+  merchantId String?
+  merchant   Merchant? @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  createdBy  String?       // 创建者 User ID
+
   // 店铺和地区信息
   storeName String?
   region    String?
@@ -292,6 +298,7 @@ model RentalPlan {
   cartItems    CartItem[]
   planTags     PlanTag[]
 
+  @@index([merchantId])
   @@index([themeId])
   @@index([themeId, isActive, displayOrder])
   @@index([campaignId])

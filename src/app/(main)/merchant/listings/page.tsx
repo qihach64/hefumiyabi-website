@@ -23,8 +23,11 @@ export default async function MerchantListingsPage() {
     redirect("/merchant/pending");
   }
 
-  // 获取所有套餐（包括标签和包含内容）
+  // 获取该商家的所有套餐（包括标签和包含内容）
   const allPlans = await prisma.rentalPlan.findMany({
+    where: {
+      merchantId: merchant.id,
+    },
     orderBy: [
       { isFeatured: "desc" },
       { createdAt: "desc" },

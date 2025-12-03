@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     // 生成 slug（使用名称的拼音或简化版本，这里用时间戳简化）
     const slug = `plan-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
-    // 创建套餐
+    // 创建套餐（关联到当前商家）
     const newPlan = await prisma.rentalPlan.create({
       data: {
         slug,
@@ -79,6 +79,9 @@ export async function POST(request: Request) {
         availableUntil: validatedData.availableUntil
           ? new Date(validatedData.availableUntil)
           : null,
+        // 关联商家所有权
+        merchantId: merchant.id,
+        createdBy: session.user.id,
       },
     });
 
