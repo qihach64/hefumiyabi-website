@@ -3,28 +3,20 @@ import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-// 验证 schema
+// 验证 schema - 简化版
 const updatePlanSchema = z.object({
   name: z.string().min(1, "套餐名称不能为空"),
-  nameEn: z.string().optional().nullable().transform(val => val || ""),
   description: z.string().min(10, "描述至少需要10个字符"),
-  category: z.enum(["LADIES", "MENS", "COUPLE", "FAMILY", "GROUP", "SPECIAL"]),
+  highlights: z.string().optional().nullable(),
   price: z.number().int().positive("价格必须大于0"),
   originalPrice: z.number().int().positive().optional().nullable(),
-  depositAmount: z.number().int().nonnegative("押金不能为负数"),
-  duration: z.number().int().positive("时长必须大于0"),
   includes: z.array(z.string()),
-  imageUrl: z.union([z.string().url(), z.literal("")]).optional().nullable().transform(val => val || ""),
-  storeName: z.string().optional().nullable().transform(val => val || ""),
-  region: z.string().optional().nullable().transform(val => val || ""),
-  tags: z.array(z.string()), // 保留旧数据兼容性
+  imageUrl: z.union([z.string().url(), z.literal("")]).optional().nullable().transform(val => val || null),
+  storeName: z.string().optional().nullable(),
+  region: z.string().optional().nullable(),
+  themeId: z.string().optional().nullable(),
   tagIds: z.array(z.string()).optional(), // 新标签系统
   isActive: z.boolean(),
-  isFeatured: z.boolean(),
-  isLimited: z.boolean(),
-  maxBookings: z.number().int().positive().optional().nullable(),
-  availableFrom: z.union([z.string().datetime(), z.literal("")]).optional().nullable().transform(val => val || ""),
-  availableUntil: z.union([z.string().datetime(), z.literal("")]).optional().nullable().transform(val => val || ""),
 });
 
 // GET - 获取单个套餐详情
@@ -126,33 +118,21 @@ export async function PATCH(
 
     // 使用事务更新套餐和标签
     const result = await prisma.$transaction(async (tx) => {
-      // 更新套餐
+      // 更新套餐 - 简化字段
       const updatedPlan = await tx.rentalPlan.update({
         where: { id },
         data: {
           name: validatedData.name,
-          nameEn: validatedData.nameEn || null,
           description: validatedData.description,
-          category: validatedData.category,
+          highlights: validatedData.highlights || null,
           price: validatedData.price,
           originalPrice: validatedData.originalPrice || null,
-          depositAmount: validatedData.depositAmount,
-          duration: validatedData.duration,
           includes: validatedData.includes,
           imageUrl: validatedData.imageUrl || null,
           storeName: validatedData.storeName || null,
           region: validatedData.region || null,
-          tags: validatedData.tags,
+          themeId: validatedData.themeId || null,
           isActive: validatedData.isActive,
-          isFeatured: validatedData.isFeatured,
-          isLimited: validatedData.isLimited,
-          maxBookings: validatedData.maxBookings || null,
-          availableFrom: validatedData.availableFrom
-            ? new Date(validatedData.availableFrom)
-            : null,
-          availableUntil: validatedData.availableUntil
-            ? new Date(validatedData.availableUntil)
-            : null,
         },
       });
 
@@ -190,30 +170,14 @@ export async function PATCH(
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      console.error("=== ZOD VALIDATION ERROR ===");
-      console.error("Full error object:", error);
-      console.error("Error.errors:", error.errors);
-      console.error("JSON stringify:", JSON.stringify(error.errors, null, 2));
-
-      // Build error messages with defensive checks
-      let errorMessages = '验证失败';
-      if (error.errors && Array.isArray(error.errors) && error.errors.length > 0) {
-        errorMessages = error.errors
-          .map(err => {
-            const path = (err.path || []).join('.');
-            const msg = err.message || '未知错误';
-            return `${path}: ${msg}`;
-          })
-          .filter(msg => msg)
-          .join('; ') || '验证失败';
-      }
-
-      console.error("Final error message:", errorMessages);
+      const errorMessages = error.issues
+        .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
+        .join('; ');
 
       return NextResponse.json(
         {
           message: `数据验证失败: ${errorMessages}`,
-          errors: error.errors
+          errors: error.issues
         },
         { status: 400 }
       );

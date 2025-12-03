@@ -30,8 +30,8 @@ interface PlanCardProps {
     imageUrl?: string;
     storeName?: string;
     region?: string;
-    category: string;
-    duration: number;
+    category?: string;
+    duration?: number;
     isCampaign?: boolean;
     includes?: string[];
     planTags?: { tag: Tag }[];

@@ -13,26 +13,20 @@ interface Tag {
 interface PlanCardPreviewProps {
   formData: {
     name: string;
-    category: string;
+    description: string;
+    highlights: string;
     price: number; // 表单中是元
     originalPrice: number | string;
-    duration: number;
     includes: string[];
     imageUrl: string;
+    storeName: string;
+    region: string;
+    isActive: boolean;
   };
   selectedTags: Tag[];
   isActive: boolean;
   isCampaign?: boolean;
 }
-
-const PLAN_CATEGORIES: Record<string, string> = {
-  LADIES: "女士",
-  MENS: "男士",
-  COUPLE: "情侣",
-  FAMILY: "亲子",
-  GROUP: "团体",
-  SPECIAL: "特别",
-};
 
 export default function PlanCardPreview({
   formData,
@@ -44,18 +38,16 @@ export default function PlanCardPreview({
   const previewPlan = {
     id: 'preview',
     name: formData.name || '套餐名称',
-    category: formData.category,
     price: Math.round(Number(formData.price) * 100), // 转换为分
     originalPrice: formData.originalPrice
       ? Math.round(Number(formData.originalPrice) * 100)
       : undefined,
     imageUrl: formData.imageUrl || undefined,
-    duration: Math.round(formData.duration / 60), // 转换为小时
     includes: formData.includes,
     planTags: selectedTags.map(tag => ({ tag })),
     isCampaign,
-    storeName: undefined,
-    region: undefined,
+    storeName: formData.storeName || undefined,
+    region: formData.region || undefined,
   };
 
   return (

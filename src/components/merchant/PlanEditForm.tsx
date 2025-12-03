@@ -26,6 +26,14 @@ interface TagCategory {
   tags: Tag[];
 }
 
+interface Theme {
+  id: string;
+  slug: string;
+  name: string;
+  icon: string | null;
+  color: string | null;
+}
+
 interface PlanEditFormProps {
   plan: {
     id: string;
@@ -33,36 +41,23 @@ interface PlanEditFormProps {
     name: string;
     nameEn?: string | null;
     description: string;
+    highlights?: string | null;
     category: string;
     price: number;
     originalPrice?: number | null;
-    depositAmount: number;
-    duration: number;
     includes: string[];
     imageUrl?: string | null;
     storeName?: string | null;
     region?: string | null;
-    tags: string[]; // 保留旧数据兼容性
+    themeId?: string | null;
     planTags?: { tag: Tag }[]; // 新的标签系统
     isActive: boolean;
     isFeatured: boolean;
-    isLimited: boolean;
     isCampaign: boolean;
-    maxBookings?: number | null;
-    currentBookings: number;
-    availableFrom?: Date | null;
-    availableUntil?: Date | null;
   };
 }
 
-const PLAN_CATEGORIES = [
-  { value: "LADIES", label: "女士套餐" },
-  { value: "MENS", label: "男士套餐" },
-  { value: "COUPLE", label: "情侣套餐" },
-  { value: "FAMILY", label: "家庭套餐" },
-  { value: "GROUP", label: "团体套餐" },
-  { value: "SPECIAL", label: "特别套餐" },
-];
+// PLAN_CATEGORIES 已删除 - 使用 Theme 系统替代
 
 export default function PlanEditForm({ plan }: PlanEditFormProps) {
   const router = useRouter();
@@ -76,6 +71,10 @@ export default function PlanEditForm({ plan }: PlanEditFormProps) {
     plan.planTags?.map(pt => pt.tag.id) || []
   );
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+
+  // 主题系统
+  const [themes, setThemes] = useState<Theme[]>([]);
+  const [selectedThemeId, setSelectedThemeId] = useState<string | null>(plan.themeId || null);
 
   // 获取已选标签的完整信息（合并 plan.planTags 和 tagCategories）
   const getSelectedTags = (): Tag[] => {
@@ -93,9 +92,10 @@ export default function PlanEditForm({ plan }: PlanEditFormProps) {
     return uniqueTags;
   };
 
-  // 加载标签分类
+  // 加载标签分类和主题
   useEffect(() => {
     fetchTagCategories();
+    fetchThemes();
   }, []);
 
   async function fetchTagCategories() {
@@ -118,18 +118,29 @@ export default function PlanEditForm({ plan }: PlanEditFormProps) {
     }
   }
 
+  async function fetchThemes() {
+    try {
+      const response = await fetch('/api/themes');
+      if (response.ok) {
+        const data = await response.json();
+        setThemes(data.themes || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch themes:', error);
+    }
+  }
+
   // 表单状态
   const [formData, setFormData] = useState({
     name: plan.name,
     description: plan.description,
-    category: plan.category,
+    highlights: plan.highlights || "",
     price: plan.price / 100, // 转换为元
     originalPrice: plan.originalPrice ? plan.originalPrice / 100 : "",
-    depositAmount: plan.depositAmount / 100,
-    duration: plan.duration,
     includes: plan.includes,
     imageUrl: plan.imageUrl || "",
-    tags: plan.tags, // 保留旧数据兼容性
+    storeName: plan.storeName || "",
+    region: plan.region || "",
     isActive: plan.isActive,
   });
 
@@ -149,22 +160,20 @@ export default function PlanEditForm({ plan }: PlanEditFormProps) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          ...formData,
-          tagIds: selectedTagIds, // 使用新标签系统
+          name: formData.name,
+          description: formData.description,
+          highlights: formData.highlights || null,
           price: Math.round(Number(formData.price) * 100), // 转换为分
           originalPrice: formData.originalPrice
             ? Math.round(Number(formData.originalPrice) * 100)
             : null,
-          depositAmount: Math.round(Number(formData.depositAmount) * 100),
-          // 添加后端API需要的字段（商家不可控制，使用默认值）
-          isFeatured: false, // 精选由管理员控制
-          isLimited: false,  // 限量供应功能移除
-          maxBookings: null,
-          availableFrom: "",
-          availableUntil: "",
-          nameEn: "",
-          storeName: "",
-          region: "",
+          includes: formData.includes,
+          imageUrl: formData.imageUrl || null,
+          storeName: formData.storeName || null,
+          region: formData.region || null,
+          themeId: selectedThemeId,
+          tagIds: selectedTagIds,
+          isActive: formData.isActive,
         }),
       });
 
@@ -266,9 +275,9 @@ export default function PlanEditForm({ plan }: PlanEditFormProps) {
       <div className="bg-white rounded-2xl border border-gray-200 p-6">
         <h2 className="text-xl font-bold text-gray-900 mb-6">基本信息</h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-6">
           {/* 套餐名称 */}
-          <div className="md:col-span-2">
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               套餐名称 <span className="text-red-500">*</span>
             </label>
@@ -283,59 +292,113 @@ export default function PlanEditForm({ plan }: PlanEditFormProps) {
             />
           </div>
 
-          {/* 类别 */}
+          {/* 主题选择 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              套餐类别 <span className="text-red-500">*</span>
+              所属主题
             </label>
-            <select
-              required
-              value={formData.category}
-              onChange={(e) =>
-                setFormData({ ...formData, category: e.target.value })
-              }
-              className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sakura-500 focus:border-transparent"
-            >
-              {PLAN_CATEGORIES.map((cat) => (
-                <option key={cat.value} value={cat.value}>
-                  {cat.label}
-                </option>
-              ))}
-            </select>
+            <p className="text-xs text-gray-500 mb-2">选择套餐所属的主题分类，便于用户发现</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {themes.map((theme) => {
+                const isSelected = selectedThemeId === theme.id;
+                return (
+                  <button
+                    key={theme.id}
+                    type="button"
+                    onClick={() => setSelectedThemeId(isSelected ? null : theme.id)}
+                    className={`p-3 rounded-xl border-2 transition-all duration-200 text-left ${
+                      isSelected
+                        ? 'border-sakura-500 bg-sakura-50'
+                        : 'border-gray-200 hover:border-gray-300 bg-white'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      {theme.icon && <span className="text-xl">{theme.icon}</span>}
+                      <span className={`font-medium ${isSelected ? 'text-sakura-700' : 'text-gray-900'}`}>
+                        {theme.name}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            {themes.length === 0 && (
+              <p className="text-sm text-gray-500 py-4 text-center">加载主题中...</p>
+            )}
           </div>
 
-          {/* 时长 */}
+          {/* 描述 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              体验时长 (分钟) <span className="text-red-500">*</span>
+              套餐描述 <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              required
+              rows={4}
+              value={formData.description}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
+              placeholder="描述套餐的主要特点和服务内容"
+              className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sakura-500 focus:border-transparent resize-none"
+            />
+          </div>
+
+          {/* 核心卖点 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              核心卖点
             </label>
             <input
-              type="number"
-              required
-              min="1"
-              value={formData.duration}
+              type="text"
+              value={formData.highlights}
               onChange={(e) =>
-                setFormData({ ...formData, duration: Number(e.target.value) })
+                setFormData({ ...formData, highlights: e.target.value })
               }
+              placeholder="例如：含专业跟拍、适合网红打卡"
+              className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sakura-500 focus:border-transparent"
+            />
+            <p className="text-xs text-gray-500 mt-1">简短的一句话卖点，突出套餐最大亮点</p>
+          </div>
+        </div>
+      </div>
+
+      {/* 店铺信息 */}
+      <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-6">店铺信息</h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* 店铺名称 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              店铺名称
+            </label>
+            <input
+              type="text"
+              value={formData.storeName}
+              onChange={(e) =>
+                setFormData({ ...formData, storeName: e.target.value })
+              }
+              placeholder="例如：浅草本店"
               className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sakura-500 focus:border-transparent"
             />
           </div>
-        </div>
 
-        {/* 描述 */}
-        <div className="mt-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            套餐描述 <span className="text-red-500">*</span>
-          </label>
-          <textarea
-            required
-            rows={5}
-            value={formData.description}
-            onChange={(e) =>
-              setFormData({ ...formData, description: e.target.value })
-            }
-            className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sakura-500 focus:border-transparent resize-none"
-          />
+          {/* 地区 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              所在地区
+            </label>
+            <input
+              type="text"
+              value={formData.region}
+              onChange={(e) =>
+                setFormData({ ...formData, region: e.target.value })
+              }
+              placeholder="例如：东京浅草、京都祇园"
+              className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sakura-500 focus:border-transparent"
+            />
+          </div>
         </div>
       </div>
 
@@ -343,7 +406,7 @@ export default function PlanEditForm({ plan }: PlanEditFormProps) {
       <div className="bg-white rounded-2xl border border-gray-200 p-6">
         <h2 className="text-xl font-bold text-gray-900 mb-6">价格信息</h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* 当前价格 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -353,7 +416,7 @@ export default function PlanEditForm({ plan }: PlanEditFormProps) {
               type="number"
               required
               min="0"
-              step="0.01"
+              step="1"
               value={formData.price}
               onChange={(e) =>
                 setFormData({ ...formData, price: Number(e.target.value) })
@@ -370,7 +433,7 @@ export default function PlanEditForm({ plan }: PlanEditFormProps) {
             <input
               type="number"
               min="0"
-              step="0.01"
+              step="1"
               value={formData.originalPrice}
               onChange={(e) =>
                 setFormData({ ...formData, originalPrice: e.target.value })
@@ -378,27 +441,7 @@ export default function PlanEditForm({ plan }: PlanEditFormProps) {
               placeholder="可选，用于显示折扣"
               className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sakura-500 focus:border-transparent"
             />
-          </div>
-
-          {/* 押金 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              押金 (¥) <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="number"
-              required
-              min="0"
-              step="0.01"
-              value={formData.depositAmount}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  depositAmount: Number(e.target.value),
-                })
-              }
-              className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sakura-500 focus:border-transparent"
-            />
+            <p className="text-xs text-gray-500 mt-1">设置原价后将显示折扣标签</p>
           </div>
         </div>
       </div>

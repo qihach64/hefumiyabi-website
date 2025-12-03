@@ -30,10 +30,19 @@ export default async function EditListingPage({ params }: EditListingPageProps) 
     redirect("/merchant/dashboard");
   }
 
-  // 获取套餐信息（包含标签关联）
+  // 获取套餐信息（包含标签关联和主题）
   const plan = await prisma.rentalPlan.findUnique({
     where: { id },
     include: {
+      theme: {
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+          icon: true,
+          color: true,
+        },
+      },
       planTags: {
         include: {
           tag: {

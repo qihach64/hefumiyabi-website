@@ -94,12 +94,14 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const errorMessages = error.errors.map(err => `${err.path.join('.')}: ${err.message}`).join('; ');
-      console.error("数据验证失败:", error.errors);
+      const errorMessages = error.issues
+        .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
+        .join('; ');
+
       return NextResponse.json(
         {
           message: `数据验证失败: ${errorMessages}`,
-          errors: error.errors
+          errors: error.issues
         },
         { status: 400 }
       );
