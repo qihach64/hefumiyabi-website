@@ -84,36 +84,31 @@ function SearchClientInner({
 }: SearchClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { searchState, setTheme } = useSearchState();
+  const { isSearching, pendingTheme, startSearch, finishSearch } = useSearchState();
   const [isPending, startTransition] = useTransition();
-  const [pendingTheme, setPendingTheme] = useState<Theme | null | undefined>(undefined);
 
   // 使用 URL 作为真正的数据源来检测外部导航
-  // 当 URL 中的 theme 参数与当前服务端渲染的 theme 不同时，说明正在导航
   const urlThemeSlug = searchParams.get('theme');
   const currentThemeSlug = currentTheme?.slug;
+  const isUrlMismatch = urlThemeSlug !== (currentThemeSlug || null);
 
-  // 外部导航检测：URL 参数与服务端数据不匹配
-  // 这发生在 HeaderSearchBar 更新 URL 但服务端数据还未更新时
-  const isExternalNavigation = urlThemeSlug !== (currentThemeSlug || null);
+  // 检查 pendingTheme 是否与服务端数据匹配（表示加载完成）
+  const pendingThemeSlug = pendingTheme?.slug ?? (pendingTheme === null ? null : undefined);
+  const isPendingComplete = pendingTheme !== undefined && pendingThemeSlug === (currentThemeSlug || null);
 
-  // 当外部导航发生时，更新 pendingTheme 用于显示即将切换到的主题
+  // 统一的加载状态：本地 transition + 全局 isSearching + URL 不匹配
+  const isLoading = isPending || isSearching || isUrlMismatch;
+
+  // 当 pendingTheme 与服务端数据匹配时（表示加载完成），重置全局搜索状态
   useEffect(() => {
-    if (isExternalNavigation) {
-      if (urlThemeSlug) {
-        // 从 themes 列表中查找即将切换到的主题
-        const targetTheme = themes.find(t => t.slug === urlThemeSlug);
-        if (targetTheme) {
-          setPendingTheme(targetTheme);
-        }
-      } else {
-        // urlThemeSlug 为 null，表示切换到"全部"
-        setPendingTheme(null);
-      }
-    } else {
-      setPendingTheme(undefined);
+    if (isPendingComplete) {
+      finishSearch();
     }
-  }, [isExternalNavigation, urlThemeSlug, themes]);
+  }, [isPendingComplete, finishSearch]);
+
+  // 计算显示的主题：如果有 pendingTheme（正在切换），立即显示 pendingTheme；否则显示当前主题
+  // pendingTheme !== undefined 表示有正在进行的切换
+  const displayTheme = pendingTheme !== undefined ? pendingTheme : currentTheme;
 
   // ========== 客户端筛选状态 ==========
   // 这些状态用于前端即时过滤，不触发后端请求
@@ -201,8 +196,8 @@ function SearchClientInner({
 
   // ========== 主题切换（需要服务端重新查询）==========
   const handleThemeChange = (theme: Theme | null) => {
-    setTheme(theme);
-    setPendingTheme(theme); // 设置正在切换到的主题
+    // 使用统一的 startSearch 设置全局加载状态
+    startSearch(theme);
 
     // 主题切换需要后端重新过滤，使用 router.push
     const params = new URLSearchParams(searchParams.toString());
@@ -278,7 +273,7 @@ function SearchClientInner({
             themes={themes}
             selectedTheme={currentTheme || null}
             onSelect={handleThemeChange}
-            isPending={isPending || isExternalNavigation}
+            isPending={isLoading}
             pendingTheme={pendingTheme}
           />
         </div>
@@ -287,65 +282,57 @@ function SearchClientInner({
       {/* 搜索结果内容 */}
       <div className="container py-8">
         {/* 搜索摘要 + 移动端筛选按钮 */}
-        {(() => {
-          // 显示的主题：优先显示 pending 主题（切换中），否则显示当前主题
-          const isLoading = isPending || isExternalNavigation;
-          const displayTheme = isLoading ? pendingTheme : currentTheme;
-
-          return (
-            <div className="mb-6 flex items-start justify-between gap-4">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                  {displayTheme ? (
-                    <span className="flex items-center gap-2">
-                      {displayTheme.icon && (
-                        <span className="text-3xl">{displayTheme.icon}</span>
-                      )}
-                      {displayTheme.name}
-                    </span>
-                  ) : (
-                    "探索和服体验"
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              {displayTheme ? (
+                <span className="flex items-center gap-2">
+                  {displayTheme.icon && (
+                    <span className="text-3xl">{displayTheme.icon}</span>
                   )}
-                </h1>
-                <p className="text-gray-600">
-                  {displayTheme?.description || "发现适合你的和服租赁套餐"}
-                </p>
-                <p className="text-sm text-gray-500 mt-2">
-                  {isLoading ? (
-                    <span className="inline-flex items-center gap-2">
-                      <span className="h-4 w-20 bg-gray-200 rounded animate-pulse inline-block" />
+                  {displayTheme.name}
+                </span>
+              ) : (
+                "探索和服体验"
+              )}
+            </h1>
+            <p className="text-gray-600">
+              {displayTheme?.description || "发现适合你的和服租赁套餐"}
+            </p>
+            <p className="text-sm text-gray-500 mt-2">
+              {isLoading ? (
+                <span className="inline-flex items-center gap-2">
+                  <span className="h-4 w-20 bg-gray-200 rounded animate-pulse inline-block" />
+                </span>
+              ) : (
+                <>
+                  共{" "}
+                  <span className="font-semibold text-gray-900">{filteredAndSortedPlans.length}</span>{" "}
+                  个套餐
+                  {activeFiltersCount > 0 && allPlans.length !== filteredAndSortedPlans.length && (
+                    <span className="text-gray-400">
+                      {" "}（已从 {allPlans.length} 个中筛选）
                     </span>
-                  ) : (
-                    <>
-                      共{" "}
-                      <span className="font-semibold text-gray-900">{filteredAndSortedPlans.length}</span>{" "}
-                      个套餐
-                      {activeFiltersCount > 0 && allPlans.length !== filteredAndSortedPlans.length && (
-                        <span className="text-gray-400">
-                          {" "}（已从 {allPlans.length} 个中筛选）
-                        </span>
-                      )}
-                    </>
                   )}
-                </p>
-              </div>
+                </>
+              )}
+            </p>
+          </div>
 
-              {/* 移动端筛选按钮 */}
-              <button
-                onClick={() => setMobileFilterOpen(true)}
-                className="lg:hidden flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-full shadow-sm hover:bg-gray-50 transition-colors"
-              >
-                <SlidersHorizontal className="w-4 h-4" />
-                <span className="text-sm font-medium">筛选</span>
-                {activeFiltersCount > 0 && (
-                  <span className="bg-sakura-500 text-white text-xs font-medium px-2 py-0.5 rounded-full">
-                    {activeFiltersCount}
-                  </span>
-                )}
-              </button>
-            </div>
-          );
-        })()}
+          {/* 移动端筛选按钮 */}
+          <button
+            onClick={() => setMobileFilterOpen(true)}
+            className="lg:hidden flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-full shadow-sm hover:bg-gray-50 transition-colors"
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+            <span className="text-sm font-medium">筛选</span>
+            {activeFiltersCount > 0 && (
+              <span className="bg-sakura-500 text-white text-xs font-medium px-2 py-0.5 rounded-full">
+                {activeFiltersCount}
+              </span>
+            )}
+          </button>
+        </div>
 
         {/* 主内容区：侧边栏 + 套餐列表 */}
         <div className="flex gap-8">
@@ -368,8 +355,8 @@ function SearchClientInner({
 
           {/* 套餐列表 */}
           <div className="flex-1 min-w-0">
-            {/* 加载中骨架屏 - 内部或外部导航时显示 */}
-            {(isPending || isExternalNavigation) && (
+            {/* 加载中骨架屏 - 统一使用 isLoading */}
+            {isLoading && (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
                 {[...Array(9)].map((_, i) => (
                   <PlanCardSkeleton key={i} />
@@ -378,7 +365,7 @@ function SearchClientInner({
             )}
 
             {/* 无结果提示 */}
-            {!isPending && !isExternalNavigation && filteredAndSortedPlans.length === 0 && (
+            {!isLoading && filteredAndSortedPlans.length === 0 && (
               <div className="text-center py-20">
                 <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gray-100 flex items-center justify-center">
                   <Search className="w-10 h-10 text-gray-400" />
@@ -409,7 +396,7 @@ function SearchClientInner({
             )}
 
             {/* 套餐网格 - Airbnb 风格大卡片 */}
-            {!isPending && !isExternalNavigation && filteredAndSortedPlans.length > 0 && (
+            {!isLoading && filteredAndSortedPlans.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
                 {filteredAndSortedPlans.map((plan) => (
                   <div key={plan.id} className="search-plan-card">

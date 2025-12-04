@@ -16,7 +16,7 @@ interface Theme {
 
 export default function HeaderSearchBar() {
   const router = useRouter();
-  const { searchState, setLocation, setDate, setTheme } = useSearchState();
+  const { searchState, setLocation, setDate, setTheme, startSearch, isSearching } = useSearchState();
   const { isSearchBarExpanded, expandManually } = useSearchBar();
   const [isPending, startTransition] = useTransition();
 
@@ -164,6 +164,9 @@ export default function HeaderSearchBar() {
 
     const queryString = params.toString();
     const url = queryString ? `/search?${queryString}` : '/search';
+
+    // 使用统一的 startSearch 设置全局加载状态
+    startSearch(searchState.theme);
 
     // 使用 startTransition 让按钮显示 loading 状态
     startTransition(() => {
@@ -458,11 +461,11 @@ export default function HeaderSearchBar() {
         {/* 搜索按钮 */}
         <button
           onClick={handleSearch}
-          disabled={isPending}
+          disabled={isPending || isSearching}
           className="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-sakura-500 hover:bg-sakura-600 disabled:bg-sakura-400 rounded-full shadow-md hover:shadow-lg active:scale-95 disabled:active:scale-100 transition-all duration-200 cursor-pointer"
           aria-label="搜索"
         >
-          {isPending ? (
+          {isPending || isSearching ? (
             <Loader2 className="w-5 h-5 text-white animate-spin" />
           ) : (
             <Search className="w-5 h-5 text-white" />

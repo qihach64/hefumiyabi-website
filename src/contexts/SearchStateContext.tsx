@@ -22,6 +22,11 @@ interface SearchStateContextType {
   setDate: (date: string) => void;
   setTheme: (theme: Theme | null) => void;
   resetSearchState: () => void;
+  // 统一的搜索加载状态管理
+  isSearching: boolean;
+  pendingTheme: Theme | null | undefined; // undefined = 未在加载, null = 切换到"全部", Theme = 切换到特定主题
+  startSearch: (targetTheme: Theme | null) => void; // 开始搜索，设置 pending 状态
+  finishSearch: () => void; // 完成搜索，清除 pending 状态
 }
 
 const SearchStateContext = createContext<SearchStateContextType | undefined>(undefined);
@@ -36,18 +41,19 @@ function SearchStateProviderInner({ children }: { children: ReactNode }) {
     theme: null, // 会通过 API 获取完整的 theme 对象
   }));
 
+  // 统一的搜索加载状态
+  const [isSearching, setIsSearching] = useState(false);
+  const [pendingTheme, setPendingTheme] = useState<Theme | null | undefined>(undefined);
+
   // 只在组件挂载时从 URL 初始化主题
-  // 使用 ref 追踪是否已经初始化，避免重复获取
   const initializedRef = useState({ done: false })[0];
 
   useEffect(() => {
-    // 只在首次挂载时从 URL 同步主题
     if (initializedRef.done) return;
 
     const themeSlug = searchParams.get('theme');
 
     if (themeSlug) {
-      // 从 API 获取 theme 详情
       fetch('/api/themes')
         .then(res => res.json())
         .then(data => {
@@ -90,6 +96,20 @@ function SearchStateProviderInner({ children }: { children: ReactNode }) {
     });
   };
 
+  // 开始搜索 - 任何组件调用搜索时都应该调用这个
+  const startSearch = (targetTheme: Theme | null) => {
+    setIsSearching(true);
+    setPendingTheme(targetTheme);
+    // 同时更新 searchState.theme，保持状态同步
+    setTheme(targetTheme);
+  };
+
+  // 完成搜索 - SearchClient 在页面加载完成后调用
+  const finishSearch = () => {
+    setIsSearching(false);
+    setPendingTheme(undefined);
+  };
+
   return (
     <SearchStateContext.Provider
       value={{
@@ -98,6 +118,10 @@ function SearchStateProviderInner({ children }: { children: ReactNode }) {
         setDate,
         setTheme,
         resetSearchState,
+        isSearching,
+        pendingTheme,
+        startSearch,
+        finishSearch,
       }}
     >
       {children}
@@ -120,6 +144,10 @@ export function SearchStateProvider({ children }: { children: ReactNode }) {
           setDate: () => {},
           setTheme: () => {},
           resetSearchState: () => {},
+          isSearching: false,
+          pendingTheme: undefined,
+          startSearch: () => {},
+          finishSearch: () => {},
         }}
       >
         {children}

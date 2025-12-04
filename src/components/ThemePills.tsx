@@ -77,9 +77,13 @@ export default function ThemePills({
       >
         {/* 全部选项 */}
         {(() => {
-          const isLoadingThis = isPending && pendingTheme === null;
-          const isSelected = !selectedTheme && !isPending;
-          const willBeSelected = isPending && pendingTheme === null;
+          // pendingTheme !== undefined 表示有正在进行的切换
+          const hasPendingSwitch = isPending && pendingTheme !== undefined;
+          const isLoadingThis = hasPendingSwitch && pendingTheme === null;
+          // 选中逻辑：如果有 pending 切换，用 pendingTheme；否则用 selectedTheme
+          const isSelected = hasPendingSwitch
+            ? pendingTheme === null
+            : !selectedTheme;
           return (
             <button
               onClick={() => onSelect(null)}
@@ -87,7 +91,7 @@ export default function ThemePills({
                 flex-shrink-0 px-4 py-2.5 rounded-full text-sm font-medium whitespace-nowrap
                 transition-all duration-300 border-2
                 ${
-                  isSelected || willBeSelected
+                  isSelected
                     ? "bg-sakura-500 text-white border-sakura-500 shadow-sm"
                     : "bg-white text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                 }
@@ -107,9 +111,13 @@ export default function ThemePills({
 
         {/* 主题选项 */}
         {themes.map((theme) => {
-          const isLoadingThis = isPending && pendingTheme?.id === theme.id;
-          const isSelected = selectedTheme?.id === theme.id && !isPending;
-          const willBeSelected = isPending && pendingTheme?.id === theme.id;
+          // pendingTheme !== undefined 表示有正在进行的切换
+          const hasPendingSwitch = isPending && pendingTheme !== undefined;
+          const isLoadingThis = hasPendingSwitch && pendingTheme?.id === theme.id;
+          // 选中逻辑：如果有 pending 切换，用 pendingTheme；否则用 selectedTheme
+          const isSelected = hasPendingSwitch
+            ? pendingTheme?.id === theme.id
+            : selectedTheme?.id === theme.id;
           return (
             <button
               key={theme.id}
@@ -118,7 +126,7 @@ export default function ThemePills({
                 flex-shrink-0 px-4 py-2.5 rounded-full text-sm font-medium whitespace-nowrap
                 transition-all duration-300 border-2
                 ${
-                  isSelected || willBeSelected
+                  isSelected
                     ? "bg-sakura-500 text-white border-sakura-500 shadow-sm"
                     : "bg-white text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                 }
