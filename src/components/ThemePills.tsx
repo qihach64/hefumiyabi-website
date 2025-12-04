@@ -83,14 +83,13 @@ export default function ThemePills({
           return (
             <button
               onClick={() => onSelect(null)}
-              disabled={isPending}
               className={`
                 flex-shrink-0 px-4 py-2.5 rounded-full text-sm font-medium whitespace-nowrap
                 transition-all duration-300 border-2
                 ${
                   isSelected || willBeSelected
                     ? "bg-sakura-500 text-white border-sakura-500 shadow-sm"
-                    : "bg-white text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-50 disabled:hover:bg-white disabled:hover:border-gray-200"
+                    : "bg-white text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                 }
               `}
             >
@@ -115,14 +114,13 @@ export default function ThemePills({
             <button
               key={theme.id}
               onClick={() => onSelect(theme)}
-              disabled={isPending}
               className={`
                 flex-shrink-0 px-4 py-2.5 rounded-full text-sm font-medium whitespace-nowrap
                 transition-all duration-300 border-2
                 ${
                   isSelected || willBeSelected
                     ? "bg-sakura-500 text-white border-sakura-500 shadow-sm"
-                    : "bg-white text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-50 disabled:hover:bg-white disabled:hover:border-gray-200"
+                    : "bg-white text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                 }
               `}
             >

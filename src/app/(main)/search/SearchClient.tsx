@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState, useCallback, useMemo, useTransition, useEffect, useRef } from "react";
+import { Suspense, useState, useCallback, useMemo, useTransition, useEffect } from "react";
 import PlanCard from "@/components/PlanCard";
 import ThemePills from "@/components/ThemePills";
 import SearchFilterSidebar from "@/components/search/SearchFilterSidebar";
@@ -88,31 +88,32 @@ function SearchClientInner({
   const [isPending, startTransition] = useTransition();
   const [pendingTheme, setPendingTheme] = useState<Theme | null | undefined>(undefined);
 
-  // 追踪上一次的 currentTheme，用于检测外部主题变化
-  const prevThemeRef = useRef<Theme | null | undefined>(currentTheme);
-  const [isExternalNavigation, setIsExternalNavigation] = useState(false);
+  // 使用 URL 作为真正的数据源来检测外部导航
+  // 当 URL 中的 theme 参数与当前服务端渲染的 theme 不同时，说明正在导航
+  const urlThemeSlug = searchParams.get('theme');
+  const currentThemeSlug = currentTheme?.slug;
 
-  // 监听 searchState.theme 变化（来自 HeaderSearchBar 的主题切换）
-  // 当全局状态的主题与当前页面的主题不同时，显示骨架屏
+  // 外部导航检测：URL 参数与服务端数据不匹配
+  // 这发生在 HeaderSearchBar 更新 URL 但服务端数据还未更新时
+  const isExternalNavigation = urlThemeSlug !== (currentThemeSlug || null);
+
+  // 当外部导航发生时，更新 pendingTheme 用于显示即将切换到的主题
   useEffect(() => {
-    const globalThemeId = searchState.theme?.id;
-    const currentThemeId = currentTheme?.id;
-
-    // 如果全局主题与当前页面主题不同，说明有外部导航正在进行
-    if (globalThemeId !== currentThemeId) {
-      setIsExternalNavigation(true);
-      setPendingTheme(searchState.theme);
-    }
-  }, [searchState.theme, currentTheme]);
-
-  // 当 currentTheme 变化时（页面重新渲染后），重置外部导航状态
-  useEffect(() => {
-    if (prevThemeRef.current?.id !== currentTheme?.id) {
-      setIsExternalNavigation(false);
+    if (isExternalNavigation) {
+      if (urlThemeSlug) {
+        // 从 themes 列表中查找即将切换到的主题
+        const targetTheme = themes.find(t => t.slug === urlThemeSlug);
+        if (targetTheme) {
+          setPendingTheme(targetTheme);
+        }
+      } else {
+        // urlThemeSlug 为 null，表示切换到"全部"
+        setPendingTheme(null);
+      }
+    } else {
       setPendingTheme(undefined);
-      prevThemeRef.current = currentTheme;
     }
-  }, [currentTheme]);
+  }, [isExternalNavigation, urlThemeSlug, themes]);
 
   // ========== 客户端筛选状态 ==========
   // 这些状态用于前端即时过滤，不触发后端请求
@@ -286,49 +287,65 @@ function SearchClientInner({
       {/* 搜索结果内容 */}
       <div className="container py-8">
         {/* 搜索摘要 + 移动端筛选按钮 */}
-        <div className="mb-6 flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              {currentTheme ? (
-                <span className="flex items-center gap-2">
-                  {currentTheme.icon && (
-                    <span className="text-3xl">{currentTheme.icon}</span>
-                  )}
-                  {currentTheme.name}
-                </span>
-              ) : (
-                "探索和服体验"
-              )}
-            </h1>
-            <p className="text-gray-600">
-              {currentTheme?.description || "发现适合你的和服租赁套餐"}
-            </p>
-            <p className="text-sm text-gray-500 mt-2">
-              共{" "}
-              <span className="font-semibold text-gray-900">{filteredAndSortedPlans.length}</span>{" "}
-              个套餐
-              {activeFiltersCount > 0 && allPlans.length !== filteredAndSortedPlans.length && (
-                <span className="text-gray-400">
-                  {" "}（已从 {allPlans.length} 个中筛选）
-                </span>
-              )}
-            </p>
-          </div>
+        {(() => {
+          // 显示的主题：优先显示 pending 主题（切换中），否则显示当前主题
+          const isLoading = isPending || isExternalNavigation;
+          const displayTheme = isLoading ? pendingTheme : currentTheme;
 
-          {/* 移动端筛选按钮 */}
-          <button
-            onClick={() => setMobileFilterOpen(true)}
-            className="lg:hidden flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-full shadow-sm hover:bg-gray-50 transition-colors"
-          >
-            <SlidersHorizontal className="w-4 h-4" />
-            <span className="text-sm font-medium">筛选</span>
-            {activeFiltersCount > 0 && (
-              <span className="bg-sakura-500 text-white text-xs font-medium px-2 py-0.5 rounded-full">
-                {activeFiltersCount}
-              </span>
-            )}
-          </button>
-        </div>
+          return (
+            <div className="mb-6 flex items-start justify-between gap-4">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                  {displayTheme ? (
+                    <span className="flex items-center gap-2">
+                      {displayTheme.icon && (
+                        <span className="text-3xl">{displayTheme.icon}</span>
+                      )}
+                      {displayTheme.name}
+                    </span>
+                  ) : (
+                    "探索和服体验"
+                  )}
+                </h1>
+                <p className="text-gray-600">
+                  {displayTheme?.description || "发现适合你的和服租赁套餐"}
+                </p>
+                <p className="text-sm text-gray-500 mt-2">
+                  {isLoading ? (
+                    <span className="inline-flex items-center gap-2">
+                      <span className="h-4 w-20 bg-gray-200 rounded animate-pulse inline-block" />
+                    </span>
+                  ) : (
+                    <>
+                      共{" "}
+                      <span className="font-semibold text-gray-900">{filteredAndSortedPlans.length}</span>{" "}
+                      个套餐
+                      {activeFiltersCount > 0 && allPlans.length !== filteredAndSortedPlans.length && (
+                        <span className="text-gray-400">
+                          {" "}（已从 {allPlans.length} 个中筛选）
+                        </span>
+                      )}
+                    </>
+                  )}
+                </p>
+              </div>
+
+              {/* 移动端筛选按钮 */}
+              <button
+                onClick={() => setMobileFilterOpen(true)}
+                className="lg:hidden flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-full shadow-sm hover:bg-gray-50 transition-colors"
+              >
+                <SlidersHorizontal className="w-4 h-4" />
+                <span className="text-sm font-medium">筛选</span>
+                {activeFiltersCount > 0 && (
+                  <span className="bg-sakura-500 text-white text-xs font-medium px-2 py-0.5 rounded-full">
+                    {activeFiltersCount}
+                  </span>
+                )}
+              </button>
+            </div>
+          );
+        })()}
 
         {/* 主内容区：侧边栏 + 套餐列表 */}
         <div className="flex gap-8">
