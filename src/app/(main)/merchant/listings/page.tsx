@@ -47,6 +47,15 @@ export default async function MerchantListingsPage() {
       createdAt: true,
       duration: true,
       includes: true,
+      themeId: true,
+      theme: {
+        select: {
+          id: true,
+          name: true,
+          icon: true,
+          color: true,
+        },
+      },
       planTags: {
         include: {
           tag: {
@@ -63,5 +72,47 @@ export default async function MerchantListingsPage() {
     },
   });
 
-  return <ListingsClient plans={allPlans} merchantId={merchant.id} />;
+  // 获取所有可用的主题
+  const themes = await prisma.theme.findMany({
+    where: { isActive: true },
+    orderBy: { displayOrder: "asc" },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      icon: true,
+      color: true,
+    },
+  });
+
+  // 获取所有可用的标签（按分类分组）
+  const tagCategories = await prisma.tagCategory.findMany({
+    where: { isActive: true },
+    orderBy: { order: "asc" },
+    select: {
+      id: true,
+      name: true,
+      code: true,
+      tags: {
+        where: { isActive: true },
+        orderBy: { order: "asc" },
+        select: {
+          id: true,
+          code: true,
+          name: true,
+          icon: true,
+          color: true,
+        },
+      },
+    },
+  });
+
+  return (
+    <ListingsClient
+      plans={allPlans}
+      merchantId={merchant.id}
+      themes={themes}
+      tagCategories={tagCategories}
+    />
+  );
 }

@@ -69,72 +69,29 @@ interface RentalPlan {
   currentBookings?: number;
   availableFrom?: Date | string;
   availableUntil?: Date | string;
+  themeId?: string;
 }
 
-interface CategorySection {
+interface ThemeSection {
   id: string;
+  slug: string;
   icon: string;
   label: string;
   description: string;
+  color: string;
   plans: RentalPlan[];
-  isRecommended?: boolean; // 标记是否为推荐分区
 }
 
 interface HomeClientProps {
-  categorySections: CategorySection[];
+  themeSections: ThemeSection[];
   allPlans: RentalPlan[];
   campaigns: Campaign[];
   stores: Store[];
   tagCategories: TagCategory[];
 }
 
-// 根据性别和年龄获取推荐分类
-interface GuestsBreakdown {
-  men: number;
-  women: number;
-  children: number;
-}
-
-function getRecommendedCategories(
-  totalGuests: number,
-  breakdown?: GuestsBreakdown
-): string[] {
-  if (breakdown) {
-    const { men, women, children } = breakdown;
-    const adults = men + women;
-
-    if (men === 1 && women === 1 && children === 0) return ['COUPLE'];
-    if (children > 0) return ['FAMILY'];
-    if (adults >= 5) return ['GROUP'];
-    if (women === 1 && men === 0 && children === 0) return ['LADIES'];
-    if (men === 1 && women === 0 && children === 0) return ['MENS'];
-    if (women >= 2 && men === 0 && children === 0) return ['LADIES', 'GROUP'];
-    if (men >= 2 && women === 0 && children === 0) return ['MENS', 'GROUP'];
-    if (adults >= 3 && adults <= 4 && children === 0) return ['GROUP', 'SPECIAL'];
-    return ['SPECIAL'];
-  }
-
-  if (totalGuests === 1) return ['LADIES', 'MENS'];
-  if (totalGuests === 2) return ['COUPLE'];
-  if (totalGuests >= 3 && totalGuests <= 4) return ['FAMILY'];
-  if (totalGuests >= 5) return ['GROUP'];
-  return [];
-}
-
-function getCategoryName(category: string): string {
-  const names: Record<string, string> = {
-    'LADIES': '女士和服',
-    'MENS': '男士和服',
-    'COUPLE': '情侣套餐',
-    'FAMILY': '亲子套餐',
-    'GROUP': '团体套餐',
-    'SPECIAL': '特别套餐',
-  };
-  return names[category] || category;
-}
-
 export default function HomeClient({
-  categorySections,
+  themeSections,
   allPlans,
   campaigns,
   stores,
@@ -146,10 +103,6 @@ export default function HomeClient({
   // 搜索参数
   const searchLocation = searchParams.get('location') || '';
   const searchDate = searchParams.get('date') || '';
-  const guestsNum = parseInt(searchParams.get('guests') || '0');
-  const menNum = parseInt(searchParams.get('men') || '0');
-  const womenNum = parseInt(searchParams.get('women') || '0');
-  const childrenNum = parseInt(searchParams.get('children') || '0');
 
   // 过滤器状态
   const [selectedStoreId, setSelectedStoreId] = useState<string>('');
@@ -206,19 +159,7 @@ export default function HomeClient({
   }, [searchParams, isSearching, searchTarget, stopSearch]);
 
   // 判断是否处于"搜索模式"
-  const isSearchMode = !!(searchLocation || searchDate || guestsNum > 0 || selectedStoreId || selectedRegion || selectedTagIds.length > 0);
-
-  // 推荐分类
-  const recommendedCategories = useMemo(() => {
-    if (guestsNum > 0) {
-      return getRecommendedCategories(guestsNum, {
-        men: menNum,
-        women: womenNum,
-        children: childrenNum,
-      });
-    }
-    return [];
-  }, [guestsNum, menNum, womenNum, childrenNum]);
+  const isSearchMode = !!(searchLocation || searchDate || selectedStoreId || selectedRegion || selectedTagIds.length > 0);
 
   // 过滤套餐逻辑
   const filteredPlans = useMemo(() => {
@@ -254,61 +195,13 @@ export default function HomeClient({
     });
   }, [allPlans, searchLocation, selectedStoreId, selectedRegion, selectedTagIds, stores]);
 
-  // 推荐套餐
-  const recommendedPlans = useMemo(() => {
-    if (recommendedCategories.length === 0) return [];
-    return filteredPlans.filter((plan) => recommendedCategories.includes(plan.category));
-  }, [filteredPlans, recommendedCategories]);
-
-  // 其他套餐
-  const otherPlans = useMemo(() => {
-    if (recommendedCategories.length === 0) return filteredPlans;
-    return filteredPlans.filter((plan) => !recommendedCategories.includes(plan.category));
-  }, [filteredPlans, recommendedCategories]);
-
-  // 搜索模式的分类sections（按分类分组,推荐置顶）
-  const searchCategorySections = useMemo(() => {
-    const sections: CategorySection[] = [];
-
-    // 1. 推荐分区
-    if (recommendedPlans.length > 0 && recommendedCategories.length > 0) {
-      recommendedCategories.forEach(categoryId => {
-        const categoryInfo = categorySections.find(c => c.id === categoryId);
-        const categoryPlans = recommendedPlans.filter(p => p.category === categoryId);
-
-        if (categoryInfo && categoryPlans.length > 0) {
-          sections.push({
-            ...categoryInfo,
-            plans: categoryPlans,
-            isRecommended: true, // 标记为推荐
-          });
-        }
-      });
-    }
-
-    // 2. 其他分类（按 category 分组）
-    const categoryMap = new Map<string, typeof filteredPlans>();
-    otherPlans.forEach(plan => {
-      if (!categoryMap.has(plan.category)) {
-        categoryMap.set(plan.category, []);
-      }
-      categoryMap.get(plan.category)!.push(plan);
-    });
-
-    // 按照 categorySections 的顺序添加其他分类
-    categorySections.forEach(categoryInfo => {
-      const plans = categoryMap.get(categoryInfo.id);
-      if (plans && plans.length > 0) {
-        sections.push({
-          ...categoryInfo,
-          plans,
-          isRecommended: false,
-        });
-      }
-    });
-
-    return sections;
-  }, [filteredPlans, recommendedPlans, recommendedCategories, otherPlans, categorySections]);
+  // 搜索模式的 Theme Sections（按 themeId 分组）
+  const searchThemeSections = useMemo(() => {
+    return themeSections.map(section => ({
+      ...section,
+      plans: filteredPlans.filter(plan => plan.themeId === section.id),
+    })).filter(section => section.plans.length > 0);
+  }, [filteredPlans, themeSections]);
 
   // 地区列表
   const regions = useMemo(() => {
@@ -619,26 +512,17 @@ export default function HomeClient({
                   </div>
                 )}
 
-                {/* 分类sections（横向滚动） */}
-                {searchCategorySections.map((section, index) => (
+                {/* Theme sections（横向滚动） */}
+                {searchThemeSections.map((section, index) => (
                   <section
                     key={section.id}
-                    className={index < searchCategorySections.length - 1 ? "mb-6 md:mb-12" : ""}
+                    className={index < searchThemeSections.length - 1 ? "mb-6 md:mb-12" : ""}
                   >
-                    {/* 推荐徽章（如果是推荐分区） */}
-                    {section.isRecommended && (
-                      <div className="mb-3 px-4 lg:px-0">
-                        <Badge variant="warning" size="lg" className="shadow-lg">
-                          <span className="text-lg">⭐</span>
-                          为您推荐
-                        </Badge>
-                      </div>
-                    )}
-
                     <ScrollableSection
                       title={section.label}
                       description={section.description}
                       icon={section.icon}
+                      color={section.color}
                       scrollerClassName="flex gap-3 md:gap-4 overflow-x-auto scroll-smooth pb-4 -mb-4 scrollbar-hide snap-x snap-mandatory px-4 md:px-0"
                     >
                       {section.plans.map((plan) => (
@@ -657,30 +541,47 @@ export default function HomeClient({
           </div>
         </section>
       ) : (
-        /* 🏠 探索模式 - 分类横向滚动 */
+        /* 🏠 探索模式 - Theme 分类横向滚动 */
         <>
           <div className="py-6 md:py-12">
-            {categorySections.map((section, index) => (
+            {themeSections.map((section, index) => (
               <section
                 key={section.id}
-                className={index < categorySections.length - 1 ? "mb-6 md:mb-12" : ""}
+                className={index < themeSections.length - 1 ? "mb-6 md:mb-12" : ""}
               >
                 <div className="container">
-                  <ScrollableSection
-                    title={section.label}
-                    description={section.description}
-                    icon={section.icon}
-                    scrollerClassName="flex gap-3 md:gap-4 overflow-x-auto scroll-smooth pb-4 -mb-4 scrollbar-hide snap-x snap-mandatory px-4 md:px-0"
-                  >
-                    {section.plans.map((plan) => (
-                      <div
-                        key={plan.id}
-                        className="snap-start flex-shrink-0 w-[75vw] max-w-[280px] sm:w-[280px] md:w-[260px] lg:w-[280px]"
-                      >
-                        <PlanCard plan={plan} showMerchant={true} />
+                  {section.plans.length > 0 ? (
+                    <ScrollableSection
+                      title={section.label}
+                      description={section.description}
+                      icon={section.icon}
+                      color={section.color}
+                      scrollerClassName="flex gap-3 md:gap-4 overflow-x-auto scroll-smooth pb-4 -mb-4 scrollbar-hide snap-x snap-mandatory px-4 md:px-0"
+                    >
+                      {section.plans.map((plan) => (
+                        <div
+                          key={plan.id}
+                          className="snap-start flex-shrink-0 w-[75vw] max-w-[280px] sm:w-[280px] md:w-[260px] lg:w-[280px]"
+                        >
+                          <PlanCard plan={plan} showMerchant={true} />
+                        </div>
+                      ))}
+                    </ScrollableSection>
+                  ) : (
+                    /* 即将上线的 Theme */
+                    <div className="px-4 md:px-0">
+                      <div className="flex items-center gap-3 mb-4">
+                        <span className="text-2xl opacity-50">{section.icon}</span>
+                        <div>
+                          <h2 className="text-lg font-semibold text-gray-400">{section.label}</h2>
+                          <p className="text-sm text-gray-400">{section.description}</p>
+                        </div>
+                        <span className="ml-auto px-3 py-1 text-xs font-medium bg-gray-100 text-gray-500 rounded-full">
+                          即将上线
+                        </span>
                       </div>
-                    ))}
-                  </ScrollableSection>
+                    </div>
+                  )}
                 </div>
               </section>
             ))}

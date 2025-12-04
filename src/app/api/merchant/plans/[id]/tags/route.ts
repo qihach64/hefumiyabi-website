@@ -9,13 +9,25 @@ export async function GET(
 ) {
   try {
     const session = await auth();
-    if (!session?.user || (session.user.role !== 'MERCHANT' && session.user.role !== 'ADMIN')) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id: planId } = await params;
 
-    // Verify plan exists and belongs to merchant (unless admin)
+    // 获取商家信息
+    const merchant = await prisma.merchant.findUnique({
+      where: { ownerId: session.user.id },
+    });
+
+    if (!merchant || merchant.status !== 'APPROVED') {
+      return NextResponse.json(
+        { error: 'Merchant not found or not approved' },
+        { status: 403 }
+      );
+    }
+
+    // Verify plan exists and belongs to merchant
     const plan = await prisma.rentalPlan.findUnique({
       where: { id: planId },
       include: {
@@ -38,10 +50,12 @@ export async function GET(
       );
     }
 
-    // For merchants, verify ownership
-    if (session.user.role === 'MERCHANT') {
-      // TODO: Add merchantId check when merchant relationship is added to RentalPlan
-      // For now, allow all merchants to edit (will be restricted in production)
+    // 验证套餐所有权
+    if (plan.merchantId !== merchant.id) {
+      return NextResponse.json(
+        { error: 'You do not have permission to access this plan' },
+        { status: 403 }
+      );
     }
 
     // Get all active categories with their active tags
@@ -80,11 +94,24 @@ export async function PUT(
 ) {
   try {
     const session = await auth();
-    if (!session?.user || (session.user.role !== 'MERCHANT' && session.user.role !== 'ADMIN')) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id: planId } = await params;
+
+    // 获取商家信息
+    const merchant = await prisma.merchant.findUnique({
+      where: { ownerId: session.user.id },
+    });
+
+    if (!merchant || merchant.status !== 'APPROVED') {
+      return NextResponse.json(
+        { error: 'Merchant not found or not approved' },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     const { tagIds } = body;
 
@@ -98,6 +125,7 @@ export async function PUT(
     // Verify plan exists
     const plan = await prisma.rentalPlan.findUnique({
       where: { id: planId },
+      select: { id: true, merchantId: true },
     });
 
     if (!plan) {
@@ -107,9 +135,12 @@ export async function PUT(
       );
     }
 
-    // For merchants, verify ownership
-    if (session.user.role === 'MERCHANT') {
-      // TODO: Add merchantId check when merchant relationship is added to RentalPlan
+    // 验证套餐所有权
+    if (plan.merchantId !== merchant.id) {
+      return NextResponse.json(
+        { error: 'You do not have permission to modify this plan' },
+        { status: 403 }
+      );
     }
 
     // Verify all tag IDs are valid and active

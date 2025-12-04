@@ -4,16 +4,6 @@ import HomeClient from "./HomeClient";
 // 禁用静态生成,在运行时动态渲染
 export const dynamic = 'force-dynamic';
 
-// 分类配置
-export const categories = [
-  { id: "LADIES", icon: "👩", label: "女士和服", description: "优雅传统的女士和服体验" },
-  { id: "MENS", icon: "👨", label: "男士和服", description: "英俊潇洒的男士和服" },
-  { id: "COUPLE", icon: "💑", label: "情侣套餐", description: "浪漫的双人和服体验" },
-  { id: "FAMILY", icon: "👨‍👩‍👧‍👦", label: "亲子套餐", description: "全家共享和服之美" },
-  { id: "GROUP", icon: "👥", label: "团体套餐", description: "朋友结伴和服体验" },
-  { id: "SPECIAL", icon: "✨", label: "特别套餐", description: "独特主题和服体验" },
-];
-
 export default async function HomePage({
   searchParams,
 }: {
@@ -23,9 +13,20 @@ export default async function HomePage({
   const params = await searchParams;
   const searchLocation = typeof params.location === 'string' ? params.location : '';
 
-  // 构建 where 条件 - 根据搜索参数预过滤
-  const whereConditions: any = {
+  // 获取所有活跃的 Theme（按 displayOrder 排序）
+  const themes = await prisma.theme.findMany({
+    where: { isActive: true },
+    orderBy: { displayOrder: 'asc' },
+  });
+
+  // 构建 where 条件 - 只获取有 themeId 的套餐
+  const whereConditions: {
+    isActive: boolean;
+    themeId: { not: null };
+    region?: { contains: string };
+  } = {
     isActive: true,
+    themeId: { not: null },
   };
 
   // 如果有地点搜索，预过滤地区
@@ -35,10 +36,11 @@ export default async function HomePage({
     };
   }
 
-  // 获取租赁套餐(服务端预过滤 + 包括活动套餐、标签关联)
-  const allPlans = await prisma.rentalPlan.findMany({
+  // 获取有 Theme 的套餐
+  const themedPlans = await prisma.rentalPlan.findMany({
     where: whereConditions,
     include: {
+      theme: true,
       campaign: {
         select: {
           id: true,
@@ -69,15 +71,20 @@ export default async function HomePage({
     ],
   });
 
-  // 为每个分类筛选前8个套餐(用于探索模式)
-  const categorySections = categories.map((category) => {
-    const categoryPlans = allPlans
-      .filter((plan) => plan.category === category.id)
+  // 按 Theme 分组构建 sections
+  const themeSections = themes.map((theme) => {
+    const themePlans = themedPlans
+      .filter((plan) => plan.themeId === theme.id)
       .slice(0, 8);
 
     return {
-      ...category,
-      plans: categoryPlans.map((plan) => ({
+      id: theme.id,
+      slug: theme.slug,
+      icon: theme.icon || '',
+      label: theme.name,
+      description: theme.description || '',
+      color: theme.color || '',
+      plans: themePlans.map((plan) => ({
         id: plan.id,
         name: plan.name,
         nameEn: plan.nameEn,
@@ -94,7 +101,7 @@ export default async function HomePage({
         planTags: plan.planTags,
       })),
     };
-  }).filter(section => section.plans.length > 0);
+  }); // 保留所有 Theme（包括无套餐的，显示「即将上线」）
 
   // 获取所有活跃的优惠活动
   const activeCampaigns = await prisma.campaign.findMany({
@@ -144,7 +151,7 @@ export default async function HomePage({
   });
 
   // 转换所有套餐为客户端格式
-  const allPlansForClient = allPlans.map((plan) => ({
+  const allPlansForClient = themedPlans.map((plan) => ({
     id: plan.id,
     name: plan.name,
     nameEn: plan.nameEn,
@@ -167,11 +174,12 @@ export default async function HomePage({
     currentBookings: plan.currentBookings,
     availableFrom: plan.availableFrom?.toISOString(),
     availableUntil: plan.availableUntil?.toISOString(),
+    themeId: plan.themeId,
   }));
 
   return (
     <HomeClient
-      categorySections={categorySections}
+      themeSections={themeSections}
       allPlans={allPlansForClient}
       campaigns={activeCampaigns}
       stores={stores}

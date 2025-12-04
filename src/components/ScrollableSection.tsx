@@ -1,13 +1,24 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Camera, Crown, Users, Leaf, Footprints, Sparkles, LucideIcon } from "lucide-react";
 import HorizontalScroller, { HorizontalScrollerRef } from "./HorizontalScroller";
+
+// Lucide icon name to component mapping
+const iconMap: Record<string, LucideIcon> = {
+  Camera,
+  Crown,
+  Users,
+  Leaf,
+  Footprints,
+  Sparkles,
+};
 
 interface ScrollableSectionProps {
   title: string;
   description?: string;
   icon?: string;
+  color?: string; // Theme color for icon
   children: React.ReactNode;
   scrollerClassName?: string;
 }
@@ -16,6 +27,7 @@ export default function ScrollableSection({
   title,
   description,
   icon,
+  color,
   children,
   scrollerClassName = "",
 }: ScrollableSectionProps) {
@@ -33,7 +45,26 @@ export default function ScrollableSection({
       {/* 标题和按钮 */}
       <div className="flex items-center justify-between mb-3 md:mb-6 px-1">
         <div className="flex items-center gap-2 md:gap-3">
-          {icon && <span className="text-xl md:text-3xl">{icon}</span>}
+          {icon && (
+            iconMap[icon] ? (
+              (() => {
+                const IconComponent = iconMap[icon];
+                return (
+                  <div
+                    className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center"
+                    style={{ backgroundColor: color ? `${color}20` : '#f3f4f6' }}
+                  >
+                    <IconComponent
+                      className="w-4 h-4 md:w-5 md:h-5"
+                      style={{ color: color || '#6b7280' }}
+                    />
+                  </div>
+                );
+              })()
+            ) : (
+              <span className="text-xl md:text-3xl">{icon}</span>
+            )
+          )}
           <div>
             <h2 className="text-lg md:text-2xl font-semibold text-gray-900">
               {title}
