@@ -2,21 +2,25 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { GuestsDetail } from '@/components/GuestsDropdown';
+
+interface Theme {
+  id: string;
+  slug: string;
+  name: string;
+  icon: string | null;
+}
 
 interface SearchState {
   location: string;
   date: string;
-  guests: number;
-  guestsDetail: GuestsDetail;
+  theme: Theme | null;
 }
 
 interface SearchStateContextType {
   searchState: SearchState;
   setLocation: (location: string) => void;
   setDate: (date: string) => void;
-  setGuests: (guests: number) => void;
-  setGuestsDetail: (detail: GuestsDetail) => void;
+  setTheme: (theme: Theme | null) => void;
   resetSearchState: () => void;
 }
 
@@ -29,29 +33,42 @@ function SearchStateProviderInner({ children }: { children: ReactNode }) {
   const [searchState, setSearchState] = useState<SearchState>(() => ({
     location: searchParams.get('location') || '',
     date: searchParams.get('date') || '',
-    guests: parseInt(searchParams.get('guests') || '1'),
-    guestsDetail: {
-      total: parseInt(searchParams.get('guests') || '1'),
-      men: parseInt(searchParams.get('men') || '0'),
-      women: parseInt(searchParams.get('women') || '1'),
-      children: parseInt(searchParams.get('children') || '0'),
-    },
+    theme: null, // 会通过 API 获取完整的 theme 对象
   }));
 
-  // 监听 URL 参数变化，同步到状态
+  // 只在组件挂载时从 URL 初始化主题
+  // 使用 ref 追踪是否已经初始化，避免重复获取
+  const initializedRef = useState({ done: false })[0];
+
   useEffect(() => {
-    setSearchState({
-      location: searchParams.get('location') || '',
-      date: searchParams.get('date') || '',
-      guests: parseInt(searchParams.get('guests') || '1'),
-      guestsDetail: {
-        total: parseInt(searchParams.get('guests') || '1'),
-        men: parseInt(searchParams.get('men') || '0'),
-        women: parseInt(searchParams.get('women') || '1'),
-        children: parseInt(searchParams.get('children') || '0'),
-      },
-    });
-  }, [searchParams]);
+    // 只在首次挂载时从 URL 同步主题
+    if (initializedRef.done) return;
+
+    const themeSlug = searchParams.get('theme');
+
+    if (themeSlug) {
+      // 从 API 获取 theme 详情
+      fetch('/api/themes')
+        .then(res => res.json())
+        .then(data => {
+          const themes = data.themes || [];
+          const foundTheme = themes.find((t: Theme) => t.slug === themeSlug);
+          if (foundTheme) {
+            setSearchState(prev => ({
+              ...prev,
+              theme: foundTheme,
+            }));
+          }
+          initializedRef.done = true;
+        })
+        .catch(err => {
+          console.error(err);
+          initializedRef.done = true;
+        });
+    } else {
+      initializedRef.done = true;
+    }
+  }, [searchParams, initializedRef]);
 
   const setLocation = (location: string) => {
     setSearchState(prev => ({ ...prev, location }));
@@ -61,24 +78,15 @@ function SearchStateProviderInner({ children }: { children: ReactNode }) {
     setSearchState(prev => ({ ...prev, date }));
   };
 
-  const setGuests = (guests: number) => {
-    setSearchState(prev => ({ ...prev, guests }));
-  };
-
-  const setGuestsDetail = (guestsDetail: GuestsDetail) => {
-    setSearchState(prev => ({
-      ...prev,
-      guests: guestsDetail.total,
-      guestsDetail
-    }));
+  const setTheme = (theme: Theme | null) => {
+    setSearchState(prev => ({ ...prev, theme }));
   };
 
   const resetSearchState = () => {
     setSearchState({
       location: '',
       date: '',
-      guests: 1,
-      guestsDetail: { total: 1, men: 0, women: 1, children: 0 },
+      theme: null,
     });
   };
 
@@ -88,8 +96,7 @@ function SearchStateProviderInner({ children }: { children: ReactNode }) {
         searchState,
         setLocation,
         setDate,
-        setGuests,
-        setGuestsDetail,
+        setTheme,
         resetSearchState,
       }}
     >
@@ -107,13 +114,11 @@ export function SearchStateProvider({ children }: { children: ReactNode }) {
           searchState: {
             location: '',
             date: '',
-            guests: 1,
-            guestsDetail: { total: 1, men: 0, women: 1, children: 0 },
+            theme: null,
           },
           setLocation: () => {},
           setDate: () => {},
-          setGuests: () => {},
-          setGuestsDetail: () => {},
+          setTheme: () => {},
           resetSearchState: () => {},
         }}
       >

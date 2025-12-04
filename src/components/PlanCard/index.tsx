@@ -340,7 +340,7 @@ export default function PlanCard({ plan, showMerchant = false, isRecommended = f
 
             {/* 评分 */}
             {showMerchant && (
-              <p className="flex items-center gap-1 text-xs text-gray-500">
+              <p className="flex items-center gap-1 text-sm text-gray-500">
                 <span>⭐</span>
                 <span className="font-medium text-gray-700">4.8</span>
                 <span>(128)</span>

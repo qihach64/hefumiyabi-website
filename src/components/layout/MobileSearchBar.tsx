@@ -1,25 +1,46 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Search, MapPin, X, Calendar, Users, Minus, Plus } from "lucide-react";
+import { Search, MapPin, X, Calendar, Palette } from "lucide-react";
 import { useSearchState } from "@/contexts/SearchStateContext";
-import { useSearchLoading } from "@/contexts/SearchLoadingContext";
-import type { GuestsDetail } from "@/components/GuestsDropdown";
+
+interface Theme {
+  id: string;
+  slug: string;
+  name: string;
+  icon: string | null;
+  color: string | null;
+}
 
 export default function MobileSearchBar() {
   const router = useRouter();
-  const { searchState, setLocation, setDate, setGuests, setGuestsDetail } = useSearchState();
-  const { startSearch } = useSearchLoading();
+  const { searchState, setLocation, setDate, setTheme } = useSearchState();
   const [isMobileModalOpen, setIsMobileModalOpen] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [allLocations, setAllLocations] = useState<string[]>([]);
   const [filteredLocations, setFilteredLocations] = useState<string[]>([]);
 
-  // 本地人数状态（用于模态框内的编辑）
-  const [localMen, setLocalMen] = useState(searchState.guestsDetail.men);
-  const [localWomen, setLocalWomen] = useState(searchState.guestsDetail.women);
-  const [localChildren, setLocalChildren] = useState(searchState.guestsDetail.children);
+  // 主题相关状态
+  const [themes, setThemes] = useState<Theme[]>([]);
+  const [isLoadingThemes, setIsLoadingThemes] = useState(false);
+
+  // 获取主题列表
+  useEffect(() => {
+    if (isMobileModalOpen && themes.length === 0) {
+      setIsLoadingThemes(true);
+      fetch('/api/themes')
+        .then(res => res.json())
+        .then(data => {
+          setThemes(data.themes || []);
+          setIsLoadingThemes(false);
+        })
+        .catch(error => {
+          console.error('Failed to fetch themes:', error);
+          setIsLoadingThemes(false);
+        });
+    }
+  }, [isMobileModalOpen, themes.length]);
 
   // 获取所有地区数据
   const fetchLocations = async () => {
@@ -67,20 +88,12 @@ export default function MobileSearchBar() {
     const params = new URLSearchParams();
     if (searchState.location) params.set("location", searchState.location);
     if (searchState.date) params.set("date", searchState.date);
-    if (searchState.guests > 0) {
-      params.set("guests", searchState.guests.toString());
-      params.set("men", searchState.guestsDetail.men.toString());
-      params.set("women", searchState.guestsDetail.women.toString());
-      params.set("children", searchState.guestsDetail.children.toString());
-    }
+    if (searchState.theme) params.set("theme", searchState.theme.slug);
 
     const queryString = params.toString();
 
-    // 开始搜索（显示 loading 状态）
-    startSearch(queryString);
-
-    // 使用客户端路由导航（平滑过渡，无页面重载）
-    router.push(queryString ? `/?${queryString}` : '/');
+    // 跳转到搜索结果页
+    router.push(queryString ? `/search?${queryString}` : '/search');
   };
 
   // 生成按钮文本 - 只显示已选中的值
@@ -98,8 +111,8 @@ export default function MobileSearchBar() {
       parts.push(`${month}月${day}日`);
     }
 
-    if (searchState.guests > 1) {
-      parts.push(`${searchState.guests}位`);
+    if (searchState.theme) {
+      parts.push(searchState.theme.name);
     }
 
     // 如果没有选择任何值，显示"开始搜索"
@@ -113,23 +126,7 @@ export default function MobileSearchBar() {
 
   const handleOpenModal = async () => {
     await fetchLocations();
-    // 同步本地人数状态
-    setLocalMen(searchState.guestsDetail.men);
-    setLocalWomen(searchState.guestsDetail.women);
-    setLocalChildren(searchState.guestsDetail.children);
     setIsMobileModalOpen(true);
-  };
-
-  // 更新人数的辅助函数
-  const updateGuestsCount = (men: number, women: number, children: number) => {
-    const total = men + women + children;
-    setGuests(total);
-    setGuestsDetail({
-      total,
-      men,
-      women,
-      children,
-    });
   };
 
   return (
@@ -234,7 +231,7 @@ export default function MobileSearchBar() {
                 </div>
               ) : (
                 <button
-                  onClick={(e) => {
+                  onClick={() => {
                     // 创建一个临时的 date input 并触发选择器
                     const input = document.createElement('input');
                     input.type = 'date';
@@ -262,7 +259,7 @@ export default function MobileSearchBar() {
                     input.click();
                     try {
                       input.showPicker?.();
-                    } catch (error) {
+                    } catch {
                       input.focus();
                     }
                   }}
@@ -273,148 +270,46 @@ export default function MobileSearchBar() {
               )}
             </div>
 
-            {/* 人数 */}
+            {/* 主题选择 */}
             <div>
               <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                <Users className="w-4 h-4 text-sakura-500" />
-                人数选择
+                <Palette className="w-4 h-4 text-sakura-500" />
+                主题
               </label>
-              <div className="border border-gray-300 rounded-xl p-4 space-y-4">
-                {/* 男士 */}
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="text-sm font-semibold text-gray-900">👨 男士</div>
-                    <div className="text-xs text-gray-500 mt-0.5">13岁及以上</div>
-                  </div>
-                  <div className="flex items-center gap-3">
+              <div className="border border-gray-300 rounded-xl p-3">
+                {isLoadingThemes ? (
+                  <div className="text-sm text-gray-500 py-2">加载中...</div>
+                ) : themes.length === 0 ? (
+                  <div className="text-sm text-gray-500 py-2">暂无主题</div>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {/* 全部选项 */}
                     <button
-                      onClick={() => {
-                        if (localMen > 0) {
-                          const newMen = localMen - 1;
-                          setLocalMen(newMen);
-                          updateGuestsCount(newMen, localWomen, localChildren);
-                        }
-                      }}
-                      disabled={localMen <= 0}
-                      className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center
-                        hover:border-sakura-500 hover:bg-sakura-50/50
-                        active:scale-95
-                        transition-all duration-200
-                        disabled:opacity-30 disabled:cursor-not-allowed"
+                      onClick={() => setTheme(null)}
+                      className={`px-3 py-2 rounded-full text-sm font-medium transition-all ${
+                        !searchState.theme
+                          ? 'bg-gray-900 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
                     >
-                      <Minus className="w-4 h-4 text-gray-600" />
+                      ✨ 全部
                     </button>
-                    <span className="w-10 text-center text-sm font-medium text-gray-900">
-                      {localMen}
-                    </span>
-                    <button
-                      onClick={() => {
-                        const newMen = localMen + 1;
-                        setLocalMen(newMen);
-                        updateGuestsCount(newMen, localWomen, localChildren);
-                      }}
-                      className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center
-                        hover:border-sakura-500 hover:bg-sakura-50/50
-                        active:scale-95
-                        transition-all duration-200"
-                    >
-                      <Plus className="w-4 h-4 text-gray-600" />
-                    </button>
+                    {themes.map((theme) => (
+                      <button
+                        key={theme.id}
+                        onClick={() => setTheme(theme)}
+                        className={`px-3 py-2 rounded-full text-sm font-medium transition-all ${
+                          searchState.theme?.id === theme.id
+                            ? 'bg-gray-900 text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {theme.icon && <span className="mr-1">{theme.icon}</span>}
+                        {theme.name}
+                      </button>
+                    ))}
                   </div>
-                </div>
-
-                {/* 女士 */}
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="text-sm font-semibold text-gray-900">👩 女士</div>
-                    <div className="text-xs text-gray-500 mt-0.5">13岁及以上</div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => {
-                        if (localWomen > 0) {
-                          const newWomen = localWomen - 1;
-                          setLocalWomen(newWomen);
-                          updateGuestsCount(localMen, newWomen, localChildren);
-                        }
-                      }}
-                      disabled={localWomen <= 0}
-                      className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center
-                        hover:border-sakura-500 hover:bg-sakura-50/50
-                        active:scale-95
-                        transition-all duration-200
-                        disabled:opacity-30 disabled:cursor-not-allowed"
-                    >
-                      <Minus className="w-4 h-4 text-gray-600" />
-                    </button>
-                    <span className="w-10 text-center text-sm font-medium text-gray-900">
-                      {localWomen}
-                    </span>
-                    <button
-                      onClick={() => {
-                        const newWomen = localWomen + 1;
-                        setLocalWomen(newWomen);
-                        updateGuestsCount(localMen, newWomen, localChildren);
-                      }}
-                      className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center
-                        hover:border-sakura-500 hover:bg-sakura-50/50
-                        active:scale-95
-                        transition-all duration-200"
-                    >
-                      <Plus className="w-4 h-4 text-gray-600" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* 儿童 */}
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="text-sm font-semibold text-gray-900">👶 儿童</div>
-                    <div className="text-xs text-gray-500 mt-0.5">2-12岁</div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => {
-                        if (localChildren > 0) {
-                          const newChildren = localChildren - 1;
-                          setLocalChildren(newChildren);
-                          updateGuestsCount(localMen, localWomen, newChildren);
-                        }
-                      }}
-                      disabled={localChildren <= 0}
-                      className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center
-                        hover:border-sakura-500 hover:bg-sakura-50/50
-                        active:scale-95
-                        transition-all duration-200
-                        disabled:opacity-30 disabled:cursor-not-allowed"
-                    >
-                      <Minus className="w-4 h-4 text-gray-600" />
-                    </button>
-                    <span className="w-10 text-center text-sm font-medium text-gray-900">
-                      {localChildren}
-                    </span>
-                    <button
-                      onClick={() => {
-                        const newChildren = localChildren + 1;
-                        setLocalChildren(newChildren);
-                        updateGuestsCount(localMen, localWomen, newChildren);
-                      }}
-                      className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center
-                        hover:border-sakura-500 hover:bg-sakura-50/50
-                        active:scale-95
-                        transition-all duration-200"
-                    >
-                      <Plus className="w-4 h-4 text-gray-600" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* 提示信息 */}
-                <div className="pt-2 border-t border-gray-100">
-                  <p className="text-xs text-gray-500">
-                    💡 至少选择1位客人，最多可预约10位
-                  </p>
-                </div>
+                )}
               </div>
             </div>
           </div>

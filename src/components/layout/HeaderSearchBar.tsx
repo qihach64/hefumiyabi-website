@@ -1,17 +1,22 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Search, MapPin, X, Calendar, Users } from "lucide-react";
+import { Search, MapPin, X, Calendar, Palette, ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
-import GuestsDropdown from "@/components/GuestsDropdown";
-import { useSearchLoading } from "@/contexts/SearchLoadingContext";
 import { useSearchState } from "@/contexts/SearchStateContext";
 import { useSearchBar } from "@/contexts/SearchBarContext";
 
+interface Theme {
+  id: string;
+  slug: string;
+  name: string;
+  icon: string | null;
+  color: string | null;
+}
+
 export default function HeaderSearchBar() {
   const router = useRouter();
-  const { startSearch } = useSearchLoading();
-  const { searchState, setLocation, setDate, setGuests, setGuestsDetail } = useSearchState();
+  const { searchState, setLocation, setDate, setTheme } = useSearchState();
   const { isSearchBarExpanded, expandManually } = useSearchBar();
 
   // 自动补全相关
@@ -21,8 +26,13 @@ export default function HeaderSearchBar() {
   const [isClosing, setIsClosing] = useState(false);
   const locationInputRef = useRef<HTMLInputElement>(null);
   const dateInputRef = useRef<HTMLInputElement>(null);
-  const guestsButtonRef = useRef<HTMLDivElement>(null);
+  const themeButtonRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // 主题相关状态
+  const [themes, setThemes] = useState<Theme[]>([]);
+  const [showThemeDropdown, setShowThemeDropdown] = useState(false);
+  const themeDropdownRef = useRef<HTMLDivElement>(null);
 
   // 获取所有地区数据
   useEffect(() => {
@@ -36,6 +46,35 @@ export default function HeaderSearchBar() {
       .catch((error) => {
         console.error('Failed to fetch locations:', error);
       });
+  }, []);
+
+  // 获取主题列表
+  useEffect(() => {
+    fetch('/api/themes')
+      .then(res => res.json())
+      .then(data => {
+        setThemes(data.themes || []);
+      })
+      .catch(error => {
+        console.error('Failed to fetch themes:', error);
+      });
+  }, []);
+
+  // 点击外部关闭主题下拉菜单
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        themeDropdownRef.current &&
+        !themeDropdownRef.current.contains(event.target as Node) &&
+        themeButtonRef.current &&
+        !themeButtonRef.current.contains(event.target as Node)
+      ) {
+        setShowThemeDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
 
@@ -69,7 +108,7 @@ export default function HeaderSearchBar() {
       dateInputRef.current?.click();
       try {
         dateInputRef.current?.showPicker?.();
-      } catch (error) {
+      } catch {
         dateInputRef.current?.focus();
       }
     }, 400); // 等待下拉菜单关闭动画完成 (300ms) + 一点缓冲
@@ -89,7 +128,7 @@ export default function HeaderSearchBar() {
     }
   };
 
-  const handleExpand = (focusField?: 'location' | 'date' | 'guests' | 'none') => {
+  const handleExpand = (focusField?: 'location' | 'date' | 'theme' | 'none') => {
     // 手动展开搜索栏（会设置锁定标志，防止滚动自动收起）
     expandManually();
 
@@ -104,14 +143,11 @@ export default function HeaderSearchBar() {
         dateInputRef.current?.click();
         try {
           dateInputRef.current?.showPicker?.();
-        } catch (error) {
+        } catch {
           dateInputRef.current?.focus();
         }
-      } else if (focusField === 'guests') {
-        const guestsButton = guestsButtonRef.current?.querySelector('[data-guests-trigger]') as HTMLElement;
-        if (guestsButton) {
-          guestsButton.click();
-        }
+      } else if (focusField === 'theme') {
+        setShowThemeDropdown(true);
       } else if (focusField === 'location') {
         // 聚焦到目的地
         locationInputRef.current?.focus();
@@ -123,20 +159,12 @@ export default function HeaderSearchBar() {
     const params = new URLSearchParams();
     if (searchState.location) params.set("location", searchState.location);
     if (searchState.date) params.set("date", searchState.date);
-    if (searchState.guests > 0) {
-      params.set("guests", searchState.guests.toString());
-      params.set("men", searchState.guestsDetail.men.toString());
-      params.set("women", searchState.guestsDetail.women.toString());
-      params.set("children", searchState.guestsDetail.children.toString());
-    }
+    if (searchState.theme) params.set("theme", searchState.theme.slug);
 
     const queryString = params.toString();
 
-    // 开始搜索（显示 loading 状态）
-    startSearch(queryString);
-
-    // 使用客户端路由导航（平滑过渡，无页面重载）
-    router.push(queryString ? `/?${queryString}` : '/');
+    // 跳转到搜索结果页
+    router.push(queryString ? `/search?${queryString}` : '/search');
   };
 
   if (!isSearchBarExpanded) {
@@ -151,7 +179,9 @@ export default function HeaderSearchBar() {
           type="button"
         >
           <MapPin className="w-4 h-4 text-sakura-500" />
-          <span className="text-sm font-medium text-gray-700 transition-colors duration-200">目的地</span>
+          <span className="text-sm font-medium text-gray-700 transition-colors duration-200">
+            {searchState.location || '目的地'}
+          </span>
         </button>
         <div className="w-px h-6 bg-gray-300"></div>
         <button
@@ -160,16 +190,27 @@ export default function HeaderSearchBar() {
           type="button"
         >
           <Calendar className="w-4 h-4 text-sakura-500" />
-          <span className="text-sm font-medium text-gray-700 transition-colors duration-200">日期</span>
+          <span className="text-sm font-medium text-gray-700 transition-colors duration-200">
+            {searchState.date
+              ? new Date(searchState.date + 'T00:00:00').toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })
+              : '日期'}
+          </span>
         </button>
         <div className="w-px h-6 bg-gray-300"></div>
         <button
-          onClick={() => handleExpand('guests')}
+          onClick={() => handleExpand('theme')}
           className="flex items-center gap-2 hover:bg-gray-50 px-2 py-1 rounded-full transition-colors cursor-pointer"
           type="button"
         >
-          <Users className="w-4 h-4 text-sakura-500" />
-          <span className="text-sm font-medium text-gray-700 transition-colors duration-200">人数</span>
+          <Palette className="w-4 h-4 text-sakura-500" />
+          <span className="text-sm font-medium text-gray-700 transition-colors duration-200">
+            {searchState.theme ? (
+              <span className="flex items-center gap-1">
+                {searchState.theme.icon && <span>{searchState.theme.icon}</span>}
+                {searchState.theme.name}
+              </span>
+            ) : '主题'}
+          </span>
         </button>
         <button
           onClick={() => handleExpand('none')}
@@ -295,7 +336,7 @@ export default function HeaderSearchBar() {
               // 尝试使用 showPicker API（如果支持）
               try {
                 dateInputRef.current?.showPicker?.();
-              } catch (error) {
+              } catch {
                 // 某些浏览器不支持 showPicker，降级到 focus
                 dateInputRef.current?.focus();
               }
@@ -326,24 +367,88 @@ export default function HeaderSearchBar() {
         {/* 分隔线 */}
         <div className="h-8 w-px bg-gray-300"></div>
 
-        {/* 人数 */}
+        {/* 主题 */}
         <div
-          ref={guestsButtonRef}
+          ref={themeButtonRef}
           className="flex-1 px-6 py-3 rounded-full hover:bg-gray-100/50 transition-all duration-200 group relative cursor-pointer"
-          onClick={() => {
-            // 触发 GuestsDropdown 内部的点击
-            const guestsButton = guestsButtonRef.current?.querySelector('[data-guests-trigger]') as HTMLElement;
-            if (guestsButton) {
-              guestsButton.click();
-            }
-          }}
+          onClick={() => setShowThemeDropdown(!showThemeDropdown)}
         >
-          <GuestsDropdown
-            value={searchState.guests}
-            onChange={setGuests}
-            onDetailChange={setGuestsDetail}
-            initialDetail={searchState.guestsDetail}
-          />
+          <label className="flex items-center gap-2 text-xs font-semibold text-gray-700 mb-1 cursor-pointer">
+            <Palette className="w-4 h-4 text-sakura-500" />
+            主题
+          </label>
+          <div className="flex items-center gap-2">
+            <span className={`text-sm ${searchState.theme ? 'text-gray-900' : 'text-gray-400'}`}>
+              {searchState.theme ? (
+                <span className="flex items-center gap-1.5">
+                  {searchState.theme.icon && <span>{searchState.theme.icon}</span>}
+                  {searchState.theme.name}
+                </span>
+              ) : (
+                '选择主题'
+              )}
+            </span>
+            {searchState.theme ? (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setTheme(null);
+                }}
+                className="p-0.5 hover:bg-gray-200 rounded-full transition-colors"
+                aria-label="清空主题"
+              >
+                <X className="w-3.5 h-3.5 text-gray-500" />
+              </button>
+            ) : (
+              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showThemeDropdown ? 'rotate-180' : ''}`} />
+            )}
+          </div>
+
+          {/* 主题下拉菜单 - Pills 网格布局 */}
+          {showThemeDropdown && (
+            <div
+              ref={themeDropdownRef}
+              className="absolute top-full left-0 mt-3 bg-white rounded-2xl overflow-hidden z-50
+                shadow-[0_8px_28px_0_rgba(0,0,0,0.12)]
+                border border-gray-100/50
+                p-3 min-w-[280px]"
+              style={{
+                animation: 'dropdown-appear 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+              }}
+            >
+              {themes.length === 0 ? (
+                <div className="px-2 py-3 text-sm text-gray-500 text-center">暂无主题</div>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {themes.map((theme) => {
+                    const isSelected = searchState.theme?.id === theme.id;
+                    return (
+                      <button
+                        key={theme.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setTheme(theme);
+                          setShowThemeDropdown(false);
+                        }}
+                        className={`
+                          px-3 py-2 rounded-full text-sm font-medium
+                          transition-all duration-200 ease-out
+                          flex items-center gap-1.5
+                          ${isSelected
+                            ? 'bg-gray-900 text-white shadow-md scale-105'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-102 active:scale-98'
+                          }
+                        `}
+                      >
+                        <span className="text-base">{theme.icon || '🎨'}</span>
+                        <span>{theme.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* 搜索按钮 */}

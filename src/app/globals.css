@@ -334,3 +334,12 @@ body {
 .dropdown-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.15);
 }
+
+/* ================================
+   搜索页面卡片样式
+   ================================ */
+
+/* 搜索页面的 3:2 宽高比卡片图片 */
+.search-plan-card .aspect-square {
+  aspect-ratio: 3 / 2;
+}
