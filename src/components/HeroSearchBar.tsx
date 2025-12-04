@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { Search, MapPin, Calendar, X } from "lucide-react";
+import { useState, useEffect, useRef, useTransition } from "react";
+import { Search, MapPin, Calendar, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui";
 import { useRouter } from "next/navigation";
 import ThemeDropdown from "@/components/ThemeDropdown";
@@ -10,6 +10,7 @@ import { useSearchState } from "@/contexts/SearchStateContext";
 export default function HeroSearchBar() {
   const router = useRouter();
   const { searchState, setLocation, setDate, setTheme } = useSearchState();
+  const [isPending, startTransition] = useTransition();
 
   const [mobileExpanded, setMobileExpanded] = useState(false);
 
@@ -112,9 +113,12 @@ export default function HeroSearchBar() {
     if (searchState.theme) params.set("theme", searchState.theme.slug);
 
     const queryString = params.toString();
+    const url = queryString ? `/search?${queryString}` : '/search';
 
-    // 跳转到搜索结果页
-    router.push(queryString ? `/search?${queryString}` : '/search');
+    // 使用 startTransition 让按钮显示 loading 状态，同时立即开始导航
+    startTransition(() => {
+      router.push(url);
+    });
   };
 
   return (
@@ -262,10 +266,15 @@ export default function HeroSearchBar() {
           {/* 搜索按钮 */}
           <button
             onClick={handleSearch}
-            className="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-sakura-600 hover:bg-sakura-700 rounded-full shadow-md hover:shadow-lg active:scale-95 transition-all duration-200 cursor-pointer"
+            disabled={isPending}
+            className="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-sakura-600 hover:bg-sakura-700 disabled:bg-sakura-400 rounded-full shadow-md hover:shadow-lg active:scale-95 disabled:active:scale-100 transition-all duration-200 cursor-pointer disabled:cursor-wait"
             aria-label="搜索"
           >
-            <Search className="w-5 h-5 text-white" />
+            {isPending ? (
+              <Loader2 className="w-5 h-5 text-white animate-spin" />
+            ) : (
+              <Search className="w-5 h-5 text-white" />
+            )}
           </button>
         </div>
 
@@ -376,10 +385,20 @@ export default function HeroSearchBar() {
                 variant="primary"
                 size="lg"
                 onClick={handleSearch}
-                className="w-full flex items-center justify-center gap-2 py-3 text-sm cursor-pointer"
+                disabled={isPending}
+                className="w-full flex items-center justify-center gap-2 py-3 text-sm cursor-pointer disabled:opacity-70 disabled:cursor-wait"
               >
-                <Search className="w-4 h-4" />
-                搜索
+                {isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    搜索中...
+                  </>
+                ) : (
+                  <>
+                    <Search className="w-4 h-4" />
+                    搜索
+                  </>
+                )}
               </Button>
             </div>
           )}

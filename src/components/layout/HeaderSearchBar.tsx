@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { Search, MapPin, X, Calendar, Palette, ChevronDown } from "lucide-react";
+import { useState, useEffect, useRef, useTransition } from "react";
+import { Search, MapPin, X, Calendar, Palette, ChevronDown, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSearchState } from "@/contexts/SearchStateContext";
 import { useSearchBar } from "@/contexts/SearchBarContext";
@@ -18,6 +18,7 @@ export default function HeaderSearchBar() {
   const router = useRouter();
   const { searchState, setLocation, setDate, setTheme } = useSearchState();
   const { isSearchBarExpanded, expandManually } = useSearchBar();
+  const [isPending, startTransition] = useTransition();
 
   // 自动补全相关
   const [allLocations, setAllLocations] = useState<string[]>([]);
@@ -162,9 +163,12 @@ export default function HeaderSearchBar() {
     if (searchState.theme) params.set("theme", searchState.theme.slug);
 
     const queryString = params.toString();
+    const url = queryString ? `/search?${queryString}` : '/search';
 
-    // 跳转到搜索结果页
-    router.push(queryString ? `/search?${queryString}` : '/search');
+    // 使用 startTransition 让按钮显示 loading 状态
+    startTransition(() => {
+      router.push(url);
+    });
   };
 
   if (!isSearchBarExpanded) {
@@ -454,10 +458,15 @@ export default function HeaderSearchBar() {
         {/* 搜索按钮 */}
         <button
           onClick={handleSearch}
-          className="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-sakura-600 hover:bg-sakura-700 rounded-full shadow-md hover:shadow-lg active:scale-95 transition-all duration-200"
+          disabled={isPending}
+          className="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-sakura-600 hover:bg-sakura-700 disabled:bg-sakura-400 rounded-full shadow-md hover:shadow-lg active:scale-95 disabled:active:scale-100 transition-all duration-200 cursor-pointer disabled:cursor-wait"
           aria-label="搜索"
         >
-          <Search className="w-5 h-5 text-white" />
+          {isPending ? (
+            <Loader2 className="w-5 h-5 text-white animate-spin" />
+          ) : (
+            <Search className="w-5 h-5 text-white" />
+          )}
         </button>
       </div>
     </div>
