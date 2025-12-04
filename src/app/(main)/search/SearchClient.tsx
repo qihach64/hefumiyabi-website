@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState, useCallback, useMemo, useTransition } from "react";
+import { Suspense, useState, useCallback, useMemo, useTransition, useEffect, useRef } from "react";
 import PlanCard from "@/components/PlanCard";
 import ThemePills from "@/components/ThemePills";
 import SearchFilterSidebar from "@/components/search/SearchFilterSidebar";
@@ -84,9 +84,35 @@ function SearchClientInner({
 }: SearchClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { setTheme } = useSearchState();
+  const { searchState, setTheme } = useSearchState();
   const [isPending, startTransition] = useTransition();
   const [pendingTheme, setPendingTheme] = useState<Theme | null | undefined>(undefined);
+
+  // 追踪上一次的 currentTheme，用于检测外部主题变化
+  const prevThemeRef = useRef<Theme | null | undefined>(currentTheme);
+  const [isExternalNavigation, setIsExternalNavigation] = useState(false);
+
+  // 监听 searchState.theme 变化（来自 HeaderSearchBar 的主题切换）
+  // 当全局状态的主题与当前页面的主题不同时，显示骨架屏
+  useEffect(() => {
+    const globalThemeId = searchState.theme?.id;
+    const currentThemeId = currentTheme?.id;
+
+    // 如果全局主题与当前页面主题不同，说明有外部导航正在进行
+    if (globalThemeId !== currentThemeId) {
+      setIsExternalNavigation(true);
+      setPendingTheme(searchState.theme);
+    }
+  }, [searchState.theme, currentTheme]);
+
+  // 当 currentTheme 变化时（页面重新渲染后），重置外部导航状态
+  useEffect(() => {
+    if (prevThemeRef.current?.id !== currentTheme?.id) {
+      setIsExternalNavigation(false);
+      setPendingTheme(undefined);
+      prevThemeRef.current = currentTheme;
+    }
+  }, [currentTheme]);
 
   // ========== 客户端筛选状态 ==========
   // 这些状态用于前端即时过滤，不触发后端请求
@@ -251,7 +277,7 @@ function SearchClientInner({
             themes={themes}
             selectedTheme={currentTheme || null}
             onSelect={handleThemeChange}
-            isPending={isPending}
+            isPending={isPending || isExternalNavigation}
             pendingTheme={pendingTheme}
           />
         </div>
@@ -325,8 +351,8 @@ function SearchClientInner({
 
           {/* 套餐列表 */}
           <div className="flex-1 min-w-0">
-            {/* 加载中骨架屏 */}
-            {isPending && (
+            {/* 加载中骨架屏 - 内部或外部导航时显示 */}
+            {(isPending || isExternalNavigation) && (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
                 {[...Array(9)].map((_, i) => (
                   <PlanCardSkeleton key={i} />
@@ -335,7 +361,7 @@ function SearchClientInner({
             )}
 
             {/* 无结果提示 */}
-            {!isPending && filteredAndSortedPlans.length === 0 && (
+            {!isPending && !isExternalNavigation && filteredAndSortedPlans.length === 0 && (
               <div className="text-center py-20">
                 <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gray-100 flex items-center justify-center">
                   <Search className="w-10 h-10 text-gray-400" />
@@ -366,7 +392,7 @@ function SearchClientInner({
             )}
 
             {/* 套餐网格 - Airbnb 风格大卡片 */}
-            {!isPending && filteredAndSortedPlans.length > 0 && (
+            {!isPending && !isExternalNavigation && filteredAndSortedPlans.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
                 {filteredAndSortedPlans.map((plan) => (
                   <div key={plan.id} className="search-plan-card">
@@ -438,32 +464,34 @@ function SearchClientInner({
   );
 }
 
-// 套餐卡片骨架屏
+// 套餐卡片骨架屏 - 匹配搜索页 PlanCard 样式
 function PlanCardSkeleton() {
   return (
-    <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
-      {/* 图片骨架 - 3:4 比例 */}
-      <div className="aspect-[3/4] bg-gray-200 animate-pulse" />
+    <div>
+      {/* 图片骨架 - 4:3 比例，圆角 */}
+      <div className="aspect-[4/3] bg-gray-200 animate-pulse rounded-xl" />
 
       {/* 内容骨架 */}
-      <div className="p-4">
-        {/* 标签 */}
-        <div className="flex gap-2 mb-2">
-          <div className="h-5 w-12 bg-gray-200 rounded animate-pulse" />
-          <div className="h-5 w-16 bg-gray-200 rounded animate-pulse" />
-        </div>
-
+      <div className="mt-3 space-y-1">
         {/* 标题 */}
-        <div className="h-5 w-3/4 bg-gray-200 rounded animate-pulse mb-2" />
+        <div className="h-5 w-3/4 bg-gray-200 rounded animate-pulse" />
 
-        {/* 描述 */}
-        <div className="h-4 w-full bg-gray-200 rounded animate-pulse mb-1" />
-        <div className="h-4 w-2/3 bg-gray-200 rounded animate-pulse mb-3" />
+        {/* 商家名称 */}
+        <div className="h-4 w-1/2 bg-gray-200 rounded animate-pulse" />
 
         {/* 价格 */}
         <div className="flex items-baseline gap-2">
-          <div className="h-6 w-16 bg-gray-200 rounded animate-pulse" />
-          <div className="h-4 w-12 bg-gray-200 rounded animate-pulse" />
+          <div className="h-5 w-16 bg-gray-200 rounded animate-pulse" />
+          <div className="h-3 w-10 bg-gray-200 rounded animate-pulse" />
+        </div>
+
+        {/* 包含物 */}
+        <div className="h-3 w-2/3 bg-gray-200 rounded animate-pulse" />
+
+        {/* 标签 */}
+        <div className="flex gap-1 pt-0.5">
+          <div className="h-5 w-12 bg-gray-200 rounded-full animate-pulse" />
+          <div className="h-5 w-14 bg-gray-200 rounded-full animate-pulse" />
         </div>
       </div>
     </div>

@@ -105,32 +105,34 @@ export default function SearchLoading() {
   );
 }
 
-// 套餐卡片骨架
+// 套餐卡片骨架 - 匹配搜索页 PlanCard 样式
 function PlanCardSkeleton() {
   return (
-    <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
-      {/* 图片骨架 - 3:4 比例 */}
-      <div className="aspect-[3/4] bg-gray-200 animate-pulse" />
+    <div>
+      {/* 图片骨架 - 4:3 比例，圆角 */}
+      <div className="aspect-[4/3] bg-gray-200 animate-pulse rounded-xl" />
 
       {/* 内容骨架 */}
-      <div className="p-4">
-        {/* 标签 */}
-        <div className="flex gap-2 mb-2">
-          <div className="h-5 w-12 bg-gray-200 rounded animate-pulse" />
-          <div className="h-5 w-16 bg-gray-200 rounded animate-pulse" />
-        </div>
-
+      <div className="mt-3 space-y-1">
         {/* 标题 */}
-        <div className="h-5 w-3/4 bg-gray-200 rounded animate-pulse mb-2" />
+        <div className="h-5 w-3/4 bg-gray-200 rounded animate-pulse" />
 
-        {/* 描述 */}
-        <div className="h-4 w-full bg-gray-200 rounded animate-pulse mb-1" />
-        <div className="h-4 w-2/3 bg-gray-200 rounded animate-pulse mb-3" />
+        {/* 商家名称 */}
+        <div className="h-4 w-1/2 bg-gray-200 rounded animate-pulse" />
 
         {/* 价格 */}
         <div className="flex items-baseline gap-2">
-          <div className="h-6 w-16 bg-gray-200 rounded animate-pulse" />
-          <div className="h-4 w-12 bg-gray-200 rounded animate-pulse" />
+          <div className="h-5 w-16 bg-gray-200 rounded animate-pulse" />
+          <div className="h-3 w-10 bg-gray-200 rounded animate-pulse" />
+        </div>
+
+        {/* 包含物 */}
+        <div className="h-3 w-2/3 bg-gray-200 rounded animate-pulse" />
+
+        {/* 标签 */}
+        <div className="flex gap-1 pt-0.5">
+          <div className="h-5 w-12 bg-gray-200 rounded-full animate-pulse" />
+          <div className="h-5 w-14 bg-gray-200 rounded-full animate-pulse" />
         </div>
       </div>
     </div>
