@@ -267,7 +267,7 @@ export default function HeroSearchBar() {
           <button
             onClick={handleSearch}
             disabled={isPending}
-            className="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-sakura-600 hover:bg-sakura-700 disabled:bg-sakura-400 rounded-full shadow-md hover:shadow-lg active:scale-95 disabled:active:scale-100 transition-all duration-200 cursor-pointer disabled:cursor-wait"
+            className="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-sakura-600 hover:bg-sakura-700 disabled:bg-sakura-400 rounded-full shadow-md hover:shadow-lg active:scale-95 disabled:active:scale-100 transition-all duration-200 cursor-pointer"
             aria-label="搜索"
           >
             {isPending ? (
@@ -386,7 +386,7 @@ export default function HeroSearchBar() {
                 size="lg"
                 onClick={handleSearch}
                 disabled={isPending}
-                className="w-full flex items-center justify-center gap-2 py-3 text-sm cursor-pointer disabled:opacity-70 disabled:cursor-wait"
+                className="w-full flex items-center justify-center gap-2 py-3 text-sm cursor-pointer disabled:opacity-70"
               >
                 {isPending ? (
                   <>

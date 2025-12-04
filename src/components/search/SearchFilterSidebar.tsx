@@ -128,9 +128,9 @@ export default function SearchFilterSidebar({
               <button
                 key={option.value}
                 onClick={() => onSortChange(option.value)}
-                className={`px-3 py-1.5 rounded-full text-sm transition-all ${
+                className={`px-3 py-1.5 rounded-full text-sm transition-all duration-300 ${
                   sortBy === option.value
-                    ? "bg-gray-900 text-white"
+                    ? "bg-sakura-500 text-white shadow-sm"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >

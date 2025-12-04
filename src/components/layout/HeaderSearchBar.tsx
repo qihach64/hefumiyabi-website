@@ -436,10 +436,10 @@ export default function HeaderSearchBar() {
                         }}
                         className={`
                           px-3 py-2 rounded-full text-sm font-medium
-                          transition-all duration-200 ease-out
+                          transition-all duration-300 ease-out
                           flex items-center gap-1.5
                           ${isSelected
-                            ? 'bg-gray-900 text-white shadow-md scale-105'
+                            ? 'bg-sakura-500 text-white shadow-sm'
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-102 active:scale-98'
                           }
                         `}
@@ -459,7 +459,7 @@ export default function HeaderSearchBar() {
         <button
           onClick={handleSearch}
           disabled={isPending}
-          className="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-sakura-600 hover:bg-sakura-700 disabled:bg-sakura-400 rounded-full shadow-md hover:shadow-lg active:scale-95 disabled:active:scale-100 transition-all duration-200 cursor-pointer disabled:cursor-wait"
+          className="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-sakura-500 hover:bg-sakura-600 disabled:bg-sakura-400 rounded-full shadow-md hover:shadow-lg active:scale-95 disabled:active:scale-100 transition-all duration-200 cursor-pointer"
           aria-label="搜索"
         >
           {isPending ? (

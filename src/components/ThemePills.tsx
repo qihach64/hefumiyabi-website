@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 
 interface Theme {
   id: string;
@@ -16,12 +16,16 @@ interface ThemePillsProps {
   themes: Theme[];
   selectedTheme: Theme | null;
   onSelect: (theme: Theme | null) => void;
+  isPending?: boolean;
+  pendingTheme?: Theme | null; // 正在切换到的主题
 }
 
 export default function ThemePills({
   themes,
   selectedTheme,
   onSelect,
+  isPending = false,
+  pendingTheme,
 }: ThemePillsProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -72,43 +76,62 @@ export default function ThemePills({
         className="flex gap-2 overflow-x-auto scrollbar-hide scroll-smooth px-1 py-1"
       >
         {/* 全部选项 */}
-        <button
-          onClick={() => onSelect(null)}
-          className={`
-            flex-shrink-0 px-4 py-2.5 rounded-full text-sm font-medium whitespace-nowrap
-            transition-all duration-200 border-2
-            ${
-              !selectedTheme
-                ? "bg-gray-900 text-white border-gray-900 shadow-md"
-                : "bg-white text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-            }
-          `}
-        >
-          <span className="flex items-center gap-1.5">
-            <span>✨</span>
-            全部
-          </span>
-        </button>
-
-        {/* 主题选项 */}
-        {themes.map((theme) => {
-          const isSelected = selectedTheme?.id === theme.id;
+        {(() => {
+          const isLoadingThis = isPending && pendingTheme === null;
+          const isSelected = !selectedTheme && !isPending;
+          const willBeSelected = isPending && pendingTheme === null;
           return (
             <button
-              key={theme.id}
-              onClick={() => onSelect(theme)}
+              onClick={() => onSelect(null)}
+              disabled={isPending}
               className={`
                 flex-shrink-0 px-4 py-2.5 rounded-full text-sm font-medium whitespace-nowrap
-                transition-all duration-200 border-2
+                transition-all duration-300 border-2
                 ${
-                  isSelected
-                    ? "bg-gray-900 text-white border-gray-900 shadow-md"
-                    : "bg-white text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                  isSelected || willBeSelected
+                    ? "bg-sakura-500 text-white border-sakura-500 shadow-sm"
+                    : "bg-white text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-50 disabled:hover:bg-white disabled:hover:border-gray-200"
                 }
               `}
             >
               <span className="flex items-center gap-1.5">
-                {theme.icon && <span>{theme.icon}</span>}
+                {isLoadingThis ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <span>✨</span>
+                )}
+                全部
+              </span>
+            </button>
+          );
+        })()}
+
+        {/* 主题选项 */}
+        {themes.map((theme) => {
+          const isLoadingThis = isPending && pendingTheme?.id === theme.id;
+          const isSelected = selectedTheme?.id === theme.id && !isPending;
+          const willBeSelected = isPending && pendingTheme?.id === theme.id;
+          return (
+            <button
+              key={theme.id}
+              onClick={() => onSelect(theme)}
+              disabled={isPending}
+              className={`
+                flex-shrink-0 px-4 py-2.5 rounded-full text-sm font-medium whitespace-nowrap
+                transition-all duration-300 border-2
+                ${
+                  isSelected || willBeSelected
+                    ? "bg-sakura-500 text-white border-sakura-500 shadow-sm"
+                    : "bg-white text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-50 disabled:hover:bg-white disabled:hover:border-gray-200"
+                }
+              `}
+            >
+              <span className="flex items-center gap-1.5">
+                {isLoadingThis ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  theme.icon && <span>{theme.icon}</span>
+                )}
                 {theme.name}
               </span>
             </button>

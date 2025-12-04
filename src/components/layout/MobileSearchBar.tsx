@@ -286,9 +286,9 @@ export default function MobileSearchBar() {
                     {/* 全部选项 */}
                     <button
                       onClick={() => setTheme(null)}
-                      className={`px-3 py-2 rounded-full text-sm font-medium transition-all ${
+                      className={`px-3 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
                         !searchState.theme
-                          ? 'bg-gray-900 text-white'
+                          ? 'bg-sakura-500 text-white shadow-sm'
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
@@ -298,9 +298,9 @@ export default function MobileSearchBar() {
                       <button
                         key={theme.id}
                         onClick={() => setTheme(theme)}
-                        className={`px-3 py-2 rounded-full text-sm font-medium transition-all ${
+                        className={`px-3 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
                           searchState.theme?.id === theme.id
-                            ? 'bg-gray-900 text-white'
+                            ? 'bg-sakura-500 text-white shadow-sm'
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                       >
@@ -321,7 +321,7 @@ export default function MobileSearchBar() {
                 handleSearch();
                 setIsMobileModalOpen(false);
               }}
-              className="w-full bg-sakura-600 hover:bg-sakura-700 text-white font-medium py-3 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all"
+              className="w-full bg-sakura-500 hover:bg-sakura-600 text-white font-medium py-3 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all"
             >
               <Search className="w-5 h-5" />
               搜索

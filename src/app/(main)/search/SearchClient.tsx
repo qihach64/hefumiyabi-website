@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState, useCallback, useMemo } from "react";
+import { Suspense, useState, useCallback, useMemo, useTransition } from "react";
 import PlanCard from "@/components/PlanCard";
 import ThemePills from "@/components/ThemePills";
 import SearchFilterSidebar from "@/components/search/SearchFilterSidebar";
@@ -85,6 +85,8 @@ function SearchClientInner({
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setTheme } = useSearchState();
+  const [isPending, startTransition] = useTransition();
+  const [pendingTheme, setPendingTheme] = useState<Theme | null | undefined>(undefined);
 
   // ========== 客户端筛选状态 ==========
   // 这些状态用于前端即时过滤，不触发后端请求
@@ -173,6 +175,8 @@ function SearchClientInner({
   // ========== 主题切换（需要服务端重新查询）==========
   const handleThemeChange = (theme: Theme | null) => {
     setTheme(theme);
+    setPendingTheme(theme); // 设置正在切换到的主题
+
     // 主题切换需要后端重新过滤，使用 router.push
     const params = new URLSearchParams(searchParams.toString());
     if (theme) {
@@ -191,7 +195,11 @@ function SearchClientInner({
     setSortBy("recommended");
 
     const queryString = params.toString();
-    router.push(queryString ? `/search?${queryString}` : "/search");
+
+    // 使用 startTransition 包装导航，实现即时反馈
+    startTransition(() => {
+      router.push(queryString ? `/search?${queryString}` : "/search");
+    });
   };
 
   // ========== 标签变更（前端过滤）==========
@@ -243,6 +251,8 @@ function SearchClientInner({
             themes={themes}
             selectedTheme={currentTheme || null}
             onSelect={handleThemeChange}
+            isPending={isPending}
+            pendingTheme={pendingTheme}
           />
         </div>
       </div>
@@ -315,8 +325,17 @@ function SearchClientInner({
 
           {/* 套餐列表 */}
           <div className="flex-1 min-w-0">
+            {/* 加载中骨架屏 */}
+            {isPending && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                {[...Array(9)].map((_, i) => (
+                  <PlanCardSkeleton key={i} />
+                ))}
+              </div>
+            )}
+
             {/* 无结果提示 */}
-            {filteredAndSortedPlans.length === 0 && (
+            {!isPending && filteredAndSortedPlans.length === 0 && (
               <div className="text-center py-20">
                 <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gray-100 flex items-center justify-center">
                   <Search className="w-10 h-10 text-gray-400" />
@@ -347,7 +366,7 @@ function SearchClientInner({
             )}
 
             {/* 套餐网格 - Airbnb 风格大卡片 */}
-            {filteredAndSortedPlans.length > 0 && (
+            {!isPending && filteredAndSortedPlans.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
                 {filteredAndSortedPlans.map((plan) => (
                   <div key={plan.id} className="search-plan-card">
@@ -415,6 +434,38 @@ function SearchClientInner({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// 套餐卡片骨架屏
+function PlanCardSkeleton() {
+  return (
+    <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+      {/* 图片骨架 - 3:4 比例 */}
+      <div className="aspect-[3/4] bg-gray-200 animate-pulse" />
+
+      {/* 内容骨架 */}
+      <div className="p-4">
+        {/* 标签 */}
+        <div className="flex gap-2 mb-2">
+          <div className="h-5 w-12 bg-gray-200 rounded animate-pulse" />
+          <div className="h-5 w-16 bg-gray-200 rounded animate-pulse" />
+        </div>
+
+        {/* 标题 */}
+        <div className="h-5 w-3/4 bg-gray-200 rounded animate-pulse mb-2" />
+
+        {/* 描述 */}
+        <div className="h-4 w-full bg-gray-200 rounded animate-pulse mb-1" />
+        <div className="h-4 w-2/3 bg-gray-200 rounded animate-pulse mb-3" />
+
+        {/* 价格 */}
+        <div className="flex items-baseline gap-2">
+          <div className="h-6 w-16 bg-gray-200 rounded animate-pulse" />
+          <div className="h-4 w-12 bg-gray-200 rounded animate-pulse" />
+        </div>
+      </div>
     </div>
   );
 }
