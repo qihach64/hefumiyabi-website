@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ShoppingCart, MapPin, Star, Check, Sparkles, RotateCcw } from "lucide-react";
+import { ShoppingCart, Star, Check, Sparkles, RotateCcw } from "lucide-react";
 import { Badge } from "@/components/ui";
 import { useCartStore } from "@/store/cart";
 import { useTryOnStore } from "@/store/tryOn";
@@ -28,7 +28,7 @@ interface PlanCardProps {
     price: number;
     originalPrice?: number;
     imageUrl?: string;
-    storeName?: string;
+    merchantName?: string;
     region?: string;
     category?: string;
     duration?: number;
@@ -303,74 +303,64 @@ export default function PlanCard({ plan, showMerchant = false, isRecommended = f
           </div>
 
           {/* 信息区域 */}
-          <div className="mt-3 space-y-1.5">
-            {showMerchant && (
-              <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
-                {plan.storeName && (
-                  <span className="font-semibold truncate">
-                    {plan.storeName}
-                  </span>
-                )}
-                {plan.region && (
-                  <>
-                    <span className="text-gray-400">·</span>
-                    <span className="flex items-center gap-1 truncate">
-                      <MapPin className="w-3 h-3 flex-shrink-0" />
-                      {plan.region}
-                    </span>
-                  </>
-                )}
-              </div>
-            )}
-
-            <h3 className="font-semibold text-base sm:text-lg text-gray-900 line-clamp-2 group-hover:underline leading-snug">
+          <div className="mt-3 space-y-1">
+            {/* 套餐名称 */}
+            <h3 className="font-semibold text-base text-gray-900 line-clamp-2 group-hover:underline leading-tight">
               {plan.name}
             </h3>
 
-            <p className="text-xs sm:text-sm text-gray-600">
-              {getCategoryLabel(plan.category)} · {plan.duration}小时
-            </p>
-
-            {plan.planTags && plan.planTags.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                {plan.planTags.slice(0, 4).map(({ tag }) => (
-                  <Badge key={tag.id} variant="sakura" size="sm">
-                    {tag.icon && <span className="mr-1">{tag.icon}</span>}
-                    {tag.name}
-                  </Badge>
-                ))}
-                {plan.planTags.length > 4 && (
-                  <Badge variant="sakura" size="sm" className="opacity-60">
-                    +{plan.planTags.length - 4}
-                  </Badge>
-                )}
-              </div>
+            {/* 商家名称 */}
+            {showMerchant && plan.merchantName && (
+              <p className="flex items-center gap-1 text-sm text-gray-500">
+                <span>🏠</span>
+                <span className="truncate">{plan.merchantName}</span>
+              </p>
             )}
 
-            <div className="flex items-baseline gap-2 pt-0.5">
-              <span className="text-xl sm:text-2xl font-bold text-gray-900">
+            {/* 价格 */}
+            <p className="flex items-baseline gap-1.5">
+              <span className="text-lg font-bold text-gray-900">
                 ¥{(plan.price / 100).toLocaleString()}
               </span>
               {plan.originalPrice && plan.originalPrice > plan.price && (
-                <span className="text-xs sm:text-sm text-gray-400 line-through">
+                <span className="text-xs text-gray-400 line-through">
                   ¥{(plan.originalPrice / 100).toLocaleString()}
                 </span>
               )}
-              <span className="text-xs sm:text-sm text-gray-600">/ 人</span>
-            </div>
+              <span className="text-xs text-gray-500">/ 人</span>
+            </p>
 
+            {/* 包含物 */}
             {plan.includes && plan.includes.length > 0 && (
-              <div className="pt-1 text-xs text-gray-600 line-clamp-1">
-                含{plan.includes.slice(0, 2).join('·')}
-                {plan.includes.length > 2 && `等${plan.includes.length}项`}
-              </div>
+              <p className="text-xs text-gray-500 line-clamp-1">
+                含 {plan.includes.slice(0, 2).join(' · ')}
+                {plan.includes.length > 2 && ` 等${plan.includes.length}项`}
+              </p>
             )}
 
+            {/* 评分 */}
             {showMerchant && (
-              <div className="flex items-center gap-1 text-sm">
-                <Star className="w-4 h-4 fill-gray-900 text-gray-900" />
-                <span className="font-semibold">4.8</span>
-                <span className="text-gray-600">(128条评价)</span>
+              <p className="flex items-center gap-1 text-xs text-gray-500">
+                <span>⭐</span>
+                <span className="font-medium text-gray-700">4.8</span>
+                <span>(128)</span>
+              </p>
+            )}
+
+            {/* 标签 */}
+            {plan.planTags && plan.planTags.length > 0 && (
+              <div className="flex flex-wrap gap-1 pt-0.5">
+                {plan.planTags.slice(0, 3).map(({ tag }) => (
+                  <Badge key={tag.id} variant="sakura" size="sm">
+                    {tag.icon && <span className="mr-0.5">{tag.icon}</span>}
+                    {tag.name}
+                  </Badge>
+                ))}
+                {plan.planTags.length > 3 && (
+                  <Badge variant="sakura" size="sm" className="opacity-60">
+                    +{plan.planTags.length - 3}
+                  </Badge>
+                )}
               </div>
             )}
           </div>

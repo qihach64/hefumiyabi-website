@@ -41,6 +41,12 @@ export default async function HomePage({
     where: whereConditions,
     include: {
       theme: true,
+      merchant: {
+        select: {
+          id: true,
+          businessName: true,
+        },
+      },
       campaign: {
         select: {
           id: true,
@@ -92,7 +98,7 @@ export default async function HomePage({
         price: plan.price,
         originalPrice: plan.originalPrice,
         imageUrl: plan.imageUrl,
-        storeName: plan.storeName || "未知店铺",
+        merchantName: plan.merchant?.businessName || plan.storeName || "",
         region: plan.region || "",
         category: plan.category,
         duration: plan.duration,
@@ -162,7 +168,7 @@ export default async function HomePage({
     duration: plan.duration,
     includes: plan.includes,
     imageUrl: plan.imageUrl,
-    storeName: plan.storeName || "未知店铺",
+    merchantName: plan.merchant?.businessName || plan.storeName || "",
     region: plan.region || "",
     tags: plan.tags,
     planTags: plan.planTags,

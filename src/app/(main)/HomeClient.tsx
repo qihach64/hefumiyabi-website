@@ -57,7 +57,7 @@ interface RentalPlan {
   duration: number;
   includes: string[];
   imageUrl?: string;
-  storeName?: string;
+  merchantName?: string;
   region?: string;
   tags?: string[];
   planTags?: PlanTag[];
