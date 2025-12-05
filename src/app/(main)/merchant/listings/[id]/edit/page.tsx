@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import PlanEditForm from "@/components/merchant/PlanEditForm";
+import HotspotEditor from "@/components/merchant/HotspotEditor";
 
 interface EditListingPageProps {
   params: {
@@ -69,6 +70,61 @@ export default async function EditListingPage({ params }: EditListingPageProps) 
     redirect("/merchant/listings");
   }
 
+  // 获取地图模板数据（用于热点编辑）
+  // 优先使用主题关联的模板，否则使用默认模板
+  let mapTemplate = null;
+  if (plan.theme?.id) {
+    mapTemplate = await prisma.mapTemplate.findFirst({
+      where: { themeId: plan.theme.id, isActive: true },
+      include: {
+        hotspots: {
+          include: {
+            component: {
+              select: {
+                id: true,
+                name: true,
+                icon: true,
+              },
+            },
+          },
+          orderBy: { displayOrder: "asc" },
+        },
+      },
+    });
+  }
+
+  // 如果没有主题关联的模板，使用默认模板
+  if (!mapTemplate) {
+    mapTemplate = await prisma.mapTemplate.findFirst({
+      where: { isDefault: true, isActive: true },
+      include: {
+        hotspots: {
+          include: {
+            component: {
+              select: {
+                id: true,
+                name: true,
+                icon: true,
+              },
+            },
+          },
+          orderBy: { displayOrder: "asc" },
+        },
+      },
+    });
+  }
+
+  // 转换热点数据格式
+  const hotspotData = mapTemplate?.hotspots.map((h) => ({
+    id: h.id,
+    x: h.x,
+    y: h.y,
+    labelPosition: h.labelPosition as "left" | "right" | "top" | "bottom",
+    displayOrder: h.displayOrder,
+    componentName: h.component.name,
+    componentIcon: h.component.icon,
+  })) || [];
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container py-8 max-w-7xl">
@@ -88,6 +144,17 @@ export default async function EditListingPage({ params }: EditListingPageProps) 
 
         {/* 编辑表单 - 传递plan数据用于预览 */}
         <PlanEditForm plan={plan} />
+
+        {/* 热点编辑器 */}
+        {mapTemplate && hotspotData.length > 0 && (
+          <div className="mt-8">
+            <HotspotEditor
+              templateId={mapTemplate.id}
+              imageUrl={mapTemplate.imageUrl}
+              hotspots={hotspotData}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

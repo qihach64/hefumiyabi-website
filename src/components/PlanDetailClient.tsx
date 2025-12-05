@@ -9,6 +9,8 @@ import TryOnResultCard from "@/components/TryOnResultCard";
 import TryOnModal from "@/components/TryOnModal";
 import ImageComparison from "@/components/ImageComparison";
 import ImageGalleryModal from "@/components/ImageGalleryModal";
+import InteractiveKimonoMap from "@/components/plan/InteractiveKimonoMap";
+import type { MapData } from "@/components/plan/InteractiveKimonoMap/types";
 import { useTryOnStore } from "@/store/tryOn";
 
 interface Campaign {
@@ -37,9 +39,10 @@ interface Plan {
 
 interface PlanDetailClientProps {
   plan: Plan;
+  mapData?: MapData | null;
 }
 
-export default function PlanDetailClient({ plan }: PlanDetailClientProps) {
+export default function PlanDetailClient({ plan, mapData }: PlanDetailClientProps) {
   const [mounted, setMounted] = useState(false);
   const [showTryOnModal, setShowTryOnModal] = useState(false);
   const [showLargeImage, setShowLargeImage] = useState(false);
@@ -257,7 +260,7 @@ export default function PlanDetailClient({ plan }: PlanDetailClientProps) {
             </button>
           </div>
 
-          {/* 两栏布局 */}
+          {/* 两栏布局 - 第一部分：基础信息 + 套餐介绍 + 套餐包含 */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 lg:gap-24">
             {/* 左侧主内容区 - 占 2/3 */}
             <div className="lg:col-span-2">
@@ -288,8 +291,8 @@ export default function PlanDetailClient({ plan }: PlanDetailClientProps) {
                 </p>
               </div>
 
-              {/* 套餐包含项目 */}
-              <div className="py-8 border-b border-gray-200">
+              {/* 套餐包含项目 - 简化列表 */}
+              <div className="py-8 border-b border-gray-200 lg:border-b-0">
                 <h2 className="text-[22px] font-semibold text-gray-900 mb-6">套餐包含</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {plan.includes.map((item, index) => (
@@ -300,6 +303,41 @@ export default function PlanDetailClient({ plan }: PlanDetailClientProps) {
                   ))}
                 </div>
               </div>
+            </div>
+
+            {/* 右侧预订卡片 - 占 1/3，Sticky定位 */}
+            <div className="lg:col-span-1">
+              <div className="lg:sticky lg:top-24 space-y-6">
+                {/* 试穿效果卡片（如果有试穿记录） */}
+                {hasTryOn && tryOnResult && (
+                  <TryOnResultCard
+                    tryOnResult={tryOnResult}
+                    onRetry={handleRetry}
+                    onViewLarge={handleViewLarge}
+                  />
+                )}
+
+                {/* 预订卡片 */}
+                <BookingCard plan={plan} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 交互式和服配件图 - 独立全宽区域 */}
+        {mapData && (
+          <div className="border-t border-b border-gray-200 bg-gray-50/50">
+            <div className="max-w-[1280px] mx-auto px-6 md:px-10 lg:px-20 py-12">
+              <InteractiveKimonoMap mapData={mapData} />
+            </div>
+          </div>
+        )}
+
+        {/* 两栏布局 - 第二部分：活动信息 + 预订须知 + 评价 */}
+        <div className="max-w-[1280px] mx-auto px-6 md:px-10 lg:px-20 pb-12">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 lg:gap-24">
+            {/* 左侧主内容区 - 占 2/3 */}
+            <div className="lg:col-span-2">
 
               {/* 活动信息 */}
               {plan.campaign && (
@@ -423,22 +461,8 @@ export default function PlanDetailClient({ plan }: PlanDetailClientProps) {
               </div>
             </div>
 
-            {/* 右侧预订卡片 - 占 1/3，Sticky定位 */}
-            <div className="lg:col-span-1">
-              <div className="space-y-6">
-                {/* 试穿效果卡片（如果有试穿记录） */}
-                {hasTryOn && tryOnResult && (
-                  <TryOnResultCard
-                    tryOnResult={tryOnResult}
-                    onRetry={handleRetry}
-                    onViewLarge={handleViewLarge}
-                  />
-                )}
-
-                {/* 预订卡片 */}
-                <BookingCard plan={plan} />
-              </div>
-            </div>
+            {/* 右侧空白占位 - 保持布局一致性 */}
+            <div className="hidden lg:block lg:col-span-1" />
           </div>
         </div>
       </div>
