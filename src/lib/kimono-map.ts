@@ -6,23 +6,30 @@ import type { MapData, HotspotData } from "@/components/plan/InteractiveKimonoMa
  * 用于展示标准和服配件图
  */
 export async function getDefaultMapData(): Promise<MapData | null> {
-  const template = await prisma.mapTemplate.findFirst({
-    where: { isDefault: true, isActive: true },
-    include: {
-      hotspots: {
-        include: {
-          component: {
-            include: {
-              upgradesTo: true,
+  try {
+    // 检查 mapTemplate 模型是否存在（处理 Prisma 客户端未更新的情况）
+    if (!prisma.mapTemplate) {
+      console.warn("MapTemplate model not found in Prisma client");
+      return null;
+    }
+
+    const template = await prisma.mapTemplate.findFirst({
+      where: { isDefault: true, isActive: true },
+      include: {
+        hotspots: {
+          include: {
+            component: {
+              include: {
+                upgradesTo: true,
+              },
             },
           },
+          orderBy: { displayOrder: "asc" },
         },
-        orderBy: { displayOrder: "asc" },
       },
-    },
-  });
+    });
 
-  if (!template) return null;
+    if (!template) return null;
 
   const hotspots: HotspotData[] = template.hotspots.map((hotspot) => ({
     id: hotspot.id,
@@ -68,14 +75,19 @@ export async function getDefaultMapData(): Promise<MapData | null> {
     imageHeight: template.imageHeight,
     hotspots,
   };
+  } catch (error) {
+    console.error("Error fetching default map data:", error);
+    return null;
+  }
 }
 
 /**
  * 获取套餐的地图数据（包含套餐特定的覆盖配置）
  */
 export async function getPlanMapData(planId: string): Promise<MapData | null> {
-  // 获取套餐及其主题关联的地图模板
-  const plan = await prisma.rentalPlan.findUnique({
+  try {
+    // 获取套餐及其主题关联的地图模板
+    const plan = await prisma.rentalPlan.findUnique({
     where: { id: planId },
     include: {
       theme: {
@@ -188,4 +200,8 @@ export async function getPlanMapData(planId: string): Promise<MapData | null> {
     imageHeight: template.imageHeight,
     hotspots,
   };
+  } catch (error) {
+    console.error("Error fetching plan map data:", error);
+    return null;
+  }
 }
