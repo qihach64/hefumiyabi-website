@@ -179,27 +179,33 @@ export default function ScrollableSection({
           </div>
         </div>
 
-        {/* 左右箭头按钮 - 只在没有大卡片时显示在 header */}
-        {!featuredChild && (
-          <div className="hidden md:flex items-center gap-2 flex-shrink-0">
-            <button
-              onClick={() => scrollerRef.current?.scrollLeft()}
-              disabled={!canScrollLeft}
-              className="w-10 h-10 flex items-center justify-center bg-white rounded-full border-2 border-gray-200 hover:border-gray-900 hover:shadow-lg hover:scale-110 transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-gray-200 disabled:hover:shadow-none disabled:hover:scale-100"
-              aria-label="向左滚动"
-            >
-              <ChevronLeft className="w-5 h-5 text-gray-700" />
-            </button>
-            <button
-              onClick={() => scrollerRef.current?.scrollRight()}
-              disabled={!canScrollRight}
-              className="w-10 h-10 flex items-center justify-center bg-white rounded-full border-2 border-gray-200 hover:border-gray-900 hover:shadow-lg hover:scale-110 transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-gray-200 disabled:hover:shadow-none disabled:hover:scale-100"
-              aria-label="向右滚动"
-            >
-              <ChevronRight className="w-5 h-5 text-gray-700" />
-            </button>
-          </div>
-        )}
+        {/* 左右箭头按钮 - 统一在 Header 显示 */}
+        <div className="hidden md:flex items-center gap-3 flex-shrink-0">
+          <button
+            onClick={() => scrollerRef.current?.scrollLeft()}
+            disabled={!canScrollLeft}
+            className={`w-9 h-9 flex items-center justify-center rounded-full border transition-all duration-200
+              ${!canScrollLeft 
+                ? 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed' 
+                : 'bg-white border-gray-200 text-gray-700 hover:border-gray-400 hover:shadow-sm active:scale-95'
+              }`}
+            aria-label="向左滚动"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => scrollerRef.current?.scrollRight()}
+            disabled={!canScrollRight}
+            className={`w-9 h-9 flex items-center justify-center rounded-full border transition-all duration-200
+              ${!canScrollRight 
+                ? 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed' 
+                : 'bg-white border-gray-200 text-gray-700 hover:border-gray-400 hover:shadow-sm active:scale-95'
+              }`}
+            aria-label="向右滚动"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
       {/* 分割线 */}
@@ -223,26 +229,8 @@ export default function ScrollableSection({
           {/* 右侧：小卡片两行网格横向滚动（桌面端） */}
           <div className="flex-1 min-w-0">
             <div className="relative -mx-4 md:mx-0">
-              {/* 滚动箭头按钮 - 悬浮在右侧 */}
-              <div className="hidden lg:flex items-center gap-2 absolute right-0 top-1/2 -translate-y-1/2 z-10 -translate-x-4">
-                <button
-                  onClick={() => scrollerRef.current?.scrollLeft()}
-                  disabled={!canScrollLeft}
-                  className="w-10 h-10 flex items-center justify-center bg-white rounded-full border-2 border-gray-200 hover:border-gray-900 hover:shadow-lg hover:scale-110 transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-gray-200 disabled:hover:shadow-none disabled:hover:scale-100"
-                  aria-label="向左滚动"
-                >
-                  <ChevronLeft className="w-5 h-5 text-gray-700" />
-                </button>
-                <button
-                  onClick={() => scrollerRef.current?.scrollRight()}
-                  disabled={!canScrollRight}
-                  className="w-10 h-10 flex items-center justify-center bg-white rounded-full border-2 border-gray-200 hover:border-gray-900 hover:shadow-lg hover:scale-110 transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-gray-200 disabled:hover:shadow-none disabled:hover:scale-100"
-                  aria-label="向右滚动"
-                >
-                  <ChevronRight className="w-5 h-5 text-gray-700" />
-                </button>
-              </div>
-
+              {/* 滚动箭头按钮 - 已移动到 Header，此处移除 */}
+              
               {/* 桌面端：两行网格横向滚动 */}
               <HorizontalScroller
                 ref={scrollerRef}
