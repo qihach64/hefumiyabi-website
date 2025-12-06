@@ -22,8 +22,18 @@ export default async function SearchPage({
   const maxPriceParam = typeof params.maxPrice === 'string' ? parseInt(params.maxPrice, 10) : 0;
   const sortBy = typeof params.sort === 'string' ? params.sort : 'recommended';
 
+  // 日本传统色系映射 (Override Database Colors)
+  const themeColorMap: Record<string, string> = {
+    'trendy-photo': '#F28B82',    // 薄红
+    'formal-ceremony': '#B39DDB', // 藤紫
+    'together': '#80CBC4',        // 青磁
+    'seasonal': '#AED581',        // 萌黄
+    'casual-stroll': '#90CAF9',   // 勿忘草
+    'specialty': '#FFCC80',       // 杏色
+  };
+
   // 获取所有活跃的 Theme
-  const themes = await prisma.theme.findMany({
+  const themesRaw = await prisma.theme.findMany({
     where: { isActive: true },
     orderBy: { displayOrder: 'asc' },
     select: {
@@ -35,6 +45,12 @@ export default async function SearchPage({
       description: true,
     },
   });
+
+  // 应用日本传统色系
+  const themes = themesRaw.map(theme => ({
+    ...theme,
+    color: themeColorMap[theme.slug] || theme.color,
+  }));
 
   // 获取筛选用的标签分类
   const tagCategories = await prisma.tagCategory.findMany({

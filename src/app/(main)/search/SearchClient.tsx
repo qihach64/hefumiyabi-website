@@ -264,6 +264,9 @@ function SearchClientInner({
     (priceRange[0] > 0 || priceRange[1] < maxPrice ? 1 : 0) +
     (sortBy !== "recommended" ? 1 : 0);
 
+  // 获取当前显示主题的颜色
+  const themeColor = displayTheme?.color || '#FF7A9A';
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* 主题 Pills - 固定在顶部 */}
@@ -279,60 +282,81 @@ function SearchClientInner({
         </div>
       </div>
 
-      {/* 搜索结果内容 */}
-      <div className="container py-8">
-        {/* 搜索摘要 + 移动端筛选按钮 */}
-        <div className="mb-6 flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              {displayTheme ? (
-                <span className="flex items-center gap-2">
-                  {displayTheme.icon && (
-                    <span className="text-3xl">{displayTheme.icon}</span>
-                  )}
-                  {displayTheme.name}
-                </span>
-              ) : (
-                "探索和服体验"
-              )}
-            </h1>
-            <p className="text-gray-600">
-              {displayTheme?.description || "发现适合你的和服租赁套餐"}
-            </p>
-            <p className="text-sm text-gray-500 mt-2">
-              {isLoading ? (
-                <span className="inline-flex items-center gap-2">
-                  <span className="h-4 w-20 bg-gray-200 rounded animate-pulse inline-block" />
-                </span>
-              ) : (
-                <>
-                  共{" "}
-                  <span className="font-semibold text-gray-900">{filteredAndSortedPlans.length}</span>{" "}
-                  个套餐
-                  {activeFiltersCount > 0 && allPlans.length !== filteredAndSortedPlans.length && (
-                    <span className="text-gray-400">
-                      {" "}（已从 {allPlans.length} 个中筛选）
-                    </span>
-                  )}
-                </>
-              )}
-            </p>
-          </div>
+      {/* 搜索结果内容 - 带主题色渐变背景 */}
+      <div
+        className="transition-colors duration-500"
+        style={{
+          background: displayTheme
+            ? `linear-gradient(to bottom, ${themeColor}08 0%, ${themeColor}03 200px, transparent 400px)`
+            : undefined,
+        }}
+      >
+        <div className="container py-8">
+          {/* 搜索摘要 + 移动端筛选按钮 */}
+          <div className="mb-6 flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                {displayTheme ? (
+                  <span className="flex items-center gap-3">
+                    {displayTheme.icon && (
+                      <span
+                        className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl"
+                        style={{
+                          backgroundColor: `${themeColor}15`,
+                          border: `1px solid ${themeColor}25`,
+                        }}
+                      >
+                        {displayTheme.icon}
+                      </span>
+                    )}
+                    <span style={{ color: themeColor }}>{displayTheme.name}</span>
+                  </span>
+                ) : (
+                  "探索和服体验"
+                )}
+              </h1>
+              <p className="text-gray-600">
+                {displayTheme?.description || "发现适合你的和服租赁套餐"}
+              </p>
+              <p className="text-sm text-gray-500 mt-2">
+                {isLoading ? (
+                  <span className="inline-flex items-center gap-2">
+                    <span className="h-4 w-20 bg-gray-200 rounded animate-pulse inline-block" />
+                  </span>
+                ) : (
+                  <>
+                    共{" "}
+                    <span className="font-semibold" style={{ color: displayTheme ? themeColor : '#111827' }}>
+                      {filteredAndSortedPlans.length}
+                    </span>{" "}
+                    个套餐
+                    {activeFiltersCount > 0 && allPlans.length !== filteredAndSortedPlans.length && (
+                      <span className="text-gray-400">
+                        {" "}（已从 {allPlans.length} 个中筛选）
+                      </span>
+                    )}
+                  </>
+                )}
+              </p>
+            </div>
 
-          {/* 移动端筛选按钮 */}
-          <button
-            onClick={() => setMobileFilterOpen(true)}
-            className="lg:hidden flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-full shadow-sm hover:bg-gray-50 transition-colors"
-          >
-            <SlidersHorizontal className="w-4 h-4" />
-            <span className="text-sm font-medium">筛选</span>
-            {activeFiltersCount > 0 && (
-              <span className="bg-sakura-500 text-white text-xs font-medium px-2 py-0.5 rounded-full">
-                {activeFiltersCount}
-              </span>
-            )}
-          </button>
-        </div>
+            {/* 移动端筛选按钮 */}
+            <button
+              onClick={() => setMobileFilterOpen(true)}
+              className="lg:hidden flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-full shadow-sm hover:bg-gray-50 transition-colors"
+            >
+              <SlidersHorizontal className="w-4 h-4" />
+              <span className="text-sm font-medium">筛选</span>
+              {activeFiltersCount > 0 && (
+                <span
+                  className="text-white text-xs font-medium px-2 py-0.5 rounded-full"
+                  style={{ backgroundColor: themeColor }}
+                >
+                  {activeFiltersCount}
+                </span>
+              )}
+            </button>
+          </div>
 
         {/* 主内容区：侧边栏 + 套餐列表 */}
         <div className="flex gap-8">
@@ -400,12 +424,17 @@ function SearchClientInner({
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
                 {filteredAndSortedPlans.map((plan) => (
                   <div key={plan.id} className="search-plan-card">
-                    <PlanCard plan={plan} showMerchant={true} />
+                    <PlanCard
+                      plan={plan}
+                      showMerchant={true}
+                      themeColor={themeColor}
+                    />
                   </div>
                 ))}
               </div>
             )}
           </div>
+        </div>
         </div>
       </div>
 
