@@ -77,6 +77,17 @@ export default async function HomePage({
     ],
   });
 
+  // 日本传统色系映射 (Override Database Colors)
+  // 低饱和度、高明度，与樱花粉 (#FF7A9A) 协调
+  const themeColorMap: Record<string, string> = {
+    'trendy-photo': '#F28B82',    // 薄红 - 柔和的珊瑚红
+    'formal-ceremony': '#B39DDB', // 藤紫 - 优雅的浅紫色
+    'together': '#80CBC4',        // 青磁 - 清新的薄荷青
+    'seasonal': '#AED581',        // 萌黄 - 柔和自然
+    'casual-stroll': '#90CAF9',   // 勿忘草 - 通透的天空蓝
+    'specialty': '#FFCC80',       // 杏色 - 温暖的淡橙色
+  };
+
   // 按 Theme 分组构建 sections
   const themeSections = themes.map((theme) => {
     const themePlans = themedPlans
@@ -91,7 +102,7 @@ export default async function HomePage({
       icon: theme.icon || '',
       label: theme.name,
       description: theme.description || '',
-      color: theme.color || '',
+      color: themeColorMap[theme.slug] || theme.color || '',
       plans: themePlans.map((plan) => ({
         id: plan.id,
         name: plan.name,
