@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ShoppingCart, Star, Check, Sparkles, RotateCcw } from "lucide-react";
+import { ShoppingCart, Star, Check, Sparkles, RotateCcw, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui";
 import { useCartStore } from "@/store/cart";
 import { useTryOnStore } from "@/store/tryOn";
@@ -217,7 +217,7 @@ export default function PlanCard({
         className={`group block ${cardVariantStyles[variant]}`}
       >
         <div className={`relative ${variant !== 'default' && variant !== 'interactive' ? 'p-3' : ''}`}>
-          {/* 图片容器 */}
+          {/* 图片容器 - 1:1 正方形，紧凑布局 */}
           <div className="relative aspect-square overflow-hidden rounded-xl bg-gray-100">
             {hasTryOn && tryOnResult ? (
               /* 已试穿：显示对比图 - 淡入效果 */
@@ -303,14 +303,6 @@ export default function PlanCard({
               )}
             </button>
 
-            {/* 优惠标签 */}
-            {discountAmount > 0 && !hideDiscountBadge && (
-              <div className="absolute top-3 left-3">
-                <Badge variant="error" size="md" className="shadow-md font-bold">
-                  省¥{(discountAmount / 100).toLocaleString()}
-                </Badge>
-              </div>
-            )}
 
             {/* 底部标签组 */}
             {(isRecommended || (plan.isCampaign && !hideCampaignBadge)) && (
@@ -329,14 +321,25 @@ export default function PlanCard({
             )}
           </div>
 
-          {/* 信息区域 - 统一风格 */}
-          <div className={`mt-3 space-y-1.5 ${variant !== 'default' && variant !== 'interactive' ? 'pb-2' : ''}`}>
-            {/* 商家名称 */}
-            {showMerchant && plan.merchantName && (
-              <p className="text-[11px] font-medium tracking-wide text-gray-400 truncate">
-                {plan.merchantName}
-              </p>
-            )}
+          {/* 信息区域 - 统一风格，padding 稍微减小以适应更紧凑的列表 */}
+          <div className={`mt-3 space-y-1 ${variant !== 'default' && variant !== 'interactive' ? 'pb-2' : ''}`}>
+            {/* 商家名称 + 地区 */}
+            {(showMerchant && plan.merchantName) || plan.region ? (
+              <div className="flex items-center gap-1.5 text-[11px] text-gray-400 truncate">
+                {showMerchant && plan.merchantName && (
+                  <span className="font-medium tracking-wide">{plan.merchantName}</span>
+                )}
+                {showMerchant && plan.merchantName && plan.region && (
+                  <div className="h-0.5 w-0.5 rounded-full bg-gray-300" />
+                )}
+                {plan.region && (
+                  <div className="flex items-center gap-0.5">
+                    <MapPin className="w-3 h-3" style={{ color: accentColor }} />
+                    <span>{plan.region}</span>
+                  </div>
+                )}
+              </div>
+            ) : null}
 
             {/* 套餐名称 */}
             <h3 className="font-medium text-[15px] text-gray-900 line-clamp-2 leading-snug group-hover:text-gray-700 transition-colors duration-500">
@@ -353,11 +356,11 @@ export default function PlanCard({
             />
 
             {/* 价格区域 */}
-            <div className="flex items-baseline gap-2">
-              <span className="text-[16px] font-semibold text-gray-900">
-                ¥{(plan.price / 100).toLocaleString()}
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-[16px] font-semibold text-gray-900 whitespace-nowrap">
+                ¥{(plan.price / 100).toLocaleString()}/人
               </span>
-              {plan.originalPrice && plan.originalPrice > plan.price && (
+              {plan.originalPrice && plan.originalPrice > 0 && plan.originalPrice > plan.price && (
                 <span className="text-[11px] text-gray-400 line-through">
                   ¥{(plan.originalPrice / 100).toLocaleString()}
                 </span>
@@ -372,8 +375,8 @@ export default function PlanCard({
               </p>
             )}
 
-            {/* 评分 */}
-            {showMerchant && (
+            {/* 评分 - 暂时移除硬编码评分 */}
+            {/* {showMerchant && (
               <div className="flex items-center gap-1.5 text-[11px] text-gray-500">
                 <Star
                   className="w-3 h-3"
@@ -382,7 +385,7 @@ export default function PlanCard({
                 <span className="font-medium">4.8</span>
                 <span className="text-gray-400">(128)</span>
               </div>
-            )}
+            )} */}
 
             {/* 标签 - 主题色边框 */}
             {plan.planTags && plan.planTags.length > 0 && (
