@@ -230,7 +230,9 @@ model Theme {
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
+  // 关联
   plans        RentalPlan[]
+  mapTemplate  MapTemplate?  // 地图模板（1:1，可选，无则使用默认模板）
 
   @@index([isActive, displayOrder])
   @@index([seasonStart, seasonEnd])
@@ -294,9 +296,10 @@ model RentalPlan {
   updatedAt DateTime      @updatedAt
 
   // 关联
-  bookingItems BookingItem[]
-  cartItems    CartItem[]
-  planTags     PlanTag[]
+  bookingItems   BookingItem[]
+  cartItems      CartItem[]
+  planTags       PlanTag[]
+  planComponents PlanComponent[]  // 套餐包含的服务组件
 
   @@index([merchantId])
   @@index([themeId])
@@ -822,4 +825,162 @@ model PlanTag {
   @@index([planId])
   @@index([tagId])
   @@map("plan_tags")
+}
+
+// ============================================
+// 交互式配件地图系统 (Interactive Component Map)
+// ============================================
+
+// 服务组件类型 - 对应积木模型的三层
+enum ComponentType {
+  KIMONO     // 主菜：和服本体
+  STYLING    // 配菜：造型服务
+  ACCESSORY  // 配件：物理配件
+  EXPERIENCE // 饮料：增值体验
+}
+
+// 组件审核状态（商家申请新配件时使用）
+enum ComponentStatus {
+  APPROVED // 已审核，可正常使用
+  PENDING  // 待审核
+  REJECTED // 已拒绝
+}
+
+// 地图模板 - 每个主题一个模板，或作为默认模板
+model MapTemplate {
+  id          String   @id @default(cuid())
+
+  // 关联主题（可选，null 表示默认模板）
+  themeId     String?  @unique @map("theme_id")
+  theme       Theme?   @relation(fields: [themeId], references: [id], onDelete: Cascade)
+
+  // 是否为默认模板（当主题没有专属模板时使用）
+  isDefault   Boolean  @default(false) @map("is_default")
+
+  // 模板信息
+  name        String
+  imageUrl    String   @map("image_url")
+  imageWidth  Int?     @map("image_width")
+  imageHeight Int?     @map("image_height")
+
+  // 元数据
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // 关联
+  hotspots    MapHotspot[]
+
+  @@index([isDefault])
+  @@index([isActive])
+  @@map("map_templates")
+}
+
+// 热点定义 - 定义模板上每个组件的位置
+model MapHotspot {
+  id            String           @id @default(cuid())
+  templateId    String           @map("template_id")
+  componentId   String           @map("component_id")
+
+  template      MapTemplate      @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  component     ServiceComponent @relation(fields: [componentId], references: [id], onDelete: Cascade)
+
+  // 热点位置（百分比坐标）
+  // x: 0=最左, 1=最右; y: 0=最上, 1=最下
+  x             Float
+  y             Float
+
+  // 标签显示位置
+  labelPosition String           @default("right") @map("label_position")
+
+  // 连接线配置（可选）
+  lineStyle     String?          @map("line_style")
+
+  // 排序（决定热点动画顺序）
+  displayOrder  Int              @default(0) @map("display_order")
+
+  createdAt     DateTime         @default(now()) @map("created_at")
+
+  @@unique([templateId, componentId])
+  @@index([templateId])
+  @@map("map_hotspots")
+}
+
+// 服务组件 - 平台统一维护的配件/服务定义
+model ServiceComponent {
+  id              String          @id @default(cuid())
+  code            String          @unique
+
+  // 基本信息
+  name            String
+  nameJa          String?         @map("name_ja")
+  nameEn          String?         @map("name_en")
+  description     String?         @db.Text
+  type            ComponentType
+  icon            String?
+
+  // 升级链设计
+  upgradeFromId   String?         @map("upgrade_from_id")
+  upgradeFrom     ServiceComponent?  @relation("UpgradePath", fields: [upgradeFromId], references: [id])
+  upgradesTo      ServiceComponent[] @relation("UpgradePath")
+  upgradeCost     Int?            @map("upgrade_cost")
+  isBaseComponent Boolean         @default(true) @map("is_base_component")
+
+  // 定价信息
+  basePrice       Int             @default(0) @map("base_price")
+
+  // 详情展示内容
+  highlights      String[]        @default([])
+  images          String[]        @default([])
+
+  // 审核状态
+  status          ComponentStatus @default(APPROVED)
+  requestedBy     String?         @map("requested_by")
+  rejectionReason String?         @map("rejection_reason")
+
+  // 元数据
+  displayOrder    Int             @default(0) @map("display_order")
+  isActive        Boolean         @default(true) @map("is_active")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  // 关联
+  planComponents  PlanComponent[]
+  mapHotspots     MapHotspot[]
+
+  @@index([type, isActive, displayOrder])
+  @@index([status])
+  @@index([isBaseComponent])
+  @@index([upgradeFromId])
+  @@map("service_components")
+}
+
+// 套餐-组件关联 - 记录套餐包含哪些组件及商家自定义配置
+model PlanComponent {
+  id                   String           @id @default(cuid())
+  planId               String           @map("plan_id")
+  componentId          String           @map("component_id")
+
+  plan                 RentalPlan       @relation(fields: [planId], references: [id], onDelete: Cascade)
+  component            ServiceComponent @relation(fields: [componentId], references: [id], onDelete: Cascade)
+
+  // 该套餐中此配件的具体配置
+  tier                 String?
+  tierLabel            String?          @map("tier_label")
+  isIncluded           Boolean          @default(true) @map("is_included")
+  isHighlighted        Boolean          @default(false) @map("is_highlighted")
+  quantity             Int              @default(1)
+  customNote           String?          @map("custom_note")
+
+  // 商家可覆盖的字段
+  nameOverride         String?          @map("name_override")
+  descriptionOverride  String?          @map("description_override") @db.Text
+  highlightsOverride   String[]         @default([]) @map("highlights_override")
+  upgradePriceOverride Int?             @map("upgrade_price_override")
+
+  createdAt            DateTime         @default(now()) @map("created_at")
+
+  @@unique([planId, componentId])
+  @@index([planId])
+  @@map("plan_components")
 }
