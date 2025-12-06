@@ -81,6 +81,8 @@ export default async function HomePage({
   const themeSections = themes.map((theme) => {
     const themePlans = themedPlans
       .filter((plan) => plan.themeId === theme.id)
+      // 按 includes 数量降序排序，包含服务最多的作为 featured
+      .sort((a, b) => (b.includes?.length || 0) - (a.includes?.length || 0))
       .slice(0, 8);
 
     return {

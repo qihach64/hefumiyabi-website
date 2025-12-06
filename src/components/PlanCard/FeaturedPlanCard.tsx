@@ -152,8 +152,8 @@ export default function FeaturedPlanCard({
         className="group block bg-white rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 border-2 border-transparent hover:border-sakura-200 h-full"
       >
         <div className="flex flex-col h-full">
-          {/* 图片容器 - 桌面端高度是普通卡片的两倍 (普通卡片280px高，feature卡片约560px高) */}
-          <div className="relative aspect-[4/3] lg:h-[560px] overflow-hidden bg-gray-100 flex-shrink-0">
+          {/* 图片容器 - 3:4 比例，不随父容器高度拉伸，保持优雅比例 */}
+          <div className="relative w-full aspect-[3/4] overflow-hidden bg-gray-100 flex-shrink-0">
             {hasTryOn && tryOnResult ? (
               <div
                 className="absolute inset-0 animate-in fade-in duration-300"
@@ -259,138 +259,131 @@ export default function FeaturedPlanCard({
             )}
           </div>
 
-          {/* 信息区域 - 更多信息，增强区分度 */}
+          {/* 信息区域 - 重新排版，均匀留白 */}
           <div className="p-5 md:p-6 flex-1 flex flex-col">
-            {/* 商家名称 */}
-            {plan.merchantName && (
-              <div className="flex items-center gap-2 mb-2">
-                <p className="text-xs font-bold tracking-wide text-gray-500 uppercase">
-                  {plan.merchantName}
-                </p>
-                <div className="h-1 w-1 rounded-full bg-gray-300" />
-                <span className="text-xs text-gray-400">认证商家</span>
-              </div>
-            )}
+            {/* 第一区块：商家 + 套餐名称 */}
+            <div className="mb-4">
+              {/* 商家名称 */}
+              {plan.merchantName && (
+                <div className="flex items-center gap-2 mb-2">
+                  <p className="text-xs font-bold tracking-wide text-gray-500 uppercase">
+                    {plan.merchantName}
+                  </p>
+                  <div className="h-1 w-1 rounded-full bg-gray-300" />
+                  <span className="text-xs text-gray-400">认证商家</span>
+                </div>
+              )}
 
-            {/* 套餐名称 - 更大更突出 */}
-            <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-3 line-clamp-2 leading-tight group-hover:text-sakura-600 transition-colors duration-300">
-              {plan.name}
-            </h3>
+              {/* 套餐名称 */}
+              <h3 className="text-xl md:text-2xl font-bold text-gray-900 line-clamp-2 leading-tight group-hover:text-sakura-600 transition-colors duration-300">
+                {plan.name}
+              </h3>
+            </div>
 
-            {/* 描述 - 完整显示 */}
+            {/* 第二区块：描述（弹性填充） */}
             {plan.description && (
-              <p className="text-sm text-gray-600 mb-4 line-clamp-3 leading-relaxed">
+              <p className="text-sm text-gray-600 leading-relaxed flex-1 mb-4">
                 {plan.description}
               </p>
             )}
 
             {/* 分隔线 */}
             <div
-              className="h-px mb-4 transition-all duration-500 ease-out group-hover:w-16"
+              className="h-px mb-5 transition-all duration-500 ease-out group-hover:w-20"
               style={{
-                width: '32px',
-                backgroundColor: `${themeColor}50`,
+                width: '40px',
+                backgroundColor: `${themeColor}40`,
               }}
             />
 
-            {/* 价格区域 - 更突出 */}
-            <div className="flex items-baseline gap-3 mb-4">
-              <span className="text-3xl md:text-4xl font-bold text-gray-900">
-                ¥{(plan.price / 100).toLocaleString()}
-              </span>
-              {plan.originalPrice && plan.originalPrice > plan.price && (
-                <>
-                  <span className="text-base text-gray-400 line-through">
-                    ¥{(plan.originalPrice / 100).toLocaleString()}
-                  </span>
-                  <span
-                    className="text-sm font-bold px-2 py-1 rounded"
-                    style={{
-                      backgroundColor: `${themeColor}15`,
-                      color: themeColor,
-                    }}
-                  >
-                    省¥{((plan.originalPrice - plan.price) / 100).toLocaleString()}
-                  </span>
-                </>
-              )}
-              <span className="text-sm text-gray-500 ml-auto">/人</span>
-            </div>
-
-            {/* 详细信息行 - 时长、地区、评分 */}
-            <div className="flex flex-wrap items-center gap-4 mb-4 pb-4 border-b border-gray-100">
-              {/* 时长 */}
-              {plan.duration && (
-                <div className="flex items-center gap-1.5 text-sm text-gray-600">
-                  <Clock className="w-4 h-4" style={{ color: themeColor }} />
-                  <span className="font-medium">{plan.duration}小时</span>
-                </div>
-              )}
-
-              {/* 地区 */}
-              {plan.region && (
-                <div className="flex items-center gap-1.5 text-sm text-gray-600">
-                  <MapPin className="w-4 h-4" style={{ color: themeColor }} />
-                  <span className="font-medium">{plan.region}</span>
-                </div>
-              )}
-
-              {/* 评分 */}
-              <div className="flex items-center gap-1.5 text-sm text-gray-600">
-                <Star
-                  className="w-4 h-4"
-                  style={{ fill: themeColor, color: themeColor }}
-                />
-                <span className="font-bold">4.8</span>
-                <span className="text-gray-400">(128评价)</span>
-              </div>
-            </div>
-
-            {/* 包含服务 - 完整列表 */}
+            {/* 第三区块：包含服务（放在价格上方） */}
             {plan.includes && plan.includes.length > 0 && (
-              <div className="mb-4">
-                <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">包含服务</p>
-                <div className="flex flex-wrap gap-2">
-                  {plan.includes.slice(0, 5).map((item, index) => (
+              <div className="mb-5">
+                <p className="text-xs font-semibold text-gray-500 mb-2.5 uppercase tracking-wide">
+                  包含服务
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {plan.includes.map((item, index) => (
                     <span
                       key={index}
-                      className="text-xs px-2.5 py-1 rounded-md bg-gray-50 text-gray-700 border border-gray-200 font-medium"
+                      className="text-xs px-2 py-1 rounded-md text-gray-600 font-medium"
+                      style={{
+                        backgroundColor: `${themeColor}08`,
+                        border: `1px solid ${themeColor}20`,
+                      }}
                     >
                       {item}
                     </span>
                   ))}
-                  {plan.includes.length > 5 && (
-                    <span className="text-xs px-2.5 py-1 rounded-md bg-gray-50 text-gray-500 border border-gray-200">
-                      +{plan.includes.length - 5} 项
-                    </span>
-                  )}
                 </div>
               </div>
             )}
 
-            {/* 标签 - 显示更多 */}
-            {plan.planTags && plan.planTags.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-auto">
-                {plan.planTags.slice(0, 5).map(({ tag }) => (
-                  <span
-                    key={tag.id}
-                    className="text-xs tracking-wide px-2.5 py-1 text-gray-700 bg-white border rounded-md font-medium"
-                    style={{
-                      borderColor: `${themeColor}50`,
-                      backgroundColor: `${themeColor}08`,
-                    }}
-                  >
-                    {tag.icon && <span className="mr-1">{tag.icon}</span>}
-                    {tag.name}
-                  </span>
-                ))}
-                {plan.planTags.length > 5 && (
-                  <span className="text-xs tracking-wide px-2.5 py-1 text-gray-500 bg-white border border-gray-200 rounded-md">
-                    +{plan.planTags.length - 5}
-                  </span>
+            {/* 第四区块：价格 + 地区 */}
+            <div className="mt-auto pt-4 border-t border-gray-100">
+              {/* 价格行 */}
+              <div className="flex items-baseline gap-1 mb-2">
+                <span className="text-3xl md:text-4xl font-bold text-gray-900">
+                  ¥{(plan.price / 100).toLocaleString()}
+                </span>
+                <span className="text-sm text-gray-500">/人</span>
+                {plan.originalPrice && plan.originalPrice > 0 && plan.originalPrice > plan.price && (
+                  <>
+                    <span className="text-base text-gray-400 line-through ml-3">
+                      ¥{(plan.originalPrice / 100).toLocaleString()}
+                    </span>
+                    <span
+                      className="text-xs font-bold px-2 py-0.5 rounded ml-2"
+                      style={{
+                        backgroundColor: `${themeColor}15`,
+                        color: themeColor,
+                      }}
+                    >
+                      省¥{((plan.originalPrice - plan.price) / 100).toLocaleString()}
+                    </span>
+                  </>
                 )}
               </div>
-            )}
+
+              {/* 地区 + 标签行 */}
+              <div className="flex items-center flex-wrap gap-3">
+                {/* 地区 */}
+                {plan.region && (
+                  <div className="flex items-center gap-1 text-sm text-gray-500">
+                    <MapPin className="w-3.5 h-3.5" style={{ color: themeColor }} />
+                    <span>{plan.region}</span>
+                  </div>
+                )}
+
+                {/* 时长 */}
+                {plan.duration && (
+                  <div className="flex items-center gap-1 text-sm text-gray-500">
+                    <Clock className="w-3.5 h-3.5" style={{ color: themeColor }} />
+                    <span>{plan.duration}小时</span>
+                  </div>
+                )}
+
+                {/* 标签（精简显示） */}
+                {plan.planTags && plan.planTags.length > 0 && (
+                  <div className="flex items-center gap-1.5 ml-auto">
+                    {plan.planTags.slice(0, 3).map(({ tag }) => (
+                      <span
+                        key={tag.id}
+                        className="text-xs px-2 py-0.5 rounded text-gray-500 bg-gray-50"
+                      >
+                        {tag.icon && <span className="mr-0.5">{tag.icon}</span>}
+                        {tag.name}
+                      </span>
+                    ))}
+                    {plan.planTags.length > 3 && (
+                      <span className="text-xs text-gray-400">
+                        +{plan.planTags.length - 3}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </Link>
