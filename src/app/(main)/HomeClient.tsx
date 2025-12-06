@@ -530,7 +530,13 @@ export default function HomeClient({
                           key={plan.id}
                           className="snap-start flex-shrink-0 w-[75vw] max-w-[280px] sm:w-[280px] md:w-[260px] lg:w-[280px]"
                         >
-                          <PlanCard plan={plan} showMerchant={true} />
+                          <PlanCard
+                            plan={plan}
+                            variant="interactive"
+                            showMerchant={true}
+                            themeSlug={section.slug}
+                            themeColor={section.color}
+                          />
                         </div>
                       ))}
                     </ScrollableSection>
@@ -543,11 +549,14 @@ export default function HomeClient({
       ) : (
         /* 🏠 探索模式 - Theme 分类横向滚动 */
         <>
-          <div className="py-6 md:py-12">
+          <div>
             {themeSections.map((section, index) => (
               <section
                 key={section.id}
-                className={index < themeSections.length - 1 ? "mb-6 md:mb-12" : ""}
+                className={`py-8 md:py-12 ${index < themeSections.length - 1 ? "mb-0" : ""}`}
+                style={{
+                  background: `linear-gradient(to bottom, ${section.color}08 0%, ${section.color}03 50%, transparent 100%)`,
+                }}
               >
                 <div className="container">
                   {section.plans.length > 0 ? (
@@ -563,22 +572,38 @@ export default function HomeClient({
                           key={plan.id}
                           className="snap-start flex-shrink-0 w-[75vw] max-w-[280px] sm:w-[280px] md:w-[260px] lg:w-[280px]"
                         >
-                          <PlanCard plan={plan} showMerchant={true} />
+                          <PlanCard
+                            plan={plan}
+                            variant="soft"
+                            showMerchant={true}
+                            themeSlug={section.slug}
+                            themeColor={section.color}
+                          />
                         </div>
                       ))}
                     </ScrollableSection>
                   ) : (
                     /* 即将上线的 Theme */
                     <div className="px-4 md:px-0">
-                      <div className="flex items-center gap-3 mb-4">
-                        <span className="text-2xl opacity-50">{section.icon}</span>
-                        <div>
-                          <h2 className="text-lg font-semibold text-gray-400">{section.label}</h2>
-                          <p className="text-sm text-gray-400">{section.description}</p>
+                      <div className="flex items-start gap-3 md:gap-4 mb-4">
+                        <div
+                          className="w-10 h-10 md:w-12 md:h-12 rounded-2xl flex items-center justify-center flex-shrink-0 opacity-50"
+                          style={{
+                            backgroundColor: `${section.color}15`,
+                            border: `1px solid ${section.color}30`,
+                          }}
+                        >
+                          <span className="text-xl md:text-2xl">{section.icon}</span>
                         </div>
-                        <span className="ml-auto px-3 py-1 text-xs font-medium bg-gray-100 text-gray-500 rounded-full">
-                          即将上线
-                        </span>
+                        <div className="flex flex-col flex-1">
+                          <div className="flex items-center gap-2">
+                            <h2 className="text-xl md:text-2xl font-bold text-gray-400">{section.label}</h2>
+                            <span className="px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-500 rounded-full">
+                              即将上线
+                            </span>
+                          </div>
+                          <p className="text-sm md:text-base text-gray-400 mt-1">{section.description}</p>
+                        </div>
                       </div>
                     </div>
                   )}

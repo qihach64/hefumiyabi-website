@@ -42,35 +42,51 @@ export default function ScrollableSection({
 
   return (
     <div>
-      {/* 标题和按钮 */}
-      <div className="flex items-center justify-between mb-3 md:mb-6 px-1">
-        <div className="flex items-center gap-2 md:gap-3">
+      {/* 标题和按钮 - Airbnb 风格价值主张 */}
+      <div className="flex items-center justify-between mb-4 md:mb-8 px-1">
+        <div className="flex items-start gap-3 md:gap-4">
+          {/* 主题图标 */}
           {icon && (
             iconMap[icon] ? (
               (() => {
                 const IconComponent = iconMap[icon];
                 return (
                   <div
-                    className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center"
-                    style={{ backgroundColor: color ? `${color}20` : '#f3f4f6' }}
+                    className="w-10 h-10 md:w-12 md:h-12 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm"
+                    style={{
+                      backgroundColor: color ? `${color}15` : '#f3f4f6',
+                      border: `1px solid ${color}30`,
+                    }}
                   >
                     <IconComponent
-                      className="w-4 h-4 md:w-5 md:h-5"
+                      className="w-5 h-5 md:w-6 md:h-6"
                       style={{ color: color || '#6b7280' }}
                     />
                   </div>
                 );
               })()
             ) : (
-              <span className="text-xl md:text-3xl">{icon}</span>
+              <div
+                className="w-10 h-10 md:w-12 md:h-12 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm"
+                style={{
+                  backgroundColor: color ? `${color}15` : '#f3f4f6',
+                  border: `1px solid ${color}30`,
+                }}
+              >
+                <span className="text-xl md:text-2xl">{icon}</span>
+              </div>
             )
           )}
-          <div>
-            <h2 className="text-lg md:text-2xl font-semibold text-gray-900">
+          {/* 标题和描述 */}
+          <div className="flex flex-col">
+            <h2 className="text-xl md:text-2xl lg:text-[28px] font-bold text-gray-900 leading-tight tracking-tight">
               {title}
             </h2>
             {description && (
-              <p className="text-xs md:text-sm text-gray-500 mt-0.5 hidden sm:block">
+              <p
+                className="text-sm md:text-base text-gray-500 mt-1.5 font-medium tracking-wide"
+                style={{ color: color ? `${color}cc` : undefined }}
+              >
                 {description}
               </p>
             )}
