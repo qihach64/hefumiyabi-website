@@ -215,8 +215,8 @@ export default function ScrollableSection({
       {/* 内容区域 - 左侧大卡片 + 右侧小卡片 */}
       {featuredChild ? (
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
-          {/* 左侧：大卡片 */}
-          <div className="w-full lg:w-[480px] xl:w-[520px] flex-shrink-0">
+          {/* 左侧：大卡片 - 调整宽度以配合单行滚动 */}
+          <div className="w-full lg:w-[340px] xl:w-[380px] flex-shrink-0">
             {featuredChild}
           </div>
 
@@ -248,7 +248,7 @@ export default function ScrollableSection({
                 ref={scrollerRef}
                 className={`${scrollerClassName} lg:!grid lg:!grid-rows-2 lg:!grid-flow-col lg:!gap-4 lg:!snap-x lg:!snap-mandatory`}
                 style={{
-                  gridAutoColumns: '280px',
+                  gridAutoColumns: '260px', // 稍微调窄一点，适应两行
                 } as React.CSSProperties}
                 onScrollStateChange={handleScrollStateChange}
               >

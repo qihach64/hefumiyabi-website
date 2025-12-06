@@ -7,7 +7,7 @@ import PlanCardGrid from "@/components/PlanCard/PlanCardGrid";
 import ScrollableSection from "@/components/ScrollableSection";
 import FeaturedPlanCard from "@/components/PlanCard/FeaturedPlanCard";
 import MobileFilterDrawer from "@/components/MobileFilterDrawer";
-import { Sparkles, MapPin, Store as StoreIcon, Tag, X, Filter, Users, Calendar, Loader2 } from "lucide-react";
+import { Sparkles, MapPin, Store as StoreIcon, Tag, X, Filter, Users, Calendar, Loader2, Plus, ArrowRight } from "lucide-react";
 import { Button, Badge } from "@/components/ui";
 import { useSearchLoading } from "@/contexts/SearchLoadingContext";
 
@@ -600,6 +600,59 @@ export default function HomeClient({
                           />
                         </div>
                       ))}
+
+                      {/* 占位卡片 1: 更多即将上线 */}
+                      <div className="snap-start flex-shrink-0 w-[75vw] max-w-[280px] sm:w-[280px] md:w-[260px] lg:w-full lg:snap-start lg:h-full">
+                        <div className="h-full flex flex-col bg-gray-50 rounded-xl border-2 border-dashed border-gray-200 p-6 items-center justify-center text-center hover:border-gray-300 transition-colors group">
+                          <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center mb-4 shadow-sm group-hover:scale-110 transition-transform duration-300">
+                            <Sparkles className="w-6 h-6 text-gray-400 group-hover:text-sakura-400 transition-colors" />
+                          </div>
+                          <h3 className="text-gray-900 font-semibold mb-2">更多款式筹备中</h3>
+                          <p className="text-sm text-gray-500 mb-4">
+                            我们正在为您精心挑选更多{section.label}主题的和服
+                          </p>
+                          <span className="text-xs font-medium text-gray-400 group-hover:text-sakura-500 transition-colors flex items-center gap-1">
+                            敬请期待 <ArrowRight className="w-3 h-3" />
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* 占位卡片 2: 商家入驻 CTA */}
+                      <div className="snap-start flex-shrink-0 w-[75vw] max-w-[280px] sm:w-[280px] md:w-[260px] lg:w-full lg:snap-start lg:h-full">
+                        <div 
+                          className="h-full flex flex-col rounded-xl p-6 items-center justify-center text-center relative overflow-hidden group cursor-pointer"
+                          style={{
+                            background: `linear-gradient(135deg, ${section.color}08 0%, ${section.color}15 100%)`,
+                            border: `1px solid ${section.color}20`,
+                          }}
+                          onClick={() => window.location.href = '/merchant/register'}
+                        >
+                          <div 
+                            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                            style={{
+                              background: `radial-gradient(circle at center, ${section.color}10 0%, transparent 70%)`,
+                            }}
+                          />
+                          
+                          <div 
+                            className="w-12 h-12 rounded-full flex items-center justify-center mb-4 shadow-sm bg-white group-hover:scale-110 transition-transform duration-300"
+                          >
+                            <StoreIcon className="w-6 h-6" style={{ color: section.color }} />
+                          </div>
+                          
+                          <h3 className="font-bold text-gray-900 mb-2">我是商家</h3>
+                          <p className="text-sm text-gray-600 mb-6">
+                            想要在这里展示您的和服？立即入驻平台
+                          </p>
+                          
+                          <button 
+                            className="text-xs font-bold px-4 py-2 rounded-full bg-white shadow-sm hover:shadow-md transition-all flex items-center gap-1.5"
+                            style={{ color: section.color }}
+                          >
+                            免费入驻 <Plus className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
                     </ScrollableSection>
                   ) : (
                     /* 即将上线的 Theme */
