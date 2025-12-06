@@ -589,7 +589,7 @@ export default function HomeClient({
                       {section.plans.slice(1).map((plan) => (
                         <div
                           key={plan.id}
-                          className="snap-start flex-shrink-0 w-[75vw] max-w-[280px] sm:w-[280px] md:w-[260px] lg:w-[280px]"
+                          className="snap-start flex-shrink-0 w-[75vw] max-w-[280px] sm:w-[280px] md:w-[260px] lg:w-full lg:snap-start lg:h-full"
                         >
                           <PlanCard
                             plan={plan}

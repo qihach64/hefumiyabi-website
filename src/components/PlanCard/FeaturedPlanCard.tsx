@@ -149,11 +149,11 @@ export default function FeaturedPlanCard({
 
       <Link
         href={planDetailHref}
-        className="group block bg-white rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 border-2 border-transparent hover:border-sakura-200"
+        className="group block bg-white rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 border-2 border-transparent hover:border-sakura-200 h-full"
       >
         <div className="flex flex-col h-full">
-          {/* 图片容器 - 更大的比例 */}
-          <div className="relative aspect-[4/3] overflow-hidden bg-gray-100 flex-shrink-0">
+          {/* 图片容器 - 桌面端高度是普通卡片的两倍 (普通卡片280px高，feature卡片约560px高) */}
+          <div className="relative aspect-[4/3] lg:h-[560px] overflow-hidden bg-gray-100 flex-shrink-0">
             {hasTryOn && tryOnResult ? (
               <div
                 className="absolute inset-0 animate-in fade-in duration-300"

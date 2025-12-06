@@ -15,3 +15,4 @@ echo "To use with Cursor:"
 echo "  1. Source this file: source set-proxy.sh"
 echo "  2. Launch Cursor from this terminal: cursor ."
 echo "  OR add these exports to your ~/.zshrc for permanent setup"
+

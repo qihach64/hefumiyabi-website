@@ -220,7 +220,7 @@ export default function ScrollableSection({
             {featuredChild}
           </div>
 
-          {/* 右侧：小卡片横向滚动 */}
+          {/* 右侧：小卡片两行网格横向滚动（桌面端） */}
           <div className="flex-1 min-w-0">
             <div className="relative -mx-4 md:mx-0">
               {/* 滚动箭头按钮 - 悬浮在右侧 */}
@@ -243,9 +243,13 @@ export default function ScrollableSection({
                 </button>
               </div>
 
+              {/* 桌面端：两行网格横向滚动 */}
               <HorizontalScroller
                 ref={scrollerRef}
-                className={scrollerClassName}
+                className={`${scrollerClassName} lg:!grid lg:!grid-rows-2 lg:!grid-flow-col lg:!gap-4 lg:!snap-x lg:!snap-mandatory`}
+                style={{
+                  gridAutoColumns: '280px',
+                } as React.CSSProperties}
                 onScrollStateChange={handleScrollStateChange}
               >
                 {children}
