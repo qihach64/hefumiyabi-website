@@ -423,17 +423,17 @@ function SearchClientInner({
               </div>
             )}
 
-            {/* 套餐网格 - Airbnb 风格大卡片 */}
+            {/* 套餐网格 - 与首页卡片风格一致 */}
             {!isLoading && filteredAndSortedPlans.length > 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
                 {filteredAndSortedPlans.map((plan) => (
-                  <div key={plan.id} className="search-plan-card">
-                    <PlanCard
-                      plan={plan}
-                      showMerchant={true}
-                      themeColor={themeColor}
-                    />
-                  </div>
+                  <PlanCard
+                    key={plan.id}
+                    plan={plan}
+                    variant="soft"
+                    showMerchant={true}
+                    themeColor={themeColor}
+                  />
                 ))}
               </div>
             )}
@@ -501,34 +501,34 @@ function SearchClientInner({
   );
 }
 
-// 套餐卡片骨架屏 - 匹配搜索页 PlanCard 样式
+// 套餐卡片骨架屏 - 匹配 soft variant PlanCard 样式
 function PlanCardSkeleton() {
   return (
-    <div>
-      {/* 图片骨架 - 4:3 比例，圆角 */}
-      <div className="aspect-[4/3] bg-gray-200 animate-pulse rounded-xl" />
+    <div className="bg-white rounded-xl shadow-[0_2px_12px_-4px_rgba(0,0,0,0.08)] p-3">
+      {/* 图片骨架 - 1:1 正方形，圆角 */}
+      <div className="aspect-square bg-gray-100 animate-pulse rounded-xl" />
 
       {/* 内容骨架 */}
-      <div className="mt-3 space-y-1">
-        {/* 标题 */}
-        <div className="h-5 w-3/4 bg-gray-200 rounded animate-pulse" />
+      <div className="mt-3 space-y-2">
+        {/* 商家 + 地区 */}
+        <div className="h-3 w-1/3 bg-gray-100 rounded animate-pulse" />
 
-        {/* 商家名称 */}
-        <div className="h-4 w-1/2 bg-gray-200 rounded animate-pulse" />
+        {/* 标题 */}
+        <div className="h-5 w-4/5 bg-gray-100 rounded animate-pulse" />
+
+        {/* 分隔线 */}
+        <div className="h-px w-6 bg-gray-100 animate-pulse" />
 
         {/* 价格 */}
-        <div className="flex items-baseline gap-2">
-          <div className="h-5 w-16 bg-gray-200 rounded animate-pulse" />
-          <div className="h-3 w-10 bg-gray-200 rounded animate-pulse" />
-        </div>
+        <div className="h-5 w-24 bg-gray-100 rounded animate-pulse" />
 
         {/* 包含物 */}
-        <div className="h-3 w-2/3 bg-gray-200 rounded animate-pulse" />
+        <div className="h-3 w-2/3 bg-gray-100 rounded animate-pulse" />
 
         {/* 标签 */}
-        <div className="flex gap-1 pt-0.5">
-          <div className="h-5 w-12 bg-gray-200 rounded-full animate-pulse" />
-          <div className="h-5 w-14 bg-gray-200 rounded-full animate-pulse" />
+        <div className="flex gap-1.5 pt-0.5">
+          <div className="h-5 w-14 bg-gray-100 rounded animate-pulse" />
+          <div className="h-5 w-12 bg-gray-100 rounded animate-pulse" />
         </div>
       </div>
     </div>
