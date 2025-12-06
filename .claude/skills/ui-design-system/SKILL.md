@@ -120,6 +120,92 @@ bg-indigo-50     // ❌ 绝对禁止！
 
 ---
 
+## 🌸 主题配色系统 - 日本传统色 (Nippon Colors)
+
+### 设计哲学："灰度共鸣"
+
+为了与主品牌色（樱花粉 `#FF7A9A`）高度协调，我们采用**日本传统色系**作为主题配色。核心逻辑是：所有辅助色都加入适量的灰度和白度，使得它们在视觉重量上与樱花粉保持一致，形成**"和而不同"的高级感**。
+
+> 🎨 **视觉效果**：如同欣赏一套高级和服布料样本 —— 多彩，但和谐统一。
+
+### 主题色映射表
+
+| 主题 Slug | 颜色值 | 色名 | 日文 | 感觉描述 |
+|-----------|--------|------|------|----------|
+| `trendy-photo` | `#F28B82` | 薄红 | Usu-beni | 柔和的珊瑚调，像少女脸颊的红晕 |
+| `formal-ceremony` | `#B39DDB` | 藤紫 | Fuji-murasaki | 紫藤花的颜色，优雅高贵 |
+| `together` | `#80CBC4` | 青磁 | Seiji | 清透的薄荷青，粉色的完美互补 |
+| `seasonal` | `#AED581` | 萌黄 | Moegi | 春天新芽的嫩绿，充满生机 |
+| `casual-stroll` | `#90CAF9` | 勿忘草 | Wasurenagusa | 通透的天空蓝，轻盈自在 |
+| `specialty` | `#FFCC80` | 杏色 | Anzu | 温暖的淡橙色，亲切包容 |
+
+### 代码实现
+
+```tsx
+// ✅ 前端主题色映射（覆盖数据库颜色）
+const themeColorMap: Record<string, string> = {
+  'trendy-photo': '#F28B82',    // 薄红
+  'formal-ceremony': '#B39DDB', // 藤紫
+  'together': '#80CBC4',        // 青磁
+  'seasonal': '#AED581',        // 萌黄
+  'casual-stroll': '#90CAF9',   // 勿忘草
+  'specialty': '#FFCC80',       // 杏色
+};
+
+// 使用方式
+const themeColor = themeColorMap[theme.slug] || theme.color || '#FF7A9A';
+```
+
+### 主题色使用规范
+
+```tsx
+// ✅ 正确使用 - 主题色作为点缀
+<div style={{ backgroundColor: `${themeColor}08` }}>  // 极淡背景 (8% 透明度)
+<div style={{ backgroundColor: `${themeColor}15` }}>  // 浅背景 (15% 透明度)
+<div style={{ border: `1px solid ${themeColor}30` }}> // 边框 (30% 透明度)
+<div style={{ color: themeColor }}>                   // 图标/文字强调
+
+// ✅ 正确使用 - 渐变背景
+style={{
+  background: `linear-gradient(to bottom, ${themeColor}08 0%, transparent 100%)`
+}}
+
+// ❌ 禁止使用 - 高饱和度/过于鲜艳的颜色
+'#FF6B6B'  // ❌ 太亮的红
+'#9B59B6'  // ❌ 太深的紫
+'#E91E63'  // ❌ Material Design 粉
+'#4CAF50'  // ❌ 安卓绿
+'#00BCD4'  // ❌ 亮青色
+'#FF9800'  // ❌ 亮橙色
+```
+
+### 固定颜色元素（不随主题变化）
+
+某些元素使用固定颜色以保持一致性：
+
+```tsx
+// ✅ 精选标签 - 固定金色渐变（代表品质）
+style={{
+  background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)'
+}}
+
+// ✅ 省钱标签 - 固定红色（语义明确）
+className="bg-red-50 text-red-600"
+
+// ✅ 地区/时长图标 - 随主题色变化
+<MapPin style={{ color: themeColor }} />
+<Clock style={{ color: themeColor }} />
+```
+
+### 配色选择原则
+
+1. **低饱和度**：避免刺眼，与樱花粉协调
+2. **高明度**：保持轻盈感，不沉重
+3. **灰度统一**：所有颜色的灰度接近，视觉重量一致
+4. **日本传统**：参考日本传统色名，富有文化底蕴
+
+---
+
 ## 📐 间距系统（4px 基础单位）
 
 ### 标准间距值

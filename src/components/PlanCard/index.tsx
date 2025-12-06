@@ -51,8 +51,6 @@ interface PlanCardProps {
   variant?: CardVariant;
   showMerchant?: boolean;
   isRecommended?: boolean;
-  hideCampaignBadge?: boolean;
-  hideDiscountBadge?: boolean;
   // 主题感知
   themeSlug?: string;
   themeColor?: string;
@@ -63,8 +61,6 @@ export default function PlanCard({
   variant = 'default',
   showMerchant = false,
   isRecommended = false,
-  hideCampaignBadge = false,
-  hideDiscountBadge = false,
   themeSlug,
   themeColor = '#FF7A9A', // 默认樱花色
 }: PlanCardProps) {
@@ -305,18 +301,11 @@ export default function PlanCard({
 
 
             {/* 底部标签组 */}
-            {(isRecommended || (plan.isCampaign && !hideCampaignBadge)) && (
-              <div className="absolute bottom-3 left-3 flex flex-col gap-2">
-                {isRecommended && (
-                  <Badge variant="warning" size="sm" className="shadow-md font-semibold">
-                    ⭐ 为您推荐
-                  </Badge>
-                )}
-                {plan.isCampaign && !hideCampaignBadge && (
-                  <Badge variant="error" size="sm" className="shadow-md">
-                    限时优惠
-                  </Badge>
-                )}
+            {isRecommended && (
+              <div className="absolute bottom-3 left-3">
+                <Badge variant="warning" size="sm" className="shadow-md font-semibold">
+                  ⭐ 为您推荐
+                </Badge>
               </div>
             )}
           </div>
