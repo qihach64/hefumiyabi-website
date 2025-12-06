@@ -6,6 +6,7 @@ import PlanCard from "@/components/PlanCard";
 import ThemePills from "@/components/ThemePills";
 import SearchFilterSidebar from "@/components/search/SearchFilterSidebar";
 import { Search, SlidersHorizontal, X } from "lucide-react";
+import { getThemeIcon } from "@/lib/themeIcons";
 import { useSearchState } from "@/contexts/SearchStateContext";
 
 // 与 ThemePills 组件共享的 Theme 类型
@@ -297,20 +298,23 @@ function SearchClientInner({
             <div>
               <h1 className="text-2xl font-bold text-gray-900 mb-2">
                 {displayTheme ? (
-                  <span className="flex items-center gap-3">
-                    {displayTheme.icon && (
-                      <span
-                        className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl"
-                        style={{
-                          backgroundColor: `${themeColor}15`,
-                          border: `1px solid ${themeColor}25`,
-                        }}
-                      >
-                        {displayTheme.icon}
+                  (() => {
+                    const IconComponent = getThemeIcon(displayTheme.icon);
+                    return (
+                      <span className="flex items-center gap-3">
+                        <span
+                          className="w-12 h-12 rounded-xl flex items-center justify-center"
+                          style={{
+                            backgroundColor: `${themeColor}15`,
+                            border: `1px solid ${themeColor}25`,
+                          }}
+                        >
+                          <IconComponent className="w-6 h-6" style={{ color: themeColor }} />
+                        </span>
+                        <span style={{ color: themeColor }}>{displayTheme.name}</span>
                       </span>
-                    )}
-                    <span style={{ color: themeColor }}>{displayTheme.name}</span>
-                  </span>
+                    );
+                  })()
                 ) : (
                   "探索和服体验"
                 )}

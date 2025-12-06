@@ -1,58 +1,9 @@
 "use client";
 
 import { useRef, useState } from "react";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Camera,
-  Crown,
-  Users,
-  Leaf,
-  Footprints,
-  Sparkles,
-  Heart,
-  Gift,
-  Star,
-  Image,
-  Calendar,
-  MapPin,
-  Palette,
-  Flower,
-  Gem,
-  Zap,
-  Award,
-  LucideIcon,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import HorizontalScroller, { HorizontalScrollerRef } from "./HorizontalScroller";
-
-// Lucide icon name to component mapping - 扩展图标库
-const iconMap: Record<string, LucideIcon> = {
-  Camera,
-  Crown,
-  Users,
-  Leaf,
-  Footprints,
-  Sparkles,
-  Heart,
-  Gift,
-  Star,
-  Image,
-  Calendar,
-  MapPin,
-  Palette,
-  Flower,
-  Gem,
-  Zap,
-  Award,
-  // 常用别名映射
-  Photo: Camera,
-  Picture: Image,
-  Love: Heart,
-  Present: Gift,
-  Lightning: Zap,
-  Trophy: Award,
-  Diamond: Gem,
-};
+import { getThemeIcon } from "@/lib/themeIcons";
 
 interface ScrollableSectionProps {
   title: string;
@@ -82,45 +33,8 @@ export default function ScrollableSection({
     setCanScrollRight(right);
   };
 
-  // 获取图标组件或使用默认图标
-  const getIconComponent = () => {
-    if (!icon) return null;
-    
-    // 如果是 Lucide 图标名称
-    if (iconMap[icon]) {
-      return iconMap[icon];
-    }
-    
-    // 如果是 emoji，使用默认图标替代
-    // 检测是否是 emoji（简单的 Unicode 范围检测）
-    const isEmoji = /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u.test(icon);
-    if (isEmoji) {
-      // 根据常见 emoji 映射到对应图标
-      const emojiToIcon: Record<string, LucideIcon> = {
-        '📷': Camera,
-        '📸': Camera,
-        '👑': Crown,
-        '👥': Users,
-        '👫': Users,
-        '🍂': Leaf,
-        '🌸': Flower,
-        '✨': Sparkles,
-        '💎': Gem,
-        '⚡': Zap,
-        '🏆': Award,
-        '🎁': Gift,
-        '❤️': Heart,
-        '⭐': Star,
-        '🎨': Palette,
-      };
-      return emojiToIcon[icon] || Sparkles; // 默认使用 Sparkles
-    }
-    
-    // 其他情况使用默认图标
-    return Sparkles;
-  };
-
-  const IconComponent = getIconComponent();
+  // 使用共享的图标工具获取图标组件
+  const IconComponent = icon ? getThemeIcon(icon) : null;
   const iconColor = color || '#6b7280';
 
   return (

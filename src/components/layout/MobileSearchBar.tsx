@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Search, MapPin, X, Calendar, Palette } from "lucide-react";
+import { Search, MapPin, X, Calendar, Palette, Sparkles } from "lucide-react";
 import { useSearchState } from "@/contexts/SearchStateContext";
+import { getThemeIcon } from "@/lib/themeIcons";
 
 interface Theme {
   id: string;
@@ -286,28 +287,32 @@ export default function MobileSearchBar() {
                     {/* 全部选项 */}
                     <button
                       onClick={() => setTheme(null)}
-                      className={`px-3 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+                      className={`px-3 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-1.5 ${
                         !searchState.theme
                           ? 'bg-sakura-500 text-white shadow-sm'
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
-                      ✨ 全部
+                      <Sparkles className="w-4 h-4" />
+                      全部
                     </button>
-                    {themes.map((theme) => (
-                      <button
-                        key={theme.id}
-                        onClick={() => setTheme(theme)}
-                        className={`px-3 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
-                          searchState.theme?.id === theme.id
-                            ? 'bg-sakura-500 text-white shadow-sm'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        {theme.icon && <span className="mr-1">{theme.icon}</span>}
-                        {theme.name}
-                      </button>
-                    ))}
+                    {themes.map((theme) => {
+                      const IconComponent = getThemeIcon(theme.icon);
+                      return (
+                        <button
+                          key={theme.id}
+                          onClick={() => setTheme(theme)}
+                          className={`px-3 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-1.5 ${
+                            searchState.theme?.id === theme.id
+                              ? 'bg-sakura-500 text-white shadow-sm'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          <IconComponent className="w-4 h-4" />
+                          {theme.name}
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>

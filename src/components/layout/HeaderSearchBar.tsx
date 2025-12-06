@@ -5,6 +5,7 @@ import { Search, MapPin, X, Calendar, Palette, ChevronDown, Loader2 } from "luci
 import { useRouter } from "next/navigation";
 import { useSearchState } from "@/contexts/SearchStateContext";
 import { useSearchBar } from "@/contexts/SearchBarContext";
+import { getThemeIcon } from "@/lib/themeIcons";
 
 interface Theme {
   id: string;
@@ -213,7 +214,10 @@ export default function HeaderSearchBar() {
           <span className="text-sm font-medium text-gray-700 transition-colors duration-200">
             {searchState.theme ? (
               <span className="flex items-center gap-1">
-                {searchState.theme.icon && <span>{searchState.theme.icon}</span>}
+                {(() => {
+                  const IconComponent = getThemeIcon(searchState.theme.icon);
+                  return <IconComponent className="w-4 h-4" />;
+                })()}
                 {searchState.theme.name}
               </span>
             ) : '主题'}
@@ -388,7 +392,10 @@ export default function HeaderSearchBar() {
             <span className={`text-sm ${searchState.theme ? 'text-gray-900' : 'text-gray-400'}`}>
               {searchState.theme ? (
                 <span className="flex items-center gap-1.5">
-                  {searchState.theme.icon && <span>{searchState.theme.icon}</span>}
+                  {(() => {
+                    const IconComponent = getThemeIcon(searchState.theme.icon);
+                    return <IconComponent className="w-4 h-4" />;
+                  })()}
                   {searchState.theme.name}
                 </span>
               ) : (
@@ -447,7 +454,10 @@ export default function HeaderSearchBar() {
                           }
                         `}
                       >
-                        <span className="text-base">{theme.icon || '🎨'}</span>
+                        {(() => {
+                          const IconComponent = getThemeIcon(theme.icon);
+                          return <IconComponent className="w-4 h-4" />;
+                        })()}
                         <span>{theme.name}</span>
                       </button>
                     );

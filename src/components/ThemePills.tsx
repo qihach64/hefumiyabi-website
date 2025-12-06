@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, Sparkles } from "lucide-react";
+import { getThemeIcon } from "@/lib/themeIcons";
 
 interface Theme {
   id: string;
@@ -101,7 +102,7 @@ export default function ThemePills({
                 {isLoadingThis ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  <span>✨</span>
+                  <Sparkles className="w-4 h-4" />
                 )}
                 全部
               </span>
@@ -136,7 +137,10 @@ export default function ThemePills({
                 {isLoadingThis ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  theme.icon && <span>{theme.icon}</span>
+                  (() => {
+                    const IconComponent = getThemeIcon(theme.icon);
+                    return <IconComponent className="w-4 h-4" />;
+                  })()
                 )}
                 {theme.name}
               </span>
