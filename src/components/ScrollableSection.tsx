@@ -147,15 +147,29 @@ export default function ScrollableSection({
             </div>
           )}
           
-          {/* 标题和描述 - 优化布局 */}
+          {/* 标题和描述 - 优化布局，增加视觉层次和区分度 */}
           <div className="flex flex-col flex-1 min-w-0">
-            <h2 className="text-2xl md:text-3xl lg:text-[32px] font-bold text-gray-900 leading-tight tracking-tight mb-2">
+            <h2 
+              className="text-2xl md:text-3xl lg:text-[36px] font-extrabold leading-[1.15] tracking-[-0.03em] mb-2.5"
+              style={{
+                // 使用主题色，如果没有则使用深色
+                color: color ? color : '#111827',
+                // 添加更明显的文字阴影
+                textShadow: color 
+                  ? `0 2px 12px ${color}20, 0 1px 3px ${color}10`
+                  : '0 2px 4px rgba(0, 0, 0, 0.08)',
+                fontWeight: 800,
+                letterSpacing: '-0.03em',
+              }}
+            >
               {title}
             </h2>
             {description && (
               <p
-                className="text-sm md:text-base text-gray-600 leading-relaxed"
-                style={{ color: color ? `${color}dd` : undefined }}
+                className="text-sm md:text-base font-medium leading-relaxed tracking-wide"
+                style={{ 
+                  color: color ? `${color}aa` : '#6b7280',
+                }}
               >
                 {description}
               </p>
@@ -183,6 +197,16 @@ export default function ScrollableSection({
           </button>
         </div>
       </div>
+
+      {/* 分割线 - Header 和卡片之间的分隔 */}
+      <div 
+        className="h-[1px] mb-6 md:mb-8 transition-colors duration-300"
+        style={{
+          background: color
+            ? `linear-gradient(to right, transparent 0%, ${color}25 20%, ${color}30 50%, ${color}25 80%, transparent 100%)`
+            : 'linear-gradient(to right, transparent 0%, #e5e7eb 20%, #d1d5db 50%, #e5e7eb 80%, transparent 100%)',
+        }}
+      />
 
       {/* 滚动容器 */}
       <div className="relative -mx-4 md:mx-0">
