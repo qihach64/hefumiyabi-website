@@ -37,11 +37,11 @@ const prisma = new PrismaClient();
 // 日本传统色系 - 低饱和度、高明度，与樱花粉 (#FF7A9A) 协调
 const newThemeColors: Record<string, string> = {
   'trendy-photo': '#F28B82',    // 薄红 - 柔和的珊瑚红
-  'formal-ceremony': '#B39DDB', // 藤紫 - 优雅的浅紫色
+  'formal-ceremony': '#FFCC80', // 杏色 - 温暖的淡橙色
   'together': '#80CBC4',        // 青磁 - 清新的薄荷青
   'seasonal': '#AED581',        // 萌黄 - 柔和自然
   'casual-stroll': '#90CAF9',   // 勿忘草 - 通透的天空蓝
-  'specialty': '#FFCC80',       // 杏色 - 温暖的淡橙色
+  'specialty': '#B39DDB',       // 藤紫 - 优雅的浅紫色
 };
 
 async function main() {

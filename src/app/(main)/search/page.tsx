@@ -25,11 +25,11 @@ export default async function SearchPage({
   // 日本传统色系映射 (Override Database Colors)
   const themeColorMap: Record<string, string> = {
     'trendy-photo': '#F28B82',    // 薄红
-    'formal-ceremony': '#B39DDB', // 藤紫
+    'formal-ceremony': '#FFCC80', // 杏色
     'together': '#80CBC4',        // 青磁
     'seasonal': '#AED581',        // 萌黄
     'casual-stroll': '#90CAF9',   // 勿忘草
-    'specialty': '#FFCC80',       // 杏色
+    'specialty': '#B39DDB',       // 藤紫
   };
 
   // 获取所有活跃的 Theme
