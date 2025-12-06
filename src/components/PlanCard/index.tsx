@@ -333,8 +333,8 @@ export default function PlanCard({
                   <div className="h-0.5 w-0.5 rounded-full bg-gray-300" />
                 )}
                 {plan.region && (
-                  <div className="flex items-center gap-0.5">
-                    <MapPin className="w-3 h-3" style={{ color: accentColor }} />
+                  <div className="flex items-center gap-0.5 text-gray-400">
+                    <MapPin className="w-3 h-3" />
                     <span>{plan.region}</span>
                   </div>
                 )}

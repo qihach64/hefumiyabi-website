@@ -187,12 +187,12 @@ export default function FeaturedPlanCard({
               </>
             )}
 
-            {/* 精选标签 - 更突出 */}
+            {/* 精选标签 - 统一使用金色/橙色渐变，代表高品质，不随主题变色 */}
             <div className="absolute top-4 left-4 z-10">
               <div
                 className="px-3 py-1.5 rounded-full backdrop-blur-sm flex items-center gap-2 shadow-lg"
                 style={{
-                  background: `linear-gradient(135deg, ${themeColor} 0%, ${themeColor}dd 100%)`,
+                  background: `linear-gradient(135deg, #F59E0B 0%, #D97706 100%)`,
                 }}
               >
                 <Award className="w-4 h-4 text-white" />
@@ -357,11 +357,7 @@ export default function FeaturedPlanCard({
                       ¥{(plan.originalPrice / 100).toLocaleString()}
                     </span>
                     <span
-                      className="text-xs font-bold px-2 py-0.5 rounded"
-                      style={{
-                        backgroundColor: `${themeColor}15`,
-                        color: themeColor,
-                      }}
+                      className="text-xs font-bold px-2 py-0.5 rounded bg-red-50 text-red-600"
                     >
                       省¥{((plan.originalPrice - plan.price) / 100).toLocaleString()}
                     </span>
