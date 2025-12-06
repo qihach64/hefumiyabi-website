@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import PlanCard from "@/components/PlanCard";
 import PlanCardGrid from "@/components/PlanCard/PlanCardGrid";
 import ScrollableSection from "@/components/ScrollableSection";
+import FeaturedPlanCard from "@/components/PlanCard/FeaturedPlanCard";
 import MobileFilterDrawer from "@/components/MobileFilterDrawer";
 import { Sparkles, MapPin, Store as StoreIcon, Tag, X, Filter, Users, Calendar, Loader2 } from "lucide-react";
 import { Button, Badge } from "@/components/ui";
@@ -524,8 +525,17 @@ export default function HomeClient({
                       icon={section.icon}
                       color={section.color}
                       scrollerClassName="flex gap-3 md:gap-4 overflow-x-auto scroll-smooth pb-4 -mb-4 scrollbar-hide snap-x snap-mandatory px-4 md:px-0"
+                      featuredChild={
+                        section.plans.length > 0 ? (
+                          <FeaturedPlanCard
+                            plan={section.plans[0]}
+                            themeColor={section.color}
+                          />
+                        ) : undefined
+                      }
                     >
-                      {section.plans.map((plan) => (
+                      {/* 其他套餐（跳过第一个） */}
+                      {section.plans.slice(1).map((plan) => (
                         <div
                           key={plan.id}
                           className="snap-start flex-shrink-0 w-[75vw] max-w-[280px] sm:w-[280px] md:w-[260px] lg:w-[280px]"
@@ -566,8 +576,17 @@ export default function HomeClient({
                       icon={section.icon}
                       color={section.color}
                       scrollerClassName="flex gap-3 md:gap-4 overflow-x-auto scroll-smooth pb-4 -mb-4 scrollbar-hide snap-x snap-mandatory px-4 md:px-0"
+                      featuredChild={
+                        section.plans.length > 0 ? (
+                          <FeaturedPlanCard
+                            plan={section.plans[0]}
+                            themeColor={section.color}
+                          />
+                        ) : undefined
+                      }
                     >
-                      {section.plans.map((plan) => (
+                      {/* 其他套餐（跳过第一个） */}
+                      {section.plans.slice(1).map((plan) => (
                         <div
                           key={plan.id}
                           className="snap-start flex-shrink-0 w-[75vw] max-w-[280px] sm:w-[280px] md:w-[260px] lg:w-[280px]"

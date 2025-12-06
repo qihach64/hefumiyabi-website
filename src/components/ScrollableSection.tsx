@@ -61,6 +61,7 @@ interface ScrollableSectionProps {
   color?: string; // Theme color for icon
   children: React.ReactNode;
   scrollerClassName?: string;
+  featuredChild?: React.ReactNode; // 左侧大卡片（featured plan）
 }
 
 export default function ScrollableSection({
@@ -70,6 +71,7 @@ export default function ScrollableSection({
   color,
   children,
   scrollerClassName = "",
+  featuredChild,
 }: ScrollableSectionProps) {
   const scrollerRef = useRef<HorizontalScrollerRef>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -177,28 +179,30 @@ export default function ScrollableSection({
           </div>
         </div>
 
-        {/* 左右箭头按钮 - 优化样式 */}
-        <div className="hidden md:flex items-center gap-2 flex-shrink-0">
-          <button
-            onClick={() => scrollerRef.current?.scrollLeft()}
-            disabled={!canScrollLeft}
-            className="w-10 h-10 flex items-center justify-center bg-white rounded-full border-2 border-gray-200 hover:border-gray-900 hover:shadow-lg hover:scale-110 transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-gray-200 disabled:hover:shadow-none disabled:hover:scale-100"
-            aria-label="向左滚动"
-          >
-            <ChevronLeft className="w-5 h-5 text-gray-700" />
-          </button>
-          <button
-            onClick={() => scrollerRef.current?.scrollRight()}
-            disabled={!canScrollRight}
-            className="w-10 h-10 flex items-center justify-center bg-white rounded-full border-2 border-gray-200 hover:border-gray-900 hover:shadow-lg hover:scale-110 transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-gray-200 disabled:hover:shadow-none disabled:hover:scale-100"
-            aria-label="向右滚动"
-          >
-            <ChevronRight className="w-5 h-5 text-gray-700" />
-          </button>
-        </div>
+        {/* 左右箭头按钮 - 只在没有大卡片时显示在 header */}
+        {!featuredChild && (
+          <div className="hidden md:flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={() => scrollerRef.current?.scrollLeft()}
+              disabled={!canScrollLeft}
+              className="w-10 h-10 flex items-center justify-center bg-white rounded-full border-2 border-gray-200 hover:border-gray-900 hover:shadow-lg hover:scale-110 transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-gray-200 disabled:hover:shadow-none disabled:hover:scale-100"
+              aria-label="向左滚动"
+            >
+              <ChevronLeft className="w-5 h-5 text-gray-700" />
+            </button>
+            <button
+              onClick={() => scrollerRef.current?.scrollRight()}
+              disabled={!canScrollRight}
+              className="w-10 h-10 flex items-center justify-center bg-white rounded-full border-2 border-gray-200 hover:border-gray-900 hover:shadow-lg hover:scale-110 transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-gray-200 disabled:hover:shadow-none disabled:hover:scale-100"
+              aria-label="向右滚动"
+            >
+              <ChevronRight className="w-5 h-5 text-gray-700" />
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* 分割线 - Header 和卡片之间的分隔 */}
+      {/* 分割线 */}
       <div 
         className="h-[1px] mb-6 md:mb-8 transition-colors duration-300"
         style={{
@@ -208,16 +212,59 @@ export default function ScrollableSection({
         }}
       />
 
-      {/* 滚动容器 */}
-      <div className="relative -mx-4 md:mx-0">
-        <HorizontalScroller
-          ref={scrollerRef}
-          className={scrollerClassName}
-          onScrollStateChange={handleScrollStateChange}
-        >
-          {children}
-        </HorizontalScroller>
-      </div>
+      {/* 内容区域 - 左侧大卡片 + 右侧小卡片 */}
+      {featuredChild ? (
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+          {/* 左侧：大卡片 */}
+          <div className="w-full lg:w-[480px] xl:w-[520px] flex-shrink-0">
+            {featuredChild}
+          </div>
+
+          {/* 右侧：小卡片横向滚动 */}
+          <div className="flex-1 min-w-0">
+            <div className="relative -mx-4 md:mx-0">
+              {/* 滚动箭头按钮 - 悬浮在右侧 */}
+              <div className="hidden lg:flex items-center gap-2 absolute right-0 top-1/2 -translate-y-1/2 z-10 -translate-x-4">
+                <button
+                  onClick={() => scrollerRef.current?.scrollLeft()}
+                  disabled={!canScrollLeft}
+                  className="w-10 h-10 flex items-center justify-center bg-white rounded-full border-2 border-gray-200 hover:border-gray-900 hover:shadow-lg hover:scale-110 transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-gray-200 disabled:hover:shadow-none disabled:hover:scale-100"
+                  aria-label="向左滚动"
+                >
+                  <ChevronLeft className="w-5 h-5 text-gray-700" />
+                </button>
+                <button
+                  onClick={() => scrollerRef.current?.scrollRight()}
+                  disabled={!canScrollRight}
+                  className="w-10 h-10 flex items-center justify-center bg-white rounded-full border-2 border-gray-200 hover:border-gray-900 hover:shadow-lg hover:scale-110 transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-gray-200 disabled:hover:shadow-none disabled:hover:scale-100"
+                  aria-label="向右滚动"
+                >
+                  <ChevronRight className="w-5 h-5 text-gray-700" />
+                </button>
+              </div>
+
+              <HorizontalScroller
+                ref={scrollerRef}
+                className={scrollerClassName}
+                onScrollStateChange={handleScrollStateChange}
+              >
+                {children}
+              </HorizontalScroller>
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* 没有大卡片时，保持原有布局 */
+        <div className="relative -mx-4 md:mx-0">
+          <HorizontalScroller
+            ref={scrollerRef}
+            className={scrollerClassName}
+            onScrollStateChange={handleScrollStateChange}
+          >
+            {children}
+          </HorizontalScroller>
+        </div>
+      )}
     </div>
   );
 }
