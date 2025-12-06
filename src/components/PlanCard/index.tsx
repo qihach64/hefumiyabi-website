@@ -31,6 +31,15 @@ const cardVariantStyles: Record<CardVariant, string> = {
   glass: 'bg-white/80 backdrop-blur-md rounded-xl border border-white/50 shadow-lg transition-all duration-500',
 };
 
+// 图片比例类型
+type AspectRatio = 'square' | '3:4' | '4:3';
+
+const aspectRatioStyles: Record<AspectRatio, string> = {
+  'square': 'aspect-square',
+  '3:4': 'aspect-[3/4]',
+  '4:3': 'aspect-[4/3]',
+};
+
 interface PlanCardProps {
   plan: {
     id: string;
@@ -54,6 +63,8 @@ interface PlanCardProps {
   // 主题感知
   themeSlug?: string;
   themeColor?: string;
+  // 图片比例
+  aspectRatio?: AspectRatio;
 }
 
 export default function PlanCard({
@@ -63,6 +74,7 @@ export default function PlanCard({
   isRecommended = false,
   themeSlug,
   themeColor = '#FF7A9A', // 默认樱花色
+  aspectRatio = 'square', // 默认 1:1
 }: PlanCardProps) {
   // 使用主题色作为点缀色
   const accentColor = themeColor;
@@ -213,8 +225,8 @@ export default function PlanCard({
         className={`group block ${cardVariantStyles[variant]}`}
       >
         <div className={`relative ${variant !== 'default' && variant !== 'interactive' ? 'p-3' : ''}`}>
-          {/* 图片容器 - 1:1 正方形，紧凑布局 */}
-          <div className="relative aspect-square overflow-hidden rounded-xl bg-gray-100">
+          {/* 图片容器 - 支持不同比例 */}
+          <div className={`relative ${aspectRatioStyles[aspectRatio]} overflow-hidden rounded-xl bg-gray-100`}>
             {hasTryOn && tryOnResult ? (
               /* 已试穿：显示对比图 - 淡入效果 */
               <div

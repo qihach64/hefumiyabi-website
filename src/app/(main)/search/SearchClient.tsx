@@ -423,7 +423,7 @@ function SearchClientInner({
               </div>
             )}
 
-            {/* 套餐网格 - 与首页卡片风格一致 */}
+            {/* 套餐网格 - 搜索页使用 3:4 比例 */}
             {!isLoading && filteredAndSortedPlans.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
                 {filteredAndSortedPlans.map((plan) => (
@@ -433,6 +433,7 @@ function SearchClientInner({
                     variant="soft"
                     showMerchant={true}
                     themeColor={themeColor}
+                    aspectRatio="3:4"
                   />
                 ))}
               </div>
@@ -505,8 +506,8 @@ function SearchClientInner({
 function PlanCardSkeleton() {
   return (
     <div className="bg-white rounded-xl shadow-[0_2px_12px_-4px_rgba(0,0,0,0.08)] p-3">
-      {/* 图片骨架 - 1:1 正方形，圆角 */}
-      <div className="aspect-square bg-gray-100 animate-pulse rounded-xl" />
+      {/* 图片骨架 - 3:4 比例，圆角 */}
+      <div className="aspect-[3/4] bg-gray-100 animate-pulse rounded-xl" />
 
       {/* 内容骨架 */}
       <div className="mt-3 space-y-2">
