@@ -252,11 +252,11 @@ rounded-sm       // ❌ 太小，除非特殊情况
 
 ### 4. 套餐卡片（PlanCard）
 
-**必须使用 3:4 比例**：
+**图片比例规范（根据场景选择）**：
 
 ```tsx
-// ✅ 正确的图片容器
-<div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-gray-100">
+// ✅ 首页/搜索页：使用 1:1 比例（高信息密度，展示更多套餐）
+<div className="relative aspect-square overflow-hidden rounded-xl bg-gray-100">
   <Image
     src={imageUrl}
     alt={name}
@@ -265,10 +265,118 @@ rounded-sm       // ❌ 太小，除非特殊情况
   />
 </div>
 
-// ❌ 禁止使用其他比例
-<div className="relative aspect-square">        // ❌ 1:1
-<div className="relative aspect-video">         // ❌ 16:9
-<div className="relative h-64 w-full">          // ❌ 固定高度
+// ✅ 主题页：使用 4:3 比例（套餐少、空间多，参考 Airbnb）
+<div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-gray-100">
+  <Image ... />
+</div>
+
+// ❌ 禁止使用的比例
+<div className="relative aspect-video">         // ❌ 16:9 - 和服图片不适合
+<div className="relative h-64 w-full">          // ❌ 固定高度 - 响应式差
+```
+
+**比例选择指南**：
+| 场景 | 比例 | 原因 |
+|------|------|------|
+| 首页精选 | 1:1 | 高密度网格，快速浏览 |
+| 搜索结果 | 1:1 | 大量结果，信息密度优先 |
+| 主题套餐页 | 4:3 | 套餐数量少，视觉展示优先 |
+| 详情页相关推荐 | 1:1 | 辅助内容，不抢主视觉 |
+
+### 5. 卡片变体系统 (Card Variants)
+
+根据使用场景选择合适的卡片样式：
+
+| 变体 | 用途 | 视觉特点 |
+|------|------|----------|
+| `default` | 通用列表卡片 | 白色背景、微阴影、hover 加深阴影 |
+| `interactive` | 可点击卡片 | default + 悬停上浮 + 轻微放大 |
+| `sakura` | 品牌强调卡片 | 樱花粉边框、品牌阴影 |
+| `zen` | 高端/传统套餐 | 温暖米色背景(#FDFBF7)、hover 时淡边框 |
+| `glass` | Hero 叠加区域 | 毛玻璃效果、半透明 |
+| `soft` | 精选/推荐卡片 | 大圆角(3xl)、柔和长阴影 |
+
+```tsx
+// ✅ 变体样式定义
+const cardVariants = {
+  // 默认白卡片
+  default: "bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300",
+
+  // 交互式卡片（带上浮效果）
+  interactive: "bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300",
+
+  // 樱花主题卡片
+  sakura: "bg-white rounded-xl border-2 border-sakura-200 shadow-[0_4px_20px_-4px_rgba(236,72,153,0.15)]",
+
+  // 和风卡片（温暖高端）
+  zen: "bg-[#FDFBF7] rounded-xl border border-transparent hover:border-sakura-200/50 transition-all duration-300",
+
+  // 毛玻璃卡片（用于图片叠加）
+  glass: "bg-white/30 backdrop-blur-md rounded-2xl border border-white/40 shadow-lg",
+
+  // 柔和卡片（大阴影、大圆角）
+  soft: "bg-white rounded-3xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.1)]",
+};
+
+// ❌ 禁止混合使用不同变体的样式
+<div className="bg-[#FDFBF7] backdrop-blur-md rounded-3xl shadow-lg">
+  {/* 混合了 zen + glass + soft 的样式，视觉混乱 */}
+</div>
+```
+
+### 6. 卡片 Hover 动画规范
+
+```tsx
+// ✅ 标准卡片 hover 效果
+className="transition-all duration-300 ease-out hover:shadow-lg hover:-translate-y-1"
+
+// ✅ 图片 hover 效果
+className="transition-transform duration-300 group-hover:scale-105"
+
+// ✅ 按钮 hover 效果（浮动按钮）
+className="transition-all duration-200 hover:scale-110 hover:shadow-md"
+
+// ❌ 禁止的动画
+className="hover:scale-110"       // ❌ 放大幅度过大（最大 1.05）
+className="hover:rotate-3"        // ❌ 不符合风格
+className="hover:-translate-y-3"  // ❌ 上浮幅度过大（最大 -1）
+className="duration-100"          // ❌ 太快，感觉生硬
+className="duration-700"          // ❌ 太慢，感觉拖沓
+```
+
+### 7. 卡片内容层次
+
+```tsx
+// ✅ 正确的卡片内容结构
+<div className="group block">
+  {/* 1. 图片区域 */}
+  <div className="relative aspect-square overflow-hidden rounded-xl bg-gray-100">
+    <Image ... />
+    {/* 左上角：状态徽章（限时优惠、省¥XX） */}
+    <Badge className="absolute top-3 left-3" />
+    {/* 右上角：操作按钮（试穿、收藏） */}
+    <button className="absolute top-3 right-3" />
+    {/* 右下角：购物车按钮 */}
+    <button className="absolute bottom-3 right-3" />
+  </div>
+
+  {/* 2. 信息区域 */}
+  <div className="mt-3 space-y-1">
+    {/* 标题 */}
+    <h3 className="font-semibold text-[15px] text-gray-900 line-clamp-2">{name}</h3>
+    {/* 副标题（可选） */}
+    <p className="text-[13px] text-gray-500">{merchantName}</p>
+    {/* 价格 - 最醒目 */}
+    <p className="flex items-baseline gap-1.5">
+      <span className="text-[17px] font-bold text-gray-900">¥{price}</span>
+      <span className="text-[12px] text-gray-400 line-through">¥{originalPrice}</span>
+    </p>
+    {/* 标签（可选，最多 3 个） */}
+    <div className="flex flex-wrap gap-1">
+      <Badge variant="sakura" size="sm">{tag}</Badge>
+    </div>
+  </div>
+</div>
 ```
 
 ---

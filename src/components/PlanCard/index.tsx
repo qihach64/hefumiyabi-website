@@ -19,6 +19,18 @@ interface Tag {
   color: string | null;
 }
 
+// 卡片变体类型
+type CardVariant = 'default' | 'interactive' | 'soft' | 'zen' | 'glass';
+
+// 卡片变体样式 - 统一白色背景，优雅过渡
+const cardVariantStyles: Record<CardVariant, string> = {
+  default: 'bg-white transition-all duration-500',
+  interactive: 'bg-white hover:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.12)] hover:-translate-y-0.5 transition-all duration-500',
+  soft: 'bg-white rounded-xl shadow-[0_2px_12px_-4px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.15)] transition-all duration-500',
+  zen: 'bg-white rounded-xl hover:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.1)] transition-all duration-500',
+  glass: 'bg-white/80 backdrop-blur-md rounded-xl border border-white/50 shadow-lg transition-all duration-500',
+};
+
 interface PlanCardProps {
   plan: {
     id: string;
@@ -36,13 +48,28 @@ interface PlanCardProps {
     includes?: string[];
     planTags?: { tag: Tag }[];
   };
+  variant?: CardVariant;
   showMerchant?: boolean;
   isRecommended?: boolean;
   hideCampaignBadge?: boolean;
   hideDiscountBadge?: boolean;
+  // 主题感知
+  themeSlug?: string;
+  themeColor?: string;
 }
 
-export default function PlanCard({ plan, showMerchant = false, isRecommended = false, hideCampaignBadge = false, hideDiscountBadge = false }: PlanCardProps) {
+export default function PlanCard({
+  plan,
+  variant = 'default',
+  showMerchant = false,
+  isRecommended = false,
+  hideCampaignBadge = false,
+  hideDiscountBadge = false,
+  themeSlug,
+  themeColor = '#FF7A9A', // 默认樱花色
+}: PlanCardProps) {
+  // 使用主题色作为点缀色
+  const accentColor = themeColor;
   const [isAdding, setIsAdding] = useState(false);
   const [justChanged, setJustChanged] = useState(false);
   const [lastAction, setLastAction] = useState<'add' | 'remove' | null>(null);
@@ -187,9 +214,9 @@ export default function PlanCard({ plan, showMerchant = false, isRecommended = f
 
       <Link
         href={planDetailHref}
-        className="group block"
+        className={`group block ${cardVariantStyles[variant]}`}
       >
-        <div className="relative">
+        <div className={`relative ${variant !== 'default' && variant !== 'interactive' ? 'p-3' : ''}`}>
           {/* 图片容器 */}
           <div className="relative aspect-square overflow-hidden rounded-xl bg-gray-100">
             {hasTryOn && tryOnResult ? (
@@ -216,7 +243,7 @@ export default function PlanCard({ plan, showMerchant = false, isRecommended = f
                     src={plan.imageUrl}
                     alt={plan.name}
                     fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   />
                 ) : (
@@ -302,37 +329,44 @@ export default function PlanCard({ plan, showMerchant = false, isRecommended = f
             )}
           </div>
 
-          {/* 信息区域 */}
-          <div className="mt-3 space-y-1">
-            {/* 套餐名称 */}
-            <h3 className="font-semibold text-base text-gray-900 line-clamp-2 group-hover:underline leading-tight">
-              {plan.name}
-            </h3>
-
+          {/* 信息区域 - 统一风格 */}
+          <div className={`mt-3 space-y-1.5 ${variant !== 'default' && variant !== 'interactive' ? 'pb-2' : ''}`}>
             {/* 商家名称 */}
             {showMerchant && plan.merchantName && (
-              <p className="flex items-center gap-1 text-sm text-gray-500">
-                <span>🏠</span>
-                <span className="truncate">{plan.merchantName}</span>
+              <p className="text-[11px] font-medium tracking-wide text-gray-400 truncate">
+                {plan.merchantName}
               </p>
             )}
 
-            {/* 价格 */}
-            <p className="flex items-baseline gap-1.5">
-              <span className="text-lg font-bold text-gray-900">
+            {/* 套餐名称 */}
+            <h3 className="font-medium text-[15px] text-gray-900 line-clamp-2 leading-snug group-hover:text-gray-700 transition-colors duration-500">
+              {plan.name}
+            </h3>
+
+            {/* 分隔线 - 主题色 */}
+            <div
+              className="h-px transition-all duration-500 ease-out group-hover:w-10"
+              style={{
+                width: '24px',
+                backgroundColor: `${accentColor}50`,
+              }}
+            />
+
+            {/* 价格区域 */}
+            <div className="flex items-baseline gap-2">
+              <span className="text-[16px] font-semibold text-gray-900">
                 ¥{(plan.price / 100).toLocaleString()}
               </span>
               {plan.originalPrice && plan.originalPrice > plan.price && (
-                <span className="text-xs text-gray-400 line-through">
+                <span className="text-[11px] text-gray-400 line-through">
                   ¥{(plan.originalPrice / 100).toLocaleString()}
                 </span>
               )}
-              <span className="text-xs text-gray-500">/ 人</span>
-            </p>
+            </div>
 
             {/* 包含物 */}
             {plan.includes && plan.includes.length > 0 && (
-              <p className="text-xs text-gray-500 line-clamp-1">
+              <p className="text-[11px] text-gray-500 line-clamp-1">
                 含 {plan.includes.slice(0, 2).join(' · ')}
                 {plan.includes.length > 2 && ` 等${plan.includes.length}项`}
               </p>
@@ -340,26 +374,35 @@ export default function PlanCard({ plan, showMerchant = false, isRecommended = f
 
             {/* 评分 */}
             {showMerchant && (
-              <p className="flex items-center gap-1 text-sm text-gray-500">
-                <span>⭐</span>
-                <span className="font-medium text-gray-700">4.8</span>
-                <span>(128)</span>
-              </p>
+              <div className="flex items-center gap-1.5 text-[11px] text-gray-500">
+                <Star
+                  className="w-3 h-3"
+                  style={{ fill: accentColor, color: accentColor }}
+                />
+                <span className="font-medium">4.8</span>
+                <span className="text-gray-400">(128)</span>
+              </div>
             )}
 
-            {/* 标签 */}
+            {/* 标签 - 主题色边框 */}
             {plan.planTags && plan.planTags.length > 0 && (
-              <div className="flex flex-wrap gap-1 pt-0.5">
+              <div className="flex flex-wrap gap-1.5 pt-0.5">
                 {plan.planTags.slice(0, 3).map(({ tag }) => (
-                  <Badge key={tag.id} variant="sakura" size="sm">
-                    {tag.icon && <span className="mr-0.5">{tag.icon}</span>}
+                  <span
+                    key={tag.id}
+                    className="text-[10px] tracking-wide px-2 py-0.5 text-gray-500 bg-white transition-all duration-300 hover:text-gray-700"
+                    style={{
+                      border: `1px solid ${accentColor}40`,
+                    }}
+                  >
+                    {tag.icon && <span className="mr-1">{tag.icon}</span>}
                     {tag.name}
-                  </Badge>
+                  </span>
                 ))}
                 {plan.planTags.length > 3 && (
-                  <Badge variant="sakura" size="sm" className="opacity-60">
+                  <span className="text-[10px] tracking-wide px-2 py-0.5 text-gray-400 bg-white border border-gray-200">
                     +{plan.planTags.length - 3}
-                  </Badge>
+                  </span>
                 )}
               </div>
             )}

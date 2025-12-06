@@ -39,6 +39,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "rakuraku-kimono.com",
       },
+      {
+        protocol: "https",
+        hostname: "ewha-yifu.com",
+      },
     ],
   },
 };

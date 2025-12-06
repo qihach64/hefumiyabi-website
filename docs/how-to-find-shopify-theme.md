@@ -243,3 +243,4 @@ Schema版本: ${theme?.schema_version || '未知'}
 - [Shopify 主题开发文档](https://shopify.dev/themes)
 - [The4 官方网站](https://the4.co/) (Kalles 主题开发者)
 
+
