@@ -3,7 +3,13 @@
 import { motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 
-export default function ScrollIndicator() {
+interface ScrollIndicatorProps {
+  variant?: "dark" | "light";
+}
+
+export default function ScrollIndicator({ variant = "dark" }: ScrollIndicatorProps) {
+  const isLight = variant === "light";
+
   const handleClick = () => {
     // 滚动到 Hero 下方的内容区域
     window.scrollTo({
@@ -20,7 +26,11 @@ export default function ScrollIndicator() {
       transition={{ delay: 1.5, duration: 0.8 }}
       onClick={handleClick}
     >
-      <span className="text-xs uppercase tracking-[0.2em] text-white/60 mb-2 group-hover:text-white/80 transition-colors">
+      <span className={`text-xs uppercase tracking-[0.2em] mb-2 transition-colors ${
+        isLight
+          ? "text-gray-500 group-hover:text-gray-700"
+          : "text-white/60 group-hover:text-white/80"
+      }`}>
         向下探索
       </span>
       <motion.div
@@ -31,7 +41,11 @@ export default function ScrollIndicator() {
           ease: "easeInOut",
         }}
       >
-        <ChevronDown className="w-6 h-6 text-white/60 group-hover:text-white/80 transition-colors" />
+        <ChevronDown className={`w-6 h-6 transition-colors ${
+          isLight
+            ? "text-gray-500 group-hover:text-gray-700"
+            : "text-white/60 group-hover:text-white/80"
+        }`} />
       </motion.div>
     </motion.div>
   );

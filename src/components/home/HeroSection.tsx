@@ -35,8 +35,8 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
   const contentY = useTransform(scrollY, [0, 500], [0, 150]);
   // 透明度渐变 - 滚动时淡出
   const contentOpacity = useTransform(scrollY, [0, 400], [1, 0]);
-  // 背景缩放效果
-  const bgScale = useTransform(scrollY, [0, 500], [1, 1.1]);
+  // 背景缩放效果 - 初始略大，滚动时继续放大
+  const bgScale = useTransform(scrollY, [0, 500], [1.05, 1.15]);
 
   // 监听 Hero 是否在视口内
   useEffect(() => {
@@ -56,7 +56,7 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
   return (
     <section
       ref={heroRef}
-      className="relative h-screen w-full overflow-hidden bg-gray-900"
+      className="relative h-screen w-full overflow-hidden bg-white"
     >
       {/* Layer 1: 背景图片 */}
       <motion.div
@@ -76,17 +76,25 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
         />
         {/* 加载占位 */}
         {!imageLoaded && (
-          <div className="absolute inset-0 bg-gradient-to-br from-sakura-100 to-sakura-200 animate-pulse" />
+          <div className="absolute inset-0 bg-gradient-to-br from-sakura-50 to-sakura-100 animate-pulse" />
         )}
       </motion.div>
 
-      {/* Layer 2: 渐变遮罩 */}
-      <div className="absolute inset-0 z-[1] bg-gradient-to-b from-black/50 via-black/20 to-black/70" />
+      {/* Layer 2: Airy Gradient - 空气感渐变 */}
+      {/* 顶部：极淡黑色渐变，保证导航栏可读性 */}
+      <div className="absolute inset-0 z-[1] bg-gradient-to-b from-black/30 via-transparent to-transparent" />
 
-      {/* 樱花色调遮罩 */}
-      <div className="absolute inset-0 z-[1] bg-gradient-to-tr from-sakura-900/20 via-transparent to-transparent" />
+      {/* 底部：白色渐变，与页面背景无缝过渡 */}
+      <div className="absolute inset-0 z-[1] bg-gradient-to-t from-white via-white/60 to-transparent" />
 
-      {/* Layer 3: 主内容区 (视差滚动) */}
+      {/* Layer 3: 背景装饰文字 */}
+      <div className="absolute inset-0 z-[2] flex items-center justify-center pointer-events-none select-none overflow-hidden">
+        <span className="text-[20vw] font-serif italic font-bold text-black/[0.03] tracking-tight whitespace-nowrap">
+          Kimono
+        </span>
+      </div>
+
+      {/* Layer 4: 主内容区 (视差滚动) */}
       <motion.div
         className="relative z-10 h-full flex flex-col items-center justify-center px-4"
         style={{ y: contentY, opacity: contentOpacity }}
@@ -97,39 +105,50 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.3 }}
+            className="relative"
           >
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-2 drop-shadow-lg">
-              <span className="font-serif">Kimono One</span>
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-gray-900 mb-4">
+              <span className="font-serif italic tracking-tight">Kimono One</span>
             </h1>
-            <p className="text-2xl md:text-3xl lg:text-4xl text-white/90 font-light tracking-wider drop-shadow-md">
-              一の和服
-            </p>
+
+            {/* 日文标题 - 带装饰线 */}
+            <div className="flex items-center justify-center gap-4">
+              <span className="hidden md:block w-12 h-px bg-gray-400" />
+              <p className="text-2xl md:text-3xl lg:text-4xl text-gray-700 font-light tracking-[0.2em]">
+                一の和服
+              </p>
+              <span className="hidden md:block w-12 h-px bg-gray-400" />
+            </div>
           </motion.div>
 
-          {/* 副标题 */}
-          <motion.p
-            className="mt-6 text-lg md:text-xl text-white/80 font-light tracking-[0.2em] drop-shadow-sm"
+          {/* 副标题 - 磨砂胶囊背景 */}
+          <motion.div
+            className="mt-8"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.6 }}
           >
-            伝統の美、現代の心
-          </motion.p>
+            <span className="inline-block px-6 py-2 rounded-full bg-black/10 backdrop-blur-sm">
+              <p className="text-base md:text-lg text-gray-700 font-light tracking-[0.15em]">
+                伝統の美、現代の心
+              </p>
+            </span>
+          </motion.div>
         </div>
 
-        {/* 搜索面板 */}
+        {/* 搜索面板 - 亮色变体 */}
         <motion.div
           className="w-full max-w-4xl"
           initial={{ opacity: 0, y: 30, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.8, delay: 0.9 }}
         >
-          <HeroSearchPanel themes={themes} />
+          <HeroSearchPanel themes={themes} variant="light" />
         </motion.div>
       </motion.div>
 
-      {/* Layer 4: 滚动指示器 */}
-      <ScrollIndicator />
+      {/* Layer 5: 滚动指示器 */}
+      <ScrollIndicator variant="light" />
     </section>
   );
 }
