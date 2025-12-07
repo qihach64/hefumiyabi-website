@@ -132,17 +132,6 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
 
         {/* 主标题区域 */}
         <div className="text-center mb-8 md:mb-12 relative">
-          {/* 背景装饰 - 大号「雅」字 */}
-          <div
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none select-none"
-          >
-            <span
-              className="text-[12rem] md:text-[18rem] lg:text-[22rem] font-serif text-[#3D3A38]/[0.03] leading-none"
-            >
-              雅
-            </span>
-          </div>
-
           {/* 主标题 */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -162,41 +151,26 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
               <span className="w-8 md:w-12 h-px bg-gradient-to-l from-transparent to-sakura-400/60" />
             </motion.div>
 
-            {/* 英文品牌名 - 使用衬线体 + 樱花渐变 */}
+            {/* 主标题 - 日文品牌名 + 樱花渐变 */}
             <h1 className="relative">
               <span
-                className="block text-5xl md:text-7xl lg:text-8xl font-serif tracking-tight bg-clip-text text-transparent"
+                className="block text-5xl md:text-7xl lg:text-8xl font-serif tracking-[0.1em] bg-clip-text text-transparent"
                 style={{
                   backgroundImage: "linear-gradient(135deg, #8B1634 0%, #A61D3F 25%, #4A4542 75%, #3D3A38 100%)",
                   filter: "drop-shadow(0 2px 4px rgba(139, 22, 52, 0.15))"
                 }}
               >
-                Kimono One
+                一の和服
               </span>
               {/* 樱花光晕效果 */}
               <span
-                className="absolute inset-0 text-5xl md:text-7xl lg:text-8xl font-serif tracking-tight opacity-20 blur-[2px] pointer-events-none select-none"
+                className="absolute inset-0 text-5xl md:text-7xl lg:text-8xl font-serif tracking-[0.1em] opacity-20 blur-[2px] pointer-events-none select-none"
                 style={{ color: "#FF7A9A" }}
                 aria-hidden="true"
               >
-                Kimono One
-              </span>
-            </h1>
-
-            {/* 日文品牌名 - 无衬线体，宽松字间距 */}
-            <motion.div
-              className="mt-3 md:mt-4"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.7 }}
-            >
-              <span
-                className="text-xl md:text-2xl lg:text-3xl font-light tracking-[0.3em]"
-                style={{ color: "#5C5552" }}
-              >
                 一の和服
               </span>
-            </motion.div>
+            </h1>
 
             {/* 底部装饰线 - 樱花色调 */}
             <motion.div
@@ -217,18 +191,12 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
             transition={{ duration: 0.8, delay: 0.9 }}
           >
             <span
-              className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full backdrop-blur-md"
+              className="inline-flex items-center px-6 py-2.5 rounded-full backdrop-blur-md"
               style={{
                 background: "rgba(255,255,255,0.6)",
                 boxShadow: "0 4px 24px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.8)"
               }}
             >
-              {/* 左侧印章装饰 - 樱花色 */}
-              <span
-                className="hidden sm:flex items-center justify-center w-6 h-6 rounded border-2 border-sakura-600 text-[10px] font-serif text-sakura-600"
-              >
-                雅
-              </span>
               <p
                 className="text-sm md:text-base font-light tracking-[0.2em]"
                 style={{ color: "#4A4542" }}
