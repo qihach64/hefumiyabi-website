@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Search, MapPin, X, Calendar, Palette, Sparkles } from "lucide-react";
 import { useSearchState } from "@/contexts/SearchStateContext";
+import { useSearchBar } from "@/contexts/SearchBarContext";
 import { getThemeIcon } from "@/lib/themeIcons";
 
 interface Theme {
@@ -17,6 +18,7 @@ interface Theme {
 export default function MobileSearchBar() {
   const router = useRouter();
   const { searchState, setLocation, setDate, setTheme } = useSearchState();
+  const { isHeroVisible } = useSearchBar();
   const [isMobileModalOpen, setIsMobileModalOpen] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [allLocations, setAllLocations] = useState<string[]>([]);
@@ -132,8 +134,12 @@ export default function MobileSearchBar() {
 
   return (
     <>
-      {/* 移动端搜索按钮 - 在 Header 下方显示 */}
-      <div className="md:hidden sticky top-16 z-40 bg-white border-b border-gray-200 px-4 py-3">
+      {/* 移动端搜索按钮 - 在 Header 下方显示，Hero 可见时隐藏 */}
+      <div
+        className={`md:hidden sticky top-16 z-40 bg-white border-b border-gray-200 px-4 py-3 transition-all duration-300 ${
+          isHeroVisible ? "opacity-0 pointer-events-none -translate-y-full" : "opacity-100 translate-y-0"
+        }`}
+      >
         <button
           onClick={handleOpenModal}
           className="w-full flex items-center gap-3 bg-white border border-gray-300 rounded-full px-4 py-3 shadow-sm active:scale-[0.98] transition-all"

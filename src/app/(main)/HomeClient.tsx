@@ -11,6 +11,7 @@ import HeroSection from "@/components/home/HeroSection";
 import { Sparkles, MapPin, Store as StoreIcon, Tag, X, Filter, Users, Calendar, Loader2, Plus, ArrowRight } from "lucide-react";
 import { Button, Badge } from "@/components/ui";
 import { useSearchLoading } from "@/contexts/SearchLoadingContext";
+import { useSearchBar } from "@/contexts/SearchBarContext";
 
 // 类型定义 (从 PlansClient 复制)
 interface Store {
@@ -101,9 +102,7 @@ export default function HomeClient({
 }: HomeClientProps) {
   const searchParams = useSearchParams();
   const { isSearching, searchTarget, stopSearch } = useSearchLoading();
-
-  // Hero visibility state (for header search bar visibility)
-  const [isHeroVisible, setIsHeroVisible] = useState(true);
+  const { setIsHeroVisible } = useSearchBar();
 
   // 搜索参数
   const searchLocation = searchParams.get('location') || '';

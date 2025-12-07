@@ -6,12 +6,15 @@ interface SearchBarContextType {
   isSearchBarExpanded: boolean;  // Header 搜索栏是否展开（大搜索栏）
   setIsSearchBarExpanded: (expanded: boolean) => void;
   expandManually: () => void; // 手动展开搜索栏
+  isHeroVisible: boolean; // Hero 是否可见（用于隐藏 Header 搜索栏）
+  setIsHeroVisible: (visible: boolean) => void;
 }
 
 const SearchBarContext = createContext<SearchBarContextType | undefined>(undefined);
 
 export function SearchBarProvider({ children }: { children: ReactNode }) {
   const [isSearchBarExpanded, setIsSearchBarExpanded] = useState(true); // 初始展开（大搜索栏）
+  const [isHeroVisible, setIsHeroVisible] = useState(true); // Hero 默认可见
   const manuallyExpandedRef = useRef(false); // 记录是否手动展开
   const expandedScrollYRef = useRef(0); // 记录手动展开时的滚动位置
 
@@ -64,6 +67,8 @@ export function SearchBarProvider({ children }: { children: ReactNode }) {
         isSearchBarExpanded,
         setIsSearchBarExpanded,
         expandManually,
+        isHeroVisible,
+        setIsHeroVisible,
       }}
     >
       {children}

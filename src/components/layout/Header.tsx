@@ -13,7 +13,7 @@ import { useSearchBar } from "@/contexts/SearchBarContext";
 
 export default function Header() {
   const { data: session } = useSession();
-  const { isSearchBarExpanded } = useSearchBar();
+  const { isSearchBarExpanded, isHeroVisible } = useSearchBar();
   const [merchant, setMerchant] = useState<any>(null);
 
   // 检查用户是否有商家账户
@@ -80,8 +80,12 @@ export default function Header() {
             </Link>
           </div>
 
-          {/* 中间：搜索栏（始终显示，根据滚动状态展开/收起） */}
-          <div className="flex-1 flex justify-center max-w-2xl mx-4">
+          {/* 中间：搜索栏（Hero 可见时隐藏，滚动后显示） */}
+          <div
+            className={`flex-1 flex justify-center max-w-2xl mx-4 transition-all duration-300 ${
+              isHeroVisible ? "opacity-0 pointer-events-none scale-95" : "opacity-100 scale-100"
+            }`}
+          >
             <HeaderSearchBar />
           </div>
 
