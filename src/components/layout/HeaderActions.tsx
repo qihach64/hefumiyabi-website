@@ -13,9 +13,10 @@ interface HeaderActionsProps {
     status: string;
     businessName: string;
   } | null;
+  isTransparent?: boolean;
 }
 
-export default function HeaderActions({ isLoggedIn, merchant }: HeaderActionsProps) {
+export default function HeaderActions({ isLoggedIn, merchant, isTransparent }: HeaderActionsProps) {
   const pathname = usePathname();
   const [isMounted, setIsMounted] = useState(false);
   const isMerchantPage = pathname?.startsWith("/merchant");
@@ -65,7 +66,7 @@ export default function HeaderActions({ isLoggedIn, merchant }: HeaderActionsPro
           </Link>
         )}
 
-        <CartIcon />
+        <CartIcon isTransparent={isTransparent} />
       </div>
     );
   }
@@ -125,7 +126,7 @@ export default function HeaderActions({ isLoggedIn, merchant }: HeaderActionsPro
       )}
 
       {/* 购物车图标 - 仅在客户模式显示 */}
-      {!isMerchantPage && <CartIcon />}
+      {!isMerchantPage && <CartIcon isTransparent={isTransparent} />}
     </div>
   );
 }

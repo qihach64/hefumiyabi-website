@@ -10,9 +10,10 @@ interface NavMenuButtonProps {
     label: string;
     special?: boolean;
   }>;
+  isTransparent?: boolean;
 }
 
-export default function NavMenuButton({ navLinks }: NavMenuButtonProps) {
+export default function NavMenuButton({ navLinks, isTransparent }: NavMenuButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -20,10 +21,21 @@ export default function NavMenuButton({ navLinks }: NavMenuButtonProps) {
       {/* 菜单按钮 */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 border border-gray-300 rounded-full px-3 py-2 hover:shadow-md transition-all duration-200 bg-white"
+        className={`flex items-center gap-2 rounded-full px-3 py-2 transition-all duration-300 ${
+          isTransparent
+            ? 'border border-white/50 bg-white/10 backdrop-blur-sm hover:bg-white/20'
+            : 'border border-gray-300 bg-white hover:shadow-md'
+        }`}
       >
-        <Menu className="w-4 h-4 text-gray-700" />
-        <span className="text-sm font-medium text-gray-700 hidden lg:inline">菜单</span>
+        <Menu className={`w-4 h-4 transition-colors duration-300 ${isTransparent ? 'text-white' : 'text-gray-700'}`} />
+        <span
+          className={`text-sm font-medium hidden lg:inline transition-colors duration-300 ${
+            isTransparent ? 'text-white' : 'text-gray-700'
+          }`}
+          style={isTransparent ? { textShadow: '0 1px 2px rgba(0,0,0,0.3)' } : undefined}
+        >
+          菜单
+        </span>
       </button>
 
       {/* 下拉菜单 */}

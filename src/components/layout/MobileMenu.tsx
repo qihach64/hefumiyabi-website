@@ -15,9 +15,10 @@ interface MobileMenuProps {
     status: string;
     businessName: string;
   } | null;
+  isTransparent?: boolean;
 }
 
-export default function MobileMenu({ isLoggedIn, userName, userEmail, merchant }: MobileMenuProps) {
+export default function MobileMenu({ isLoggedIn, userName, userEmail, merchant, isTransparent }: MobileMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
 
@@ -83,7 +84,12 @@ export default function MobileMenu({ isLoggedIn, userName, userEmail, merchant }
       {/* 汉堡菜单按钮 */}
       <button
         onClick={() => setIsOpen(true)}
-        className="md:hidden inline-flex items-center justify-center p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+        className={`md:hidden inline-flex items-center justify-center p-2 rounded-lg transition-all duration-300 ${
+          isTransparent
+            ? 'text-white hover:text-white/90 hover:bg-white/20'
+            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+        }`}
+        style={isTransparent ? { filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))' } : undefined}
         aria-label="打开菜单"
       >
         <Menu className="w-6 h-6" />

@@ -11,9 +11,10 @@ interface UserMenuProps {
     email?: string | null;
     avatar?: string | null;
   };
+  isTransparent?: boolean;
 }
 
-export default function UserMenu({ user }: UserMenuProps) {
+export default function UserMenu({ user, isTransparent }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -44,9 +45,10 @@ export default function UserMenu({ user }: UserMenuProps) {
           {user.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
         </div>
         <ChevronDown
-          className={`w-4 h-4 text-gray-600 transition-transform hidden md:block ${
+          className={`w-4 h-4 transition-all duration-300 hidden md:block ${
             isOpen ? "rotate-180" : ""
-          }`}
+          } ${isTransparent ? 'text-white' : 'text-gray-600'}`}
+          style={isTransparent ? { filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))' } : undefined}
         />
       </button>
 
