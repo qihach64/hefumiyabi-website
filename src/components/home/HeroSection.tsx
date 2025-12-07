@@ -87,14 +87,7 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
       {/* 底部：白色渐变，与页面背景无缝过渡 */}
       <div className="absolute inset-0 z-[1] bg-gradient-to-t from-white via-white/60 to-transparent" />
 
-      {/* Layer 3: 背景装饰文字 */}
-      <div className="absolute inset-0 z-[2] flex items-center justify-center pointer-events-none select-none overflow-hidden">
-        <span className="text-[20vw] font-serif italic font-bold text-black/[0.03] tracking-tight whitespace-nowrap">
-          Kimono
-        </span>
-      </div>
-
-      {/* Layer 4: 主内容区 (视差滚动) */}
+      {/* Layer 3: 主内容区 (视差滚动) */}
       <motion.div
         className="relative z-10 h-full flex flex-col items-center justify-center px-4"
         style={{ y: contentY, opacity: contentOpacity }}
@@ -147,7 +140,7 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
         </motion.div>
       </motion.div>
 
-      {/* Layer 5: 滚动指示器 */}
+      {/* Layer 4: 滚动指示器 */}
       <ScrollIndicator variant="light" />
     </section>
   );
