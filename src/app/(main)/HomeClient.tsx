@@ -7,6 +7,7 @@ import PlanCardGrid from "@/components/PlanCard/PlanCardGrid";
 import ScrollableSection from "@/components/ScrollableSection";
 import FeaturedPlanCard from "@/components/PlanCard/FeaturedPlanCard";
 import MobileFilterDrawer from "@/components/MobileFilterDrawer";
+import HeroSection from "@/components/home/HeroSection";
 import { Sparkles, MapPin, Store as StoreIcon, Tag, X, Filter, Users, Calendar, Loader2, Plus, ArrowRight } from "lucide-react";
 import { Button, Badge } from "@/components/ui";
 import { useSearchLoading } from "@/contexts/SearchLoadingContext";
@@ -101,9 +102,22 @@ export default function HomeClient({
   const searchParams = useSearchParams();
   const { isSearching, searchTarget, stopSearch } = useSearchLoading();
 
+  // Hero visibility state (for header search bar visibility)
+  const [isHeroVisible, setIsHeroVisible] = useState(true);
+
   // 搜索参数
   const searchLocation = searchParams.get('location') || '';
   const searchDate = searchParams.get('date') || '';
+
+  // Convert themeSections to Hero format
+  const heroThemes = useMemo(() =>
+    themeSections.map(section => ({
+      id: section.id,
+      slug: section.slug,
+      name: section.label,
+      icon: section.icon,
+      color: section.color,
+    })), [themeSections]);
 
   // 过滤器状态
   const [selectedStoreId, setSelectedStoreId] = useState<string>('');
@@ -557,8 +571,15 @@ export default function HomeClient({
           </div>
         </section>
       ) : (
-        /* 🏠 探索模式 - Theme 分类横向滚动 */
+        /* 🏠 探索模式 - Hero + Theme 分类横向滚动 */
         <>
+          {/* Hero Section */}
+          <HeroSection
+            themes={heroThemes}
+            onHeroVisibilityChange={setIsHeroVisible}
+          />
+
+          {/* Theme Sections */}
           <div>
             {themeSections.map((section, index) => (
               <section
