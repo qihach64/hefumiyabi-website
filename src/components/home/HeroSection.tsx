@@ -8,7 +8,7 @@ import ScrollIndicator from "./ScrollIndicator";
 
 // Hero 背景图片 (Unsplash)
 const HERO_IMAGES = [
-  "https://images.unsplash.com/photo-1528164344705-47542687000d?q=80&w=2092&auto=format&fit=crop", // 和服女性
+  "https://images.unsplash.com/photo-1558445034-055296cc0aca?q=80&w=2670&auto=format&fit=crop",
 ];
 
 interface Theme {
