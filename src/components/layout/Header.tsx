@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import UserMenu from "./UserMenu";
@@ -86,20 +85,103 @@ export default function Header() {
               merchant={merchant}
             />
 
-            {/* Logo */}
-            <Link href="/" className="flex items-center gap-2 md:gap-3 shrink-0 group">
-              <div className="relative w-8 h-8 md:w-10 md:h-10 transition-transform group-hover:scale-105">
-                <Image
-                  src="/logo.svg"
-                  alt="Kimono One"
-                  fill
-                  className="object-contain"
-                  priority
+            {/* Logo - 家紋スタイル CSS Version - Sakura Theme */}
+            <Link href="/" className="flex items-center gap-2.5 md:gap-3 shrink-0 group">
+              {/* 家紋 Kamon - CSS Rendered */}
+              <div className="relative w-10 h-10 md:w-12 md:h-12 transition-transform duration-300 group-hover:scale-105">
+                {/* Outer ring */}
+                <div
+                  className={`absolute inset-0 rounded-full border-2 transition-colors duration-300 ${
+                    isTransparent
+                      ? 'border-sakura-600 shadow-[0_0_8px_rgba(255,255,255,0.3)]'
+                      : 'border-sakura-500 group-hover:border-sakura-600'
+                  }`}
                 />
+                {/* Decorative middle ring with pattern simulation */}
+                <div
+                  className={`absolute inset-[3px] md:inset-1 rounded-full transition-colors duration-300 ${
+                    isTransparent
+                      ? 'border border-sakura-500/60'
+                      : 'border border-sakura-400/50'
+                  }`}
+                  style={{
+                    background: isTransparent
+                      ? 'repeating-conic-gradient(from 0deg, transparent 0deg 30deg, rgba(236, 72, 153, 0.08) 30deg 60deg)'
+                      : 'repeating-conic-gradient(from 0deg, transparent 0deg 30deg, rgba(236, 72, 153, 0.06) 30deg 60deg)',
+                  }}
+                />
+                {/* Inner circle - background */}
+                <div
+                  className={`absolute inset-[6px] md:inset-2 rounded-full transition-colors duration-300 ${
+                    isTransparent
+                      ? 'bg-white/90 backdrop-blur-sm'
+                      : 'bg-white'
+                  }`}
+                />
+                {/* Center character 一 */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span
+                    className={`font-serif text-base md:text-lg font-medium transition-colors duration-300 select-none ${
+                      isTransparent
+                        ? 'text-sakura-700'
+                        : 'text-sakura-600 group-hover:text-sakura-700'
+                    }`}
+                    style={{
+                      fontFamily: '"Noto Serif JP", "Source Han Serif", serif',
+                      marginTop: '1px',
+                    }}
+                  >
+                    一
+                  </span>
+                </div>
+                {/* Decorative dots - 桜 petals hint (5 points like cherry blossom) */}
+                {[0, 72, 144, 216, 288].map((angle, i) => {
+                  const radius = 17; // pixels from center
+                  const rad = (angle - 90) * (Math.PI / 180);
+                  const x = Math.cos(rad) * radius;
+                  const y = Math.sin(rad) * radius;
+                  return (
+                    <div
+                      key={i}
+                      className={`absolute w-1 h-1 rounded-full transition-all duration-300 ${
+                        isTransparent
+                          ? 'bg-sakura-500/70'
+                          : 'bg-sakura-400/60 group-hover:bg-sakura-500/70'
+                      }`}
+                      style={{
+                        top: `calc(50% + ${y}px)`,
+                        left: `calc(50% + ${x}px)`,
+                        transform: 'translate(-50%, -50%)',
+                      }}
+                    />
+                  );
+                })}
               </div>
-              <span className="text-base md:text-lg font-bold text-sakura-600 transition-colors group-hover:text-sakura-700">
-                Kimono One
-              </span>
+
+              {/* Typography - 和モダン Style - Sakura Theme */}
+              <div className="flex flex-col leading-none">
+                {/* Main brand name */}
+                <span
+                  className={`font-serif text-lg md:text-xl tracking-tight transition-all duration-300 ${
+                    isTransparent
+                      ? 'text-sakura-700 drop-shadow-[0_1px_2px_rgba(255,255,255,0.8)]'
+                      : 'text-sakura-600 group-hover:text-sakura-700'
+                  }`}
+                >
+                  <span className="italic font-medium">Kimono</span>
+                  <span className="font-light ml-1">One</span>
+                </span>
+                {/* Japanese subtitle */}
+                <span
+                  className={`hidden md:block text-[10px] tracking-[0.25em] mt-1 font-medium transition-colors duration-300 ${
+                    isTransparent
+                      ? 'text-sakura-600/80 drop-shadow-[0_1px_1px_rgba(255,255,255,0.6)]'
+                      : 'text-sakura-500/70 group-hover:text-sakura-600/80'
+                  }`}
+                >
+                  着物レンタル
+                </span>
+              </div>
             </Link>
           </div>
 

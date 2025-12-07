@@ -301,11 +301,12 @@ export default function FeaturedPlanCard({
             {/* 第三区块：包含（带分割线） */}
             {plan.includes && plan.includes.length > 0 && (
               <div className="mb-5">
-                {/* 分隔线 - 渐变 */}
+                {/* 分隔线 - 主题色渐变 */}
                 <div
-                  className="h-px mb-4 transition-all duration-500 ease-out group-hover:w-20 bg-gradient-to-r from-gray-200 to-transparent"
+                  className="h-px mb-4 transition-all duration-500 ease-out group-hover:w-20"
                   style={{
                     width: '40px',
+                    background: `linear-gradient(to right, ${themeColor}50, transparent)`,
                   }}
                 />
                 <p className="text-xs font-semibold text-gray-500 mb-2.5 uppercase tracking-wide">
@@ -315,7 +316,10 @@ export default function FeaturedPlanCard({
                   {plan.includes.map((item, index) => (
                     <span
                       key={index}
-                      className="text-xs px-2.5 py-1 rounded-md text-gray-600 font-medium border border-gray-100 bg-gray-50/50"
+                      className="text-xs px-2.5 py-1 rounded-md text-gray-600 font-medium bg-white/80 transition-colors duration-300"
+                      style={{
+                        border: `1px solid ${themeColor}30`,
+                      }}
                     >
                       {item}
                     </span>
@@ -327,10 +331,12 @@ export default function FeaturedPlanCard({
             {/* 第四区块：标签（带分割线） */}
             {plan.planTags && plan.planTags.length > 0 && (
               <div className="mb-5">
-                 <div
-                  className="h-px mb-4 transition-all duration-500 ease-out group-hover:w-20 bg-gradient-to-r from-gray-200 to-transparent"
+                {/* 分隔线 - 主题色渐变 */}
+                <div
+                  className="h-px mb-4 transition-all duration-500 ease-out group-hover:w-20"
                   style={{
                     width: '40px',
+                    background: `linear-gradient(to right, ${themeColor}50, transparent)`,
                   }}
                 />
                 <p className="text-xs font-semibold text-gray-500 mb-2.5 uppercase tracking-wide">
@@ -340,7 +346,10 @@ export default function FeaturedPlanCard({
                   {plan.planTags.map(({ tag }) => (
                     <span
                       key={tag.id}
-                      className="text-xs px-2 py-1 rounded text-gray-500 bg-gray-50"
+                      className="text-xs px-2 py-1 rounded-md text-gray-600 font-medium bg-white/80 transition-colors duration-300"
+                      style={{
+                        border: `1px solid ${themeColor}30`,
+                      }}
                     >
                       {tag.icon && <span className="mr-0.5">{tag.icon}</span>}
                       {tag.name}
