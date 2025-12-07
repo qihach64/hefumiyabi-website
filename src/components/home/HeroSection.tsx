@@ -8,9 +8,7 @@ import ScrollIndicator from "./ScrollIndicator";
 
 // Hero 背景图片 (Unsplash)
 const HERO_IMAGES = [
-  "https://images.unsplash.com/photo-1528360983277-13d401cdc186?q=80&w=2070&auto=format&fit=crop", // 京都和服
-  "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?q=80&w=2070&auto=format&fit=crop", // 传统街道
-  "https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?q=80&w=2070&auto=format&fit=crop", // 樱花
+  "https://images.unsplash.com/photo-1528164344705-47542687000d?q=80&w=2092&auto=format&fit=crop", // 和服女性
 ];
 
 interface Theme {
