@@ -149,10 +149,10 @@ export default function FeaturedPlanCard({
 
       <Link
         href={planDetailHref}
-        className="group block bg-white rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 border-2 border-transparent hover:border-sakura-200 h-full"
+        className="group block bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-sakura-lg transition-all duration-500 border border-gray-100 hover:border-sakura-200/50 h-full relative"
       >
         <div className="flex flex-col h-full">
-          {/* 图片容器 - 3:4 比例，不随父容器高度拉伸，保持优雅比例 */}
+          {/* 图片容器 - 3:4 比例 */}
           <div className="relative w-full aspect-[3/4] overflow-hidden bg-gray-100 flex-shrink-0">
             {hasTryOn && tryOnResult ? (
               <div
@@ -187,24 +187,31 @@ export default function FeaturedPlanCard({
               </>
             )}
 
-            {/* 精选标签 - 统一使用金色/橙色渐变，代表高品质，不随主题变色 */}
+            {/* 精选标签 - 使用 Glass Premium 风格 */}
             <div className="absolute top-4 left-4 z-10">
               <div
-                className="px-3 py-1.5 rounded-full backdrop-blur-sm flex items-center gap-2 shadow-lg"
+                className="px-3 py-1.5 rounded-full glass-premium flex items-center gap-2"
                 style={{
-                  background: `linear-gradient(135deg, #F59E0B 0%, #D97706 100%)`,
+                   // 移除硬编码的渐变背景，改用边框和文字渐变来体现高级感
+                   // 或者保留渐变但增加透明度
+                   background: 'rgba(255, 255, 255, 0.8)',
+                   border: '1px solid rgba(245, 158, 11, 0.3)',
                 }}
               >
-                <Award className="w-4 h-4 text-white" />
-                <span className="text-sm font-bold text-white">精选推荐</span>
+                <div className="p-1 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-sm">
+                    <Award className="w-3 h-3" />
+                </div>
+                <span className="text-sm font-bold text-gray-800 tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-amber-600 to-orange-600">
+                    精选推荐
+                </span>
               </div>
             </div>
 
-            {/* 试穿按钮 */}
+            {/* 试穿按钮 - Glass Button */}
             {!hasTryOn && (
               <button
                 onClick={handleTryOn}
-                className="absolute top-4 right-4 p-2.5 rounded-full bg-white/90 hover:bg-white text-gray-700 shadow-lg hover:scale-110 transition-all z-10"
+                className="absolute top-4 right-4 p-2.5 rounded-full glass-button text-gray-700 hover:text-sakura-600 z-10"
                 aria-label="AI试穿"
                 title="点击试穿看看"
               >
@@ -216,7 +223,7 @@ export default function FeaturedPlanCard({
             {hasTryOn && (
               <button
                 onClick={handleRetry}
-                className="absolute top-4 right-4 p-2.5 rounded-full bg-white/90 hover:bg-white shadow-lg hover:scale-110 transition-all z-10"
+                className="absolute top-4 right-4 p-2.5 rounded-full glass-button hover:text-sakura-600 z-10"
                 aria-label="重新试穿"
                 title="点击重新试穿"
               >
@@ -224,18 +231,18 @@ export default function FeaturedPlanCard({
               </button>
             )}
 
-            {/* 购物车按钮 */}
+            {/* 购物车按钮 - Glass Button */}
             <button
               onClick={handleToggleCart}
               disabled={isAdding}
-              className={`absolute bottom-4 right-4 p-3 rounded-full shadow-lg transition-all ${
+              className={`absolute bottom-4 right-4 p-3 rounded-full transition-all glass-button ${
                 justChanged
                   ? lastAction === 'add'
-                    ? 'bg-green-500 text-white scale-110'
-                    : 'bg-gray-400 text-white scale-110'
+                    ? 'bg-green-50/90 text-green-600 scale-110 border-green-200'
+                    : 'bg-gray-50/90 text-gray-400 scale-110'
                   : isInCart
-                  ? 'bg-sakura-500 text-white hover:bg-sakura-600'
-                  : 'bg-white/90 text-gray-700 hover:bg-white hover:scale-110'
+                  ? 'bg-sakura-50/90 text-sakura-600 border-sakura-200'
+                  : 'text-gray-700 hover:scale-110'
               }`}
               aria-label={isInCart ? "从购物车移除" : "加入购物车"}
               title={isInCart ? "点击从购物车移除" : "点击加入购物车"}
@@ -252,7 +259,12 @@ export default function FeaturedPlanCard({
           </div>
 
           {/* 信息区域 - 重新排版，均匀留白 */}
-          <div className="p-5 md:p-6 flex-1 flex flex-col">
+          <div className="p-5 md:p-6 flex-1 flex flex-col bg-white/50 backdrop-blur-sm relative z-20">
+            {/* 装饰性背景光晕 */}
+             <div 
+                className="absolute top-0 right-0 w-32 h-32 bg-sakura-100/30 rounded-full blur-3xl -z-10 translate-x-10 -translate-y-10 pointer-events-none"
+             />
+
             {/* 第一区块：商家 + 地区 + 套餐名称 */}
             <div className="mb-4">
               {/* 商家名称 + 地区 */}
@@ -289,12 +301,11 @@ export default function FeaturedPlanCard({
             {/* 第三区块：包含（带分割线） */}
             {plan.includes && plan.includes.length > 0 && (
               <div className="mb-5">
-                {/* 分隔线 */}
+                {/* 分隔线 - 渐变 */}
                 <div
-                  className="h-px mb-4 transition-all duration-500 ease-out group-hover:w-20"
+                  className="h-px mb-4 transition-all duration-500 ease-out group-hover:w-20 bg-gradient-to-r from-gray-200 to-transparent"
                   style={{
                     width: '40px',
-                    backgroundColor: `${themeColor}40`,
                   }}
                 />
                 <p className="text-xs font-semibold text-gray-500 mb-2.5 uppercase tracking-wide">
@@ -304,11 +315,7 @@ export default function FeaturedPlanCard({
                   {plan.includes.map((item, index) => (
                     <span
                       key={index}
-                      className="text-xs px-2 py-1 rounded-md text-gray-600 font-medium"
-                      style={{
-                        backgroundColor: `${themeColor}08`,
-                        border: `1px solid ${themeColor}20`,
-                      }}
+                      className="text-xs px-2.5 py-1 rounded-md text-gray-600 font-medium border border-gray-100 bg-gray-50/50"
                     >
                       {item}
                     </span>
@@ -320,12 +327,10 @@ export default function FeaturedPlanCard({
             {/* 第四区块：标签（带分割线） */}
             {plan.planTags && plan.planTags.length > 0 && (
               <div className="mb-5">
-                {/* 分隔线 */}
-                <div
-                  className="h-px mb-4 transition-all duration-500 ease-out group-hover:w-20"
+                 <div
+                  className="h-px mb-4 transition-all duration-500 ease-out group-hover:w-20 bg-gradient-to-r from-gray-200 to-transparent"
                   style={{
                     width: '40px',
-                    backgroundColor: `${themeColor}40`,
                   }}
                 />
                 <p className="text-xs font-semibold text-gray-500 mb-2.5 uppercase tracking-wide">
@@ -346,7 +351,7 @@ export default function FeaturedPlanCard({
             )}
 
             {/* 第五区块：价格 */}
-            <div className="mt-auto pt-4 border-t border-gray-100">
+            <div className="mt-auto pt-4 border-t border-gray-100/50">
               <div className="flex items-baseline flex-wrap gap-x-3 gap-y-1">
                 <span className="text-3xl md:text-4xl font-bold text-gray-900 whitespace-nowrap">
                   ¥{(plan.price / 100).toLocaleString()}<span className="text-sm font-normal text-gray-500">/人</span>
@@ -357,7 +362,7 @@ export default function FeaturedPlanCard({
                       ¥{(plan.originalPrice / 100).toLocaleString()}
                     </span>
                     <span
-                      className="text-xs font-bold px-2 py-0.5 rounded bg-red-50 text-red-600"
+                      className="text-xs font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-100"
                     >
                       省¥{((plan.originalPrice - plan.price) / 100).toLocaleString()}
                     </span>

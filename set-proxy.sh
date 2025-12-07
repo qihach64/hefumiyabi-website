@@ -23,3 +23,6 @@ echo "  OR add these exports to your ~/.zshrc for permanent setup"
 
 
 
+
+
+

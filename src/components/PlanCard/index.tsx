@@ -28,7 +28,7 @@ const cardVariantStyles: Record<CardVariant, string> = {
   interactive: 'bg-white hover:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.12)] hover:-translate-y-0.5 transition-all duration-500',
   soft: 'bg-white rounded-xl shadow-[0_2px_12px_-4px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.15)] transition-all duration-500',
   zen: 'bg-white rounded-xl hover:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.1)] transition-all duration-500',
-  glass: 'bg-white/80 backdrop-blur-md rounded-xl border border-white/50 shadow-lg transition-all duration-500',
+  glass: 'glass-premium rounded-xl transition-all duration-500',
 };
 
 // 图片比例类型
@@ -262,11 +262,11 @@ export default function PlanCard({
               </>
             )}
 
-            {/* 试穿按钮 - 右上角，与购物车对齐 */}
+            {/* 试穿按钮 - Glass Button */}
             {!hasTryOn && (
               <button
                 onClick={handleTryOn}
-                className="absolute top-3 right-3 p-2 rounded-full bg-white/90 hover:bg-white text-gray-700 shadow-md hover:scale-110 transition-all z-10"
+                className="absolute top-3 right-3 p-2 rounded-full glass-button text-gray-700 hover:text-sakura-600 z-10"
                 aria-label="AI试穿"
                 title="点击试穿看看"
               >
@@ -278,7 +278,7 @@ export default function PlanCard({
             {hasTryOn && (
               <button
                 onClick={handleRetry}
-                className="absolute top-3 right-3 p-2 rounded-full bg-white/90 hover:bg-white shadow-md hover:scale-110 transition-all z-10"
+                className="absolute top-3 right-3 p-2 rounded-full glass-button hover:text-sakura-600 z-10"
                 aria-label="重新试穿"
                 title="点击重新试穿"
               >
@@ -286,18 +286,18 @@ export default function PlanCard({
               </button>
             )}
 
-            {/* 购物车按钮 - 右下角 */}
+            {/* 购物车按钮 - Glass Button */}
             <button
               onClick={handleToggleCart}
               disabled={isAdding}
-              className={`absolute bottom-3 right-3 p-2 rounded-full shadow-md transition-all ${
+              className={`absolute bottom-3 right-3 p-2 rounded-full transition-all glass-button ${
                 justChanged
                   ? lastAction === 'add'
-                    ? 'bg-green-500 text-white scale-110'
-                    : 'bg-gray-400 text-white scale-110'
+                    ? 'bg-green-50/90 text-green-600 scale-110 border-green-200'
+                    : 'bg-gray-50/90 text-gray-400 scale-110'
                   : isInCart
-                  ? 'bg-sakura-500 text-white hover:bg-sakura-600'
-                  : 'bg-white/90 text-gray-700 hover:bg-white hover:scale-110'
+                  ? 'bg-sakura-50/90 text-sakura-600 border-sakura-200'
+                  : 'text-gray-700 hover:scale-110'
               }`}
               aria-label={isInCart ? "从购物车移除" : "加入购物车"}
               title={isInCart ? "点击从购物车移除" : "点击加入购物车"}
@@ -375,18 +375,6 @@ export default function PlanCard({
                 {plan.includes.length > 2 && ` 等${plan.includes.length}项`}
               </p>
             )}
-
-            {/* 评分 - 暂时移除硬编码评分 */}
-            {/* {showMerchant && (
-              <div className="flex items-center gap-1.5 text-[11px] text-gray-500">
-                <Star
-                  className="w-3 h-3"
-                  style={{ fill: accentColor, color: accentColor }}
-                />
-                <span className="font-medium">4.8</span>
-                <span className="text-gray-400">(128)</span>
-              </div>
-            )} */}
 
             {/* 标签 - 主题色边框 */}
             {plan.planTags && plan.planTags.length > 0 && (

@@ -31,6 +31,12 @@ const cardVariants = cva(
 
         // 浮动卡片 - 强阴影
         elevated: "shadow-lg",
+
+        // 毛玻璃卡片 (Premium Glass)
+        glass: "glass-premium border-0 shadow-lg",
+        
+        // 极简卡片 (Zen)
+        zen: "bg-[#FDFBF7] border border-transparent hover:border-sakura-200/50 shadow-sm hover:shadow-md",
       },
       padding: {
         none: "",

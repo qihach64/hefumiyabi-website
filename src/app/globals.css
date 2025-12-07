@@ -220,6 +220,38 @@ body {
   -webkit-backdrop-filter: blur(12px);
 }
 
+/* 高级毛玻璃 (Premium Glass) - 更通透，带边框反光 */
+.glass-premium {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+/* 深层毛玻璃 (Heavy Glass) - 用于复杂背景上的内容载体 */
+.glass-heavy {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+/* 悬浮毛玻璃 (Floating Glass) - 用于按钮 */
+.glass-button {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  transition: all 0.3s ease;
+}
+
+.glass-button:hover {
+  background: rgba(255, 255, 255, 0.9);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
 /* 平滑过渡 */
 .transition-smooth {
   transition: all 0.2s ease-in-out;
