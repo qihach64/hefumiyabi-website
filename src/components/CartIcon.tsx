@@ -5,11 +5,7 @@ import Link from "next/link";
 import { ShoppingCart } from "lucide-react";
 import { useCartStore } from "@/store/cart";
 
-interface CartIconProps {
-  isTransparent?: boolean;
-}
-
-export default function CartIcon({ isTransparent }: CartIconProps) {
+export default function CartIcon() {
   const [mounted, setMounted] = useState(false);
   const totalItems = useCartStore((state) => state.getTotalItems());
 
@@ -21,12 +17,7 @@ export default function CartIcon({ isTransparent }: CartIconProps) {
   return (
     <Link
       href="/cart"
-      className={`relative inline-flex items-center justify-center rounded-md text-sm font-medium transition-all duration-300 h-10 w-10 ${
-        isTransparent
-          ? 'text-white hover:bg-white/20'
-          : 'text-gray-700 hover:bg-sakura-50 hover:text-sakura-700'
-      }`}
-      style={isTransparent ? { filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))' } : undefined}
+      className="relative inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-sakura-50 hover:text-sakura-700 h-10 w-10"
       aria-label="购物车"
     >
       <ShoppingCart className="h-5 w-5" />

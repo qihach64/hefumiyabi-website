@@ -84,15 +84,11 @@ export default function Header() {
               userName={session?.user?.name}
               userEmail={session?.user?.email}
               merchant={merchant}
-              isTransparent={isTransparent}
             />
 
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 md:gap-3 shrink-0 group">
-              <div
-                className="relative w-8 h-8 md:w-10 md:h-10 transition-transform group-hover:scale-105"
-                style={isTransparent ? { filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))' } : undefined}
-              >
+              <div className="relative w-8 h-8 md:w-10 md:h-10 transition-transform group-hover:scale-105">
                 <Image
                   src="/logo.svg"
                   alt="Kimono One"
@@ -101,14 +97,7 @@ export default function Header() {
                   priority
                 />
               </div>
-              <span
-                className={`text-base md:text-lg font-bold transition-all duration-300 ${
-                  isTransparent
-                    ? 'text-white group-hover:text-white/90'
-                    : 'text-sakura-600 group-hover:text-sakura-700'
-                }`}
-                style={isTransparent ? { textShadow: '0 1px 3px rgba(0,0,0,0.4)' } : undefined}
-              >
+              <span className="text-base md:text-lg font-bold text-sakura-600 transition-colors group-hover:text-sakura-700">
                 Kimono One
               </span>
             </Link>
@@ -129,24 +118,18 @@ export default function Header() {
             <HeaderActions
               isLoggedIn={!!session?.user}
               merchant={merchant}
-              isTransparent={isTransparent}
             />
 
             {/* 导航菜单 + 用户头像（合并按钮，Airbnb 风格） */}
             <div className="hidden md:flex items-center gap-2 relative">
-              <NavMenuButton navLinks={navLinks} isTransparent={isTransparent} />
+              <NavMenuButton navLinks={navLinks} />
 
               {session?.user ? (
-                <UserMenu user={session.user} isTransparent={isTransparent} />
+                <UserMenu user={session.user} />
               ) : (
                 <Link
                   href="/login"
-                  className={`inline-flex items-center justify-center rounded-full text-sm font-medium transition-all duration-300 h-10 px-4 border ${
-                    isTransparent
-                      ? 'border-white/50 text-white hover:bg-white/20 backdrop-blur-sm'
-                      : 'border-gray-300 text-gray-700 hover:bg-sakura-50 hover:text-sakura-700'
-                  }`}
-                  style={isTransparent ? { textShadow: '0 1px 2px rgba(0,0,0,0.3)' } : undefined}
+                  className="inline-flex items-center justify-center rounded-full text-sm font-medium transition-colors hover:bg-sakura-50 hover:text-sakura-700 h-10 px-4 border border-gray-300"
                 >
                   登录
                 </Link>
