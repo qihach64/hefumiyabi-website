@@ -213,13 +213,14 @@ export default function HeroSearchPanel({ themes, variant = "dark" }: HeroSearch
             {/* 全部选项 */}
             <button
               onClick={() => setSelectedTheme(null)}
-              className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
                 !selectedTheme
-                  ? "bg-gray-900 text-white"
+                  ? "bg-sakura-500 text-white shadow-md"
                   : isLight
-                    ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    ? "bg-white/80 text-gray-700 hover:bg-sakura-50 hover:text-sakura-700"
                     : "bg-white/10 text-white/80 hover:bg-white/20"
               }`}
+              style={!selectedTheme ? { boxShadow: "0 4px 14px rgba(255, 87, 128, 0.3)" } : undefined}
             >
               <Sparkles className="w-4 h-4" />
               全部
@@ -232,13 +233,14 @@ export default function HeroSearchPanel({ themes, variant = "dark" }: HeroSearch
                 <button
                   key={theme.id}
                   onClick={() => setSelectedTheme(isSelected ? null : theme)}
-                  className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
                     isSelected
-                      ? "bg-gray-900 text-white"
+                      ? "bg-sakura-500 text-white shadow-md"
                       : isLight
-                        ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        ? "bg-white/80 text-gray-700 hover:bg-sakura-50 hover:text-sakura-700"
                         : "bg-white/10 text-white/80 hover:bg-white/20"
                   }`}
+                  style={isSelected ? { boxShadow: "0 4px 14px rgba(255, 87, 128, 0.3)" } : undefined}
                 >
                   <IconComponent className="w-4 h-4" />
                   {theme.name}

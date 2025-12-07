@@ -87,6 +87,14 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
       {/* 底部：白色渐变，与页面背景无缝过渡 */}
       <div className="absolute inset-0 z-[1] bg-gradient-to-t from-white via-white/60 to-transparent" />
 
+      {/* Layer 2.5: 中央径向渐变遮罩 - 提升文字可读性 */}
+      <div
+        className="absolute inset-0 z-[2] pointer-events-none"
+        style={{
+          background: "radial-gradient(ellipse 80% 50% at 50% 45%, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.4) 40%, transparent 70%)"
+        }}
+      />
+
       {/* Layer 3: 主内容区 (视差滚动) */}
       <motion.div
         className="relative z-10 h-full flex flex-col items-center justify-center px-4"
@@ -142,26 +150,34 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
             transition={{ duration: 0.8, delay: 0.3 }}
             className="relative"
           >
-            {/* 顶部装饰线 */}
+            {/* 顶部装饰线 - 樱花色调 */}
             <motion.div
               className="flex items-center justify-center gap-3 mb-6"
               initial={{ opacity: 0, scaleX: 0 }}
               animate={{ opacity: 1, scaleX: 1 }}
               transition={{ duration: 0.6, delay: 0.5 }}
             >
-              <span className="w-8 md:w-12 h-px bg-gradient-to-r from-transparent to-[#8B7355]/60" />
-              <span className="w-1.5 h-1.5 rounded-full bg-[#8B7355]/60" />
-              <span className="w-8 md:w-12 h-px bg-gradient-to-l from-transparent to-[#8B7355]/60" />
+              <span className="w-8 md:w-12 h-px bg-gradient-to-r from-transparent to-sakura-400/60" />
+              <span className="w-1.5 h-1.5 rounded-full bg-sakura-500/70" />
+              <span className="w-8 md:w-12 h-px bg-gradient-to-l from-transparent to-sakura-400/60" />
             </motion.div>
 
-            {/* 英文品牌名 - 使用衬线体，优雅的字间距 */}
+            {/* 英文品牌名 - 使用衬线体 + 樱花渐变 */}
             <h1 className="relative">
               <span
-                className="block text-5xl md:text-7xl lg:text-8xl font-serif tracking-tight"
+                className="block text-5xl md:text-7xl lg:text-8xl font-serif tracking-tight bg-clip-text text-transparent"
                 style={{
-                  color: "#3D3A38",
-                  textShadow: "0 2px 20px rgba(255,255,255,0.8)"
+                  backgroundImage: "linear-gradient(135deg, #8B1634 0%, #A61D3F 25%, #4A4542 75%, #3D3A38 100%)",
+                  filter: "drop-shadow(0 2px 4px rgba(139, 22, 52, 0.15))"
                 }}
+              >
+                Kimono One
+              </span>
+              {/* 樱花光晕效果 */}
+              <span
+                className="absolute inset-0 text-5xl md:text-7xl lg:text-8xl font-serif tracking-tight opacity-20 blur-[2px] pointer-events-none select-none"
+                style={{ color: "#FF7A9A" }}
+                aria-hidden="true"
               >
                 Kimono One
               </span>
@@ -182,14 +198,14 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
               </span>
             </motion.div>
 
-            {/* 底部装饰线 */}
+            {/* 底部装饰线 - 樱花色调 */}
             <motion.div
               className="flex items-center justify-center gap-3 mt-6"
               initial={{ opacity: 0, scaleX: 0 }}
               animate={{ opacity: 1, scaleX: 1 }}
               transition={{ duration: 0.6, delay: 0.8 }}
             >
-              <span className="w-16 md:w-24 h-px bg-gradient-to-r from-transparent via-[#8B7355]/40 to-transparent" />
+              <span className="w-16 md:w-24 h-px bg-gradient-to-r from-transparent via-sakura-400/50 to-transparent" />
             </motion.div>
           </motion.div>
 
@@ -207,13 +223,9 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
                 boxShadow: "0 4px 24px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.8)"
               }}
             >
-              {/* 左侧印章装饰 */}
+              {/* 左侧印章装饰 - 樱花色 */}
               <span
-                className="hidden sm:flex items-center justify-center w-6 h-6 rounded border text-[10px] font-serif"
-                style={{
-                  borderColor: "#8B5A5A",
-                  color: "#8B5A5A"
-                }}
+                className="hidden sm:flex items-center justify-center w-6 h-6 rounded border-2 border-sakura-600 text-[10px] font-serif text-sakura-600"
               >
                 雅
               </span>
