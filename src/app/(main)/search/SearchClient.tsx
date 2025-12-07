@@ -283,18 +283,18 @@ function SearchClientInner({
         </div>
       </div>
 
-      {/* 搜索结果内容 - 带主题色渐变背景 */}
+      {/* 标题区域 - 主题色渐变背景 */}
       <div
         className="transition-colors duration-500"
         style={{
           background: displayTheme
-            ? `linear-gradient(to bottom, ${themeColor}08 0%, ${themeColor}03 200px, transparent 400px)`
+            ? `linear-gradient(to bottom, ${themeColor}10 0%, ${themeColor}05 60%, transparent 100%)`
             : undefined,
         }}
       >
-        <div className="container py-8">
+        <div className="container py-6 pb-8">
           {/* 搜索摘要 + 移动端筛选按钮 */}
-          <div className="mb-6 flex items-start justify-between gap-4">
+          <div className="flex items-start justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold text-gray-900 mb-2">
                 {displayTheme ? (
@@ -361,9 +361,14 @@ function SearchClientInner({
               )}
             </button>
           </div>
+        </div>
+      </div>
 
-        {/* 主内容区：侧边栏 + 套餐列表 */}
-        <div className="flex gap-8">
+      {/* 主内容区：白色背景 */}
+      <div className="bg-white">
+        <div className="container py-6">
+          {/* 侧边栏 + 套餐列表 */}
+          <div className="flex gap-8">
           {/* 桌面端侧边栏 */}
           <div className="hidden lg:block w-72 flex-shrink-0">
             <div className="sticky top-24">
