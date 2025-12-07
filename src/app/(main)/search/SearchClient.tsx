@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState, useCallback, useMemo, useTransition, useEffect } from "react";
+import { Suspense, useState, useCallback, useMemo, useTransition, useEffect, useRef } from "react";
 import PlanCard from "@/components/PlanCard";
 import ThemePills from "@/components/ThemePills";
 import SearchFilterSidebar from "@/components/search/SearchFilterSidebar";
@@ -119,6 +119,31 @@ function SearchClientInner({
 
   // 移动端筛选抽屉状态
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+
+  // Pills 栏 Sticky 状态检测
+  const [isPillsSticky, setIsPillsSticky] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // 使用 IntersectionObserver 检测 Pills 栏是否触顶
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // 当哨兵元素离开视口时，Pills 栏变为 sticky
+        setIsPillsSticky(!entry.isIntersecting);
+      },
+      {
+        // 考虑 Header 高度的偏移 (mobile: 64px, desktop: 80px)
+        rootMargin: '-80px 0px 0px 0px',
+        threshold: 0,
+      }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, []);
 
   // ========== 前端过滤逻辑 ==========
   const filteredAndSortedPlans = useMemo(() => {
@@ -270,9 +295,27 @@ function SearchClientInner({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* 主题 Pills - 固定在顶部 */}
-      <div className="sticky top-0 z-30 bg-white border-b border-gray-200 shadow-sm">
-        <div className="container py-4">
+      {/* 哨兵元素 - 用于检测 Pills 栏是否触顶 */}
+      <div ref={sentinelRef} className="h-0 w-full" aria-hidden="true" />
+
+      {/* 主题 Pills - Sticky 到 Header 下方 */}
+      <div
+        className={`sticky top-16 md:top-20 z-30 transition-all duration-300 ${
+          isPillsSticky
+            ? 'bg-white/95 backdrop-blur-md shadow-sm'
+            : 'bg-transparent'
+        }`}
+      >
+        {/* 底部渐变遮罩 - 只在 sticky 状态显示 */}
+        <div
+          className={`absolute inset-x-0 -bottom-4 h-4 pointer-events-none transition-opacity duration-300 ${
+            isPillsSticky ? 'opacity-100' : 'opacity-0'
+          }`}
+          style={{
+            background: 'linear-gradient(to bottom, rgba(255,255,255,0.8) 0%, transparent 100%)',
+          }}
+        />
+        <div className="container py-3 md:py-4">
           <ThemePills
             themes={themes}
             selectedTheme={currentTheme || null}
