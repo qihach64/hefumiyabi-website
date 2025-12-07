@@ -6,9 +6,9 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import HeroSearchPanel from "./HeroSearchPanel";
 import ScrollIndicator from "./ScrollIndicator";
 
-// Hero 背景图片 (Unsplash)
+// Hero 背景图片
 const HERO_IMAGES = [
-  "https://images.unsplash.com/photo-1558445034-055296cc0aca?q=80&w=2670&auto=format&fit=crop",
+  "https://i0.wp.com/www.touristjapan.com/wp-content/uploads/2025/04/Young-Japanese-woman-in-a-traditional-Kimono-dress-at-Kiyomizu-dera-temple-in-Kyoto-Japan-scaled.jpg?fit=2560%2C1707&ssl=1",
 ];
 
 interface Theme {
