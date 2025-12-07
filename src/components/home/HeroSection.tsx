@@ -160,7 +160,7 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
                   filter: "drop-shadow(0 2px 4px rgba(139, 22, 52, 0.15))"
                 }}
               >
-                一の和服
+                一の着物
               </span>
               {/* 樱花光晕效果 */}
               <span
@@ -168,7 +168,7 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
                 style={{ color: "#FF7A9A" }}
                 aria-hidden="true"
               >
-                一の和服
+                一の着物
               </span>
             </h1>
 
