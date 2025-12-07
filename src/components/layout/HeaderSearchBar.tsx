@@ -175,83 +175,82 @@ export default function HeaderSearchBar() {
     });
   };
 
-  if (!isSearchBarExpanded) {
-    // 紧凑模式 - Airbnb 风格
-    return (
-      <div className="hidden md:flex items-center gap-3 border border-gray-300 rounded-full px-4 py-2 bg-white
-        hover:shadow-[0_4px_12px_0_rgba(0,0,0,0.1)]
-        transition-all duration-300 ease-out">
-        <button
-          onClick={() => handleExpand('location')}
-          className="flex items-center gap-2 hover:bg-gray-50 px-2 py-1 rounded-full transition-colors cursor-pointer"
-          type="button"
-        >
-          <MapPin className="w-4 h-4 text-sakura-500" />
-          <span className="text-sm font-medium text-gray-700 transition-colors duration-200">
-            {searchState.location || '目的地'}
-          </span>
-        </button>
-        <div className="w-px h-6 bg-gray-300"></div>
-        <button
-          onClick={() => handleExpand('date')}
-          className="flex items-center gap-2 hover:bg-gray-50 px-2 py-1 rounded-full transition-colors cursor-pointer"
-          type="button"
-        >
-          <Calendar className="w-4 h-4 text-sakura-500" />
-          <span className="text-sm font-medium text-gray-700 transition-colors duration-200">
-            {searchState.date
-              ? new Date(searchState.date + 'T00:00:00').toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })
-              : '日期'}
-          </span>
-        </button>
-        <div className="w-px h-6 bg-gray-300"></div>
-        <button
-          onClick={() => handleExpand('theme')}
-          className="flex items-center gap-2 hover:bg-gray-50 px-2 py-1 rounded-full transition-colors cursor-pointer"
-          type="button"
-        >
-          <Palette className="w-4 h-4 text-sakura-500" />
-          <span className="text-sm font-medium text-gray-700 transition-colors duration-200">
-            {searchState.theme ? (
-              <span className="flex items-center gap-1">
-                {(() => {
-                  const IconComponent = getThemeIcon(searchState.theme.icon);
-                  return <IconComponent className="w-4 h-4" />;
-                })()}
-                {searchState.theme.name}
-              </span>
-            ) : '主题'}
-          </span>
-        </button>
-        <button
-          onClick={() => handleExpand('none')}
-          className="w-8 h-8 bg-sakura-500 rounded-full flex items-center justify-center ml-2
-            hover:bg-sakura-600 transition-all duration-200
-            hover:scale-110 active:scale-95 cursor-pointer"
-          type="button"
-          aria-label="展开搜索"
-        >
-          <Search className="w-4 h-4 text-white" />
-        </button>
-      </div>
-    );
-  }
+  // 紧凑模式组件 - Airbnb 风格胶囊
+  const compactSearchBar = (
+    <div className="flex items-center gap-1.5 md:gap-2 border border-gray-300 rounded-full px-2 md:px-3 py-1.5 md:py-2 bg-white
+      hover:shadow-[0_4px_12px_0_rgba(0,0,0,0.1)]
+      transition-all duration-300 ease-out
+      flex-shrink min-w-0">
+      <button
+        onClick={() => handleExpand('location')}
+        className="flex items-center gap-1 md:gap-1.5 hover:bg-gray-50 px-1.5 md:px-2 py-1 rounded-full transition-colors cursor-pointer min-w-0"
+        type="button"
+      >
+        <MapPin className="w-3.5 h-3.5 md:w-4 md:h-4 text-sakura-500 flex-shrink-0" />
+        <span className="text-xs md:text-sm font-medium text-gray-700 truncate max-w-[60px] md:max-w-[80px]">
+          {searchState.location || '目的地'}
+        </span>
+      </button>
+      <div className="w-px h-5 md:h-6 bg-gray-300 flex-shrink-0"></div>
+      <button
+        onClick={() => handleExpand('date')}
+        className="flex items-center gap-1 md:gap-1.5 hover:bg-gray-50 px-1.5 md:px-2 py-1 rounded-full transition-colors cursor-pointer min-w-0"
+        type="button"
+      >
+        <Calendar className="w-3.5 h-3.5 md:w-4 md:h-4 text-sakura-500 flex-shrink-0" />
+        <span className="text-xs md:text-sm font-medium text-gray-700 truncate max-w-[50px] md:max-w-[70px]">
+          {searchState.date
+            ? new Date(searchState.date + 'T00:00:00').toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })
+            : '日期'}
+        </span>
+      </button>
+      <div className="w-px h-5 md:h-6 bg-gray-300 flex-shrink-0 hidden sm:block"></div>
+      <button
+        onClick={() => handleExpand('theme')}
+        className="hidden sm:flex items-center gap-1 md:gap-1.5 hover:bg-gray-50 px-1.5 md:px-2 py-1 rounded-full transition-colors cursor-pointer min-w-0"
+        type="button"
+      >
+        <Palette className="w-3.5 h-3.5 md:w-4 md:h-4 text-sakura-500 flex-shrink-0" />
+        <span className="text-xs md:text-sm font-medium text-gray-700 truncate max-w-[50px] md:max-w-[70px]">
+          {searchState.theme ? (
+            <span className="flex items-center gap-1">
+              {(() => {
+                const IconComponent = getThemeIcon(searchState.theme.icon);
+                return <IconComponent className="w-3.5 h-3.5 md:w-4 md:h-4" />;
+              })()}
+              <span className="truncate">{searchState.theme.name}</span>
+            </span>
+          ) : '主题'}
+        </span>
+      </button>
+      <button
+        onClick={() => handleExpand('none')}
+        className="w-7 h-7 md:w-8 md:h-8 bg-sakura-500 rounded-full flex items-center justify-center ml-1 md:ml-2 flex-shrink-0
+          hover:bg-sakura-600 transition-all duration-200
+          hover:scale-110 active:scale-95 cursor-pointer"
+        type="button"
+        aria-label="展开搜索"
+      >
+        <Search className="w-3.5 h-3.5 md:w-4 md:h-4 text-white" />
+      </button>
+    </div>
+  );
 
-  // 桌面端展开模式 - 显示完整搜索框
-  const desktopSearchBar = (
-    <div className="hidden md:block w-full max-w-4xl">
+  // 展开模式组件 - 完整搜索框
+  const expandedSearchBar = (
+    <div className="w-full max-w-3xl flex-shrink min-w-0">
       {/* 展开的搜索框 - Airbnb 风格优化 */}
-      <div className="rounded-full p-2 gap-2 flex items-center bg-white border border-gray-200
+      <div className="rounded-full p-1.5 gap-1 flex items-center bg-white border border-gray-200
         shadow-[0_8px_24px_0_rgba(0,0,0,0.1)]
         transition-all duration-300 ease-out">
         {/* 目的地 */}
         <div
-          className="flex-1 px-6 py-3 rounded-full hover:bg-gray-100/50 transition-all duration-200 relative group cursor-pointer"
+          className="flex-1 min-w-0 px-3 xl:px-4 py-2 xl:py-3 rounded-full hover:bg-gray-100/50 transition-all duration-200 relative group cursor-pointer"
           onClick={() => locationInputRef.current?.focus()}
         >
-          <label className="flex items-center gap-2 text-xs font-semibold text-gray-700 mb-1 cursor-pointer">
-            <MapPin className="w-4 h-4 text-sakura-500" />
-            目的地
+          <label className="flex items-center gap-1.5 text-[10px] xl:text-xs font-semibold text-gray-700 mb-0.5 cursor-pointer">
+            <MapPin className="w-3 h-3 xl:w-4 xl:h-4 text-sakura-500 flex-shrink-0" />
+            <span className="truncate">目的地</span>
           </label>
           <div className="relative flex items-center">
             <input
@@ -261,7 +260,7 @@ export default function HeaderSearchBar() {
               value={searchState.location}
               onChange={(e) => handleLocationChange(e.target.value)}
               onFocus={handleLocationFocus}
-              className="w-full text-sm text-gray-900 placeholder-gray-400 bg-transparent border-none outline-none focus:ring-0 cursor-text pr-6"
+              className="w-full text-xs xl:text-sm text-gray-900 placeholder-gray-400 bg-transparent border-none outline-none focus:ring-0 cursor-text pr-5 truncate"
             />
             {/* 清空按钮 */}
             {searchState.location && (
@@ -271,10 +270,10 @@ export default function HeaderSearchBar() {
                   setLocation('');
                   setShowDropdown(false);
                 }}
-                className="absolute right-0 p-1 hover:bg-gray-200 rounded-full transition-colors"
+                className="absolute right-0 p-0.5 hover:bg-gray-200 rounded-full transition-colors flex-shrink-0"
                 aria-label="清空目的地"
               >
-                <X className="w-3.5 h-3.5 text-gray-500" />
+                <X className="w-3 h-3 xl:w-3.5 xl:h-3.5 text-gray-500" />
               </button>
             )}
           </div>
@@ -335,11 +334,11 @@ export default function HeaderSearchBar() {
         </div>
 
         {/* 分隔线 */}
-        <div className="h-8 w-px bg-gray-200"></div>
+        <div className="h-6 xl:h-8 w-px bg-gray-200 flex-shrink-0"></div>
 
         {/* 日期 */}
         <div
-          className="flex-1 px-6 py-3 rounded-full hover:bg-gray-100/50 transition-all duration-200 group cursor-pointer relative"
+          className="flex-1 min-w-0 px-3 xl:px-4 py-2 xl:py-3 rounded-full hover:bg-gray-100/50 transition-all duration-200 group cursor-pointer relative"
           onClick={(e) => {
             // 如果点击的不是 input 本身，则触发 input 的点击
             if (e.target !== dateInputRef.current) {
@@ -354,12 +353,12 @@ export default function HeaderSearchBar() {
             }
           }}
         >
-          <label className="flex items-center gap-2 text-xs font-semibold text-gray-700 mb-1 cursor-pointer">
-            <Calendar className="w-4 h-4 text-sakura-500" />
-            到店日期
+          <label className="flex items-center gap-1.5 text-[10px] xl:text-xs font-semibold text-gray-700 mb-0.5 cursor-pointer">
+            <Calendar className="w-3 h-3 xl:w-4 xl:h-4 text-sakura-500 flex-shrink-0" />
+            <span className="truncate">到店日期</span>
           </label>
           {/* 显示层 */}
-          <div className="text-sm text-gray-900">
+          <div className="text-xs xl:text-sm text-gray-900 truncate">
             {searchState.date ? new Date(searchState.date + 'T00:00:00').toLocaleDateString('zh-CN', {
               month: 'long',
               day: 'numeric'
@@ -376,27 +375,27 @@ export default function HeaderSearchBar() {
         </div>
 
         {/* 分隔线 */}
-        <div className="h-8 w-px bg-gray-300"></div>
+        <div className="h-6 xl:h-8 w-px bg-gray-300 flex-shrink-0"></div>
 
         {/* 主题 */}
         <div
           ref={themeButtonRef}
-          className="flex-1 px-6 py-3 rounded-full hover:bg-gray-100/50 transition-all duration-200 group relative cursor-pointer"
+          className="flex-1 min-w-0 px-3 xl:px-4 py-2 xl:py-3 rounded-full hover:bg-gray-100/50 transition-all duration-200 group relative cursor-pointer"
           onClick={() => setShowThemeDropdown(!showThemeDropdown)}
         >
-          <label className="flex items-center gap-2 text-xs font-semibold text-gray-700 mb-1 cursor-pointer">
-            <Palette className="w-4 h-4 text-sakura-500" />
-            主题
+          <label className="flex items-center gap-1.5 text-[10px] xl:text-xs font-semibold text-gray-700 mb-0.5 cursor-pointer">
+            <Palette className="w-3 h-3 xl:w-4 xl:h-4 text-sakura-500 flex-shrink-0" />
+            <span className="truncate">主题</span>
           </label>
-          <div className="flex items-center gap-2">
-            <span className={`text-sm ${searchState.theme ? 'text-gray-900' : 'text-gray-400'}`}>
+          <div className="flex items-center gap-1.5">
+            <span className={`text-xs xl:text-sm truncate ${searchState.theme ? 'text-gray-900' : 'text-gray-400'}`}>
               {searchState.theme ? (
-                <span className="flex items-center gap-1.5">
+                <span className="flex items-center gap-1">
                   {(() => {
                     const IconComponent = getThemeIcon(searchState.theme.icon);
-                    return <IconComponent className="w-4 h-4" />;
+                    return <IconComponent className="w-3.5 h-3.5 xl:w-4 xl:h-4 flex-shrink-0" />;
                   })()}
-                  {searchState.theme.name}
+                  <span className="truncate">{searchState.theme.name}</span>
                 </span>
               ) : (
                 '选择主题'
@@ -408,13 +407,13 @@ export default function HeaderSearchBar() {
                   e.stopPropagation();
                   setTheme(null);
                 }}
-                className="p-0.5 hover:bg-gray-200 rounded-full transition-colors"
+                className="p-0.5 hover:bg-gray-200 rounded-full transition-colors flex-shrink-0"
                 aria-label="清空主题"
               >
-                <X className="w-3.5 h-3.5 text-gray-500" />
+                <X className="w-3 h-3 xl:w-3.5 xl:h-3.5 text-gray-500" />
               </button>
             ) : (
-              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showThemeDropdown ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-3.5 h-3.5 xl:w-4 xl:h-4 text-gray-400 transition-transform flex-shrink-0 ${showThemeDropdown ? 'rotate-180' : ''}`} />
             )}
           </div>
 
@@ -472,18 +471,36 @@ export default function HeaderSearchBar() {
         <button
           onClick={handleSearch}
           disabled={isPending || isSearching}
-          className="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-sakura-500 hover:bg-sakura-600 disabled:bg-sakura-400 rounded-full shadow-md hover:shadow-lg active:scale-95 disabled:active:scale-100 transition-all duration-200 cursor-pointer"
+          className="flex-shrink-0 w-9 h-9 xl:w-11 xl:h-11 flex items-center justify-center bg-sakura-500 hover:bg-sakura-600 disabled:bg-sakura-400 rounded-full shadow-md hover:shadow-lg active:scale-95 disabled:active:scale-100 transition-all duration-200 cursor-pointer"
           aria-label="搜索"
         >
           {isPending || isSearching ? (
-            <Loader2 className="w-5 h-5 text-white animate-spin" />
+            <Loader2 className="w-4 h-4 xl:w-5 xl:h-5 text-white animate-spin" />
           ) : (
-            <Search className="w-5 h-5 text-white" />
+            <Search className="w-4 h-4 xl:w-5 xl:h-5 text-white" />
           )}
         </button>
       </div>
     </div>
   );
 
-  return desktopSearchBar;
+  return (
+    <>
+      {/*
+        响应式策略:
+        - md (768px-1024px): 始终显示紧凑模式
+        - lg+ (>1024px): 根据 isSearchBarExpanded 切换
+      */}
+
+      {/* 中等屏幕 (768px-1024px): 始终显示紧凑模式 */}
+      <div className="hidden md:flex lg:hidden">
+        {compactSearchBar}
+      </div>
+
+      {/* 大屏幕 (>1024px): 根据状态切换 */}
+      <div className="hidden lg:flex">
+        {isSearchBarExpanded ? expandedSearchBar : compactSearchBar}
+      </div>
+    </>
+  );
 }
