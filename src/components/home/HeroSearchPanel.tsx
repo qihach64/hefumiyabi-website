@@ -267,7 +267,11 @@ export default function HeroSearchPanel({ themes, variant = "dark", onDropdownOp
               <span>到店日期</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className={`text-lg md:text-xl font-medium ${isLight ? "text-gray-900" : "text-white"}`}>
+              <span className={`text-lg md:text-xl font-medium ${
+                date
+                  ? (isLight ? "text-gray-900" : "text-white")
+                  : (isLight ? "text-gray-400" : "text-white/50")
+              }`}>
                 {date
                   ? new Date(date + "T00:00:00").toLocaleDateString("zh-CN", {
                       month: "long",
