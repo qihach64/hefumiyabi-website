@@ -1,0 +1,1157 @@
+// Kimono Library Configuration for Virtual Try-On
+// Reuses background&pose images as kimono style references
+// Total: 153 kimonos (Female: 119, Male: 19, Child: 15)
+
+import type {
+  KimonoLibraryItem,
+  KimonoLibrary,
+  KimonoCategory,
+} from '../types/kimono';
+
+/**
+ * 和服图片基础路径
+ * 复用 background&pose 文件夹的原图（含人物穿着和服）
+ */
+export const KIMONO_BASE_PATH = '/backgrounds';
+
+/**
+ * 静态和服库配置
+ * 图片来源于 background&pose 文件夹
+ * 分类映射: girl → female, boy → male, kid → child
+ */
+export const KIMONO_LIBRARY: KimonoLibrary = {
+  female: [
+    {
+      id: 'kimono-female-001',
+      name: '女性和服 1',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/010A7117.jpg`,
+      cleanImageUrl: '/kimonos/female/010A7117.png',
+    },
+    {
+      id: 'kimono-female-002',
+      name: '女性和服 2',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/010A8096.jpg`,
+      cleanImageUrl: '/kimonos/female/010A8096.png',
+    },
+    {
+      id: 'kimono-female-003',
+      name: '女性和服 3',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/0R1A0294.jpg`,
+      cleanImageUrl: '/kimonos/female/0R1A0294.png',
+    },
+    {
+      id: 'kimono-female-004',
+      name: '女性和服 4',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/0R1A0352.jpg`,
+      cleanImageUrl: '/kimonos/female/0R1A0352.png',
+    },
+    {
+      id: 'kimono-female-005',
+      name: '女性和服 5',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/0R1A3323.jpg`,
+      cleanImageUrl: '/kimonos/female/0R1A3323.png',
+    },
+    {
+      id: 'kimono-female-006',
+      name: '女性和服 6',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/0R1A3666.jpg`,
+      cleanImageUrl: '/kimonos/female/0R1A3666.png',
+    },
+    {
+      id: 'kimono-female-007',
+      name: '女性和服 7',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/1202416_(2).jpg`,
+      cleanImageUrl: '/kimonos/female/1202416_(2).png',
+    },
+    {
+      id: 'kimono-female-008',
+      name: '女性和服 8',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/1202438.jpg`,
+      cleanImageUrl: '/kimonos/female/1202438.png',
+    },
+    {
+      id: 'kimono-female-009',
+      name: '女性和服 9',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/13406619282679822.jpeg`,
+      cleanImageUrl: '/kimonos/female/13406619282679822.png',
+    },
+    {
+      id: 'kimono-female-010',
+      name: '女性和服 10',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/13407320388772820.jpeg`,
+      cleanImageUrl: '/kimonos/female/13407320388772820.png',
+    },
+    {
+      id: 'kimono-female-011',
+      name: '女性和服 11',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/13407484978299363.jpeg`,
+      cleanImageUrl: '/kimonos/female/13407484978299363.png',
+    },
+    {
+      id: 'kimono-female-012',
+      name: '女性和服 12',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/13407485242664986.jpeg`,
+      cleanImageUrl: '/kimonos/female/13407485242664986.png',
+    },
+    {
+      id: 'kimono-female-013',
+      name: '女性和服 13',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/13407485307123564.jpeg`,
+    },
+    {
+      id: 'kimono-female-014',
+      name: '女性和服 14',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/13407485367880907.jpeg`,
+      cleanImageUrl: '/kimonos/female/13407485367880907.png',
+    },
+    {
+      id: 'kimono-female-015',
+      name: '女性和服 15',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/13407485837956742.jpeg`,
+      cleanImageUrl: '/kimonos/female/13407485837956742.png',
+    },
+    {
+      id: 'kimono-female-016',
+      name: '女性和服 16',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/202401-17.JPG`,
+      cleanImageUrl: '/kimonos/female/202401-17.png',
+    },
+    {
+      id: 'kimono-female-017',
+      name: '女性和服 17',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/202401-27.jpg`,
+      cleanImageUrl: '/kimonos/female/202401-27.png',
+    },
+    {
+      id: 'kimono-female-018',
+      name: '女性和服 18',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/202401-32.jpg`,
+      cleanImageUrl: '/kimonos/female/202401-32.png',
+    },
+    {
+      id: 'kimono-female-019',
+      name: '女性和服 19',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/202401-6.jpg`,
+      cleanImageUrl: '/kimonos/female/202401-6.png',
+    },
+    {
+      id: 'kimono-female-020',
+      name: '女性和服 20',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/202401.jpg`,
+      cleanImageUrl: '/kimonos/female/202401.png',
+    },
+    {
+      id: 'kimono-female-021',
+      name: '女性和服 21',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/2065f3080ff2ed2413235577b8054de5.jpeg`,
+      cleanImageUrl: '/kimonos/female/2065f3080ff2ed2413235577b8054de5.png',
+    },
+    {
+      id: 'kimono-female-022',
+      name: '女性和服 22',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/2b335e79282fa85e3822623a27ec6407.JPG`,
+      cleanImageUrl: '/kimonos/female/2b335e79282fa85e3822623a27ec6407.png',
+    },
+    {
+      id: 'kimono-female-023',
+      name: '女性和服 23',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/6f569fc513ff37d21754676dd50628f8.jpeg`,
+      cleanImageUrl: '/kimonos/female/6f569fc513ff37d21754676dd50628f8.png',
+    },
+    {
+      id: 'kimono-female-024',
+      name: '女性和服 24',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/881f67cfca73271e3cce6fc9588ffad0.jpeg`,
+      cleanImageUrl: '/kimonos/female/881f67cfca73271e3cce6fc9588ffad0.png',
+    },
+    {
+      id: 'kimono-female-025',
+      name: '女性和服 25',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/8fc9a9c552ecb1fbf9fbf6c9bf2df69c.JPG`,
+      cleanImageUrl: '/kimonos/female/8fc9a9c552ecb1fbf9fbf6c9bf2df69c.png',
+    },
+    {
+      id: 'kimono-female-026',
+      name: '女性和服 26',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC00116.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC00116.png',
+    },
+    {
+      id: 'kimono-female-027',
+      name: '女性和服 27',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC00674.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC00674.png',
+    },
+    {
+      id: 'kimono-female-028',
+      name: '女性和服 28',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC00735.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC00735.png',
+    },
+    {
+      id: 'kimono-female-029',
+      name: '女性和服 29',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC00744.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC00744.png',
+    },
+    {
+      id: 'kimono-female-030',
+      name: '女性和服 30',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC00786.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC00786.png',
+    },
+    {
+      id: 'kimono-female-031',
+      name: '女性和服 31',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC00834.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC00834.png',
+    },
+    {
+      id: 'kimono-female-032',
+      name: '女性和服 32',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC00966.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC00966.png',
+    },
+    {
+      id: 'kimono-female-033',
+      name: '女性和服 33',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC01064.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC01064.png',
+    },
+    {
+      id: 'kimono-female-034',
+      name: '女性和服 34',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC01414.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC01414.png',
+    },
+    {
+      id: 'kimono-female-035',
+      name: '女性和服 35',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC01591.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC01591.png',
+    },
+    {
+      id: 'kimono-female-036',
+      name: '女性和服 36',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC01699.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC01699.png',
+    },
+    {
+      id: 'kimono-female-037',
+      name: '女性和服 37',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC02281.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC02281.png',
+    },
+    {
+      id: 'kimono-female-038',
+      name: '女性和服 38',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC02294.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC02294.png',
+    },
+    {
+      id: 'kimono-female-039',
+      name: '女性和服 39',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC02295.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC02295.png',
+    },
+    {
+      id: 'kimono-female-040',
+      name: '女性和服 40',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC02309.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC02309.png',
+    },
+    {
+      id: 'kimono-female-041',
+      name: '女性和服 41',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC02313.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC02313.png',
+    },
+    {
+      id: 'kimono-female-042',
+      name: '女性和服 42',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC02412.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC02412.png',
+    },
+    {
+      id: 'kimono-female-043',
+      name: '女性和服 43',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC02692.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC02692.png',
+    },
+    {
+      id: 'kimono-female-044',
+      name: '女性和服 44',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC02846.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC02846.png',
+    },
+    {
+      id: 'kimono-female-045',
+      name: '女性和服 45',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC03054.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC03054.png',
+    },
+    {
+      id: 'kimono-female-046',
+      name: '女性和服 46',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC03139.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC03139.png',
+    },
+    {
+      id: 'kimono-female-047',
+      name: '女性和服 47',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC03613-2.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC03613-2.png',
+    },
+    {
+      id: 'kimono-female-048',
+      name: '女性和服 48',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC03728.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC03728.png',
+    },
+    {
+      id: 'kimono-female-049',
+      name: '女性和服 49',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC04072.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC04072.png',
+    },
+    {
+      id: 'kimono-female-050',
+      name: '女性和服 50',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC04254.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC04254.png',
+    },
+    {
+      id: 'kimono-female-051',
+      name: '女性和服 51',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC04371.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC04371.png',
+    },
+    {
+      id: 'kimono-female-052',
+      name: '女性和服 52',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC04405.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC04405.png',
+    },
+    {
+      id: 'kimono-female-053',
+      name: '女性和服 53',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC04563.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC04563.png',
+    },
+    {
+      id: 'kimono-female-054',
+      name: '女性和服 54',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC04590.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC04590.png',
+    },
+    {
+      id: 'kimono-female-055',
+      name: '女性和服 55',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC04598.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC04598.png',
+    },
+    {
+      id: 'kimono-female-056',
+      name: '女性和服 56',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC04935.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC04935.png',
+    },
+    {
+      id: 'kimono-female-057',
+      name: '女性和服 57',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC04964.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC04964.png',
+    },
+    {
+      id: 'kimono-female-058',
+      name: '女性和服 58',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC05173.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC05173.png',
+    },
+    {
+      id: 'kimono-female-059',
+      name: '女性和服 59',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC05206.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC05206.png',
+    },
+    {
+      id: 'kimono-female-060',
+      name: '女性和服 60',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC05311.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC05311.png',
+    },
+    {
+      id: 'kimono-female-061',
+      name: '女性和服 61',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC05514.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC05514.png',
+    },
+    {
+      id: 'kimono-female-062',
+      name: '女性和服 62',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC05641.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC05641.png',
+    },
+    {
+      id: 'kimono-female-063',
+      name: '女性和服 63',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC05713.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC05713.png',
+    },
+    {
+      id: 'kimono-female-064',
+      name: '女性和服 64',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC05775.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC05775.png',
+    },
+    {
+      id: 'kimono-female-065',
+      name: '女性和服 65',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC05776.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC05776.png',
+    },
+    {
+      id: 'kimono-female-066',
+      name: '女性和服 66',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC06275.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC06275.png',
+    },
+    {
+      id: 'kimono-female-067',
+      name: '女性和服 67',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC0643511.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC0643511.png',
+    },
+    {
+      id: 'kimono-female-068',
+      name: '女性和服 68',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC06503.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC06503.png',
+    },
+    {
+      id: 'kimono-female-069',
+      name: '女性和服 69',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC06730.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC06730.png',
+    },
+    {
+      id: 'kimono-female-070',
+      name: '女性和服 70',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC06799.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC06799.png',
+    },
+    {
+      id: 'kimono-female-071',
+      name: '女性和服 71',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC07278.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC07278.png',
+    },
+    {
+      id: 'kimono-female-072',
+      name: '女性和服 72',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC07490-.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC07490-.png',
+    },
+    {
+      id: 'kimono-female-073',
+      name: '女性和服 73',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC07507.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC07507.png',
+    },
+    {
+      id: 'kimono-female-074',
+      name: '女性和服 74',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC07610.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC07610.png',
+    },
+    {
+      id: 'kimono-female-075',
+      name: '女性和服 75',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC07679.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC07679.png',
+    },
+    {
+      id: 'kimono-female-076',
+      name: '女性和服 76',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC07704-已增强-降噪.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC07704-已增强-降噪.png',
+    },
+    {
+      id: 'kimono-female-077',
+      name: '女性和服 77',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC07769.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC07769.png',
+    },
+    {
+      id: 'kimono-female-078',
+      name: '女性和服 78',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC07795-已增强-降噪.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC07795-已增强-降噪.png',
+    },
+    {
+      id: 'kimono-female-079',
+      name: '女性和服 79',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC07922.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC07922.png',
+    },
+    {
+      id: 'kimono-female-080',
+      name: '女性和服 80',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC08048.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC08048.png',
+    },
+    {
+      id: 'kimono-female-081',
+      name: '女性和服 81',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC08219.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC08219.png',
+    },
+    {
+      id: 'kimono-female-082',
+      name: '女性和服 82',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC08355.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC08355.png',
+    },
+    {
+      id: 'kimono-female-083',
+      name: '女性和服 83',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC08367.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC08367.png',
+    },
+    {
+      id: 'kimono-female-084',
+      name: '女性和服 84',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC08396.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC08396.png',
+    },
+    {
+      id: 'kimono-female-085',
+      name: '女性和服 85',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC08538.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC08538.png',
+    },
+    {
+      id: 'kimono-female-086',
+      name: '女性和服 86',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC08780.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC08780.png',
+    },
+    {
+      id: 'kimono-female-087',
+      name: '女性和服 87',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC08843.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC08843.png',
+    },
+    {
+      id: 'kimono-female-088',
+      name: '女性和服 88',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC08953.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC08953.png',
+    },
+    {
+      id: 'kimono-female-089',
+      name: '女性和服 89',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC09394.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC09394.png',
+    },
+    {
+      id: 'kimono-female-090',
+      name: '女性和服 90',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC09989.jpg`,
+      cleanImageUrl: '/kimonos/female/DSC09989.png',
+    },
+    {
+      id: 'kimono-female-091',
+      name: '女性和服 91',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSC09996.JPG`,
+      cleanImageUrl: '/kimonos/female/DSC09996.png',
+    },
+    {
+      id: 'kimono-female-092',
+      name: '女性和服 92',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSCF3235.jpg`,
+      cleanImageUrl: '/kimonos/female/DSCF3235.png',
+    },
+    {
+      id: 'kimono-female-093',
+      name: '女性和服 93',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSCF6562.jpg`,
+      cleanImageUrl: '/kimonos/female/DSCF6562.png',
+    },
+    {
+      id: 'kimono-female-094',
+      name: '女性和服 94',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/DSCF7550.jpg`,
+      cleanImageUrl: '/kimonos/female/DSCF7550.png',
+    },
+    {
+      id: 'kimono-female-095',
+      name: '女性和服 95',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/IMG_0189.jpg`,
+      cleanImageUrl: '/kimonos/female/IMG_0189.png',
+    },
+    {
+      id: 'kimono-female-096',
+      name: '女性和服 96',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/IMG_0437.JPG`,
+      cleanImageUrl: '/kimonos/female/IMG_0437.png',
+    },
+    {
+      id: 'kimono-female-097',
+      name: '女性和服 97',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/IMG_0542.jpg`,
+      cleanImageUrl: '/kimonos/female/IMG_0542.png',
+    },
+    {
+      id: 'kimono-female-098',
+      name: '女性和服 98',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/IMG_1151-Exposure.jpg`,
+      cleanImageUrl: '/kimonos/female/IMG_1151-Exposure.png',
+    },
+    {
+      id: 'kimono-female-099',
+      name: '女性和服 99',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/IMG_1512.JPG`,
+      cleanImageUrl: '/kimonos/female/IMG_1512.png',
+    },
+    {
+      id: 'kimono-female-100',
+      name: '女性和服 100',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/IMG_2740.jpg`,
+      cleanImageUrl: '/kimonos/female/IMG_2740.png',
+    },
+    {
+      id: 'kimono-female-101',
+      name: '女性和服 101',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/IMG_4708.jpg`,
+      cleanImageUrl: '/kimonos/female/IMG_4708.png',
+    },
+    {
+      id: 'kimono-female-102',
+      name: '女性和服 102',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/IMG_5977.jpg`,
+      cleanImageUrl: '/kimonos/female/IMG_5977.png',
+    },
+    {
+      id: 'kimono-female-103',
+      name: '女性和服 103',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/IMG_7827.jpg`,
+      cleanImageUrl: '/kimonos/female/IMG_7827.png',
+    },
+    {
+      id: 'kimono-female-104',
+      name: '女性和服 104',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/IMG_9060.jpg`,
+      cleanImageUrl: '/kimonos/female/IMG_9060.png',
+    },
+    {
+      id: 'kimono-female-105',
+      name: '女性和服 105',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/IMG_9337.jpg`,
+      cleanImageUrl: '/kimonos/female/IMG_9337.png',
+    },
+    {
+      id: 'kimono-female-106',
+      name: '女性和服 106',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/IMG_9480.jpg`,
+      cleanImageUrl: '/kimonos/female/IMG_9480.png',
+    },
+    {
+      id: 'kimono-female-107',
+      name: '女性和服 107',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/WeChat 圖片_20211211215603.jpg`,
+      cleanImageUrl: '/kimonos/female/WeChat 圖片_20211211215603.png',
+    },
+    {
+      id: 'kimono-female-108',
+      name: '女性和服 108',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/_DSC9933.jpg`,
+      cleanImageUrl: '/kimonos/female/_DSC9933.png',
+    },
+    {
+      id: 'kimono-female-109',
+      name: '女性和服 109',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/e417b088fe9332f5380863ca8a525389.JPG`,
+      cleanImageUrl: '/kimonos/female/e417b088fe9332f5380863ca8a525389.png',
+    },
+    {
+      id: 'kimono-female-110',
+      name: '女性和服 110',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/e6fad8873e2aafd03637b1879efdfd06.jpeg`,
+      cleanImageUrl: '/kimonos/female/e6fad8873e2aafd03637b1879efdfd06.png',
+    },
+    {
+      id: 'kimono-female-111',
+      name: '女性和服 111',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/ea39d394c113a659d1b337144971e560.JPG`,
+      cleanImageUrl: '/kimonos/female/ea39d394c113a659d1b337144971e560.png',
+    },
+    {
+      id: 'kimono-female-112',
+      name: '女性和服 112',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/圖片_20240218150505.jpg`,
+      cleanImageUrl: '/kimonos/female/圖片_20240218150505.png',
+    },
+    {
+      id: 'kimono-female-113',
+      name: '女性和服 113',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/截屏2025-07-13 13.28.57.png`,
+      cleanImageUrl: '/kimonos/female/截屏2025-07-13 13.28.57.png',
+    },
+    {
+      id: 'kimono-female-114',
+      name: '女性和服 114',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/截屏2025-07-13 13.51.09.png`,
+      cleanImageUrl: '/kimonos/female/截屏2025-07-13 13.51.09.png',
+    },
+    {
+      id: 'kimono-female-115',
+      name: '女性和服 115',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/截屏2025-07-13 13.52.46.png`,
+      cleanImageUrl: '/kimonos/female/截屏2025-07-13 13.52.46.png',
+    },
+    {
+      id: 'kimono-female-116',
+      name: '女性和服 116',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/截屏2025-07-13 14.21.06.png`,
+      cleanImageUrl: '/kimonos/female/截屏2025-07-13 14.21.06.png',
+    },
+    {
+      id: 'kimono-female-117',
+      name: '女性和服 117',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/截屏2025-07-13 14.21.22.png`,
+      cleanImageUrl: '/kimonos/female/截屏2025-07-13 14.21.22.png',
+    },
+    {
+      id: 'kimono-female-118',
+      name: '女性和服 118',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/截屏2025-07-30 15.55.05.png`,
+      cleanImageUrl: '/kimonos/female/截屏2025-07-30 15.55.05.png',
+    },
+    {
+      id: 'kimono-female-119',
+      name: '女性和服 119',
+      category: 'female',
+      imageUrl: `${KIMONO_BASE_PATH}/girl/被大家喜欢真是太幸福太开心啦！_6_KeKe=Ariel_来自小红书网页版.jpg`,
+      cleanImageUrl: '/kimonos/female/被大家喜欢真是太幸福太开心啦！_6_KeKe=Ariel_来自小红书网页版.png',
+    },
+  ],
+  male: [
+    {
+      id: 'kimono-male-001',
+      name: '男性和服 1',
+      category: 'male',
+      imageUrl: `${KIMONO_BASE_PATH}/boy/0R1A3793.jpg`,
+      cleanImageUrl: '/kimonos/male/0R1A3793.png',
+    },
+    {
+      id: 'kimono-male-002',
+      name: '男性和服 2',
+      category: 'male',
+      imageUrl: `${KIMONO_BASE_PATH}/boy/202401-3.jpg`,
+      cleanImageUrl: '/kimonos/male/202401-3.png',
+    },
+    {
+      id: 'kimono-male-003',
+      name: '男性和服 3',
+      category: 'male',
+      imageUrl: `${KIMONO_BASE_PATH}/boy/DSC01294.jpg`,
+      cleanImageUrl: '/kimonos/male/DSC01294.png',
+    },
+    {
+      id: 'kimono-male-004',
+      name: '男性和服 4',
+      category: 'male',
+      imageUrl: `${KIMONO_BASE_PATH}/boy/DSC02308.jpg`,
+      cleanImageUrl: '/kimonos/male/DSC02308.png',
+    },
+    {
+      id: 'kimono-male-005',
+      name: '男性和服 5',
+      category: 'male',
+      imageUrl: `${KIMONO_BASE_PATH}/boy/DSC02346.jpg`,
+      cleanImageUrl: '/kimonos/male/DSC02346.png',
+    },
+    {
+      id: 'kimono-male-006',
+      name: '男性和服 6',
+      category: 'male',
+      imageUrl: `${KIMONO_BASE_PATH}/boy/DSC02389.jpg`,
+      cleanImageUrl: '/kimonos/male/DSC02389.png',
+    },
+    {
+      id: 'kimono-male-007',
+      name: '男性和服 7',
+      category: 'male',
+      imageUrl: `${KIMONO_BASE_PATH}/boy/DSC05648.jpg`,
+      cleanImageUrl: '/kimonos/male/DSC05648.png',
+    },
+    {
+      id: 'kimono-male-008',
+      name: '男性和服 8',
+      category: 'male',
+      imageUrl: `${KIMONO_BASE_PATH}/boy/DSC06732-2.jpg`,
+      cleanImageUrl: '/kimonos/male/DSC06732-2.png',
+    },
+    {
+      id: 'kimono-male-009',
+      name: '男性和服 9',
+      category: 'male',
+      imageUrl: `${KIMONO_BASE_PATH}/boy/DSC09824.jpg`,
+      cleanImageUrl: '/kimonos/male/DSC09824.png',
+    },
+    {
+      id: 'kimono-male-010',
+      name: '男性和服 10',
+      category: 'male',
+      imageUrl: `${KIMONO_BASE_PATH}/boy/DSCF7922.jpg`,
+      cleanImageUrl: '/kimonos/male/DSCF7922.png',
+    },
+    {
+      id: 'kimono-male-011',
+      name: '男性和服 11',
+      category: 'male',
+      imageUrl: `${KIMONO_BASE_PATH}/boy/IMG_1616.jpg`,
+      cleanImageUrl: '/kimonos/male/IMG_1616.png',
+    },
+    {
+      id: 'kimono-male-012',
+      name: '男性和服 12',
+      category: 'male',
+      imageUrl: `${KIMONO_BASE_PATH}/boy/IMG_1804-2.jpg`,
+      cleanImageUrl: '/kimonos/male/IMG_1804-2.png',
+    },
+    {
+      id: 'kimono-male-013',
+      name: '男性和服 13',
+      category: 'male',
+      imageUrl: `${KIMONO_BASE_PATH}/boy/IMG_6023.jpg`,
+      cleanImageUrl: '/kimonos/male/IMG_6023.png',
+    },
+    {
+      id: 'kimono-male-014',
+      name: '男性和服 14',
+      category: 'male',
+      imageUrl: `${KIMONO_BASE_PATH}/boy/IMG_7177.jpg`,
+      cleanImageUrl: '/kimonos/male/IMG_7177.png',
+    },
+    {
+      id: 'kimono-male-015',
+      name: '男性和服 15',
+      category: 'male',
+      imageUrl: `${KIMONO_BASE_PATH}/boy/_DSC0049.jpg`,
+      cleanImageUrl: '/kimonos/male/_DSC0049.png',
+    },
+    {
+      id: 'kimono-male-016',
+      name: '男性和服 16',
+      category: 'male',
+      imageUrl: `${KIMONO_BASE_PATH}/boy/_DSC5885.jpg`,
+      cleanImageUrl: '/kimonos/male/_DSC5885.png',
+    },
+    {
+      id: 'kimono-male-017',
+      name: '男性和服 17',
+      category: 'male',
+      imageUrl: `${KIMONO_BASE_PATH}/boy/_DSC7791.jpg`,
+      cleanImageUrl: '/kimonos/male/_DSC7791.png',
+    },
+    {
+      id: 'kimono-male-018',
+      name: '男性和服 18',
+      category: 'male',
+      imageUrl: `${KIMONO_BASE_PATH}/boy/截屏2025-07-13 13.29.45.png`,
+      cleanImageUrl: '/kimonos/male/截屏2025-07-13 13.29.45.png',
+    },
+    {
+      id: 'kimono-male-019',
+      name: '男性和服 19',
+      category: 'male',
+      imageUrl: `${KIMONO_BASE_PATH}/boy/截屏2025-07-13 13.51.53.png`,
+    },
+  ],
+  child: [
+    {
+      id: 'kimono-child-001',
+      name: '儿童和服 1',
+      category: 'child',
+      imageUrl: `${KIMONO_BASE_PATH}/kid/0R1A0203.jpg`,
+      cleanImageUrl: '/kimonos/child/0R1A0203.png',
+    },
+    {
+      id: 'kimono-child-002',
+      name: '儿童和服 2',
+      category: 'child',
+      imageUrl: `${KIMONO_BASE_PATH}/kid/0R1A3831.jpg`,
+    },
+    {
+      id: 'kimono-child-003',
+      name: '儿童和服 3',
+      category: 'child',
+      imageUrl: `${KIMONO_BASE_PATH}/kid/13406619059877009.jpeg`,
+      cleanImageUrl: '/kimonos/child/13406619059877009.png',
+    },
+    {
+      id: 'kimono-child-004',
+      name: '儿童和服 4',
+      category: 'child',
+      imageUrl: `${KIMONO_BASE_PATH}/kid/13406619081837480.jpeg`,
+      cleanImageUrl: '/kimonos/child/13406619081837480.png',
+    },
+    {
+      id: 'kimono-child-005',
+      name: '儿童和服 5',
+      category: 'child',
+      imageUrl: `${KIMONO_BASE_PATH}/kid/13406798622888412.jpeg`,
+      cleanImageUrl: '/kimonos/child/13406798622888412.png',
+    },
+    {
+      id: 'kimono-child-006',
+      name: '儿童和服 6',
+      category: 'child',
+      imageUrl: `${KIMONO_BASE_PATH}/kid/13406798638726990.jpeg`,
+      cleanImageUrl: '/kimonos/child/13406798638726990.png',
+    },
+    {
+      id: 'kimono-child-007',
+      name: '儿童和服 7',
+      category: 'child',
+      imageUrl: `${KIMONO_BASE_PATH}/kid/13407230080958538.jpeg`,
+      cleanImageUrl: '/kimonos/child/13407230080958538.png',
+    },
+    {
+      id: 'kimono-child-008',
+      name: '儿童和服 8',
+      category: 'child',
+      imageUrl: `${KIMONO_BASE_PATH}/kid/13407230104361955.jpeg`,
+      cleanImageUrl: '/kimonos/child/13407230104361955.png',
+    },
+    {
+      id: 'kimono-child-009',
+      name: '儿童和服 9',
+      category: 'child',
+      imageUrl: `${KIMONO_BASE_PATH}/kid/495203d6c5e4b0f75ba751167372361a.png`,
+      cleanImageUrl: '/kimonos/child/495203d6c5e4b0f75ba751167372361a.png',
+    },
+    {
+      id: 'kimono-child-010',
+      name: '儿童和服 10',
+      category: 'child',
+      imageUrl: `${KIMONO_BASE_PATH}/kid/6J6A3809.jpg`,
+      cleanImageUrl: '/kimonos/child/6J6A3809.png',
+    },
+    {
+      id: 'kimono-child-011',
+      name: '儿童和服 11',
+      category: 'child',
+      imageUrl: `${KIMONO_BASE_PATH}/kid/DSC00182.jpg`,
+      cleanImageUrl: '/kimonos/child/DSC00182.png',
+    },
+    {
+      id: 'kimono-child-012',
+      name: '儿童和服 12',
+      category: 'child',
+      imageUrl: `${KIMONO_BASE_PATH}/kid/DSC00305.jpg`,
+      cleanImageUrl: '/kimonos/child/DSC00305.png',
+    },
+    {
+      id: 'kimono-child-013',
+      name: '儿童和服 13',
+      category: 'child',
+      imageUrl: `${KIMONO_BASE_PATH}/kid/DSC06277.jpg`,
+      cleanImageUrl: '/kimonos/child/DSC06277.png',
+    },
+    {
+      id: 'kimono-child-014',
+      name: '儿童和服 14',
+      category: 'child',
+      imageUrl: `${KIMONO_BASE_PATH}/kid/DSC06987.jpg`,
+      cleanImageUrl: '/kimonos/child/DSC06987.png',
+    },
+    {
+      id: 'kimono-child-015',
+      name: '儿童和服 15',
+      category: 'child',
+      imageUrl: `${KIMONO_BASE_PATH}/kid/DSCF6641.jpg`,
+      cleanImageUrl: '/kimonos/child/DSCF6641.png',
+    },
+  ],
+};
+
+/**
+ * 获取完整和服库
+ */
+export function getKimonoLibrary(): KimonoLibrary {
+  return KIMONO_LIBRARY;
+}
+
+/**
+ * 按分类获取和服列表
+ */
+export function getKimonosByCategory(category: KimonoCategory): KimonoLibraryItem[] {
+  return KIMONO_LIBRARY[category] || [];
+}
+
+/**
+ * 按ID获取单个和服项
+ */
+export function getKimonoById(id: string): KimonoLibraryItem | null {
+  const all = getAllKimonos();
+  return all.find(k => k.id === id) || null;
+}
+
+/**
+ * 获取所有和服
+ */
+export function getAllKimonos(): KimonoLibraryItem[] {
+  return [
+    ...KIMONO_LIBRARY.female,
+    ...KIMONO_LIBRARY.male,
+    ...KIMONO_LIBRARY.child,
+  ];
+}
+
+/**
+ * 获取各分类和服数量
+ */
+export function getKimonoCounts(): Record<KimonoCategory, number> {
+  return {
+    female: KIMONO_LIBRARY.female.length,
+    male: KIMONO_LIBRARY.male.length,
+    child: KIMONO_LIBRARY.child.length,
+  };
+}
+
+/**
+ * 获取随机和服
+ */
+export function getRandomKimono(category?: KimonoCategory): KimonoLibraryItem | null {
+  let pool: KimonoLibraryItem[];
+
+  if (category) {
+    pool = KIMONO_LIBRARY[category];
+  } else {
+    pool = getAllKimonos();
+  }
+
+  if (pool.length === 0) return null;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
