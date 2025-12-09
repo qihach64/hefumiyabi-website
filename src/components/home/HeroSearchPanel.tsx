@@ -19,22 +19,31 @@ interface Theme {
 interface HeroSearchPanelProps {
   themes: Theme[];
   variant?: "dark" | "light";
+  onDropdownOpenChange?: (isOpen: boolean) => void; // 下拉菜单打开状态变化时通知父组件
 }
 
-export default function HeroSearchPanel({ themes, variant = "dark" }: HeroSearchPanelProps) {
+export default function HeroSearchPanel({ themes, variant = "dark", onDropdownOpenChange }: HeroSearchPanelProps) {
   const router = useRouter();
-  const { startSearch } = useSearchState();
+  // 使用全局搜索状态，与 Header 搜索栏同步
+  const { searchState, setLocation, setDate, setTheme, startSearch } = useSearchState();
   const themesScrollRef = useRef<HTMLDivElement>(null);
   const locationContainerRef = useRef<HTMLDivElement>(null);
   const locationDropdownRef = useRef<HTMLDivElement>(null);
   const dateContainerRef = useRef<HTMLDivElement>(null);
   const isLight = variant === "light";
 
-  const [location, setLocation] = useState("");
-  const [date, setDate] = useState("");
-  const [selectedTheme, setSelectedTheme] = useState<Theme | null>(null);
+  // 从全局状态读取
+  const location = searchState.location;
+  const date = searchState.date;
+  const selectedTheme = searchState.theme;
+
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+
+  // 设置主题的包装函数（用于主题选择按钮）
+  const setSelectedTheme = (theme: Theme | null) => {
+    setTheme(theme);
+  };
 
   // 使用共享的 location dropdown hook
   const {
@@ -53,6 +62,12 @@ export default function HeroSearchPanel({ themes, variant = "dark" }: HeroSearch
     close: closeDateDropdown,
     toggle: toggleDateDropdown,
   } = useDateDropdown();
+
+  // 通知父组件下拉菜单状态变化
+  useEffect(() => {
+    const isAnyDropdownOpen = showLocationDropdown || showDateDropdown;
+    onDropdownOpenChange?.(isAnyDropdownOpen);
+  }, [showLocationDropdown, showDateDropdown, onDropdownOpenChange]);
 
   // 点击外部关闭 location 下拉菜单
   useEffect(() => {

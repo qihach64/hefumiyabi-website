@@ -1,10 +1,9 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import Image from "next/image";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion, useScroll, useTransform, useMotionValue } from "framer-motion";
 import HeroSearchPanel from "./HeroSearchPanel";
-import ScrollIndicator from "./ScrollIndicator";
 
 // Hero 背景图片
 const HERO_IMAGES = [
@@ -27,16 +26,46 @@ interface HeroSectionProps {
 export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSectionProps) {
   const heroRef = useRef<HTMLDivElement>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false); // 下拉菜单是否打开
 
   // 滚动动画
   const { scrollY } = useScroll();
 
-  // 视差效果 - 内容向上移动
-  const contentY = useTransform(scrollY, [0, 500], [0, 150]);
-  // 透明度渐变 - 滚动时淡出
-  const contentOpacity = useTransform(scrollY, [0, 400], [1, 0]);
   // 背景缩放效果 - 初始略大，滚动时继续放大
   const bgScale = useTransform(scrollY, [0, 500], [1.05, 1.15]);
+
+  // 视差效果 - 内容向上移动（下拉菜单打开时锁定）
+  const contentYBase = useTransform(scrollY, [0, 500], [0, 150]);
+  // 透明度渐变 - 滚动时淡出（下拉菜单打开时锁定）
+  const contentOpacityBase = useTransform(scrollY, [0, 400], [1, 0]);
+
+  // 使用 motion value 来手动控制，以便响应 isDropdownOpen 状态
+  const contentY = useMotionValue(0);
+  const contentOpacity = useMotionValue(1);
+
+  // 订阅 base 值变化，根据 isDropdownOpen 状态决定是否更新
+  useEffect(() => {
+    // 当下拉菜单打开时，不订阅滚动变化（保持当前位置不变）
+    if (isDropdownOpen) {
+      return;
+    }
+
+    // 下拉菜单关闭时，订阅滚动变化并立即同步当前值
+    contentY.set(contentYBase.get());
+    contentOpacity.set(contentOpacityBase.get());
+
+    const unsubY = contentYBase.on("change", (v) => {
+      contentY.set(v);
+    });
+    const unsubOpacity = contentOpacityBase.on("change", (v) => {
+      contentOpacity.set(v);
+    });
+
+    return () => {
+      unsubY();
+      unsubOpacity();
+    };
+  }, [isDropdownOpen, contentYBase, contentOpacityBase, contentY, contentOpacity]);
 
   // 监听 Hero 是否在视口内
   useEffect(() => {
@@ -95,9 +124,9 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
         }}
       />
 
-      {/* Layer 3: 主内容区 (视差滚动) */}
+      {/* Layer 3: 主内容区 (视差滚动) - 整体上移以给日历下拉菜单留出空间 */}
       <motion.div
-        className="relative z-10 h-full flex flex-col items-center justify-center px-4"
+        className="relative z-10 h-full flex flex-col items-center justify-center px-4 -mt-16 md:-mt-24"
         style={{ y: contentY, opacity: contentOpacity }}
       >
         {/* 竖排装饰文字 - 左侧 */}
@@ -206,12 +235,10 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.8, delay: 1.1 }}
         >
-          <HeroSearchPanel themes={themes} variant="light" />
+          <HeroSearchPanel themes={themes} variant="light" onDropdownOpenChange={setIsDropdownOpen} />
         </motion.div>
       </motion.div>
 
-      {/* Layer 4: 滚动指示器 */}
-      <ScrollIndicator variant="light" />
     </section>
   );
 }
