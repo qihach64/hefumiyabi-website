@@ -722,8 +722,8 @@ export default function HeaderSearchBar() {
                                 transition-all duration-200
                                 flex items-center gap-3
                                 ${isSelected
-                                  ? 'bg-gray-900 text-white'
-                                  : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                                  ? 'bg-sakura-500 text-white'
+                                  : 'bg-gray-50 text-gray-700 hover:bg-sakura-50'
                                 }
                               `}
                             >
@@ -733,7 +733,7 @@ export default function HeaderSearchBar() {
                               `}>
                                 <IconComponent
                                   className="w-5 h-5"
-                                  style={{ color: isSelected ? 'white' : (theme.color || '#6b7280') }}
+                                  style={{ color: isSelected ? 'white' : (theme.color || '#FF7A9A') }}
                                 />
                               </div>
                               <span className="text-[14px] font-medium truncate">{theme.name}</span>

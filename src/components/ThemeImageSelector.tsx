@@ -12,7 +12,7 @@ const defaultThemeImages: Record<string, string> = {
   'together': 'https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?w=400&q=80',
   'seasonal': 'https://images.unsplash.com/photo-1522383225653-ed111181a951?w=400&q=80',
   'casual-stroll': 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=400&q=80',
-  'specialty': 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&q=80',
+  'specialty': 'https://images.unsplash.com/photo-1490806843957-31f4c9a91c65?w=400&q=80',
 };
 
 // "全部"选项的默认图片
@@ -106,7 +106,7 @@ export default function ThemeImageSelector({
                   relative w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden
                   transition-all duration-300 shadow-sm
                   ${isSelected
-                    ? 'ring-2 ring-gray-900 ring-offset-2 shadow-md'
+                    ? 'ring-2 ring-sakura-500 ring-offset-2 shadow-md'
                     : 'hover:shadow-md hover:scale-[1.02]'
                   }
                 `}
@@ -134,7 +134,7 @@ export default function ThemeImageSelector({
                 className={`
                   text-[13px] md:text-[14px] font-medium text-center whitespace-nowrap
                   transition-colors duration-300
-                  ${isSelected ? 'text-gray-900' : 'text-gray-500 group-hover:text-gray-700'}
+                  ${isSelected ? 'text-sakura-600' : 'text-gray-500 group-hover:text-gray-700'}
                 `}
               >
                 全部
@@ -143,7 +143,7 @@ export default function ThemeImageSelector({
               <div
                 className={`
                   h-0.5 w-10 rounded-full transition-all duration-300
-                  ${isSelected ? 'bg-gray-900' : 'bg-transparent'}
+                  ${isSelected ? 'bg-sakura-500' : 'bg-transparent'}
                 `}
               />
             </button>
@@ -171,7 +171,7 @@ export default function ThemeImageSelector({
                   relative w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden
                   transition-all duration-300 shadow-sm
                   ${isSelected
-                    ? 'ring-2 ring-gray-900 ring-offset-2 shadow-md'
+                    ? 'ring-2 ring-sakura-500 ring-offset-2 shadow-md'
                     : 'hover:shadow-md hover:scale-[1.02]'
                   }
                 `}
@@ -199,7 +199,7 @@ export default function ThemeImageSelector({
                 className={`
                   text-[13px] md:text-[14px] font-medium text-center whitespace-nowrap
                   transition-colors duration-300
-                  ${isSelected ? 'text-gray-900' : 'text-gray-500 group-hover:text-gray-700'}
+                  ${isSelected ? 'text-sakura-600' : 'text-gray-500 group-hover:text-gray-700'}
                 `}
               >
                 {theme.name}
@@ -208,7 +208,7 @@ export default function ThemeImageSelector({
               <div
                 className={`
                   h-0.5 w-10 rounded-full transition-all duration-300
-                  ${isSelected ? 'bg-gray-900' : 'bg-transparent'}
+                  ${isSelected ? 'bg-sakura-500' : 'bg-transparent'}
                 `}
               />
             </button>
