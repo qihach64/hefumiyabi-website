@@ -374,9 +374,9 @@ export default function InteractiveKimonoMap({
             </div>
           </div>
 
-          {/* 右侧：配件列表 */}
-          <div className="w-full lg:w-[45%] lg:flex-shrink-0">
-            <div className="flex items-baseline justify-between mb-6 pb-4 border-b border-gray-100">
+          {/* 右侧：配件列表 - 右边距与外层容器一致 */}
+          <div className="w-full lg:w-[45%] lg:flex-shrink-0 overflow-hidden">
+            <div className="flex items-baseline justify-between mb-6 pb-4 border-b border-gray-100 px-4">
               <h4 className="text-lg font-serif text-gray-900">
                 全部配件
               </h4>
@@ -403,7 +403,7 @@ export default function InteractiveKimonoMap({
                     <button
                       onClick={() => handleHotspotClick(hotspot)}
                       className={`
-                        w-full flex items-center gap-3 py-4 pl-4 pr-2 text-left
+                        w-full flex items-center gap-3 py-4 px-4 text-left
                         transition-all duration-200 group
                         ${isSelected ? "bg-gray-50/80" : "hover:bg-gray-50/50"}
                       `}

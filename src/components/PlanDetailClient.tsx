@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Star } from "lucide-react";
-import { Badge } from "@/components/ui";
+import Link from "next/link";
+import { Star, ChevronRight, Clock, MapPin } from "lucide-react";
 import BookingCard from "@/components/BookingCard";
 import MiniBookingBar from "@/components/MiniBookingBar";
 import VisualHub from "@/components/plan/VisualHub";
@@ -42,39 +42,35 @@ interface PlanDetailClientProps {
 
 export default function PlanDetailClient({ plan, mapData }: PlanDetailClientProps) {
   const [mounted, setMounted] = useState(false);
-  // 追踪是否在全宽区域（显示 MiniBookingBar）
   const [isInFullWidthSection, setIsInFullWidthSection] = useState(true);
 
-  // 两栏区域的 ref，用于 Intersection Observer
-  const twoColumnSectionRef = useRef<HTMLDivElement>(null);
-  // BookingCard 区域的 ref，用于滚动定位
   const bookingCardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Intersection Observer: 检测两栏区域是否进入视口
+  // Intersection Observer: 检测 BookingCard 是否进入视口
+  // 当 BookingCard 可见时隐藏 MiniBookingBar
   useEffect(() => {
     if (!mounted) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          // 当两栏区域进入视口时，隐藏 MiniBookingBar
-          // 当两栏区域离开视口时，显示 MiniBookingBar
+          // 当 BookingCard 进入视口时，隐藏 MiniBookingBar
           setIsInFullWidthSection(!entry.isIntersecting);
         });
       },
       {
-        // 当两栏区域顶部接近视口顶部时触发
-        rootMargin: "-100px 0px 0px 0px",
-        threshold: 0,
+        // 当 BookingCard 顶部距离视口顶部 150px 时触发
+        rootMargin: "-150px 0px 0px 0px",
+        threshold: 0.1, // 10% 可见时触发
       }
     );
 
-    if (twoColumnSectionRef.current) {
-      observer.observe(twoColumnSectionRef.current);
+    if (bookingCardRef.current) {
+      observer.observe(bookingCardRef.current);
     }
 
     return () => {
@@ -82,7 +78,6 @@ export default function PlanDetailClient({ plan, mapData }: PlanDetailClientProp
     };
   }, [mounted]);
 
-  // 滚动到 BookingCard 区域
   const scrollToBooking = () => {
     if (bookingCardRef.current) {
       bookingCardRef.current.scrollIntoView({
@@ -92,71 +87,155 @@ export default function PlanDetailClient({ plan, mapData }: PlanDetailClientProp
     }
   };
 
-  // 分类标签
+  // 分类标签 - 中英文
   const getCategoryLabel = (category: string) => {
-    const labels: Record<string, string> = {
-      LADIES: "女士",
-      MENS: "男士",
-      COUPLE: "情侣",
-      FAMILY: "亲子",
-      GROUP: "团体",
-      SPECIAL: "特别",
+    const labels: Record<string, { zh: string; en: string }> = {
+      LADIES: { zh: "女士", en: "Ladies" },
+      MENS: { zh: "男士", en: "Men's" },
+      COUPLE: { zh: "情侣", en: "Couple" },
+      FAMILY: { zh: "亲子", en: "Family" },
+      GROUP: { zh: "团体", en: "Group" },
+      SPECIAL: { zh: "特别", en: "Special" },
     };
-    return labels[category] || "套餐";
+    return labels[category] || { zh: "套餐", en: "Plan" };
   };
 
+  const categoryInfo = getCategoryLabel(plan.category);
+
   return (
-    <div className="bg-white min-h-screen">
-      {/* 主容器 */}
-      <div className="max-w-[1280px] mx-auto px-4 sm:px-6 md:px-10 lg:px-16 pt-6 pb-12">
+    // 米白色纸张质感背景
+    <div className="min-h-screen" style={{ backgroundColor: "#FDFCFB" }}>
+      {/* 主容器 - 增加顶部留白 */}
+      <div className="max-w-[1280px] mx-auto px-4 sm:px-6 md:px-10 lg:px-16 pt-8 md:pt-12 pb-16">
 
         {/* ========================================
-            标题区域 - 紧凑布局
+            面包屑导航 - 精致斜杠分隔
         ======================================== */}
-        <div className="mb-6">
-          <h1 className="text-[24px] md:text-[28px] font-semibold text-gray-900 mb-2 leading-tight">
+        <nav className="mb-8 md:mb-10">
+          <ol className="flex items-center gap-2 text-[13px]">
+            <li>
+              <Link
+                href="/"
+                className="text-[#8B7355] hover:text-sakura-600 transition-colors"
+              >
+                首页
+              </Link>
+            </li>
+            <li className="text-[#C4B5A5]">/</li>
+            <li>
+              <Link
+                href="/plans"
+                className="text-[#8B7355] hover:text-sakura-600 transition-colors"
+              >
+                全部套餐
+              </Link>
+            </li>
+            <li className="text-[#C4B5A5]">/</li>
+            <li>
+              <Link
+                href={`/plans?category=${plan.category}`}
+                className="text-[#8B7355] hover:text-sakura-600 transition-colors"
+              >
+                {categoryInfo.zh}套餐
+              </Link>
+            </li>
+            <li className="text-[#C4B5A5]">/</li>
+            <li className="text-[#3D3A38] font-medium truncate max-w-[200px]">
+              {plan.name}
+            </li>
+          </ol>
+        </nav>
+
+        {/* ========================================
+            标题区域 - Japanese Modernism 风格
+        ======================================== */}
+        <header className="mb-10 md:mb-12">
+          {/* 装饰线 + 分类标签 */}
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-10 h-px bg-gradient-to-r from-sakura-400 to-transparent" />
+            <span className="text-[11px] uppercase tracking-[0.25em] text-sakura-500 font-medium">
+              {categoryInfo.en} Plan
+            </span>
+          </div>
+
+          {/* 主标题 - 衬线体 + 深炭灰 */}
+          <h1
+            className="text-[28px] md:text-[36px] lg:text-[42px] font-serif tracking-tight leading-tight mb-6"
+            style={{ color: "#3D3A38" }}
+          >
             {plan.name}
           </h1>
 
-          <div className="flex items-center gap-2 flex-wrap text-[14px]">
-            {/* 评分 */}
-            <div className="flex items-center gap-1">
-              <Star className="w-4 h-4 fill-gray-900 text-gray-900" />
-              <span className="font-semibold">4.8</span>
-              <span className="text-gray-500">(128)</span>
+          {/* 元信息行 */}
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+            {/* 评分 - 樱花色星星 */}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-0.5">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <Star
+                    key={i}
+                    className={`w-4 h-4 ${
+                      i <= 4
+                        ? "fill-sakura-500 text-sakura-500"
+                        : i === 5
+                        ? "fill-sakura-300 text-sakura-300"
+                        : "fill-gray-200 text-gray-200"
+                    }`}
+                  />
+                ))}
+              </div>
+              <span className="text-[15px] font-semibold text-[#3D3A38]">4.8</span>
+              <span className="text-[14px] text-[#8B7355]">(128 条评价)</span>
             </div>
 
-            <span className="text-gray-300">·</span>
+            {/* 分隔点 */}
+            <span className="w-1 h-1 rounded-full bg-[#C4B5A5]" />
 
-            {/* 分类 + 时长 */}
-            <span className="text-gray-600">
-              {getCategoryLabel(plan.category)} · {plan.duration}小时
-            </span>
+            {/* 时长 */}
+            <div className="flex items-center gap-1.5 text-[14px] text-[#5C5854]">
+              <Clock className="w-4 h-4 text-[#8B7355]" />
+              <span>{plan.duration} 小时体验</span>
+            </div>
 
             {/* 地区 */}
             {plan.region && (
               <>
-                <span className="text-gray-300">·</span>
-                <span className="text-gray-900 font-medium">{plan.region}</span>
+                <span className="w-1 h-1 rounded-full bg-[#C4B5A5]" />
+                <div className="flex items-center gap-1.5 text-[14px] text-[#5C5854]">
+                  <MapPin className="w-4 h-4 text-[#8B7355]" />
+                  <span>{plan.region}</span>
+                </div>
               </>
             )}
 
-            {/* 限时优惠标签 */}
+            {/* 限时优惠标签 - Glass 风格 */}
             {plan.isCampaign && (
               <>
-                <span className="text-gray-300">·</span>
-                <Badge variant="error" size="sm">限时优惠</Badge>
+                <span className="w-1 h-1 rounded-full bg-[#C4B5A5]" />
+                <span
+                  className="inline-flex items-center px-3 py-1 rounded-full text-[12px] font-medium backdrop-blur-sm"
+                  style={{
+                    background: "rgba(139, 22, 52, 0.08)",
+                    color: "#8B1634",
+                    border: "1px solid rgba(139, 22, 52, 0.15)",
+                  }}
+                >
+                  限时优惠
+                </span>
               </>
             )}
           </div>
-        </div>
+
+          {/* 渐变分割线 */}
+          <div className="mt-8 h-px bg-gradient-to-r from-transparent via-[#E8E2DC] to-transparent" />
+        </header>
 
         {/* ========================================
             全宽区域：VisualHub + ServiceMap
-            这部分独立于 Grid，可以全宽展示
+            使用 space-y-12 (48px) 作为统一垂直节奏
         ======================================== */}
-        <div className="space-y-10 mb-10">
-          {/* VISUAL HUB - 全宽视觉中心 */}
+        <div className="space-y-12 mb-12">
+          {/* VISUAL HUB */}
           <VisualHub
             plan={{
               id: plan.id,
@@ -168,70 +247,87 @@ export default function PlanDetailClient({ plan, mapData }: PlanDetailClientProp
             }}
           />
 
-          {/* 套餐简介 */}
+          {/* 套餐简介 - 更大留白 */}
           {plan.description && (
-            <div>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-8 h-px bg-sakura-300" />
-                <span className="text-[11px] uppercase tracking-[0.2em] text-sakura-500 font-medium">
+            <section className="py-2">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-px bg-gradient-to-r from-sakura-400 to-transparent" />
+                <span className="text-[11px] uppercase tracking-[0.25em] text-sakura-500 font-medium">
                   About This Plan
                 </span>
               </div>
-              <p className="text-[15px] text-gray-600 leading-relaxed whitespace-pre-line">
+              <p
+                className="text-[16px] leading-[1.9] whitespace-pre-line max-w-3xl"
+                style={{ color: "#5C5854" }}
+              >
                 {plan.description}
               </p>
-            </div>
+            </section>
           )}
 
-          {/* SERVICE MAP - 全宽配件热点图 + 升级选项 */}
+          {/* SERVICE MAP */}
           <ServiceMap
             includes={plan.includes}
             mapData={mapData}
           />
 
-          {/* 活动信息 */}
+          {/* 活动信息 - 更精致的设计 */}
           {plan.campaign && (
-            <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-5 border border-amber-200">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center flex-shrink-0">
-                  <span className="text-white text-xl">🎊</span>
+            <section
+              className="rounded-2xl p-6 md:p-8"
+              style={{
+                background: "linear-gradient(135deg, rgba(255, 251, 235, 0.8) 0%, rgba(254, 243, 199, 0.6) 100%)",
+                border: "1px solid rgba(217, 119, 6, 0.15)",
+              }}
+            >
+              <div className="flex items-start gap-5">
+                <div
+                  className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
+                  style={{
+                    background: "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)",
+                    boxShadow: "0 4px 12px rgba(217, 119, 6, 0.25)",
+                  }}
+                >
+                  <span className="text-2xl">🎊</span>
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-[16px] font-semibold text-amber-900 mb-1">
+                  <h3
+                    className="text-[18px] font-serif tracking-wide mb-2"
+                    style={{ color: "#78350F" }}
+                  >
                     {plan.campaign.title}
                   </h3>
-                  <p className="text-[14px] text-amber-800 leading-relaxed">
+                  <p
+                    className="text-[15px] leading-relaxed"
+                    style={{ color: "#92400E" }}
+                  >
                     {plan.campaign.description}
                   </p>
                   {plan.availableUntil && (
-                    <p className="text-[13px] text-amber-700 mt-2 font-medium">
+                    <p
+                      className="text-[13px] mt-3 font-medium"
+                      style={{ color: "#B45309" }}
+                    >
                       活动截止：{new Date(plan.availableUntil).toLocaleDateString('zh-CN')}
                     </p>
                   )}
                 </div>
               </div>
-            </div>
+            </section>
           )}
         </div>
 
         {/* ========================================
             两栏区域：Journey + Reviews + BookingCard
-            BookingCard 在这里 sticky 显示
         ======================================== */}
-        <div
-          ref={twoColumnSectionRef}
-          className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-10"
-        >
-          {/* 左侧主内容区 - 占 2/3 */}
-          <div className="lg:col-span-2 space-y-10">
-            {/* JOURNEY + FAQ - 体验旅程 */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-10">
+          {/* 左侧主内容区 */}
+          <div className="lg:col-span-2 space-y-12">
             <JourneyTimeline duration={plan.duration} />
-
-            {/* SOCIAL PROOF - 评价系统 */}
             <SocialProof />
           </div>
 
-          {/* 右侧预订卡片 - Sticky 定位 */}
+          {/* 右侧预订卡片 */}
           <div ref={bookingCardRef} className="lg:col-span-1">
             <div className="lg:sticky lg:top-24">
               <BookingCard plan={plan} />
@@ -240,10 +336,7 @@ export default function PlanDetailClient({ plan, mapData }: PlanDetailClientProp
         </div>
       </div>
 
-      {/* ========================================
-          MiniBookingBar - 全宽区域时显示
-          使用 Intersection Observer 智能切换
-      ======================================== */}
+      {/* MiniBookingBar */}
       <MiniBookingBar
         plan={plan}
         visible={isInFullWidthSection}
