@@ -45,4 +45,6 @@ export interface InteractiveKimonoMapProps {
   mapData: MapData;
   onHotspotClick?: (hotspot: HotspotData) => void;
   className?: string;
+  /** Layout mode: 'horizontal' (default) or 'vertical' for narrow containers */
+  layout?: "horizontal" | "vertical";
 }

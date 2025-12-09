@@ -79,10 +79,10 @@ export default function ServiceMap({
       {/* 和服配件交互图 + 升级选项 整合容器 */}
       <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
 
-        {/* 和服配件交互图 */}
+        {/* 和服配件交互图 - 全宽展示，使用水平布局 */}
         {mapData && (
-          <div className="p-6 md:p-8 bg-gray-50/30">
-            <InteractiveKimonoMap mapData={mapData} />
+          <div className="p-6 md:p-8">
+            <InteractiveKimonoMap mapData={mapData} layout="horizontal" />
           </div>
         )}
 
