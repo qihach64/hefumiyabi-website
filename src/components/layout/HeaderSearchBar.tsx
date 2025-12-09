@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef, useTransition } from "react";
+import { useState, useEffect, useRef, useTransition, useCallback } from "react";
 import { Search, MapPin, X, Calendar, Palette, ChevronDown, Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useSearchState } from "@/contexts/SearchStateContext";
 import { useSearchBar } from "@/contexts/SearchBarContext";
 import { getThemeIcon } from "@/lib/themeIcons";
@@ -17,9 +17,41 @@ interface Theme {
 
 export default function HeaderSearchBar() {
   const router = useRouter();
-  const { searchState, setLocation, setDate, setTheme, startSearch, isSearching } = useSearchState();
-  const { isSearchBarExpanded, expandManually } = useSearchBar();
+  const searchParams = useSearchParams();
+  const { searchState, setLocation, setDate, startSearch, isSearching } = useSearchState();
+  const { isSearchBarExpanded, expandManually, hideThemeSelector } = useSearchBar();
   const [isPending, startTransition] = useTransition();
+
+  // 主题选择立即导航到 /plans
+  const handleThemeSelect = useCallback((theme: Theme | null) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    // 保留当前的 location 和 date（优先使用 searchState 中的最新值）
+    if (searchState.location) {
+      params.set('location', searchState.location);
+    }
+    if (searchState.date) {
+      params.set('date', searchState.date);
+    }
+
+    // 设置或清除主题
+    if (theme) {
+      params.set('theme', theme.slug);
+    } else {
+      params.delete('theme');
+    }
+
+    const queryString = params.toString();
+    const url = queryString ? `/plans?${queryString}` : '/plans';
+
+    // 设置全局加载状态
+    startSearch(theme);
+
+    // 导航
+    startTransition(() => {
+      router.push(url);
+    });
+  }, [searchParams, searchState.location, searchState.date, startSearch, router]);
 
   // 自动补全相关
   const [allLocations, setAllLocations] = useState<string[]>([]);
@@ -164,7 +196,7 @@ export default function HeaderSearchBar() {
     if (searchState.theme) params.set("theme", searchState.theme.slug);
 
     const queryString = params.toString();
-    const url = queryString ? `/search?${queryString}` : '/search';
+    const url = queryString ? `/plans?${queryString}` : '/plans';
 
     // 使用统一的 startSearch 设置全局加载状态
     startSearch(searchState.theme);
@@ -204,25 +236,29 @@ export default function HeaderSearchBar() {
             : '日期'}
         </span>
       </button>
-      <div className="w-px h-5 md:h-6 bg-gray-300 flex-shrink-0 hidden sm:block"></div>
-      <button
-        onClick={() => handleExpand('theme')}
-        className="hidden sm:flex items-center gap-1 md:gap-1.5 hover:bg-gray-50 px-1.5 md:px-2 py-1 rounded-full transition-colors cursor-pointer min-w-0"
-        type="button"
-      >
-        <Palette className="w-3.5 h-3.5 md:w-4 md:h-4 text-sakura-500 flex-shrink-0" />
-        <span className="text-xs md:text-sm font-medium text-gray-700 truncate max-w-[50px] md:max-w-[70px]">
-          {searchState.theme ? (
-            <span className="flex items-center gap-1">
-              {(() => {
-                const IconComponent = getThemeIcon(searchState.theme.icon);
-                return <IconComponent className="w-3.5 h-3.5 md:w-4 md:h-4" />;
-              })()}
-              <span className="truncate">{searchState.theme.name}</span>
+      {!hideThemeSelector && (
+        <>
+          <div className="w-px h-5 md:h-6 bg-gray-300 flex-shrink-0 hidden sm:block"></div>
+          <button
+            onClick={() => handleExpand('theme')}
+            className="hidden sm:flex items-center gap-1 md:gap-1.5 hover:bg-gray-50 px-1.5 md:px-2 py-1 rounded-full transition-colors cursor-pointer min-w-0"
+            type="button"
+          >
+            <Palette className="w-3.5 h-3.5 md:w-4 md:h-4 text-sakura-500 flex-shrink-0" />
+            <span className="text-xs md:text-sm font-medium text-gray-700 truncate max-w-[50px] md:max-w-[70px]">
+              {searchState.theme ? (
+                <span className="flex items-center gap-1">
+                  {(() => {
+                    const IconComponent = getThemeIcon(searchState.theme.icon);
+                    return <IconComponent className="w-3.5 h-3.5 md:w-4 md:h-4" />;
+                  })()}
+                  <span className="truncate">{searchState.theme.name}</span>
+                </span>
+              ) : '主题'}
             </span>
-          ) : '主题'}
-        </span>
-      </button>
+          </button>
+        </>
+      )}
       <button
         onClick={() => handleExpand('none')}
         className="w-7 h-7 md:w-8 md:h-8 bg-sakura-500 rounded-full flex items-center justify-center ml-1 md:ml-2 flex-shrink-0
@@ -374,98 +410,102 @@ export default function HeaderSearchBar() {
           />
         </div>
 
-        {/* 分隔线 */}
-        <div className="h-6 xl:h-8 w-px bg-gray-300 flex-shrink-0"></div>
+        {/* 分隔线 + 主题选择 - 在 /plans 页面隐藏 */}
+        {!hideThemeSelector && (
+          <>
+            <div className="h-6 xl:h-8 w-px bg-gray-300 flex-shrink-0"></div>
 
-        {/* 主题 */}
-        <div
-          ref={themeButtonRef}
-          className="flex-1 min-w-0 px-3 xl:px-4 py-2 xl:py-3 rounded-full hover:bg-gray-100/50 transition-all duration-200 group relative cursor-pointer"
-          onClick={() => setShowThemeDropdown(!showThemeDropdown)}
-        >
-          <label className="flex items-center gap-1.5 text-[10px] xl:text-xs font-semibold text-gray-700 mb-0.5 cursor-pointer">
-            <Palette className="w-3 h-3 xl:w-4 xl:h-4 text-sakura-500 flex-shrink-0" />
-            <span className="truncate">主题</span>
-          </label>
-          <div className="flex items-center gap-1.5">
-            <span className={`text-xs xl:text-sm truncate ${searchState.theme ? 'text-gray-900' : 'text-gray-400'}`}>
-              {searchState.theme ? (
-                <span className="flex items-center gap-1">
-                  {(() => {
-                    const IconComponent = getThemeIcon(searchState.theme.icon);
-                    return <IconComponent className="w-3.5 h-3.5 xl:w-4 xl:h-4 flex-shrink-0" />;
-                  })()}
-                  <span className="truncate">{searchState.theme.name}</span>
-                </span>
-              ) : (
-                '选择主题'
-              )}
-            </span>
-            {searchState.theme ? (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setTheme(null);
-                }}
-                className="p-0.5 hover:bg-gray-200 rounded-full transition-colors flex-shrink-0"
-                aria-label="清空主题"
-              >
-                <X className="w-3 h-3 xl:w-3.5 xl:h-3.5 text-gray-500" />
-              </button>
-            ) : (
-              <ChevronDown className={`w-3.5 h-3.5 xl:w-4 xl:h-4 text-gray-400 transition-transform flex-shrink-0 ${showThemeDropdown ? 'rotate-180' : ''}`} />
-            )}
-          </div>
-
-          {/* 主题下拉菜单 - Pills 网格布局 */}
-          {showThemeDropdown && (
+            {/* 主题 */}
             <div
-              ref={themeDropdownRef}
-              className="absolute top-full left-0 mt-3 bg-white rounded-2xl overflow-hidden z-50
-                shadow-[0_8px_28px_0_rgba(0,0,0,0.12)]
-                border border-gray-100/50
-                p-3 min-w-[280px]"
-              style={{
-                animation: 'dropdown-appear 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-              }}
+              ref={themeButtonRef}
+              className="flex-1 min-w-0 px-3 xl:px-4 py-2 xl:py-3 rounded-full hover:bg-gray-100/50 transition-all duration-200 group relative cursor-pointer"
+              onClick={() => setShowThemeDropdown(!showThemeDropdown)}
             >
-              {themes.length === 0 ? (
-                <div className="px-2 py-3 text-sm text-gray-500 text-center">暂无主题</div>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {themes.map((theme) => {
-                    const isSelected = searchState.theme?.id === theme.id;
-                    return (
-                      <button
-                        key={theme.id}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setTheme(theme);
-                          setShowThemeDropdown(false);
-                        }}
-                        className={`
-                          px-3 py-2 rounded-full text-sm font-medium
-                          transition-all duration-300 ease-out
-                          flex items-center gap-1.5
-                          ${isSelected
-                            ? 'bg-sakura-500 text-white shadow-sm'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-102 active:scale-98'
-                          }
-                        `}
-                      >
-                        {(() => {
-                          const IconComponent = getThemeIcon(theme.icon);
-                          return <IconComponent className="w-4 h-4" />;
-                        })()}
-                        <span>{theme.name}</span>
-                      </button>
-                    );
-                  })}
+              <label className="flex items-center gap-1.5 text-[10px] xl:text-xs font-semibold text-gray-700 mb-0.5 cursor-pointer">
+                <Palette className="w-3 h-3 xl:w-4 xl:h-4 text-sakura-500 flex-shrink-0" />
+                <span className="truncate">主题</span>
+              </label>
+              <div className="flex items-center gap-1.5">
+                <span className={`text-xs xl:text-sm truncate ${searchState.theme ? 'text-gray-900' : 'text-gray-400'}`}>
+                  {searchState.theme ? (
+                    <span className="flex items-center gap-1">
+                      {(() => {
+                        const IconComponent = getThemeIcon(searchState.theme.icon);
+                        return <IconComponent className="w-3.5 h-3.5 xl:w-4 xl:h-4 flex-shrink-0" />;
+                      })()}
+                      <span className="truncate">{searchState.theme.name}</span>
+                    </span>
+                  ) : (
+                    '选择主题'
+                  )}
+                </span>
+                {searchState.theme ? (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleThemeSelect(null);
+                    }}
+                    className="p-0.5 hover:bg-gray-200 rounded-full transition-colors flex-shrink-0"
+                    aria-label="清空主题"
+                  >
+                    <X className="w-3 h-3 xl:w-3.5 xl:h-3.5 text-gray-500" />
+                  </button>
+                ) : (
+                  <ChevronDown className={`w-3.5 h-3.5 xl:w-4 xl:h-4 text-gray-400 transition-transform flex-shrink-0 ${showThemeDropdown ? 'rotate-180' : ''}`} />
+                )}
+              </div>
+
+              {/* 主题下拉菜单 - Pills 网格布局 */}
+              {showThemeDropdown && (
+                <div
+                  ref={themeDropdownRef}
+                  className="absolute top-full left-0 mt-3 bg-white rounded-2xl overflow-hidden z-50
+                    shadow-[0_8px_28px_0_rgba(0,0,0,0.12)]
+                    border border-gray-100/50
+                    p-3 min-w-[280px]"
+                  style={{
+                    animation: 'dropdown-appear 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                  }}
+                >
+                  {themes.length === 0 ? (
+                    <div className="px-2 py-3 text-sm text-gray-500 text-center">暂无主题</div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {themes.map((theme) => {
+                        const isSelected = searchState.theme?.id === theme.id;
+                        return (
+                          <button
+                            key={theme.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowThemeDropdown(false);
+                              handleThemeSelect(theme);
+                            }}
+                            className={`
+                              px-3 py-2 rounded-full text-sm font-medium
+                              transition-all duration-300 ease-out
+                              flex items-center gap-1.5
+                              ${isSelected
+                                ? 'bg-sakura-500 text-white shadow-sm'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-102 active:scale-98'
+                              }
+                            `}
+                          >
+                            {(() => {
+                              const IconComponent = getThemeIcon(theme.icon);
+                              return <IconComponent className="w-4 h-4" />;
+                            })()}
+                            <span>{theme.name}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-          )}
-        </div>
+          </>
+        )}
 
         {/* 搜索按钮 */}
         <button

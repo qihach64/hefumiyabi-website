@@ -22,6 +22,13 @@ export default async function PlanDetailPage({ params }: PlanDetailPageProps) {
           description: true,
         },
       },
+      theme: {
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+        },
+      },
     },
   });
 

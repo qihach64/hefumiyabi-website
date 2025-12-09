@@ -113,7 +113,7 @@ export default function HeroSearchBar() {
     if (searchState.theme) params.set("theme", searchState.theme.slug);
 
     const queryString = params.toString();
-    const url = queryString ? `/search?${queryString}` : '/search';
+    const url = queryString ? `/plans?${queryString}` : '/plans';
 
     // 使用 startTransition 让按钮显示 loading 状态，同时立即开始导航
     startTransition(() => {

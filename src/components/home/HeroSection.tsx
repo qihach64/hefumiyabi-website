@@ -130,8 +130,8 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
           </div>
         </motion.div>
 
-        {/* 主标题区域 */}
-        <div className="text-center mb-8 md:mb-12 relative">
+        {/* 主标题区域 - 上移以避免底部截断 */}
+        <div className="text-center mb-6 md:mb-10 relative -mt-8 md:-mt-12">
           {/* 主标题 */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -141,7 +141,7 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
           >
             {/* 顶部装饰线 - 樱花色调 */}
             <motion.div
-              className="flex items-center justify-center gap-3 mb-6"
+              className="flex items-center justify-center gap-3 mb-5"
               initial={{ opacity: 0, scaleX: 0 }}
               animate={{ opacity: 1, scaleX: 1 }}
               transition={{ duration: 0.6, delay: 0.5 }}
@@ -151,22 +151,14 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
               <span className="w-8 md:w-12 h-px bg-gradient-to-l from-transparent to-sakura-400/60" />
             </motion.div>
 
-            {/* 主标题 - 日文品牌名 + 樱花渐变 */}
-            <h1 className="relative">
+            {/* 主标题 - 优雅的深色 + 樱花色点缀 */}
+            <h1 className="relative pb-2">
               <span
-                className="block text-5xl md:text-7xl lg:text-8xl font-serif tracking-[0.1em] bg-clip-text text-transparent"
+                className="block text-5xl md:text-7xl lg:text-8xl font-serif tracking-[0.12em]"
                 style={{
-                  backgroundImage: "linear-gradient(135deg, #8B1634 0%, #A61D3F 25%, #4A4542 75%, #3D3A38 100%)",
-                  filter: "drop-shadow(0 2px 4px rgba(139, 22, 52, 0.15))"
+                  color: "#2D2A26",
+                  textShadow: "0 2px 12px rgba(255, 122, 154, 0.2)"
                 }}
-              >
-                一の着物
-              </span>
-              {/* 樱花光晕效果 */}
-              <span
-                className="absolute inset-0 text-5xl md:text-7xl lg:text-8xl font-serif tracking-[0.1em] opacity-20 blur-[2px] pointer-events-none select-none"
-                style={{ color: "#FF7A9A" }}
-                aria-hidden="true"
               >
                 一の着物
               </span>
@@ -174,18 +166,18 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
 
             {/* 底部装饰线 - 樱花色调 */}
             <motion.div
-              className="flex items-center justify-center gap-3 mt-6"
+              className="flex items-center justify-center gap-3 mt-5"
               initial={{ opacity: 0, scaleX: 0 }}
               animate={{ opacity: 1, scaleX: 1 }}
               transition={{ duration: 0.6, delay: 0.8 }}
             >
-              <span className="w-16 md:w-24 h-px bg-gradient-to-r from-transparent via-sakura-400/50 to-transparent" />
+              <span className="w-16 md:w-24 h-px bg-gradient-to-r from-transparent via-sakura-400/60 to-transparent" />
             </motion.div>
           </motion.div>
 
           {/* 副标题 - 细腻的磨砂背景 */}
           <motion.div
-            className="mt-8 md:mt-10"
+            className="mt-6 md:mt-8"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.9 }}
@@ -193,7 +185,7 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
             <span
               className="inline-flex items-center px-6 py-2.5 rounded-full backdrop-blur-md"
               style={{
-                background: "rgba(255,255,255,0.6)",
+                background: "rgba(255,255,255,0.65)",
                 boxShadow: "0 4px 24px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.8)"
               }}
             >

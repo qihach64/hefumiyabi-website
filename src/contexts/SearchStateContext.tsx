@@ -2,13 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-
-interface Theme {
-  id: string;
-  slug: string;
-  name: string;
-  icon: string | null;
-}
+import type { Theme } from '@/types';
 
 interface SearchState {
   location: string;
@@ -45,36 +39,69 @@ function SearchStateProviderInner({ children }: { children: ReactNode }) {
   const [isSearching, setIsSearching] = useState(false);
   const [pendingTheme, setPendingTheme] = useState<Theme | null | undefined>(undefined);
 
-  // 只在组件挂载时从 URL 初始化主题
-  const initializedRef = useState({ done: false })[0];
+  // 缓存 themes 数据，避免重复请求
+  const [cachedThemes, setCachedThemes] = useState<Theme[]>([]);
 
+  // 监听 URL 参数变化，同步 location 和 date
   useEffect(() => {
-    if (initializedRef.done) return;
+    const urlLocation = searchParams.get('location') || '';
+    const urlDate = searchParams.get('date') || '';
 
+    setSearchState(prev => ({
+      ...prev,
+      location: urlLocation,
+      date: urlDate,
+    }));
+  }, [searchParams]);
+
+  // 监听 URL 中的 theme 参数变化，同步主题
+  useEffect(() => {
     const themeSlug = searchParams.get('theme');
 
-    if (themeSlug) {
-      fetch('/api/themes')
-        .then(res => res.json())
-        .then(data => {
-          const themes = data.themes || [];
-          const foundTheme = themes.find((t: Theme) => t.slug === themeSlug);
-          if (foundTheme) {
-            setSearchState(prev => ({
-              ...prev,
-              theme: foundTheme,
-            }));
-          }
-          initializedRef.done = true;
-        })
-        .catch(err => {
-          console.error(err);
-          initializedRef.done = true;
-        });
-    } else {
-      initializedRef.done = true;
+    // 如果 URL 中没有 theme 参数，清空主题
+    if (!themeSlug) {
+      setSearchState(prev => ({
+        ...prev,
+        theme: null,
+      }));
+      return;
     }
-  }, [searchParams, initializedRef]);
+
+    // 如果当前主题已经匹配，不需要更新
+    if (searchState.theme?.slug === themeSlug) {
+      return;
+    }
+
+    // 如果有缓存的 themes，直接使用
+    if (cachedThemes.length > 0) {
+      const foundTheme = cachedThemes.find((t: Theme) => t.slug === themeSlug);
+      if (foundTheme) {
+        setSearchState(prev => ({
+          ...prev,
+          theme: foundTheme,
+        }));
+      }
+      return;
+    }
+
+    // 从 API 获取 themes
+    fetch('/api/themes')
+      .then(res => res.json())
+      .then(data => {
+        const themes = data.themes || [];
+        setCachedThemes(themes);
+        const foundTheme = themes.find((t: Theme) => t.slug === themeSlug);
+        if (foundTheme) {
+          setSearchState(prev => ({
+            ...prev,
+            theme: foundTheme,
+          }));
+        }
+      })
+      .catch(err => {
+        console.error('Failed to fetch themes:', err);
+      });
+  }, [searchParams, cachedThemes, searchState.theme?.slug]);
 
   const setLocation = (location: string) => {
     setSearchState(prev => ({ ...prev, location }));

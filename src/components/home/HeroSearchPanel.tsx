@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { MapPin, Calendar, Search, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { getThemeIcon } from "@/lib/themeIcons";
+import { useSearchState } from "@/contexts/SearchStateContext";
 
 interface Theme {
   id: string;
@@ -20,6 +21,7 @@ interface HeroSearchPanelProps {
 
 export default function HeroSearchPanel({ themes, variant = "dark" }: HeroSearchPanelProps) {
   const router = useRouter();
+  const { startSearch } = useSearchState();
   const themesScrollRef = useRef<HTMLDivElement>(null);
   const isLight = variant === "light";
 
@@ -64,8 +66,11 @@ export default function HeroSearchPanel({ themes, variant = "dark" }: HeroSearch
     if (date) params.set("date", date);
     if (selectedTheme) params.set("theme", selectedTheme.slug);
 
+    // 设置全局搜索状态，让 /plans 页面的 ThemePills 立即显示选中状态
+    startSearch(selectedTheme);
+
     const queryString = params.toString();
-    router.push(queryString ? `/search?${queryString}` : "/search");
+    router.push(queryString ? `/plans?${queryString}` : "/plans");
   };
 
   const handleDateClick = () => {

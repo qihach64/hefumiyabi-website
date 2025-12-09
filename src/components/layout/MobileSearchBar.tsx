@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Search, MapPin, X, Calendar, Palette, Sparkles } from "lucide-react";
 import { useSearchState } from "@/contexts/SearchStateContext";
 import { useSearchBar } from "@/contexts/SearchBarContext";
@@ -17,7 +17,8 @@ interface Theme {
 
 export default function MobileSearchBar() {
   const router = useRouter();
-  const { searchState, setLocation, setDate, setTheme } = useSearchState();
+  const searchParams = useSearchParams();
+  const { searchState, setLocation, setDate, startSearch } = useSearchState();
   const { isHeroVisible } = useSearchBar();
   const [isMobileModalOpen, setIsMobileModalOpen] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -27,6 +28,36 @@ export default function MobileSearchBar() {
   // 主题相关状态
   const [themes, setThemes] = useState<Theme[]>([]);
   const [isLoadingThemes, setIsLoadingThemes] = useState(false);
+
+  // 主题选择立即导航到 /plans
+  const handleThemeSelect = useCallback((theme: Theme | null) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    // 保留当前的 location 和 date
+    if (searchState.location) {
+      params.set('location', searchState.location);
+    }
+    if (searchState.date) {
+      params.set('date', searchState.date);
+    }
+
+    // 设置或清除主题
+    if (theme) {
+      params.set('theme', theme.slug);
+    } else {
+      params.delete('theme');
+    }
+
+    const queryString = params.toString();
+    const url = queryString ? `/plans?${queryString}` : '/plans';
+
+    // 关闭模态框
+    setIsMobileModalOpen(false);
+
+    // 设置全局加载状态并导航
+    startSearch(theme);
+    router.push(url);
+  }, [searchParams, searchState.location, searchState.date, startSearch, router]);
 
   // 获取主题列表
   useEffect(() => {
@@ -95,8 +126,8 @@ export default function MobileSearchBar() {
 
     const queryString = params.toString();
 
-    // 跳转到搜索结果页
-    router.push(queryString ? `/search?${queryString}` : '/search');
+    // 跳转到套餐列表页
+    router.push(queryString ? `/plans?${queryString}` : '/plans');
   };
 
   // 生成按钮文本 - 只显示已选中的值
@@ -292,7 +323,7 @@ export default function MobileSearchBar() {
                   <div className="flex flex-wrap gap-2">
                     {/* 全部选项 */}
                     <button
-                      onClick={() => setTheme(null)}
+                      onClick={() => handleThemeSelect(null)}
                       className={`px-3 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-1.5 ${
                         !searchState.theme
                           ? 'bg-sakura-500 text-white shadow-sm'
@@ -307,7 +338,7 @@ export default function MobileSearchBar() {
                       return (
                         <button
                           key={theme.id}
-                          onClick={() => setTheme(theme)}
+                          onClick={() => handleThemeSelect(theme)}
                           className={`px-3 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-1.5 ${
                             searchState.theme?.id === theme.id
                               ? 'bg-sakura-500 text-white shadow-sm'

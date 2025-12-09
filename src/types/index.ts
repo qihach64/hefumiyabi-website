@@ -52,6 +52,16 @@ export interface PaginatedResponse<T> {
   totalPages: number;
 }
 
+// ============ Theme Types ============
+export interface Theme {
+  id: string;
+  slug: string;
+  name: string;
+  icon: string | null;
+  color: string | null;
+  description?: string | null;
+}
+
 // ============ Filter Types ============
 export interface KimonoFilters {
   category?: string;

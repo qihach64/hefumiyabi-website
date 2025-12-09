@@ -9,6 +9,7 @@ import VisualHub from "@/components/plan/VisualHub";
 import ServiceMap from "@/components/plan/ServiceMap";
 import SocialProof from "@/components/plan/SocialProof";
 import JourneyTimeline from "@/components/plan/JourneyTimeline";
+import { useSearchBar } from "@/contexts/SearchBarContext";
 import type { MapData } from "@/components/plan/InteractiveKimonoMap/types";
 
 interface Campaign {
@@ -18,21 +19,28 @@ interface Campaign {
   description: string;
 }
 
+interface Theme {
+  id: string;
+  slug: string;
+  name: string;
+}
+
 interface Plan {
   id: string;
   name: string;
   category: string;
   price: number;
-  originalPrice?: number;
+  originalPrice?: number | null;
   duration: number;
   depositAmount: number;
-  description?: string;
+  description?: string | null;
   includes: string[];
-  imageUrl?: string;
-  region?: string;
+  imageUrl?: string | null;
+  region?: string | null;
   isCampaign?: boolean;
-  availableUntil?: Date;
-  campaign?: Campaign;
+  availableUntil?: Date | null;
+  campaign?: Campaign | null;
+  theme?: Theme | null;
 }
 
 interface PlanDetailClientProps {
@@ -43,8 +51,15 @@ interface PlanDetailClientProps {
 export default function PlanDetailClient({ plan, mapData }: PlanDetailClientProps) {
   const [mounted, setMounted] = useState(false);
   const [isInFullWidthSection, setIsInFullWidthSection] = useState(true);
+  const { setHideSearchBar } = useSearchBar();
 
   const bookingCardRef = useRef<HTMLDivElement>(null);
+
+  // 隐藏 Header 搜索栏
+  useEffect(() => {
+    setHideSearchBar(true);
+    return () => setHideSearchBar(false);
+  }, [setHideSearchBar]);
 
   useEffect(() => {
     setMounted(true);
@@ -110,6 +125,7 @@ export default function PlanDetailClient({ plan, mapData }: PlanDetailClientProp
 
         {/* ========================================
             面包屑导航 - 精致斜杠分隔
+            结构：首页 / 全部套餐 / 主题名称 / 套餐名称
         ======================================== */}
         <nav className="mb-8 md:mb-10">
           <ol className="flex items-center gap-2 text-[13px]">
@@ -130,15 +146,19 @@ export default function PlanDetailClient({ plan, mapData }: PlanDetailClientProp
                 全部套餐
               </Link>
             </li>
-            <li className="text-[#C4B5A5]">/</li>
-            <li>
-              <Link
-                href={`/plans?category=${plan.category}`}
-                className="text-[#8B7355] hover:text-sakura-600 transition-colors"
-              >
-                {categoryInfo.zh}套餐
-              </Link>
-            </li>
+            {plan.theme && (
+              <>
+                <li className="text-[#C4B5A5]">/</li>
+                <li>
+                  <Link
+                    href={`/plans?theme=${plan.theme.slug}`}
+                    className="text-[#8B7355] hover:text-sakura-600 transition-colors"
+                  >
+                    {plan.theme.name}
+                  </Link>
+                </li>
+              </>
+            )}
             <li className="text-[#C4B5A5]">/</li>
             <li className="text-[#3D3A38] font-medium truncate max-w-[200px]">
               {plan.name}
@@ -241,8 +261,8 @@ export default function PlanDetailClient({ plan, mapData }: PlanDetailClientProp
               id: plan.id,
               name: plan.name,
               price: plan.price,
-              originalPrice: plan.originalPrice,
-              imageUrl: plan.imageUrl,
+              originalPrice: plan.originalPrice ?? undefined,
+              imageUrl: plan.imageUrl ?? undefined,
               isCampaign: plan.isCampaign,
             }}
           />
@@ -330,7 +350,18 @@ export default function PlanDetailClient({ plan, mapData }: PlanDetailClientProp
           {/* 右侧预订卡片 */}
           <div ref={bookingCardRef} className="lg:col-span-1">
             <div className="lg:sticky lg:top-24">
-              <BookingCard plan={plan} />
+              <BookingCard
+                plan={{
+                  id: plan.id,
+                  name: plan.name,
+                  price: plan.price,
+                  originalPrice: plan.originalPrice ?? undefined,
+                  duration: plan.duration,
+                  depositAmount: plan.depositAmount,
+                  isCampaign: plan.isCampaign,
+                  imageUrl: plan.imageUrl ?? undefined,
+                }}
+              />
             </div>
           </div>
         </div>
@@ -338,7 +369,13 @@ export default function PlanDetailClient({ plan, mapData }: PlanDetailClientProp
 
       {/* MiniBookingBar */}
       <MiniBookingBar
-        plan={plan}
+        plan={{
+          id: plan.id,
+          name: plan.name,
+          price: plan.price,
+          originalPrice: plan.originalPrice ?? undefined,
+          isCampaign: plan.isCampaign,
+        }}
         visible={isInFullWidthSection}
         onScrollToBooking={scrollToBooking}
       />

@@ -1,24 +1,14 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState, useCallback, useMemo, useTransition, useEffect } from "react";
 import PlanCard from "@/components/PlanCard";
-import PlanCardGrid from "@/components/PlanCard/PlanCardGrid";
-import { Sparkles, MapPin, Store as StoreIcon, Tag, X, Filter, Users, Calendar } from "lucide-react";
-import { Button, Badge } from "@/components/ui";
-
-interface Store {
-  id: string;
-  name: string;
-  slug: string;
-}
-
-interface Campaign {
-  id: string;
-  slug: string;
-  title: string;
-  description: string;
-}
+import ThemeImageSelector from "@/components/ThemeImageSelector";
+import SearchFilterSidebar from "@/components/search/SearchFilterSidebar";
+import { Search, SlidersHorizontal, X } from "lucide-react";
+import { getThemeIcon } from "@/lib/themeIcons";
+import { useSearchState } from "@/contexts/SearchStateContext";
+import type { Theme } from "@/types";
 
 interface Tag {
   id: string;
@@ -26,7 +16,6 @@ interface Tag {
   name: string;
   icon: string | null;
   color: string | null;
-  categoryId?: string;
 }
 
 interface TagCategory {
@@ -34,7 +23,6 @@ interface TagCategory {
   code: string;
   name: string;
   icon: string | null;
-  color: string | null;
   tags: Tag[];
 }
 
@@ -42,819 +30,549 @@ interface PlanTag {
   tag: Tag;
 }
 
-interface RentalPlan {
+interface Plan {
   id: string;
   name: string;
-  nameEn?: string;
   description?: string;
   price: number;
-  originalPrice?: number; // 原价（线下价格）
-  category: string;
-  duration: number;
-  includes: string[];
+  originalPrice?: number;
   imageUrl?: string;
-  storeName?: string; // 店铺名称
-  region?: string; // 地区
-  tags?: string[]; // 旧的标签字段(兼容)
-  planTags?: PlanTag[]; // 新的标签关联
-
-  // 活动相关字段
+  merchantName?: string;
+  region?: string;
+  category?: string;
+  duration?: number;
   isCampaign?: boolean;
-  campaignId?: string;
-  campaign?: Campaign;
-  isLimited?: boolean;
-  maxBookings?: number;
-  currentBookings?: number;
-  availableFrom?: Date | string;
-  availableUntil?: Date | string;
+  includes?: string[];
+  planTags?: PlanTag[];
+  themeId?: string;
+  themeName?: string;
+  themeIcon?: string;
 }
 
-interface PlansClientProps {
-  plans: RentalPlan[];
-  campaigns: Campaign[];
-  stores: Store[];
+interface SearchClientProps {
+  themes: Theme[];
+  plans: Plan[]; // 服务端已按主题/地点预过滤的所有套餐
+  currentTheme: Theme | null | undefined;
+  searchLocation: string;
+  searchDate: string;
   tagCategories: TagCategory[];
+  selectedTags: string[];
+  priceRange: [number, number];
+  maxPrice: number;
+  sortBy: string;
 }
 
-// 根据性别和年龄获取推荐分类
-interface GuestsBreakdown {
-  men: number;
-  women: number;
-  children: number;
-}
-
-function getRecommendedCategories(
-  totalGuests: number,
-  breakdown?: GuestsBreakdown
-): string[] {
-  // 如果有详细的性别和年龄信息，使用智能推荐
-  if (breakdown) {
-    const { men, women, children } = breakdown;
-    const adults = men + women;
-
-    // 情侣：1男1女，无儿童
-    if (men === 1 && women === 1 && children === 0) {
-      return ['COUPLE'];
-    }
-
-    // 家庭：有儿童的组合
-    if (children > 0) {
-      return ['FAMILY'];
-    }
-
-    // 团体：5人以上成人
-    if (adults >= 5) {
-      return ['GROUP'];
-    }
-
-    // 单人女士
-    if (women === 1 && men === 0 && children === 0) {
-      return ['LADIES'];
-    }
-
-    // 单人男士
-    if (men === 1 && women === 0 && children === 0) {
-      return ['MENS'];
-    }
-
-    // 多位女士（闺蜜）
-    if (women >= 2 && men === 0 && children === 0) {
-      return ['LADIES', 'GROUP'];
-    }
-
-    // 多位男士（兄弟）
-    if (men >= 2 && women === 0 && children === 0) {
-      return ['MENS', 'GROUP'];
-    }
-
-    // 男女混合，无儿童，3-4人
-    if (adults >= 3 && adults <= 4 && children === 0) {
-      return ['GROUP', 'SPECIAL'];
-    }
-
-    // 默认返回通用分类
-    return ['SPECIAL'];
-  }
-
-  // 兼容旧逻辑：仅根据总人数（如果没有详细信息）
-  if (totalGuests === 1) return ['LADIES', 'MENS'];
-  if (totalGuests === 2) return ['COUPLE'];
-  if (totalGuests >= 3 && totalGuests <= 4) return ['FAMILY'];
-  if (totalGuests >= 5) return ['GROUP'];
-  return [];
-}
-
-// 获取分类的中文名称
-function getCategoryName(category: string): string {
-  const names: Record<string, string> = {
-    'LADIES': '女士和服',
-    'MENS': '男士和服',
-    'COUPLE': '情侣套餐',
-    'FAMILY': '家庭套餐',
-    'GROUP': '团体套餐',
-    'SPECIAL': '特别套餐',
-  };
-  return names[category] || category;
-}
-
-export default function PlansClient({
-  plans,
-  campaigns,
-  stores,
+function SearchClientInner({
+  themes,
+  plans: allPlans, // 重命名为 allPlans，表示这是服务端传来的完整列表
+  currentTheme,
+  searchLocation,
+  searchDate,
   tagCategories,
-}: PlansClientProps) {
-  // 读取URL搜索参数
+  selectedTags: initialSelectedTags,
+  priceRange: initialPriceRange,
+  maxPrice,
+  sortBy: initialSortBy,
+}: SearchClientProps) {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const searchLocation = searchParams.get('location');
-  const searchDate = searchParams.get('date');
-  const searchGuests = searchParams.get('guests');
-  const searchMen = searchParams.get('men');
-  const searchWomen = searchParams.get('women');
-  const searchChildren = searchParams.get('children');
+  const { isSearching, pendingTheme, startSearch, finishSearch } = useSearchState();
+  const [isPending, startTransition] = useTransition();
 
-  const guestsNum = searchGuests ? parseInt(searchGuests) : 0;
-  const guestsBreakdown: GuestsBreakdown | undefined =
-    searchMen !== null && searchWomen !== null && searchChildren !== null
-      ? {
-          men: parseInt(searchMen),
-          women: parseInt(searchWomen),
-          children: parseInt(searchChildren),
-        }
-      : undefined;
+  // 注意：hideThemeSelector 现在由 SearchBarContext 根据 pathname 自动判断
+  // 不需要在这里手动设置
 
-  const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
-  const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
-  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
-  const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
-  const [showOnlyCampaigns, setShowOnlyCampaigns] = useState<boolean>(false);
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
-    new Set(tagCategories.map(c => c.id)) // 默认全部展开
-  );
+  // 使用 URL 作为真正的数据源来检测外部导航
+  const urlThemeSlug = searchParams.get('theme');
+  const currentThemeSlug = currentTheme?.slug;
+  const isUrlMismatch = urlThemeSlug !== (currentThemeSlug || null);
 
-  // 所有套餐
-  const allPlans = plans;
+  // 检查 pendingTheme 是否与服务端数据匹配（表示加载完成）
+  const pendingThemeSlug = pendingTheme?.slug ?? (pendingTheme === null ? null : undefined);
+  const isPendingComplete = pendingTheme !== undefined && pendingThemeSlug === (currentThemeSlug || null);
 
-  // 临时判断：通过套餐名称判断是否为活动套餐（数据库同步前的兼容方案）
-  const isCampaignPlan = (plan: RentalPlan) => {
-    if (plan.isCampaign !== undefined) {
-      return plan.isCampaign; // 如果字段存在，使用它
+  // 统一的加载状态：本地 transition + 全局 isSearching + URL 不匹配
+  const isLoading = isPending || isSearching || isUrlMismatch;
+
+  // 当 pendingTheme 与服务端数据匹配时（表示加载完成），重置全局搜索状态
+  useEffect(() => {
+    if (isPendingComplete) {
+      finishSearch();
     }
-    // 否则通过名称判断
-    const name = plan.name || '';
-    return name.includes('10周年') || 
-           name.includes('10週年') || 
-           name.includes('10th') ||
-           name.includes('优惠') ||
-           name.includes('優惠') ||
-           name.includes('限定') ||
-           name.includes('special') ||
-           name.includes('campaign');
-  };
+  }, [isPendingComplete, finishSearch]);
 
-  // 提取所有唯一的地区
-  const regions = Array.from(new Set(allPlans.map(p => p.region).filter(Boolean))) as string[];
+  // 计算显示的主题：如果有 pendingTheme（正在切换），立即显示 pendingTheme；否则显示当前主题
+  // pendingTheme !== undefined 表示有正在进行的切换
+  const displayTheme = pendingTheme !== undefined ? pendingTheme : currentTheme;
 
-  // 只显示有对应套餐的活动
-  const campaignsWithPlans = campaigns.filter(campaign => 
-    allPlans.some(plan => plan.campaignId === campaign.id)
-  );
+  // ========== 客户端筛选状态 ==========
+  // 这些状态用于前端即时过滤，不触发后端请求
+  const [selectedTags, setSelectedTags] = useState<string[]>(initialSelectedTags);
+  const [priceRange, setPriceRange] = useState<[number, number]>(initialPriceRange);
+  const [sortBy, setSortBy] = useState<string>(initialSortBy);
 
-  // 统一筛选和排序逻辑
-  const filteredPlans = useMemo(() => {
-    let result = allPlans.filter(plan => {
-      // 仅显示活动套餐（使用兼容判断）
-      if (showOnlyCampaigns && !isCampaignPlan(plan)) {
-        return false;
-      }
+  // 移动端筛选抽屉状态
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
-      // 活动筛选（使用兼容判断）
-      if (selectedCampaignId) {
-        // 如果没有 campaignId 字段，通过名称匹配
-        if (!plan.campaignId && !isCampaignPlan(plan)) {
-          return false;
-        }
-        // 如果有 campaignId 字段，使用它
-        if (plan.campaignId && plan.campaignId !== selectedCampaignId) {
-          return false;
-        }
-      }
+  // 注意：Pills 栏的 Sticky 状态检测已移到 ClientThemePills 组件
 
-      // 店铺筛选
-      if (selectedStoreId) {
-        const selectedStore = stores.find(s => s.id === selectedStoreId);
-        if (selectedStore && plan.storeName && !plan.storeName.includes(selectedStore.name)) {
-          return false;
-        }
-      }
+  // ========== 前端过滤逻辑 ==========
+  const filteredAndSortedPlans = useMemo(() => {
+    let result = [...allPlans];
 
-      // 地区筛选
-      if (selectedRegion && plan.region !== selectedRegion) {
-        return false;
-      }
-
-      // 标签筛选 (使用新的标签系统)
-      if (selectedTagIds.length > 0) {
-        const planTagIds = plan.planTags?.map(pt => pt.tag.id) || [];
-        if (!selectedTagIds.some(tagId => planTagIds.includes(tagId))) {
-          return false;
-        }
-      }
-
-      // URL搜索参数：地点筛选
-      if (searchLocation) {
-        const matchesRegion = plan.region?.includes(searchLocation);
-        const matchesStoreName = plan.storeName?.includes(searchLocation);
-        if (!matchesRegion && !matchesStoreName) {
-          return false;
-        }
-      }
-
-      // TODO: 日期筛选（需要库存系统支持）
-      // if (searchDate) {
-      //   // 检查该日期是否可预订
-      // }
-
-      return true;
-    });
-
-    // 智能排序：根据性别和年龄推荐
-    if (guestsNum > 0) {
-      const recommendedCategories = getRecommendedCategories(guestsNum, guestsBreakdown);
-      result = result.sort((a, b) => {
-        const aIsRecommended = recommendedCategories.includes(a.category);
-        const bIsRecommended = recommendedCategories.includes(b.category);
-
-        // 推荐的排前面
-        if (aIsRecommended && !bIsRecommended) return -1;
-        if (!aIsRecommended && bIsRecommended) return 1;
-
-        // 都推荐或都不推荐时，按价格排序
-        return a.price - b.price;
+    // 1. 标签过滤 (AND 逻辑)
+    if (selectedTags.length > 0) {
+      result = result.filter((plan) => {
+        const planTagCodes = plan.planTags?.map((pt) => pt.tag.code) || [];
+        // 必须包含所有选中的标签
+        return selectedTags.every((tagCode) => planTagCodes.includes(tagCode));
       });
     }
 
+    // 2. 价格过滤
+    if (priceRange[0] > 0 || priceRange[1] < maxPrice) {
+      result = result.filter((plan) => {
+        const price = plan.price;
+        const minOk = priceRange[0] <= 0 || price >= priceRange[0];
+        const maxOk = priceRange[1] >= maxPrice || price <= priceRange[1];
+        return minOk && maxOk;
+      });
+    }
+
+    // 3. 排序
+    switch (sortBy) {
+      case "price_asc":
+        result.sort((a, b) => a.price - b.price);
+        break;
+      case "price_desc":
+        result.sort((a, b) => b.price - a.price);
+        break;
+      case "rating":
+        // 按 isCampaign 和原价折扣排序（作为"热门"的替代）
+        result.sort((a, b) => {
+          const aScore = (a.isCampaign ? 100 : 0) + (a.originalPrice ? 50 : 0);
+          const bScore = (b.isCampaign ? 100 : 0) + (b.originalPrice ? 50 : 0);
+          return bScore - aScore;
+        });
+        break;
+      case "recommended":
+      default:
+        // 默认排序：isCampaign > 折扣 > 价格
+        result.sort((a, b) => {
+          if (a.isCampaign !== b.isCampaign) return a.isCampaign ? -1 : 1;
+          if (!!a.originalPrice !== !!b.originalPrice) return a.originalPrice ? -1 : 1;
+          return a.price - b.price;
+        });
+        break;
+    }
+
     return result;
-  }, [
-    allPlans,
-    showOnlyCampaigns,
-    selectedCampaignId,
-    selectedStoreId,
-    selectedRegion,
-    selectedTagIds,
-    searchLocation,
-    guestsNum,
-    guestsBreakdown,
-    stores,
-  ]);
+  }, [allPlans, selectedTags, priceRange, sortBy, maxPrice]);
 
-  // 获取推荐的分类列表（必须在分组前定义）
-  const recommendedCategories = guestsNum > 0 ? getRecommendedCategories(guestsNum, guestsBreakdown) : [];
+  // ========== URL 同步（仅用于分享链接，不触发页面刷新）==========
+  const updateUrlSilently = useCallback(
+    (updates: Record<string, string | null>) => {
+      const params = new URLSearchParams(searchParams.toString());
 
-  // 分组套餐：推荐、活动、其他
-  const recommendedPlans = filteredPlans.filter(p =>
-    !isCampaignPlan(p) && recommendedCategories.includes(p.category)
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === null || value === "" || value === "0") {
+          params.delete(key);
+        } else {
+          params.set(key, value);
+        }
+      });
+
+      const queryString = params.toString();
+      const newUrl = queryString ? `/plans?${queryString}` : "/plans";
+
+      // 使用 replaceState 静默更新 URL，不触发页面刷新
+      window.history.replaceState(null, "", newUrl);
+    },
+    [searchParams]
   );
-  const campaignPlans = filteredPlans.filter(p => isCampaignPlan(p));
-  const otherPlans = filteredPlans.filter(p =>
-    !isCampaignPlan(p) && !recommendedCategories.includes(p.category)
-  );
 
-  // 加载更多状态
-  const [showMoreCount, setShowMoreCount] = useState(8); // 初始显示8个
-  const visibleOtherPlans = otherPlans.slice(0, showMoreCount);
-  const hasMorePlans = otherPlans.length > showMoreCount;
+  // ========== 主题切换（需要服务端重新查询）==========
+  const handleThemeChange = (theme: Theme | null) => {
+    startSearch(theme);
 
-  // 切换标签选择
-  const toggleTag = (tagId: string) => {
-    setSelectedTagIds(prev =>
-      prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]
-    );
-  };
+    const params = new URLSearchParams(searchParams.toString());
+    if (theme) {
+      params.set("theme", theme.slug);
+    } else {
+      params.delete("theme");
+    }
+    // 切换主题时重置筛选条件
+    params.delete("tags");
+    params.delete("minPrice");
+    params.delete("maxPrice");
+    params.delete("sort");
 
-  // 切换分类展开/折叠
-  const toggleCategory = (categoryId: string) => {
-    setExpandedCategories(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(categoryId)) {
-        newSet.delete(categoryId);
-      } else {
-        newSet.add(categoryId);
-      }
-      return newSet;
+    setSelectedTags([]);
+    setPriceRange([0, maxPrice]);
+    setSortBy("recommended");
+
+    const queryString = params.toString();
+
+    startTransition(() => {
+      router.push(queryString ? `/plans?${queryString}` : "/plans");
     });
   };
 
-  // 清除所有筛选
-  const clearFilters = () => {
-    setSelectedStoreId(null);
-    setSelectedRegion(null);
-    setSelectedTagIds([]);
-    setSelectedCampaignId(null);
-    setShowOnlyCampaigns(false);
+  // ========== 标签变更（前端过滤）==========
+  const handleTagsChange = (tags: string[]) => {
+    setSelectedTags(tags);
+    updateUrlSilently({ tags: tags.length > 0 ? tags.join(",") : null });
   };
 
-  const hasActiveFilters =
-    selectedStoreId ||
-    selectedRegion ||
-    selectedTagIds.length > 0 ||
-    selectedCampaignId ||
-    showOnlyCampaigns;
+  // ========== 价格变更（前端过滤）==========
+  const handlePriceChange = (range: [number, number]) => {
+    setPriceRange(range);
+    updateUrlSilently({
+      minPrice: range[0] > 0 ? String(range[0]) : null,
+      maxPrice: range[1] < maxPrice ? String(range[1]) : null,
+    });
+  };
 
-  // 侧边栏筛选器组件
-  const FilterSidebar = () => (
-    <aside className="lg:sticky lg:top-4 lg:h-[calc(100vh-2rem)]">
-      <div className="bg-card rounded-lg border p-6 space-y-6">
-        {/* 筛选器标题 */}
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold flex items-center gap-2">
-            <Filter className="w-5 h-5" />
-            筛选条件
-          </h2>
-          {hasActiveFilters && (
-            <button
-              onClick={clearFilters}
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-            >
-              <X className="w-3 h-3" />
-              清除
-            </button>
-          )}
-        </div>
+  // ========== 排序变更（前端过滤）==========
+  const handleSortChange = (sort: string) => {
+    setSortBy(sort);
+    updateUrlSilently({ sort: sort === "recommended" ? null : sort });
+  };
 
-        {/* 标签筛选 - 按分类分组(可折叠) */}
-        {tagCategories.map((category) => {
-          const isExpanded = expandedCategories.has(category.id);
-          const selectedCount = category.tags.filter(tag => selectedTagIds.includes(tag.id)).length;
+  // ========== 重置所有筛选 ==========
+  const handleReset = () => {
+    setSelectedTags([]);
+    setPriceRange([0, maxPrice]);
+    setSortBy("recommended");
+    updateUrlSilently({
+      tags: null,
+      minPrice: null,
+      maxPrice: null,
+      sort: null,
+    });
+  };
 
-          return (
-            <div key={category.id}>
-              <button
-                onClick={() => toggleCategory(category.id)}
-                className="w-full text-sm font-semibold mb-3 flex items-center justify-between hover:opacity-70 transition-opacity"
-              >
-                <div className="flex items-center gap-2">
-                  {category.icon && <span className="text-base">{category.icon}</span>}
-                  <span style={{ color: category.color || undefined }}>{category.name}</span>
-                  {selectedCount > 0 && (
-                    <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
-                      {selectedCount}
-                    </span>
-                  )}
-                </div>
-                <svg
-                  className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              {isExpanded && (
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {category.tags.map((tag) => (
-                    <button
-                      key={tag.id}
-                      onClick={() => toggleTag(tag.id)}
-                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
-                        selectedTagIds.includes(tag.id)
-                          ? 'text-white shadow-md scale-105'
-                          : 'bg-secondary hover:bg-secondary/80'
-                      }`}
+  // 计算活跃筛选数量
+  const activeFiltersCount =
+    selectedTags.length +
+    (priceRange[0] > 0 || priceRange[1] < maxPrice ? 1 : 0) +
+    (sortBy !== "recommended" ? 1 : 0);
+
+  // 获取当前显示主题的颜色
+  const themeColor = displayTheme?.color || '#FF7A9A';
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* 头部区域 - 微妙的主题色渐变背景 */}
+      <div
+        className="transition-colors duration-500"
+        style={{
+          background: `linear-gradient(to bottom, ${themeColor}08 0%, ${themeColor}03 50%, transparent 100%)`,
+        }}
+      >
+        <div className="container">
+          {/* 1. 主题选择器 - 放在最上方 */}
+          <div className="pt-6 md:pt-8 pb-4">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-[13px] font-medium text-gray-500 uppercase tracking-wide">选择主题</span>
+              <div className="flex-1 h-px bg-gray-200" />
+            </div>
+            <ThemeImageSelector
+              themes={themes}
+              selectedTheme={currentTheme || null}
+              onSelect={handleThemeChange}
+              isPending={isLoading}
+              pendingTheme={pendingTheme}
+            />
+          </div>
+
+          {/* 2. 主题介绍 + 筛选按钮 - 与首页 ScrollableSection 样式一致 */}
+          <div className="pb-6 md:pb-8">
+            <div className="flex items-start justify-between gap-4 mb-6">
+              <div className="flex items-start gap-4 md:gap-5 flex-1 min-w-0">
+                {/* 主题图标 - 与首页一致的突出设计 */}
+                {(() => {
+                  const ThemeIcon = getThemeIcon(displayTheme?.icon);
+                  return (
+                    <div
+                      className="flex-shrink-0 w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center transition-all duration-300 hover:scale-105"
                       style={{
-                        backgroundColor: selectedTagIds.includes(tag.id)
-                          ? (tag.color || category.color || '#FF5580')
-                          : undefined
+                        background: `linear-gradient(135deg, ${themeColor}15 0%, ${themeColor}25 100%)`,
+                        border: `2px solid ${themeColor}30`,
+                        boxShadow: `0 4px 12px ${themeColor}20, 0 2px 4px ${themeColor}10`,
                       }}
                     >
-                      {tag.icon && <span className="mr-1">{tag.icon}</span>}
-                      {tag.name}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          );
-        })}
-
-        {/* 活动筛选 */}
-        <div>
-          <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-amber-600" />
-            限时活动
-          </h3>
-          <div className="space-y-2">
-            {/* 仅显示活动套餐 */}
-            <button
-              onClick={() => {
-                setShowOnlyCampaigns(!showOnlyCampaigns);
-                // 如果只有一个活动，切换时清除具体活动选择
-                if (campaignsWithPlans.length === 1) {
-                  setSelectedCampaignId(null);
-                }
-              }}
-              className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                showOnlyCampaigns
-                  ? 'bg-amber-500 text-white font-medium'
-                  : 'hover:bg-secondary'
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <span>🎊 所有优惠套餐</span>
-                <span className="text-xs opacity-75">
-                  ({campaignPlans.length})
-                </span>
-              </div>
-            </button>
-            
-            {/* 只在有多个活动时显示具体活动筛选器 */}
-            {campaignsWithPlans.length > 1 && (
-              <>
-                {/* 全部活动 */}
-                <button
-                  onClick={() => setSelectedCampaignId(null)}
-                  className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                    !selectedCampaignId
-                      ? 'bg-primary text-primary-foreground font-medium'
-                      : 'hover:bg-secondary'
-                  }`}
-                >
-                  全部活动
-                </button>
-                
-                {/* 活动列表（只显示有套餐的） */}
-                {campaignsWithPlans.map((campaign) => {
-                  const planCount = allPlans.filter(p => p.campaignId === campaign.id).length;
-                  return (
-                    <button
-                      key={campaign.id}
-                      onClick={() => setSelectedCampaignId(campaign.id)}
-                      className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                        selectedCampaignId === campaign.id
-                          ? 'bg-primary text-primary-foreground font-medium'
-                          : 'hover:bg-secondary'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="truncate">{campaign.title}</span>
-                        <span className="text-xs opacity-75 ml-2 flex-shrink-0">
-                          ({planCount})
-                        </span>
-                      </div>
-                    </button>
+                      <ThemeIcon
+                        className="w-7 h-7 md:w-8 md:h-8"
+                        style={{ color: themeColor }}
+                      />
+                    </div>
                   );
-                })}
-              </>
+                })()}
+
+                {/* 标题和描述 - 与首页一致的视觉层次 */}
+                <div className="flex flex-col flex-1 min-w-0">
+                  <h1
+                    className="text-2xl md:text-3xl lg:text-[36px] font-extrabold leading-[1.15] tracking-[-0.03em] mb-2.5"
+                    style={{
+                      color: themeColor,
+                      textShadow: `0 2px 12px ${themeColor}20, 0 1px 3px ${themeColor}10`,
+                      fontWeight: 800,
+                      letterSpacing: '-0.03em',
+                    }}
+                  >
+                    {displayTheme ? displayTheme.name : "探索和服体验"}
+                  </h1>
+
+                  {/* 主题描述 */}
+                  {displayTheme?.description ? (
+                    <p
+                      className="text-sm md:text-base font-medium leading-relaxed tracking-wide mb-2"
+                      style={{ color: `${themeColor}aa` }}
+                    >
+                      {displayTheme.description}
+                    </p>
+                  ) : !displayTheme && (
+                    <p
+                      className="text-sm md:text-base font-medium leading-relaxed tracking-wide mb-2"
+                      style={{ color: `${themeColor}aa` }}
+                    >
+                      浏览我们精心策划的所有和服体验套餐，找到最适合您的款式与风格。
+                    </p>
+                  )}
+
+                  {/* 套餐数量 */}
+                  <p className="text-[14px] text-gray-500">
+                    {isLoading ? (
+                      <span className="h-4 w-20 bg-gray-200 rounded animate-pulse inline-block" />
+                    ) : (
+                      <>
+                        共 <span className="font-medium text-gray-700">{filteredAndSortedPlans.length}</span> 个套餐
+                        {activeFiltersCount > 0 && allPlans.length !== filteredAndSortedPlans.length && (
+                          <span className="text-gray-400 ml-1">· 已筛选</span>
+                        )}
+                      </>
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              {/* 移动端筛选按钮 */}
+              <button
+                onClick={() => setMobileFilterOpen(true)}
+                className="lg:hidden flex-shrink-0 flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-full shadow-sm hover:shadow-md transition-all"
+              >
+                <SlidersHorizontal className="w-4 h-4 text-gray-600" />
+                <span className="text-[14px] font-medium text-gray-700">筛选</span>
+                {activeFiltersCount > 0 && (
+                  <span className="bg-gray-900 text-white text-[11px] font-medium w-5 h-5 rounded-full flex items-center justify-center">
+                    {activeFiltersCount}
+                  </span>
+                )}
+              </button>
+            </div>
+
+            {/* 分割线 - 与首页一致 */}
+            <div
+              className="h-[1px] transition-colors duration-300"
+              style={{
+                background: `linear-gradient(to right, transparent 0%, ${themeColor}25 20%, ${themeColor}30 50%, ${themeColor}25 80%, transparent 100%)`,
+              }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* 主内容区：白色背景 */}
+      <div className="bg-white">
+        <div className="container py-6">
+          {/* 侧边栏 + 套餐列表 */}
+          <div className="flex gap-8">
+          {/* 桌面端侧边栏 */}
+          <div className="hidden lg:block w-72 flex-shrink-0">
+            <div className="sticky top-24">
+              <SearchFilterSidebar
+                categories={tagCategories}
+                selectedTags={selectedTags}
+                onTagsChange={handleTagsChange}
+                priceRange={priceRange}
+                onPriceChange={handlePriceChange}
+                maxPrice={maxPrice}
+                sortBy={sortBy}
+                onSortChange={handleSortChange}
+                onReset={handleReset}
+              />
+            </div>
+          </div>
+
+          {/* 套餐列表 */}
+          <div className="flex-1 min-w-0">
+            {/* 加载中骨架屏 - 统一使用 isLoading */}
+            {isLoading && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                {[...Array(9)].map((_, i) => (
+                  <PlanCardSkeleton key={i} />
+                ))}
+              </div>
+            )}
+
+            {/* 无结果提示 */}
+            {!isLoading && filteredAndSortedPlans.length === 0 && (
+              <div className="text-center py-20">
+                <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gray-100 flex items-center justify-center">
+                  <Search className="w-10 h-10 text-gray-400" />
+                </div>
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                  暂无符合条件的套餐
+                </h2>
+                <p className="text-gray-500 mb-6">
+                  试试调整筛选条件或查看其他主题
+                </p>
+                <div className="flex items-center justify-center gap-3">
+                  {activeFiltersCount > 0 && (
+                    <button
+                      onClick={handleReset}
+                      className="px-6 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-full hover:bg-gray-50 transition-colors"
+                    >
+                      清除筛选
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      startSearch(null);
+                      router.push('/plans');
+                    }}
+                    className="px-6 py-2.5 bg-sakura-500 text-white font-medium rounded-full hover:bg-sakura-600 transition-colors"
+                  >
+                    查看全部套餐
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* 套餐网格 - 搜索页使用 3:4 比例 */}
+            {!isLoading && filteredAndSortedPlans.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
+                {filteredAndSortedPlans.map((plan) => (
+                  <PlanCard
+                    key={plan.id}
+                    plan={plan}
+                    variant="soft"
+                    showMerchant={true}
+                    themeColor={themeColor}
+                    aspectRatio="3:4"
+                  />
+                ))}
+              </div>
             )}
           </div>
         </div>
-
-        {/* 地区筛选 */}
-        <div>
-          <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-            <MapPin className="w-4 h-4 text-blue-600" />
-            地区
-          </h3>
-          <div className="space-y-2">
-            <button
-              onClick={() => setSelectedRegion(null)}
-              className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                !selectedRegion
-                  ? 'bg-primary text-primary-foreground font-medium'
-                  : 'hover:bg-secondary'
-              }`}
-            >
-              全部地区
-            </button>
-            {regions.map((region) => (
-              <button
-                key={region}
-                onClick={() => setSelectedRegion(region)}
-                className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                  selectedRegion === region
-                    ? 'bg-primary text-primary-foreground font-medium'
-                    : 'hover:bg-secondary'
-                }`}
-              >
-                {region}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* 店铺筛选 */}
-        <div>
-          <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-            <StoreIcon className="w-4 h-4 text-green-600" />
-            店铺
-          </h3>
-          <div className="space-y-2">
-            <button
-              onClick={() => setSelectedStoreId(null)}
-              className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                !selectedStoreId
-                  ? 'bg-primary text-primary-foreground font-medium'
-                  : 'hover:bg-secondary'
-              }`}
-            >
-              全部店铺
-            </button>
-            {stores.map((store) => (
-              <button
-                key={store.id}
-                onClick={() => setSelectedStoreId(store.id)}
-                className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                  selectedStoreId === store.id
-                    ? 'bg-primary text-primary-foreground font-medium'
-                    : 'hover:bg-secondary'
-                }`}
-              >
-                {store.name}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* 筛选结果统计 */}
-        <div className="pt-4 border-t text-sm text-muted-foreground">
-          找到 {filteredPlans.length} 个套餐
-          {campaignPlans.length > 0 && (
-            <span className="block text-xs mt-1 text-amber-600">
-              🎊 {campaignPlans.length} 个活动优惠
-            </span>
-          )}
         </div>
       </div>
-    </aside>
-  );
 
-  return (
-    <>
-      {/* 搜索上下文提示条 - Airbnb 风格 */}
-      {(searchLocation || searchDate || guestsNum > 0) && (
-        <div className="sticky top-16 z-20 bg-white border-b border-gray-200 py-3 shadow-sm">
-          <div className="container">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm font-medium text-gray-700">搜索条件：</span>
-                {searchLocation && (
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-200 hover:bg-gray-300 rounded-full text-sm transition-all duration-150 group">
-                    <MapPin className="w-3.5 h-3.5 text-gray-700" />
-                    <span className="font-medium text-gray-900">{searchLocation}</span>
-                    <button
-                      onClick={() => {
-                        const params = new URLSearchParams(window.location.search);
-                        params.delete('location');
-                        window.location.href = `/plans?${params.toString()}`;
-                      }}
-                      className="ml-0.5 w-4 h-4 flex items-center justify-center rounded-full hover:bg-gray-400 text-gray-600 hover:text-gray-900 transition-all duration-150"
-                      aria-label="移除地点筛选"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                )}
-                {searchDate && (
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-200 hover:bg-gray-300 rounded-full text-sm transition-all duration-150 group">
-                    <Calendar className="w-3.5 h-3.5 text-gray-700" />
-                    <span className="font-medium text-gray-900">
-                      {new Date(searchDate).toLocaleDateString('zh-CN', {
-                        month: 'long',
-                        day: 'numeric'
-                      })}
-                    </span>
-                    <button
-                      onClick={() => {
-                        const params = new URLSearchParams(window.location.search);
-                        params.delete('date');
-                        window.location.href = `/plans?${params.toString()}`;
-                      }}
-                      className="ml-0.5 w-4 h-4 flex items-center justify-center rounded-full hover:bg-gray-400 text-gray-600 hover:text-gray-900 transition-all duration-150"
-                      aria-label="移除日期筛选"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                )}
-                {guestsNum > 0 && (
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-200 hover:bg-gray-300 rounded-full text-sm transition-all duration-150 group">
-                    <Users className="w-3.5 h-3.5 text-gray-700" />
-                    <span className="font-medium text-gray-900">{guestsNum}位客人</span>
-                    <button
-                      onClick={() => {
-                        const params = new URLSearchParams(window.location.search);
-                        params.delete('guests');
-                        params.delete('men');
-                        params.delete('women');
-                        params.delete('children');
-                        window.location.href = `/plans?${params.toString()}`;
-                      }}
-                      className="ml-0.5 w-4 h-4 flex items-center justify-center rounded-full hover:bg-gray-400 text-gray-600 hover:text-gray-900 transition-all duration-150"
-                      aria-label="移除客人筛选"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                )}
-                {guestsNum > 0 && recommendedCategories.length > 0 && (
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-sakura-100 hover:bg-sakura-200 rounded-full text-sm transition-all duration-150">
-                    <span>⭐</span>
-                    <span className="font-semibold text-sakura-700">
-                      推荐：{recommendedCategories.map(cat => getCategoryName(cat)).join('、')}
-                    </span>
-                  </div>
-                )}
-              </div>
+      {/* 移动端筛选抽屉 */}
+      {mobileFilterOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          {/* 背景遮罩 */}
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setMobileFilterOpen(false)}
+          />
+
+          {/* 抽屉内容 */}
+          <div className="absolute inset-y-0 right-0 w-full max-w-md bg-white shadow-xl flex flex-col">
+            {/* 抽屉头部 */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900">筛选条件</h2>
               <button
-                onClick={() => window.location.href = '/plans'}
-                className="text-sm text-gray-700 hover:text-gray-900 font-semibold underline hover:no-underline transition-all duration-150 whitespace-nowrap"
+                onClick={() => setMobileFilterOpen(false)}
+                className="p-2 -mr-2 text-gray-500 hover:text-gray-700"
               >
-                清除全部
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* 抽屉内容 - 滚动区域 */}
+            <div className="flex-1 overflow-y-auto">
+              <SearchFilterSidebar
+                categories={tagCategories}
+                selectedTags={selectedTags}
+                onTagsChange={handleTagsChange}
+                priceRange={priceRange}
+                onPriceChange={handlePriceChange}
+                maxPrice={maxPrice}
+                sortBy={sortBy}
+                onSortChange={handleSortChange}
+                onReset={handleReset}
+              />
+            </div>
+
+            {/* 抽屉底部 */}
+            <div className="border-t border-gray-200 px-5 py-4 flex gap-3">
+              <button
+                onClick={handleReset}
+                className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                重置
+              </button>
+              <button
+                onClick={() => setMobileFilterOpen(false)}
+                className="flex-1 px-4 py-3 bg-sakura-500 text-white font-medium rounded-xl hover:bg-sakura-600 transition-colors"
+              >
+                查看 {filteredAndSortedPlans.length} 个结果
               </button>
             </div>
           </div>
         </div>
       )}
+    </div>
+  );
+}
 
-      {/* 主内容区域 - 侧边栏布局 */}
-      <section className="py-6 bg-background min-h-screen">
-        <div className="container">
-          <div className="flex flex-col lg:flex-row gap-6">
-            {/* 左侧筛选器（桌面端） */}
-            <div className="hidden lg:block lg:w-64 flex-shrink-0">
-              <FilterSidebar />
-            </div>
+// 套餐卡片骨架屏 - 匹配 soft variant PlanCard 样式
+function PlanCardSkeleton() {
+  return (
+    <div className="bg-white rounded-xl shadow-[0_2px_12px_-4px_rgba(0,0,0,0.08)] p-3">
+      {/* 图片骨架 - 3:4 比例，圆角 */}
+      <div className="aspect-[3/4] bg-gray-100 animate-pulse rounded-xl" />
 
-            {/* 移动端筛选器（折叠） */}
-            <div className="lg:hidden">
-              <details className="bg-card rounded-lg border mb-6">
-                <summary className="px-4 py-3 cursor-pointer flex items-center justify-between font-medium">
-                  <span className="flex items-center gap-2">
-                    <Filter className="w-4 h-4" />
-                    筛选条件
-                    {hasActiveFilters && (
-                      <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
-                        {(selectedStoreId ? 1 : 0) + (selectedRegion ? 1 : 0) + selectedTagIds.length}
-                      </span>
-                    )}
-                  </span>
-                </summary>
-                <div className="px-4 pb-4">
-                  <FilterSidebar />
-                </div>
-              </details>
-            </div>
+      {/* 内容骨架 */}
+      <div className="mt-3 space-y-2">
+        {/* 商家 + 地区 */}
+        <div className="h-3 w-1/3 bg-gray-100 rounded animate-pulse" />
 
-            {/* 右侧内容区域 */}
-            <div className="flex-1 min-w-0">
-              {/* 地点筛选反馈 - Airbnb 风格 */}
-              {searchLocation && (
-                <div className="bg-white border border-gray-200 rounded-xl p-4 mb-6 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-sakura-100 rounded-full flex items-center justify-center">
-                        <MapPin className="w-5 h-5 text-sakura-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500">正在显示</p>
-                        <p className="text-lg font-semibold text-gray-900">
-                          {searchLocation} 的套餐
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => {
-                        const params = new URLSearchParams(window.location.search);
-                        params.delete('location');
-                        window.location.href = `/plans?${params.toString()}`;
-                      }}
-                      className="text-sm text-gray-500 hover:text-gray-900 underline transition-colors"
-                    >
-                      清除地点
-                    </button>
-                  </div>
-                </div>
-              )}
+        {/* 标题 */}
+        <div className="h-5 w-4/5 bg-gray-100 rounded animate-pulse" />
 
-              {/* 结果数量和排序 */}
-              <div className="flex items-center justify-between mb-6">
-                <p className="text-sm text-gray-600">
-                  找到 <span className="font-semibold text-gray-900">{filteredPlans.length}</span> 个符合条件的套餐
-                </p>
-              </div>
+        {/* 分隔线 */}
+        <div className="h-px w-6 bg-gray-100 animate-pulse" />
 
-              {/* 1️⃣ 为您推荐区域 */}
-              {recommendedPlans.length > 0 && (
-                <div className="mb-12">
-                  <div className="flex items-center gap-4 mb-8">
-                    <Badge variant="warning" size="lg" className="shadow-lg">
-                      <span className="text-lg">⭐</span>
-                      为您推荐
-                    </Badge>
-                    <span className="text-2xl font-bold text-gray-900">
-                      {recommendedCategories.map(cat => getCategoryName(cat)).join('、')}
-                    </span>
-                  </div>
+        {/* 价格 */}
+        <div className="h-5 w-24 bg-gray-100 rounded animate-pulse" />
 
-                  <PlanCardGrid variant="grid-4">
-                    {recommendedPlans.map((plan) => (
-                      <PlanCard
-                        key={plan.id}
-                        plan={plan}
-                        showMerchant={true}
-                        isRecommended={false}
-                        hideDiscountBadge={true}
-                      />
-                    ))}
-                  </PlanCardGrid>
-                </div>
-              )}
+        {/* 包含物 */}
+        <div className="h-3 w-2/3 bg-gray-100 rounded animate-pulse" />
 
-              {/* 2️⃣ 限时优惠区域 */}
-              {campaignPlans.length > 0 && (
-                <div className="mb-12">
-                  <div className="flex items-center gap-4 mb-8">
-                    <Badge variant="error" size="lg" className="shadow-lg">
-                      <Sparkles className="w-4 h-4" />
-                      限时优惠
-                    </Badge>
-                    <span className="text-2xl font-bold text-gray-900">🎉 最高享50%优惠</span>
-                  </div>
-
-                  <PlanCardGrid variant="grid-4">
-                    {campaignPlans.map((plan) => (
-                      <PlanCard
-                        key={plan.id}
-                        plan={plan}
-                        showMerchant={true}
-                        isRecommended={false}
-                        hideCampaignBadge={true}
-                      />
-                    ))}
-                  </PlanCardGrid>
-                </div>
-              )}
-
-              {/* 3️⃣ 更多选择区域 */}
-              {otherPlans.length > 0 && (
-                <div>
-                  <h2 className="text-2xl font-bold mb-8 flex items-center gap-3">
-                    <span>更多选择</span>
-                    <span className="text-base font-normal text-gray-500">
-                      {otherPlans.length} 个套餐
-                    </span>
-                  </h2>
-
-                  <PlanCardGrid variant="grid-4">
-                    {visibleOtherPlans.map((plan) => (
-                      <PlanCard
-                        key={plan.id}
-                        plan={plan}
-                        showMerchant={true}
-                        isRecommended={false}
-                        hideDiscountBadge={true}
-                      />
-                    ))}
-                  </PlanCardGrid>
-
-                  {/* 加载更多按钮 */}
-                  {hasMorePlans && (
-                    <div className="mt-12 text-center">
-                      <Button
-                        variant="outline"
-                        size="lg"
-                        onClick={() => setShowMoreCount(prev => prev + 8)}
-                        className="px-12"
-                      >
-                        加载更多 ({otherPlans.length - showMoreCount} 个剩余)
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* 无结果提示 */}
-              {filteredPlans.length === 0 && (
-                <div className="text-center py-20">
-                  <div className="text-7xl mb-6">🔍</div>
-                  <h3 className="text-2xl font-bold mb-3 text-gray-900">未找到匹配的套餐</h3>
-                  <p className="text-gray-600 mb-8 text-lg">
-                    请尝试调整筛选条件
-                  </p>
-                  <Button
-                    variant="primary"
-                    size="lg"
-                    onClick={clearFilters}
-                  >
-                    <X className="w-5 h-5" />
-                    清除所有筛选
-                  </Button>
-                </div>
-              )}
-            </div>
-          </div>
+        {/* 标签 */}
+        <div className="flex gap-1.5 pt-0.5">
+          <div className="h-5 w-14 bg-gray-100 rounded animate-pulse" />
+          <div className="h-5 w-12 bg-gray-100 rounded animate-pulse" />
         </div>
-      </section>
-    </>
+      </div>
+    </div>
+  );
+}
+
+export default function SearchClient(props: SearchClientProps) {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-sakura-500 border-t-transparent"></div>
+        </div>
+      }
+    >
+      <SearchClientInner {...props} />
+    </Suspense>
   );
 }

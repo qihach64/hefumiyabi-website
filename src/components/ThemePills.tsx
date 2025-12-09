@@ -3,15 +3,7 @@
 import { useRef, useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Loader2, Sparkles } from "lucide-react";
 import { getThemeIcon } from "@/lib/themeIcons";
-
-interface Theme {
-  id: string;
-  slug: string;
-  name: string;
-  icon: string | null;
-  color: string | null;
-  description?: string | null;
-}
+import type { Theme } from "@/types";
 
 interface ThemePillsProps {
   themes: Theme[];

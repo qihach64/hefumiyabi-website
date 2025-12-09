@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
 
 interface SearchBarContextType {
   isSearchBarExpanded: boolean;  // Header 搜索栏是否展开（大搜索栏）
@@ -8,15 +9,30 @@ interface SearchBarContextType {
   expandManually: () => void; // 手动展开搜索栏
   isHeroVisible: boolean; // Hero 是否可见（用于隐藏 Header 搜索栏）
   setIsHeroVisible: (visible: boolean) => void;
+  hideSearchBar: boolean; // 完全隐藏搜索栏（如详情页）
+  setHideSearchBar: (hide: boolean) => void;
+  hideThemeSelector: boolean; // 隐藏主题选择器（如 /plans 页面已有 ThemePills）
+  setHideThemeSelector: (hide: boolean) => void;
 }
 
 const SearchBarContext = createContext<SearchBarContextType | undefined>(undefined);
 
 export function SearchBarProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+
+  // 根据路径自动判断是否隐藏主题选择器
+  // /plans 页面有 ThemePills，所以隐藏搜索栏的主题选择器
+  const isPlansPage = pathname === '/plans';
+
   const [isSearchBarExpanded, setIsSearchBarExpanded] = useState(true); // 初始展开（大搜索栏）
   const [isHeroVisible, setIsHeroVisible] = useState(true); // Hero 默认可见
+  const [hideSearchBar, setHideSearchBar] = useState(false); // 完全隐藏搜索栏
+  const [hideThemeSelectorManual, setHideThemeSelectorManual] = useState(false); // 手动设置隐藏主题选择器
   const manuallyExpandedRef = useRef(false); // 记录是否手动展开
   const expandedScrollYRef = useRef(0); // 记录手动展开时的滚动位置
+
+  // 综合判断：路径自动 OR 手动设置
+  const hideThemeSelector = isPlansPage || hideThemeSelectorManual;
 
   // 监听滚动事件来控制搜索框的展开/收起
   useEffect(() => {
@@ -69,6 +85,10 @@ export function SearchBarProvider({ children }: { children: ReactNode }) {
         expandManually,
         isHeroVisible,
         setIsHeroVisible,
+        hideSearchBar,
+        setHideSearchBar,
+        hideThemeSelector,
+        setHideThemeSelector: setHideThemeSelectorManual,
       }}
     >
       {children}
