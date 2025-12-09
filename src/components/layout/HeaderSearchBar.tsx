@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef, useTransition, useCallback } from "react";
-import { Search, MapPin, X, Calendar, Palette, ChevronDown, Loader2 } from "lucide-react";
+import { useState, useEffect, useRef, useTransition, useCallback, useMemo } from "react";
+import { Search, MapPin, X, Calendar, Palette, ChevronDown, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSearchState } from "@/contexts/SearchStateContext";
 import { useSearchBar } from "@/contexts/SearchBarContext";
@@ -27,7 +27,6 @@ export default function HeaderSearchBar() {
   const [filteredLocations, setFilteredLocations] = useState<string[]>([]);
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
   const locationInputRef = useRef<HTMLInputElement>(null);
-  const dateInputRef = useRef<HTMLInputElement>(null);
   const locationDropdownRef = useRef<HTMLDivElement>(null);
   const locationContainerRef = useRef<HTMLDivElement>(null);
 
@@ -36,6 +35,15 @@ export default function HeaderSearchBar() {
   const [showThemeDropdown, setShowThemeDropdown] = useState(false);
   const themeDropdownRef = useRef<HTMLDivElement>(null);
   const themeContainerRef = useRef<HTMLDivElement>(null);
+
+  // 日期选择器状态
+  const [showDateDropdown, setShowDateDropdown] = useState(false);
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
+  const dateDropdownRef = useRef<HTMLDivElement>(null);
+  const dateContainerRef = useRef<HTMLDivElement>(null);
 
   // 搜索框容器 ref
   const searchBarRef = useRef<HTMLDivElement>(null);
@@ -47,6 +55,7 @@ export default function HeaderSearchBar() {
   const closeAllDropdowns = useCallback(() => {
     setShowLocationDropdown(false);
     setShowThemeDropdown(false);
+    setShowDateDropdown(false);
   }, []);
 
   // 获取所有地区数据
@@ -106,11 +115,22 @@ export default function HeaderSearchBar() {
       ) {
         setShowThemeDropdown(false);
       }
+
+      // 检查 date 下拉菜单
+      if (
+        showDateDropdown &&
+        dateDropdownRef.current &&
+        !dateDropdownRef.current.contains(target) &&
+        dateContainerRef.current &&
+        !dateContainerRef.current.contains(target)
+      ) {
+        setShowDateDropdown(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showLocationDropdown, showThemeDropdown]);
+  }, [showLocationDropdown, showThemeDropdown, showDateDropdown]);
 
   // ESC 键关闭下拉菜单
   useEffect(() => {
@@ -139,7 +159,7 @@ export default function HeaderSearchBar() {
 
       // 只有滚动超过一定距离才关闭（防止 header 高度变化触发的微小滚动）
       const scrollDelta = Math.abs(window.scrollY - lastScrollY);
-      if (scrollDelta > 10 && (showLocationDropdown || showThemeDropdown)) {
+      if (scrollDelta > 10 && (showLocationDropdown || showThemeDropdown || showDateDropdown)) {
         closeAllDropdowns();
       }
       lastScrollY = window.scrollY;
@@ -147,7 +167,7 @@ export default function HeaderSearchBar() {
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [showLocationDropdown, showThemeDropdown, closeAllDropdowns]);
+  }, [showLocationDropdown, showThemeDropdown, showDateDropdown, closeAllDropdowns]);
 
   // 主题选择立即导航到 /plans
   const handleThemeSelect = useCallback((theme: Theme | null) => {
@@ -198,12 +218,7 @@ export default function HeaderSearchBar() {
 
     // 自动切换到日期选择器
     setTimeout(() => {
-      dateInputRef.current?.click();
-      try {
-        dateInputRef.current?.showPicker?.();
-      } catch {
-        dateInputRef.current?.focus();
-      }
+      setShowDateDropdown(true);
     }, 100);
   };
 
@@ -240,15 +255,13 @@ export default function HeaderSearchBar() {
     // 等待展开动画和 DOM 更新完成后再操作
     setTimeout(() => {
       if (focusField === 'date') {
-        dateInputRef.current?.click();
-        try {
-          dateInputRef.current?.showPicker?.();
-        } catch {
-          dateInputRef.current?.focus();
-        }
+        setShowDateDropdown(true);
+        setShowLocationDropdown(false);
+        setShowThemeDropdown(false);
       } else if (focusField === 'theme') {
         setShowThemeDropdown(true);
         setShowLocationDropdown(false);
+        setShowDateDropdown(false);
       } else if (focusField === 'location') {
         locationInputRef.current?.focus();
         // 触发 focus 会自动打开下拉菜单
@@ -263,8 +276,90 @@ export default function HeaderSearchBar() {
 
   const handleThemeButtonClick = () => {
     setShowThemeDropdown(prev => !prev);
-    // 打开 theme 时关闭 location
+    // 打开 theme 时关闭其他
     setShowLocationDropdown(false);
+    setShowDateDropdown(false);
+  };
+
+  const handleDateButtonClick = () => {
+    setShowDateDropdown(prev => !prev);
+    // 打开 date 时关闭其他
+    setShowLocationDropdown(false);
+    setShowThemeDropdown(false);
+  };
+
+  // 日历数据生成
+  const calendarData = useMemo(() => {
+    const year = calendarMonth.getFullYear();
+    const month = calendarMonth.getMonth();
+
+    // 获取当月第一天和最后一天
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+
+    // 获取第一天是星期几（0=周日）
+    const startDayOfWeek = firstDay.getDay();
+
+    // 生成日历网格（42天 = 6周）
+    const days: { date: Date; isCurrentMonth: boolean; isToday: boolean; isPast: boolean }[] = [];
+
+    // 上个月的天数填充
+    const prevMonthLastDay = new Date(year, month, 0).getDate();
+    for (let i = startDayOfWeek - 1; i >= 0; i--) {
+      const date = new Date(year, month - 1, prevMonthLastDay - i);
+      days.push({
+        date,
+        isCurrentMonth: false,
+        isToday: false,
+        isPast: date < new Date(new Date().setHours(0, 0, 0, 0)),
+      });
+    }
+
+    // 当月的天数
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    for (let i = 1; i <= lastDay.getDate(); i++) {
+      const date = new Date(year, month, i);
+      days.push({
+        date,
+        isCurrentMonth: true,
+        isToday: date.getTime() === today.getTime(),
+        isPast: date < today,
+      });
+    }
+
+    // 下个月的天数填充
+    const remainingDays = 42 - days.length;
+    for (let i = 1; i <= remainingDays; i++) {
+      const date = new Date(year, month + 1, i);
+      days.push({
+        date,
+        isCurrentMonth: false,
+        isToday: false,
+        isPast: false,
+      });
+    }
+
+    return {
+      year,
+      month,
+      monthName: calendarMonth.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long' }),
+      days,
+    };
+  }, [calendarMonth]);
+
+  const handleDateSelect = (date: Date) => {
+    const dateStr = date.toISOString().split('T')[0];
+    setDate(dateStr);
+    setShowDateDropdown(false);
+  };
+
+  const handlePrevMonth = () => {
+    setCalendarMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+  };
+
+  const handleNextMonth = () => {
+    setCalendarMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
   };
 
   const handleSearch = () => {
@@ -390,16 +485,21 @@ export default function HeaderSearchBar() {
             )}
           </div>
 
-          {/* Location 下拉菜单 */}
+          {/* Location 下拉菜单 - Airbnb 风格 */}
           {showLocationDropdown && filteredLocations.length > 0 && (
             <div
               ref={locationDropdownRef}
-              className="absolute top-full left-0 right-0 mt-3 bg-white rounded-3xl overflow-hidden z-[100] max-h-[400px] overflow-y-auto
-                shadow-[0_8px_28px_0_rgba(0,0,0,0.15)]
-                border border-gray-200
+              className="absolute top-full left-0 mt-4 bg-white rounded-xl overflow-hidden z-[100] min-w-[320px] max-w-[400px]
+                shadow-[0_2px_16px_rgba(0,0,0,0.12)]
+                border border-gray-100
                 animate-in fade-in slide-in-from-top-2 duration-200"
             >
-              <div className="py-2">
+              {/* 标题 */}
+              <div className="px-4 pt-4 pb-2">
+                <h3 className="text-[12px] font-semibold text-gray-800 uppercase tracking-wide">热门目的地</h3>
+              </div>
+              {/* 选项列表 */}
+              <div className="px-2 pb-2 max-h-[320px] overflow-y-auto">
                 {filteredLocations.map((loc, index) => (
                   <button
                     key={index}
@@ -407,28 +507,23 @@ export default function HeaderSearchBar() {
                       e.stopPropagation();
                       handleLocationSelect(loc);
                     }}
-                    className="w-full px-5 py-3.5 text-left flex items-center gap-4
-                      transition-all duration-200 ease-out
-                      hover:bg-sakura-50/60 active:bg-sakura-100/80
-                      group relative cursor-pointer"
+                    className="w-full px-3 py-3 text-left flex items-center gap-3 rounded-lg
+                      transition-all duration-200
+                      hover:bg-gray-100 active:bg-gray-200
+                      group cursor-pointer"
                   >
-                    <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center
-                      group-hover:bg-sakura-50 transition-all duration-200">
-                      <MapPin className="w-5 h-5 text-gray-400 group-hover:text-sakura-500 transition-colors duration-200" />
+                    <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center
+                      group-hover:bg-gray-200 transition-colors duration-200">
+                      <MapPin className="w-5 h-5 text-gray-600" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-gray-900 group-hover:text-gray-950 transition-colors duration-200">
+                      <div className="text-[14px] font-medium text-gray-900">
                         {loc}
                       </div>
-                      <div className="text-xs text-gray-500 mt-0.5">
+                      <div className="text-[12px] text-gray-500 mt-0.5">
                         {loc.includes('京都') ? '人气和服体验地' :
                          loc.includes('东京') ? '东京热门区域' : '和服租赁店铺'}
                       </div>
-                    </div>
-                    <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
                     </div>
                   </button>
                 ))}
@@ -442,36 +537,141 @@ export default function HeaderSearchBar() {
 
         {/* 日期 */}
         <div
+          ref={dateContainerRef}
           className="flex-1 min-w-0 px-3 xl:px-4 py-2 xl:py-3 rounded-full hover:bg-gray-100/50 transition-all duration-200 group cursor-pointer relative"
-          onClick={(e) => {
-            if (e.target !== dateInputRef.current) {
-              closeAllDropdowns();
-              dateInputRef.current?.click();
-              try {
-                dateInputRef.current?.showPicker?.();
-              } catch {
-                dateInputRef.current?.focus();
-              }
-            }
-          }}
+          onClick={handleDateButtonClick}
         >
           <label className="flex items-center gap-1.5 text-[10px] xl:text-xs font-semibold text-gray-700 mb-0.5 cursor-pointer">
             <Calendar className="w-3 h-3 xl:w-4 xl:h-4 text-sakura-500 flex-shrink-0" />
             <span className="truncate">到店日期</span>
           </label>
-          <div className="text-xs xl:text-sm text-gray-900 truncate">
-            {searchState.date ? new Date(searchState.date + 'T00:00:00').toLocaleDateString('zh-CN', {
-              month: 'long',
-              day: 'numeric'
-            }) : '选择日期'}
+          <div className="flex items-center gap-1.5">
+            <span className={`text-xs xl:text-sm truncate ${searchState.date ? 'text-gray-900' : 'text-gray-400'}`}>
+              {searchState.date ? new Date(searchState.date + 'T00:00:00').toLocaleDateString('zh-CN', {
+                month: 'long',
+                day: 'numeric'
+              }) : '选择日期'}
+            </span>
+            {searchState.date ? (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDate('');
+                }}
+                className="p-0.5 hover:bg-gray-200 rounded-full transition-colors flex-shrink-0"
+                aria-label="清空日期"
+              >
+                <X className="w-3 h-3 xl:w-3.5 xl:h-3.5 text-gray-500" />
+              </button>
+            ) : (
+              <ChevronDown className={`w-3.5 h-3.5 xl:w-4 xl:h-4 text-gray-400 transition-transform flex-shrink-0 ${showDateDropdown ? 'rotate-180' : ''}`} />
+            )}
           </div>
-          <input
-            ref={dateInputRef}
-            type="date"
-            value={searchState.date}
-            onChange={(e) => setDate(e.target.value)}
-            className="absolute opacity-0 pointer-events-none"
-          />
+
+          {/* 日期下拉菜单 - Airbnb 风格日历 */}
+          {showDateDropdown && (
+            <div
+              ref={dateDropdownRef}
+              className="absolute top-full left-1/2 -translate-x-1/2 mt-4 bg-white rounded-xl overflow-hidden z-[100]
+                shadow-[0_2px_16px_rgba(0,0,0,0.12)]
+                border border-gray-100
+                animate-in fade-in slide-in-from-top-2 duration-200"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-4 w-[320px]">
+                {/* 月份导航 */}
+                <div className="flex items-center justify-between mb-4">
+                  <button
+                    onClick={handlePrevMonth}
+                    className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors"
+                    aria-label="上个月"
+                  >
+                    <ChevronLeft className="w-5 h-5 text-gray-600" />
+                  </button>
+                  <h3 className="text-[15px] font-semibold text-gray-900">
+                    {calendarData.monthName}
+                  </h3>
+                  <button
+                    onClick={handleNextMonth}
+                    className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors"
+                    aria-label="下个月"
+                  >
+                    <ChevronRight className="w-5 h-5 text-gray-600" />
+                  </button>
+                </div>
+
+                {/* 星期标题 */}
+                <div className="grid grid-cols-7 mb-2">
+                  {['日', '一', '二', '三', '四', '五', '六'].map((day) => (
+                    <div key={day} className="text-center text-[12px] font-medium text-gray-500 py-2">
+                      {day}
+                    </div>
+                  ))}
+                </div>
+
+                {/* 日期网格 */}
+                <div className="grid grid-cols-7 gap-1">
+                  {calendarData.days.map((day, index) => {
+                    const dateStr = day.date.toISOString().split('T')[0];
+                    const isSelected = searchState.date === dateStr;
+
+                    return (
+                      <button
+                        key={index}
+                        onClick={() => !day.isPast && day.isCurrentMonth && handleDateSelect(day.date)}
+                        disabled={day.isPast || !day.isCurrentMonth}
+                        className={`
+                          w-10 h-10 rounded-full text-[14px] font-medium
+                          transition-all duration-200
+                          flex items-center justify-center
+                          ${isSelected
+                            ? 'bg-gray-900 text-white'
+                            : day.isToday
+                              ? 'bg-gray-100 text-gray-900 font-semibold'
+                              : day.isCurrentMonth && !day.isPast
+                                ? 'text-gray-900 hover:bg-gray-100'
+                                : 'text-gray-300 cursor-not-allowed'
+                          }
+                        `}
+                      >
+                        {day.date.getDate()}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* 快捷选项 */}
+                <div className="mt-4 pt-3 border-t border-gray-100 flex gap-2">
+                  <button
+                    onClick={() => handleDateSelect(new Date())}
+                    className="flex-1 py-2 text-[13px] font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    今天
+                  </button>
+                  <button
+                    onClick={() => {
+                      const tomorrow = new Date();
+                      tomorrow.setDate(tomorrow.getDate() + 1);
+                      handleDateSelect(tomorrow);
+                    }}
+                    className="flex-1 py-2 text-[13px] font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    明天
+                  </button>
+                  <button
+                    onClick={() => {
+                      const nextWeek = new Date();
+                      nextWeek.setDate(nextWeek.getDate() + 7);
+                      handleDateSelect(nextWeek);
+                    }}
+                    className="flex-1 py-2 text-[13px] font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    下周
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 分隔线 + 主题选择 */}
@@ -519,48 +719,74 @@ export default function HeaderSearchBar() {
                 )}
               </div>
 
-              {/* Theme 下拉菜单 */}
+              {/* Theme 下拉菜单 - Airbnb 风格 */}
               {showThemeDropdown && (
                 <div
                   ref={themeDropdownRef}
-                  className="absolute top-full left-0 mt-3 bg-white rounded-2xl overflow-hidden z-[100]
-                    shadow-[0_8px_28px_0_rgba(0,0,0,0.15)]
-                    border border-gray-200
-                    p-3 min-w-[280px]
+                  className="absolute top-full left-0 mt-4 bg-white rounded-xl overflow-hidden z-[100] min-w-[320px]
+                    shadow-[0_2px_16px_rgba(0,0,0,0.12)]
+                    border border-gray-100
                     animate-in fade-in slide-in-from-top-2 duration-200"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  {themes.length === 0 ? (
-                    <div className="px-2 py-3 text-sm text-gray-500 text-center">暂无主题</div>
-                  ) : (
-                    <div className="flex flex-wrap gap-2">
-                      {themes.map((theme) => {
-                        const isSelected = searchState.theme?.id === theme.id;
-                        return (
-                          <button
-                            key={theme.id}
-                            onClick={() => {
-                              setShowThemeDropdown(false);
-                              handleThemeSelect(theme);
-                            }}
-                            className={`
-                              px-3 py-2 rounded-full text-sm font-medium
-                              transition-all duration-200 ease-out
-                              flex items-center gap-1.5
-                              ${isSelected
-                                ? 'bg-sakura-500 text-white shadow-sm'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                              }
-                            `}
-                          >
-                            {(() => {
-                              const IconComponent = getThemeIcon(theme.icon);
-                              return <IconComponent className="w-4 h-4" />;
-                            })()}
-                            <span>{theme.name}</span>
-                          </button>
-                        );
-                      })}
+                  {/* 标题 */}
+                  <div className="px-4 pt-4 pb-2">
+                    <h3 className="text-[12px] font-semibold text-gray-800 uppercase tracking-wide">选择体验主题</h3>
+                  </div>
+                  {/* 选项网格 */}
+                  <div className="px-2 pb-3">
+                    {themes.length === 0 ? (
+                      <div className="px-2 py-4 text-[14px] text-gray-500 text-center">暂无主题</div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-2">
+                        {themes.map((theme) => {
+                          const isSelected = searchState.theme?.id === theme.id;
+                          const IconComponent = getThemeIcon(theme.icon);
+                          return (
+                            <button
+                              key={theme.id}
+                              onClick={() => {
+                                setShowThemeDropdown(false);
+                                handleThemeSelect(theme);
+                              }}
+                              className={`
+                                px-3 py-3 rounded-lg text-left
+                                transition-all duration-200
+                                flex items-center gap-3
+                                ${isSelected
+                                  ? 'bg-gray-900 text-white'
+                                  : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                                }
+                              `}
+                            >
+                              <div className={`
+                                w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0
+                                ${isSelected ? 'bg-white/20' : 'bg-white'}
+                              `}>
+                                <IconComponent
+                                  className="w-5 h-5"
+                                  style={{ color: isSelected ? 'white' : (theme.color || '#6b7280') }}
+                                />
+                              </div>
+                              <span className="text-[14px] font-medium truncate">{theme.name}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                  {/* 清除选择 */}
+                  {searchState.theme && (
+                    <div className="px-4 pb-3 pt-1 border-t border-gray-100">
+                      <button
+                        onClick={() => {
+                          setShowThemeDropdown(false);
+                          handleThemeSelect(null);
+                        }}
+                        className="w-full py-2 text-[14px] text-gray-500 hover:text-gray-700 transition-colors text-center"
+                      >
+                        清除选择
+                      </button>
                     </div>
                   )}
                 </div>
