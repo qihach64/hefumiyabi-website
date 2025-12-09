@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode, Suspense } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, ReactNode, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import type { Theme } from '@/types';
 
@@ -54,11 +54,23 @@ function SearchStateProviderInner({ children }: { children: ReactNode }) {
     }));
   }, [searchParams]);
 
+  // 跟踪上一次的 URL theme 参数，避免不必要的同步
+  const prevThemeSlugRef = useRef<string | null>(null);
+
   // 监听 URL 中的 theme 参数变化，同步主题
+  // 注意：只在 URL 参数变化时同步，不要覆盖用户通过 setTheme 设置的值
   useEffect(() => {
     const themeSlug = searchParams.get('theme');
 
-    // 如果 URL 中没有 theme 参数，清空主题
+    // 如果 URL 参数没有变化，不做任何操作
+    if (prevThemeSlugRef.current === themeSlug) {
+      return;
+    }
+
+    // 记录当前 URL 参数
+    prevThemeSlugRef.current = themeSlug;
+
+    // 如果 URL 中没有 theme 参数，清空主题（仅在 URL 显式变化时）
     if (!themeSlug) {
       setSearchState(prev => ({
         ...prev,

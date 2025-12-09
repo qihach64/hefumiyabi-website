@@ -6,19 +6,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useSearchState } from "@/contexts/SearchStateContext";
 import { useSearchBar } from "@/contexts/SearchBarContext";
 import { getThemeIcon } from "@/lib/themeIcons";
-
-interface Theme {
-  id: string;
-  slug: string;
-  name: string;
-  icon: string | null;
-  color: string | null;
-}
+import type { Theme } from "@/types";
 
 export default function HeaderSearchBar() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { searchState, setLocation, setDate, startSearch, isSearching } = useSearchState();
+  const { searchState, setLocation, setDate, setTheme, startSearch, isSearching } = useSearchState();
   const { isSearchBarExpanded, expandManually, hideThemeSelector } = useSearchBar();
   const [isPending, startTransition] = useTransition();
 
@@ -169,33 +162,11 @@ export default function HeaderSearchBar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [showLocationDropdown, showThemeDropdown, showDateDropdown, closeAllDropdowns]);
 
-  // 主题选择立即导航到 /plans
+  // 主题选择 - 只更新状态，不立即跳转
   const handleThemeSelect = useCallback((theme: Theme | null) => {
-    const params = new URLSearchParams(searchParams.toString());
-
-    if (searchState.location) {
-      params.set('location', searchState.location);
-    }
-    if (searchState.date) {
-      params.set('date', searchState.date);
-    }
-
-    if (theme) {
-      params.set('theme', theme.slug);
-    } else {
-      params.delete('theme');
-    }
-
-    const queryString = params.toString();
-    const url = queryString ? `/plans?${queryString}` : '/plans';
-
-    startSearch(theme);
-    closeAllDropdowns();
-
-    startTransition(() => {
-      router.push(url);
-    });
-  }, [searchParams, searchState.location, searchState.date, startSearch, router, closeAllDropdowns]);
+    setTheme(theme);
+    setShowThemeDropdown(false);
+  }, [setTheme]);
 
   const handleLocationChange = (value: string) => {
     setLocation(value);
@@ -745,10 +716,7 @@ export default function HeaderSearchBar() {
                           return (
                             <button
                               key={theme.id}
-                              onClick={() => {
-                                setShowThemeDropdown(false);
-                                handleThemeSelect(theme);
-                              }}
+                              onClick={() => handleThemeSelect(theme)}
                               className={`
                                 px-3 py-3 rounded-lg text-left
                                 transition-all duration-200
@@ -779,10 +747,7 @@ export default function HeaderSearchBar() {
                   {searchState.theme && (
                     <div className="px-4 pb-3 pt-1 border-t border-gray-100">
                       <button
-                        onClick={() => {
-                          setShowThemeDropdown(false);
-                          handleThemeSelect(null);
-                        }}
+                        onClick={() => handleThemeSelect(null)}
                         className="w-full py-2 text-[14px] text-gray-500 hover:text-gray-700 transition-colors text-center"
                       >
                         清除选择
@@ -795,11 +760,11 @@ export default function HeaderSearchBar() {
           </>
         )}
 
-        {/* 搜索按钮 */}
+        {/* 搜索按钮 - 展开模式显示文字 */}
         <button
           onClick={handleSearch}
           disabled={isPending || isSearching}
-          className="flex-shrink-0 w-9 h-9 xl:w-11 xl:h-11 flex items-center justify-center bg-sakura-500 hover:bg-sakura-600 disabled:bg-sakura-400 rounded-full shadow-md hover:shadow-lg active:scale-95 disabled:active:scale-100 transition-all duration-200 cursor-pointer"
+          className="flex-shrink-0 h-9 xl:h-11 px-3 xl:px-5 flex items-center justify-center gap-1.5 xl:gap-2 bg-sakura-500 hover:bg-sakura-600 disabled:bg-sakura-400 rounded-full shadow-md hover:shadow-lg active:scale-95 disabled:active:scale-100 transition-all duration-200 cursor-pointer"
           aria-label="搜索"
         >
           {isPending || isSearching ? (
@@ -807,6 +772,7 @@ export default function HeaderSearchBar() {
           ) : (
             <Search className="w-4 h-4 xl:w-5 xl:h-5 text-white" />
           )}
+          <span className="text-sm xl:text-base font-medium text-white">搜索</span>
         </button>
       </div>
     </div>
