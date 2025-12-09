@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import UserMenu from "./UserMenu";
@@ -11,8 +12,14 @@ import NavMenuButton from "./NavMenuButton";
 import { useSearchBar } from "@/contexts/SearchBarContext";
 
 export default function Header() {
+  const pathname = usePathname();
   const { data: session } = useSession();
   const { isSearchBarExpanded, isHeroVisible, hideSearchBar } = useSearchBar();
+
+  // 基于路径判断是否应该隐藏搜索栏（详情页等）
+  // 这样在页面初次渲染时就能正确隐藏，不会闪烁
+  const isPlanDetailPage = pathname?.match(/^\/plans\/[^/]+$/) !== null;
+  const shouldHideSearchBar = hideSearchBar || isPlanDetailPage;
   const [merchant, setMerchant] = useState<any>(null);
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -76,7 +83,7 @@ export default function Header() {
       <div className="container">
         {/* 动态高度：展开搜索栏时增加 padding，让内容有更多空间 */}
         <div className={`flex items-center justify-between gap-4 transition-all duration-300 ease-in-out ${
-          isSearchBarExpanded && !isHeroVisible && !hideSearchBar
+          isSearchBarExpanded && !isHeroVisible && !shouldHideSearchBar
             ? 'h-20 md:h-24 py-2'
             : 'h-16 md:h-20'
         }`}>
@@ -191,7 +198,7 @@ export default function Header() {
           </div>
 
           {/* 中间：搜索栏（Hero 可见时隐藏，滚动后显示；详情页完全隐藏） */}
-          {!hideSearchBar && (
+          {!shouldHideSearchBar && (
             <div
               className={`flex-1 flex justify-center max-w-2xl mx-4 transition-all duration-300 ${
                 isHeroVisible ? "opacity-0 pointer-events-none scale-95" : "opacity-100 scale-100"
