@@ -22,51 +22,32 @@ export default function HeaderSearchBar() {
   const { isSearchBarExpanded, expandManually, hideThemeSelector } = useSearchBar();
   const [isPending, startTransition] = useTransition();
 
-  // 主题选择立即导航到 /plans
-  const handleThemeSelect = useCallback((theme: Theme | null) => {
-    const params = new URLSearchParams(searchParams.toString());
-
-    // 保留当前的 location 和 date（优先使用 searchState 中的最新值）
-    if (searchState.location) {
-      params.set('location', searchState.location);
-    }
-    if (searchState.date) {
-      params.set('date', searchState.date);
-    }
-
-    // 设置或清除主题
-    if (theme) {
-      params.set('theme', theme.slug);
-    } else {
-      params.delete('theme');
-    }
-
-    const queryString = params.toString();
-    const url = queryString ? `/plans?${queryString}` : '/plans';
-
-    // 设置全局加载状态
-    startSearch(theme);
-
-    // 导航
-    startTransition(() => {
-      router.push(url);
-    });
-  }, [searchParams, searchState.location, searchState.date, startSearch, router]);
-
   // 自动补全相关
   const [allLocations, setAllLocations] = useState<string[]>([]);
   const [filteredLocations, setFilteredLocations] = useState<string[]>([]);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [isClosing, setIsClosing] = useState(false);
+  const [showLocationDropdown, setShowLocationDropdown] = useState(false);
   const locationInputRef = useRef<HTMLInputElement>(null);
   const dateInputRef = useRef<HTMLInputElement>(null);
-  const themeButtonRef = useRef<HTMLDivElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const locationDropdownRef = useRef<HTMLDivElement>(null);
+  const locationContainerRef = useRef<HTMLDivElement>(null);
 
   // 主题相关状态
   const [themes, setThemes] = useState<Theme[]>([]);
   const [showThemeDropdown, setShowThemeDropdown] = useState(false);
   const themeDropdownRef = useRef<HTMLDivElement>(null);
+  const themeContainerRef = useRef<HTMLDivElement>(null);
+
+  // 搜索框容器 ref
+  const searchBarRef = useRef<HTMLDivElement>(null);
+
+  // 防止展开动画期间误关闭下拉菜单
+  const isExpandingRef = useRef(false);
+
+  // 关闭所有下拉菜单
+  const closeAllDropdowns = useCallback(() => {
+    setShowLocationDropdown(false);
+    setShowThemeDropdown(false);
+  }, []);
 
   // 获取所有地区数据
   useEffect(() => {
@@ -94,14 +75,34 @@ export default function HeaderSearchBar() {
       });
   }, []);
 
-  // 点击外部关闭主题下拉菜单
+  // 点击外部关闭下拉菜单
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      // 展开动画期间不处理点击外部事件
+      if (isExpandingRef.current) {
+        return;
+      }
+
+      const target = event.target as Node;
+
+      // 检查 location 下拉菜单
       if (
+        showLocationDropdown &&
+        locationDropdownRef.current &&
+        !locationDropdownRef.current.contains(target) &&
+        locationContainerRef.current &&
+        !locationContainerRef.current.contains(target)
+      ) {
+        setShowLocationDropdown(false);
+      }
+
+      // 检查 theme 下拉菜单
+      if (
+        showThemeDropdown &&
         themeDropdownRef.current &&
-        !themeDropdownRef.current.contains(event.target as Node) &&
-        themeButtonRef.current &&
-        !themeButtonRef.current.contains(event.target as Node)
+        !themeDropdownRef.current.contains(target) &&
+        themeContainerRef.current &&
+        !themeContainerRef.current.contains(target)
       ) {
         setShowThemeDropdown(false);
       }
@@ -109,8 +110,72 @@ export default function HeaderSearchBar() {
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [showLocationDropdown, showThemeDropdown]);
 
+  // ESC 键关闭下拉菜单
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        closeAllDropdowns();
+        // 移除输入框焦点
+        locationInputRef.current?.blur();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [closeAllDropdowns]);
+
+  // 滚动时关闭下拉菜单
+  useEffect(() => {
+    let lastScrollY = window.scrollY;
+
+    const handleScroll = () => {
+      // 展开动画期间不处理滚动事件
+      if (isExpandingRef.current) {
+        lastScrollY = window.scrollY;
+        return;
+      }
+
+      // 只有滚动超过一定距离才关闭（防止 header 高度变化触发的微小滚动）
+      const scrollDelta = Math.abs(window.scrollY - lastScrollY);
+      if (scrollDelta > 10 && (showLocationDropdown || showThemeDropdown)) {
+        closeAllDropdowns();
+      }
+      lastScrollY = window.scrollY;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [showLocationDropdown, showThemeDropdown, closeAllDropdowns]);
+
+  // 主题选择立即导航到 /plans
+  const handleThemeSelect = useCallback((theme: Theme | null) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (searchState.location) {
+      params.set('location', searchState.location);
+    }
+    if (searchState.date) {
+      params.set('date', searchState.date);
+    }
+
+    if (theme) {
+      params.set('theme', theme.slug);
+    } else {
+      params.delete('theme');
+    }
+
+    const queryString = params.toString();
+    const url = queryString ? `/plans?${queryString}` : '/plans';
+
+    startSearch(theme);
+    closeAllDropdowns();
+
+    startTransition(() => {
+      router.push(url);
+    });
+  }, [searchParams, searchState.location, searchState.date, startSearch, router, closeAllDropdowns]);
 
   const handleLocationChange = (value: string) => {
     setLocation(value);
@@ -122,22 +187,16 @@ export default function HeaderSearchBar() {
       );
       setFilteredLocations(filtered.slice(0, 10));
     }
-    setShowDropdown(true);
+    setShowLocationDropdown(true);
+    // 打开 location 时关闭 theme
+    setShowThemeDropdown(false);
   };
 
   const handleLocationSelect = (selectedLocation: string) => {
     setLocation(selectedLocation);
+    setShowLocationDropdown(false);
 
-    // 先播放关闭动画
-    setIsClosing(true);
-
-    // 等待动画完成后再关闭下拉菜单
-    setTimeout(() => {
-      setShowDropdown(false);
-      setIsClosing(false);
-    }, 300);
-
-    // 自动切换到日期选择器（Airbnb风格）
+    // 自动切换到日期选择器
     setTimeout(() => {
       dateInputRef.current?.click();
       try {
@@ -145,7 +204,7 @@ export default function HeaderSearchBar() {
       } catch {
         dateInputRef.current?.focus();
       }
-    }, 400); // 等待下拉菜单关闭动画完成 (300ms) + 一点缓冲
+    }, 100);
   };
 
   const handleLocationFocus = () => {
@@ -158,20 +217,27 @@ export default function HeaderSearchBar() {
         );
         setFilteredLocations(filtered.slice(0, 10));
       }
-      setShowDropdown(true);
+      setShowLocationDropdown(true);
+      // 打开 location 时关闭 theme
+      setShowThemeDropdown(false);
     }
   };
 
   const handleExpand = (focusField?: 'location' | 'date' | 'theme' | 'none') => {
-    // 手动展开搜索栏（会设置锁定标志，防止滚动自动收起）
+    // 设置展开锁定标志，防止点击外部事件误关闭下拉菜单
+    isExpandingRef.current = true;
+
     expandManually();
 
-    // 根据点击的字段，聚焦到对应的输入框
     if (focusField === 'none') {
-      // 只展开，不聚焦任何字段
+      // 仅展开不聚焦时，短暂锁定后解除
+      setTimeout(() => {
+        isExpandingRef.current = false;
+      }, 350);
       return;
     }
 
+    // 等待展开动画和 DOM 更新完成后再操作
     setTimeout(() => {
       if (focusField === 'date') {
         dateInputRef.current?.click();
@@ -182,11 +248,23 @@ export default function HeaderSearchBar() {
         }
       } else if (focusField === 'theme') {
         setShowThemeDropdown(true);
+        setShowLocationDropdown(false);
       } else if (focusField === 'location') {
-        // 聚焦到目的地
         locationInputRef.current?.focus();
+        // 触发 focus 会自动打开下拉菜单
       }
-    }, 100);
+
+      // 操作完成后解除锁定
+      setTimeout(() => {
+        isExpandingRef.current = false;
+      }, 100);
+    }, 350); // 等待 header 高度动画 (300ms) + 缓冲
+  };
+
+  const handleThemeButtonClick = () => {
+    setShowThemeDropdown(prev => !prev);
+    // 打开 theme 时关闭 location
+    setShowLocationDropdown(false);
   };
 
   const handleSearch = () => {
@@ -198,16 +276,15 @@ export default function HeaderSearchBar() {
     const queryString = params.toString();
     const url = queryString ? `/plans?${queryString}` : '/plans';
 
-    // 使用统一的 startSearch 设置全局加载状态
     startSearch(searchState.theme);
+    closeAllDropdowns();
 
-    // 使用 startTransition 让按钮显示 loading 状态
     startTransition(() => {
       router.push(url);
     });
   };
 
-  // 紧凑模式组件 - Airbnb 风格胶囊
+  // 紧凑模式组件
   const compactSearchBar = (
     <div className="flex items-center gap-1.5 md:gap-2 border border-gray-300 rounded-full px-2 md:px-3 py-1.5 md:py-2 bg-white
       hover:shadow-[0_4px_12px_0_rgba(0,0,0,0.1)]
@@ -272,15 +349,15 @@ export default function HeaderSearchBar() {
     </div>
   );
 
-  // 展开模式组件 - 完整搜索框
+  // 展开模式组件
   const expandedSearchBar = (
-    <div className="w-full max-w-3xl flex-shrink min-w-0">
-      {/* 展开的搜索框 - Airbnb 风格优化 */}
+    <div ref={searchBarRef} className="w-full max-w-3xl flex-shrink min-w-0">
       <div className="rounded-full p-1.5 gap-1 flex items-center bg-white border border-gray-200
         shadow-[0_8px_24px_0_rgba(0,0,0,0.1)]
         transition-all duration-300 ease-out">
         {/* 目的地 */}
         <div
+          ref={locationContainerRef}
           className="flex-1 min-w-0 px-3 xl:px-4 py-2 xl:py-3 rounded-full hover:bg-gray-100/50 transition-all duration-200 relative group cursor-pointer"
           onClick={() => locationInputRef.current?.focus()}
         >
@@ -298,13 +375,12 @@ export default function HeaderSearchBar() {
               onFocus={handleLocationFocus}
               className="w-full text-xs xl:text-sm text-gray-900 placeholder-gray-400 bg-transparent border-none outline-none focus:ring-0 cursor-text pr-5 truncate"
             />
-            {/* 清空按钮 */}
             {searchState.location && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   setLocation('');
-                  setShowDropdown(false);
+                  setShowLocationDropdown(false);
                 }}
                 className="absolute right-0 p-0.5 hover:bg-gray-200 rounded-full transition-colors flex-shrink-0"
                 aria-label="清空目的地"
@@ -314,38 +390,32 @@ export default function HeaderSearchBar() {
             )}
           </div>
 
-          {/* 下拉菜单 - Airbnb 风格优化 */}
-          {showDropdown && filteredLocations.length > 0 && (
+          {/* Location 下拉菜单 */}
+          {showLocationDropdown && filteredLocations.length > 0 && (
             <div
-              ref={dropdownRef}
-              className="absolute top-full left-0 right-0 mt-3 bg-white rounded-3xl overflow-hidden z-50 max-h-[400px] overflow-y-auto
-                shadow-[0_8px_28px_0_rgba(0,0,0,0.12)]
-                border border-gray-100/50
-                dropdown-scrollbar"
-              style={{
-                animation: isClosing
-                  ? 'dropdown-disappear 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
-                  : 'dropdown-appear 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-              }}
+              ref={locationDropdownRef}
+              className="absolute top-full left-0 right-0 mt-3 bg-white rounded-3xl overflow-hidden z-[100] max-h-[400px] overflow-y-auto
+                shadow-[0_8px_28px_0_rgba(0,0,0,0.15)]
+                border border-gray-200
+                animate-in fade-in slide-in-from-top-2 duration-200"
             >
               <div className="py-2">
                 {filteredLocations.map((loc, index) => (
                   <button
                     key={index}
-                    onClick={() => handleLocationSelect(loc)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleLocationSelect(loc);
+                    }}
                     className="w-full px-5 py-3.5 text-left flex items-center gap-4
                       transition-all duration-200 ease-out
-                      hover:bg-sakura-50/60 hover:shadow-md active:bg-sakura-100/80 active:scale-[0.98]
-                      group relative rounded-2xl cursor-pointer"
+                      hover:bg-sakura-50/60 active:bg-sakura-100/80
+                      group relative cursor-pointer"
                   >
-                    {/* 图标容器 - 添加悬停动画 */}
                     <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center
-                      group-hover:bg-sakura-50 transition-all duration-200
-                      group-hover:scale-110 group-active:scale-95">
+                      group-hover:bg-sakura-50 transition-all duration-200">
                       <MapPin className="w-5 h-5 text-gray-400 group-hover:text-sakura-500 transition-colors duration-200" />
                     </div>
-
-                    {/* 文字内容 */}
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-gray-900 group-hover:text-gray-950 transition-colors duration-200">
                         {loc}
@@ -355,8 +425,6 @@ export default function HeaderSearchBar() {
                          loc.includes('东京') ? '东京热门区域' : '和服租赁店铺'}
                       </div>
                     </div>
-
-                    {/* 悬停时显示的箭头指示器 */}
                     <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                       <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -376,14 +444,12 @@ export default function HeaderSearchBar() {
         <div
           className="flex-1 min-w-0 px-3 xl:px-4 py-2 xl:py-3 rounded-full hover:bg-gray-100/50 transition-all duration-200 group cursor-pointer relative"
           onClick={(e) => {
-            // 如果点击的不是 input 本身，则触发 input 的点击
             if (e.target !== dateInputRef.current) {
+              closeAllDropdowns();
               dateInputRef.current?.click();
-              // 尝试使用 showPicker API（如果支持）
               try {
                 dateInputRef.current?.showPicker?.();
               } catch {
-                // 某些浏览器不支持 showPicker，降级到 focus
                 dateInputRef.current?.focus();
               }
             }
@@ -393,14 +459,12 @@ export default function HeaderSearchBar() {
             <Calendar className="w-3 h-3 xl:w-4 xl:h-4 text-sakura-500 flex-shrink-0" />
             <span className="truncate">到店日期</span>
           </label>
-          {/* 显示层 */}
           <div className="text-xs xl:text-sm text-gray-900 truncate">
             {searchState.date ? new Date(searchState.date + 'T00:00:00').toLocaleDateString('zh-CN', {
               month: 'long',
               day: 'numeric'
             }) : '选择日期'}
           </div>
-          {/* 隐藏的 input */}
           <input
             ref={dateInputRef}
             type="date"
@@ -410,16 +474,16 @@ export default function HeaderSearchBar() {
           />
         </div>
 
-        {/* 分隔线 + 主题选择 - 在 /plans 页面隐藏 */}
+        {/* 分隔线 + 主题选择 */}
         {!hideThemeSelector && (
           <>
             <div className="h-6 xl:h-8 w-px bg-gray-300 flex-shrink-0"></div>
 
             {/* 主题 */}
             <div
-              ref={themeButtonRef}
+              ref={themeContainerRef}
               className="flex-1 min-w-0 px-3 xl:px-4 py-2 xl:py-3 rounded-full hover:bg-gray-100/50 transition-all duration-200 group relative cursor-pointer"
-              onClick={() => setShowThemeDropdown(!showThemeDropdown)}
+              onClick={handleThemeButtonClick}
             >
               <label className="flex items-center gap-1.5 text-[10px] xl:text-xs font-semibold text-gray-700 mb-0.5 cursor-pointer">
                 <Palette className="w-3 h-3 xl:w-4 xl:h-4 text-sakura-500 flex-shrink-0" />
@@ -455,17 +519,16 @@ export default function HeaderSearchBar() {
                 )}
               </div>
 
-              {/* 主题下拉菜单 - Pills 网格布局 */}
+              {/* Theme 下拉菜单 */}
               {showThemeDropdown && (
                 <div
                   ref={themeDropdownRef}
-                  className="absolute top-full left-0 mt-3 bg-white rounded-2xl overflow-hidden z-50
-                    shadow-[0_8px_28px_0_rgba(0,0,0,0.12)]
-                    border border-gray-100/50
-                    p-3 min-w-[280px]"
-                  style={{
-                    animation: 'dropdown-appear 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-                  }}
+                  className="absolute top-full left-0 mt-3 bg-white rounded-2xl overflow-hidden z-[100]
+                    shadow-[0_8px_28px_0_rgba(0,0,0,0.15)]
+                    border border-gray-200
+                    p-3 min-w-[280px]
+                    animate-in fade-in slide-in-from-top-2 duration-200"
+                  onClick={(e) => e.stopPropagation()}
                 >
                   {themes.length === 0 ? (
                     <div className="px-2 py-3 text-sm text-gray-500 text-center">暂无主题</div>
@@ -476,18 +539,17 @@ export default function HeaderSearchBar() {
                         return (
                           <button
                             key={theme.id}
-                            onClick={(e) => {
-                              e.stopPropagation();
+                            onClick={() => {
                               setShowThemeDropdown(false);
                               handleThemeSelect(theme);
                             }}
                             className={`
                               px-3 py-2 rounded-full text-sm font-medium
-                              transition-all duration-300 ease-out
+                              transition-all duration-200 ease-out
                               flex items-center gap-1.5
                               ${isSelected
                                 ? 'bg-sakura-500 text-white shadow-sm'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-102 active:scale-98'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                               }
                             `}
                           >
@@ -526,12 +588,6 @@ export default function HeaderSearchBar() {
 
   return (
     <>
-      {/*
-        响应式策略:
-        - md (768px-1024px): 始终显示紧凑模式
-        - lg+ (>1024px): 根据 isSearchBarExpanded 切换
-      */}
-
       {/* 中等屏幕 (768px-1024px): 始终显示紧凑模式 */}
       <div className="hidden md:flex lg:hidden">
         {compactSearchBar}

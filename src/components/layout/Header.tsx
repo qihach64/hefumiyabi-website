@@ -74,7 +74,12 @@ export default function Header() {
       }`}
     >
       <div className="container">
-        <div className="flex h-16 md:h-20 items-center justify-between gap-4">
+        {/* 动态高度：展开搜索栏时增加 padding，让内容有更多空间 */}
+        <div className={`flex items-center justify-between gap-4 transition-all duration-300 ease-in-out ${
+          isSearchBarExpanded && !isHeroVisible && !hideSearchBar
+            ? 'h-20 md:h-24 py-2'
+            : 'h-16 md:h-20'
+        }`}>
           {/* 左侧：Logo */}
           <div className="flex items-center gap-2 md:gap-3">
             {/* 移动端汉堡菜单 */}
