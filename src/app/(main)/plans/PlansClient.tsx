@@ -79,9 +79,6 @@ function SearchClientInner({
   const { isSearching, pendingTheme, startSearch, finishSearch } = useSearchState();
   const [isPending, startTransition] = useTransition();
 
-  // 注意：hideThemeSelector 现在由 SearchBarContext 根据 pathname 自动判断
-  // 不需要在这里手动设置
-
   // 使用 URL 作为真正的数据源来检测外部导航
   const urlThemeSlug = searchParams.get('theme');
   const currentThemeSlug = currentTheme?.slug;

@@ -18,7 +18,7 @@ const SearchBarContext = createContext<SearchBarContextType | undefined>(undefin
 
 export function SearchBarProvider({ children }: { children: ReactNode }) {
   const [isSearchBarExpanded, setIsSearchBarExpanded] = useState(true); // 初始展开（大搜索栏）
-  const [isHeroVisible, setIsHeroVisible] = useState(true); // Hero 默认可见
+  const [isHeroVisible, setIsHeroVisible] = useState(false); // Hero 默认不可见（只有首页会设置为 true）
   const [hideSearchBar, setHideSearchBar] = useState(false); // 完全隐藏搜索栏
   const [hideThemeSelector, setHideThemeSelector] = useState(false); // 隐藏主题选择器
   const manuallyExpandedRef = useRef(false); // 记录是否手动展开
