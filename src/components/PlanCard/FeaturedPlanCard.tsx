@@ -149,6 +149,7 @@ export default function FeaturedPlanCard({
 
       <Link
         href={planDetailHref}
+        target="_blank"
         className="group block bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-sakura-lg transition-all duration-500 border border-gray-100 hover:border-sakura-200/50 h-full relative"
       >
         <div className="flex flex-col h-full">

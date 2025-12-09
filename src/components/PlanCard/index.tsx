@@ -222,6 +222,7 @@ export default function PlanCard({
 
       <Link
         href={planDetailHref}
+        target="_blank"
         className={`group block ${cardVariantStyles[variant]}`}
       >
         <div className={`relative ${variant !== 'default' && variant !== 'interactive' ? 'p-3' : ''}`}>
