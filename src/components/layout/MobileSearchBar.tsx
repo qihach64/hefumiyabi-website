@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, MapPin, X, Calendar, Palette, Sparkles } from "lucide-react";
 import { useSearchState } from "@/contexts/SearchStateContext";
@@ -15,7 +15,8 @@ interface Theme {
   color: string | null;
 }
 
-export default function MobileSearchBar() {
+// 内部组件，使用 useSearchParams
+function MobileSearchBarInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { searchState, setLocation, setDate, startSearch } = useSearchState();
@@ -372,5 +373,14 @@ export default function MobileSearchBar() {
         </div>
       )}
     </>
+  );
+}
+
+// 外部组件，包裹 Suspense 以支持静态页面预渲染
+export default function MobileSearchBar() {
+  return (
+    <Suspense fallback={null}>
+      <MobileSearchBarInner />
+    </Suspense>
   );
 }
