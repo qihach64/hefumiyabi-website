@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import {
   Check,
@@ -10,7 +10,8 @@ import {
   ArrowRight,
   Info,
   X,
-  Plus,
+  Move,
+  MapPin,
 } from "lucide-react";
 
 // ==================== 类型定义 ====================
@@ -69,16 +70,6 @@ export interface ComponentConfig {
   hotmapLabelPosition?: string;
 }
 
-// 热点槽位（模板定义的位置）
-interface HotspotSlot {
-  slotIndex: number;  // 槽位索引
-  x: number;
-  y: number;
-  labelPosition: string;
-  defaultComponentId?: string;  // 模板预设的默认组件
-  assignedComponentId?: string | null;  // 当前分配的组件
-}
-
 interface MapTemplateData {
   id: string;
   imageUrl: string;
@@ -117,11 +108,15 @@ export default function PlanComponentEditor({
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [expandedUpgrades, setExpandedUpgrades] = useState<Set<string>>(new Set());
 
-  // 槽位分配状态
-  const [slotAssignments, setSlotAssignments] = useState<Map<number, string | null>>(new Map());
+  // 放置模式：选中一个组件后，点击图片可以放置
+  const [placingComponentId, setPlacingComponentId] = useState<string | null>(null);
 
-  // 当前选中要分配的槽位（点击空槽位时打开选择器）
-  const [activeSlotIndex, setActiveSlotIndex] = useState<number | null>(null);
+  // 拖拽状态
+  const [draggingComponentId, setDraggingComponentId] = useState<string | null>(null);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+
+  // 图片容器引用
+  const imageContainerRef = useRef<HTMLDivElement>(null);
 
   // 内部状态：组件配置
   const [internalConfigs, setInternalConfigs] = useState<ComponentConfig[]>([]);
@@ -154,114 +149,114 @@ export default function PlanComponentEditor({
     fetchComponents();
   }, [themeId]);
 
-  // 初始化槽位分配（基于模板预设 + 已选组件）
-  useEffect(() => {
-    if (!mapTemplate) return;
+  // ==================== 位置计算辅助函数 ====================
 
-    const initialAssignments = new Map<number, string | null>();
+  // 根据点击位置计算标签应该在左边还是右边
+  const calculateLabelPosition = (x: number): string => {
+    return x > 0.5 ? "left" : "right";
+  };
 
-    mapTemplate.hotspots.forEach((hotspot, index) => {
-      // 检查该位置的默认组件是否被选中
-      if (selectedComponentIds.includes(hotspot.componentId)) {
-        initialAssignments.set(index, hotspot.componentId);
-      } else {
-        // 检查是否有其他已选组件在 config 中有这个位置
-        const configAtPosition = configs.find(
-          c => c.hotmapX === hotspot.x && c.hotmapY === hotspot.y && selectedComponentIds.includes(c.componentId)
-        );
-        if (configAtPosition) {
-          initialAssignments.set(index, configAtPosition.componentId);
-        } else {
-          initialAssignments.set(index, null);
-        }
-      }
-    });
+  // 将鼠标事件坐标转换为相对位置 (0-1)
+  const getRelativePosition = useCallback((e: React.MouseEvent | MouseEvent): { x: number; y: number } | null => {
+    if (!imageContainerRef.current) return null;
+    const rect = imageContainerRef.current.getBoundingClientRect();
+    const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const y = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+    return { x, y };
+  }, []);
 
-    setSlotAssignments(initialAssignments);
-  }, [mapTemplate, selectedComponentIds, configs]);
+  // ==================== 放置组件逻辑 ====================
 
-  // ==================== 槽位操作逻辑 ====================
+  // 点击图片放置组件
+  const handleImageClick = useCallback((e: React.MouseEvent) => {
+    if (!placingComponentId) return;
 
-  // 获取槽位信息
-  const getSlots = useCallback((): HotspotSlot[] => {
-    if (!mapTemplate) return [];
-    return mapTemplate.hotspots.map((hotspot, index) => ({
-      slotIndex: index,
-      x: hotspot.x,
-      y: hotspot.y,
-      labelPosition: hotspot.labelPosition,
-      defaultComponentId: hotspot.componentId,
-      assignedComponentId: slotAssignments.get(index) ?? null,
-    }));
-  }, [mapTemplate, slotAssignments]);
+    const pos = getRelativePosition(e);
+    if (!pos) return;
 
-  // 将组件分配到槽位
-  const assignComponentToSlot = useCallback((slotIndex: number, componentId: string) => {
-    const slot = mapTemplate?.hotspots[slotIndex];
-    if (!slot) return;
+    const labelPosition = calculateLabelPosition(pos.x);
 
-    // 更新槽位分配
-    setSlotAssignments(prev => {
-      const next = new Map(prev);
-      // 先移除该组件在其他槽位的分配
-      next.forEach((assignedId, idx) => {
-        if (assignedId === componentId) {
-          next.set(idx, null);
-        }
-      });
-      // 分配到新槽位
-      next.set(slotIndex, componentId);
-      return next;
-    });
-
-    // 如果组件未被选中，添加到选中列表
-    if (!selectedComponentIds.includes(componentId)) {
-      onChange([...selectedComponentIds, componentId]);
-    }
-
-    // 更新组件配置的热点位置
-    const existingConfig = configs.find((c: ComponentConfig) => c.componentId === componentId);
+    // 更新或添加配置
+    const existingConfig = configs.find(c => c.componentId === placingComponentId);
     if (existingConfig) {
-      setConfigs(configs.map((c: ComponentConfig) =>
-        c.componentId === componentId
-          ? { ...c, hotmapX: slot.x, hotmapY: slot.y, hotmapLabelPosition: slot.labelPosition }
+      setConfigs(configs.map(c =>
+        c.componentId === placingComponentId
+          ? { ...c, hotmapX: pos.x, hotmapY: pos.y, hotmapLabelPosition: labelPosition }
           : c
       ));
     } else {
       setConfigs([...configs, {
-        componentId,
+        componentId: placingComponentId,
         isIncluded: true,
         enabledUpgrades: [],
-        hotmapX: slot.x,
-        hotmapY: slot.y,
-        hotmapLabelPosition: slot.labelPosition,
+        hotmapX: pos.x,
+        hotmapY: pos.y,
+        hotmapLabelPosition: labelPosition,
       }]);
     }
 
-    // 关闭选择器
-    setActiveSlotIndex(null);
-  }, [mapTemplate, selectedComponentIds, onChange, setConfigs, configs]);
+    // 如果组件未被选中，添加到选中列表
+    if (!selectedComponentIds.includes(placingComponentId)) {
+      onChange([...selectedComponentIds, placingComponentId]);
+    }
 
-  // 从槽位移除组件
-  const removeFromSlot = useCallback((slotIndex: number) => {
-    const assignedComponentId = slotAssignments.get(slotIndex);
-    if (!assignedComponentId) return;
+    // 退出放置模式
+    setPlacingComponentId(null);
+  }, [placingComponentId, getRelativePosition, configs, setConfigs, selectedComponentIds, onChange]);
 
-    // 更新槽位分配
-    setSlotAssignments(prev => {
-      const next = new Map(prev);
-      next.set(slotIndex, null);
-      return next;
+  // ==================== 拖拽逻辑 ====================
+
+  const handleDragStart = useCallback((e: React.MouseEvent, componentId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const config = configs.find(c => c.componentId === componentId);
+    if (!config?.hotmapX || !config?.hotmapY) return;
+
+    const pos = getRelativePosition(e);
+    if (!pos) return;
+
+    setDraggingComponentId(componentId);
+    setDragOffset({
+      x: pos.x - config.hotmapX,
+      y: pos.y - config.hotmapY,
     });
+  }, [configs, getRelativePosition]);
 
-    // 从选中列表移除
-    onChange(selectedComponentIds.filter(id => id !== assignedComponentId));
+  const handleDragMove = useCallback((e: MouseEvent) => {
+    if (!draggingComponentId) return;
 
-    // 从配置中移除
-    setConfigs(configs.filter(c => c.componentId !== assignedComponentId));
-  }, [slotAssignments, selectedComponentIds, onChange, configs, setConfigs]);
+    const pos = getRelativePosition(e);
+    if (!pos) return;
 
-  // ==================== 组件选择逻辑（右侧列表）====================
+    const newX = Math.max(0.05, Math.min(0.95, pos.x - dragOffset.x));
+    const newY = Math.max(0.05, Math.min(0.95, pos.y - dragOffset.y));
+    const labelPosition = calculateLabelPosition(newX);
+
+    setConfigs(configs.map(c =>
+      c.componentId === draggingComponentId
+        ? { ...c, hotmapX: newX, hotmapY: newY, hotmapLabelPosition: labelPosition }
+        : c
+    ));
+  }, [draggingComponentId, dragOffset, getRelativePosition, configs, setConfigs]);
+
+  const handleDragEnd = useCallback(() => {
+    setDraggingComponentId(null);
+  }, []);
+
+  // 添加全局鼠标事件监听
+  useEffect(() => {
+    if (draggingComponentId) {
+      window.addEventListener("mousemove", handleDragMove);
+      window.addEventListener("mouseup", handleDragEnd);
+      return () => {
+        window.removeEventListener("mousemove", handleDragMove);
+        window.removeEventListener("mouseup", handleDragEnd);
+      };
+    }
+  }, [draggingComponentId, handleDragMove, handleDragEnd]);
+
+  // ==================== 组件选择逻辑 ====================
 
   const toggleCategory = (type: string) => {
     setExpandedCategories((prev) => {
@@ -275,83 +270,72 @@ export default function PlanComponentEditor({
     });
   };
 
-  // 从右侧列表选择/取消组件
-  const toggleComponentFromList = useCallback(
-    (componentId: string) => {
-      const isSelected = selectedComponentIds.includes(componentId);
+  // 从列表选择组件 - 进入放置模式或取消选择
+  const handleComponentSelect = useCallback((componentId: string) => {
+    const isSelected = selectedComponentIds.includes(componentId);
 
-      if (isSelected) {
-        // 取消选择 - 同时从槽位中移除
-        onChange(selectedComponentIds.filter((id) => id !== componentId));
-        setConfigs(configs.filter((c) => c.componentId !== componentId));
-
-        // 从槽位分配中移除
-        setSlotAssignments(prev => {
-          const next = new Map(prev);
-          next.forEach((assignedId, idx) => {
-            if (assignedId === componentId) {
-              next.set(idx, null);
-            }
-          });
-          return next;
-        });
-      } else {
-        // 选择组件 - 尝试自动分配到默认槽位或第一个空槽位
-        onChange([...selectedComponentIds, componentId]);
-
-        // 查找该组件的默认槽位
-        const defaultSlotIndex = mapTemplate?.hotspots.findIndex(h => h.componentId === componentId);
-        let targetSlot = mapTemplate?.hotspots[defaultSlotIndex ?? -1];
-        let targetSlotIndex = defaultSlotIndex ?? -1;
-
-        // 如果默认槽位已被占用或不存在，找第一个空槽位
-        if (defaultSlotIndex !== undefined && defaultSlotIndex >= 0) {
-          const isOccupied = slotAssignments.get(defaultSlotIndex) !== null && slotAssignments.get(defaultSlotIndex) !== undefined;
-          if (isOccupied) {
-            // 查找空槽位
-            const emptySlotIndex = Array.from(slotAssignments.entries()).find(([, assigned]) => !assigned)?.[0];
-            if (emptySlotIndex !== undefined) {
-              targetSlot = mapTemplate?.hotspots[emptySlotIndex];
-              targetSlotIndex = emptySlotIndex;
-            } else {
-              targetSlot = undefined;
-              targetSlotIndex = -1;
-            }
-          }
-        } else {
-          // 没有默认槽位，找第一个空槽位
-          const emptySlotIndex = Array.from(slotAssignments.entries()).find(([, assigned]) => !assigned)?.[0];
-          if (emptySlotIndex !== undefined) {
-            targetSlot = mapTemplate?.hotspots[emptySlotIndex];
-            targetSlotIndex = emptySlotIndex;
-          }
-        }
-
-        // 添加配置
-        setConfigs([
-          ...configs,
-          {
-            componentId,
-            isIncluded: true,
-            enabledUpgrades: [],
-            hotmapX: targetSlot?.x ?? null,
-            hotmapY: targetSlot?.y ?? null,
-            hotmapLabelPosition: targetSlot?.labelPosition ?? "right",
-          },
-        ]);
-
-        // 更新槽位分配
-        if (targetSlotIndex >= 0) {
-          setSlotAssignments(prev => {
-            const next = new Map(prev);
-            next.set(targetSlotIndex, componentId);
-            return next;
-          });
-        }
+    if (isSelected) {
+      // 取消选择
+      onChange(selectedComponentIds.filter(id => id !== componentId));
+      setConfigs(configs.filter(c => c.componentId !== componentId));
+      if (placingComponentId === componentId) {
+        setPlacingComponentId(null);
       }
-    },
-    [selectedComponentIds, onChange, configs, setConfigs, mapTemplate, slotAssignments]
-  );
+    } else {
+      // 选择组件并进入放置模式
+      onChange([...selectedComponentIds, componentId]);
+
+      // 查找模板中的默认位置
+      const templateHotspot = mapTemplate?.hotspots.find(h => h.componentId === componentId);
+
+      if (templateHotspot) {
+        // 有默认位置，直接使用
+        setConfigs([...configs, {
+          componentId,
+          isIncluded: true,
+          enabledUpgrades: [],
+          hotmapX: templateHotspot.x,
+          hotmapY: templateHotspot.y,
+          hotmapLabelPosition: templateHotspot.labelPosition,
+        }]);
+      } else if (mapTemplate) {
+        // 没有默认位置，进入放置模式
+        setConfigs([...configs, {
+          componentId,
+          isIncluded: true,
+          enabledUpgrades: [],
+          hotmapX: null,
+          hotmapY: null,
+          hotmapLabelPosition: "right",
+        }]);
+        setPlacingComponentId(componentId);
+      } else {
+        // 没有地图模板
+        setConfigs([...configs, {
+          componentId,
+          isIncluded: true,
+          enabledUpgrades: [],
+          hotmapX: null,
+          hotmapY: null,
+          hotmapLabelPosition: "right",
+        }]);
+      }
+    }
+  }, [selectedComponentIds, onChange, configs, setConfigs, mapTemplate, placingComponentId]);
+
+  // 点击"放置到图片"按钮
+  const startPlacing = useCallback((componentId: string) => {
+    setPlacingComponentId(componentId);
+  }, []);
+
+  // 从图片移除组件（清除位置但保留选中状态）
+  const removeFromMap = useCallback((componentId: string) => {
+    setConfigs(configs.map(c =>
+      c.componentId === componentId
+        ? { ...c, hotmapX: null, hotmapY: null }
+        : c
+    ));
+  }, [configs, setConfigs]);
 
   const selectAllInCategory = (components: ServiceComponent[]) => {
     const categoryIds = components.map((c) => c.id);
@@ -360,16 +344,6 @@ export default function PlanComponentEditor({
     if (allSelected) {
       onChange(selectedComponentIds.filter((id) => !categoryIds.includes(id)));
       setConfigs(configs.filter((c) => !categoryIds.includes(c.componentId)));
-      // 从槽位中移除
-      setSlotAssignments(prev => {
-        const next = new Map(prev);
-        next.forEach((assignedId, idx) => {
-          if (assignedId && categoryIds.includes(assignedId)) {
-            next.set(idx, null);
-          }
-        });
-        return next;
-      });
     } else {
       const newIds = new Set([...selectedComponentIds, ...categoryIds]);
       onChange(Array.from(newIds));
@@ -430,12 +404,20 @@ export default function PlanComponentEditor({
     return categories.flatMap((cat) => cat.components);
   };
 
-  // 获取组件在哪个槽位
-  const getSlotIndexForComponent = (componentId: string): number | null => {
-    for (const [slotIndex, assignedId] of slotAssignments.entries()) {
-      if (assignedId === componentId) return slotIndex;
-    }
-    return null;
+  // 检查组件是否已放置到图片上
+  const isPlacedOnMap = (componentId: string): boolean => {
+    const config = getConfig(componentId);
+    return config?.hotmapX != null && config?.hotmapY != null;
+  };
+
+  // 获取已放置到图片上的组件
+  const getPlacedComponents = () => {
+    return configs.filter(c => c.hotmapX != null && c.hotmapY != null && selectedComponentIds.includes(c.componentId));
+  };
+
+  // 获取未放置到图片上的已选组件
+  const getUnplacedComponents = () => {
+    return selectedComponentIds.filter(id => !isPlacedOnMap(id));
   };
 
   // 统计
@@ -444,13 +426,8 @@ export default function PlanComponentEditor({
     0
   );
 
-  const slots = getSlots();
-  const occupiedSlotCount = slots.filter(s => s.assignedComponentId).length;
-
-  // 获取没有分配到槽位的已选组件
-  const unassignedComponents = selectedComponentIds.filter(
-    id => getSlotIndexForComponent(id) === null
-  );
+  const placedComponents = getPlacedComponents();
+  const unplacedComponents = getUnplacedComponents();
 
   // ==================== 渲染 ====================
 
@@ -487,7 +464,7 @@ export default function PlanComponentEditor({
             <h2 className="text-lg font-bold text-gray-900">套餐包含内容</h2>
             <p className="text-sm text-gray-500 mt-0.5">
               {hasMapTemplate
-                ? "点击图片上的空位放置服务，或在右侧列表中勾选"
+                ? "在右侧选择服务，然后点击图片放置位置"
                 : "勾选套餐包含的服务项目"}
             </p>
           </div>
@@ -497,9 +474,9 @@ export default function PlanComponentEditor({
                 已选 {selectedComponentIds.length} 项
               </span>
             )}
-            {hasMapTemplate && (
+            {hasMapTemplate && placedComponents.length > 0 && (
               <span className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
-                展示图 {occupiedSlotCount}/{slots.length}
+                已放置 {placedComponents.length} 项
               </span>
             )}
             {totalEnabledUpgrades > 0 && (
@@ -513,207 +490,158 @@ export default function PlanComponentEditor({
 
       {/* 主内容区 - 左右分栏 */}
       <div className={`flex flex-col ${hasMapTemplate ? "lg:flex-row" : ""}`}>
-        {/* 左侧：可交互的槽位图 */}
+        {/* 左侧：可交互的热点图 */}
         {hasMapTemplate && (
           <div className="lg:w-1/2 flex-shrink-0 border-b lg:border-b-0 lg:border-r border-gray-100 bg-gradient-to-br from-gray-50 to-white">
             <div className="p-4">
               {/* 操作提示 */}
-              <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-blue-50 rounded-lg">
-                <Info className="w-4 h-4 text-blue-500 flex-shrink-0" />
-                <p className="text-xs text-blue-700">
-                  点击<strong>空位 (+)</strong> 放置服务 · 点击<strong>已放置的服务</strong>可移除
+              <div className={`flex items-center gap-2 mb-3 px-3 py-2 rounded-lg ${
+                placingComponentId
+                  ? "bg-blue-100 border border-blue-300"
+                  : "bg-gray-50"
+              }`}>
+                <Info className={`w-4 h-4 flex-shrink-0 ${placingComponentId ? "text-blue-600" : "text-gray-400"}`} />
+                <p className={`text-xs ${placingComponentId ? "text-blue-700 font-medium" : "text-gray-600"}`}>
+                  {placingComponentId ? (
+                    <>
+                      <strong>点击图片</strong>放置「{getAllComponents().find(c => c.id === placingComponentId)?.name}」
+                      <button
+                        onClick={() => setPlacingComponentId(null)}
+                        className="ml-2 text-blue-500 hover:text-blue-700 underline"
+                      >
+                        取消
+                      </button>
+                    </>
+                  ) : (
+                    <>拖拽调整位置 · 点击标记可移除</>
+                  )}
                 </p>
               </div>
 
               {/* 图片容器 */}
-              <div className="relative rounded-xl overflow-hidden bg-white shadow-sm border border-gray-200 aspect-[2/3] max-h-[600px]">
+              <div
+                ref={imageContainerRef}
+                className={`relative rounded-xl overflow-hidden bg-white shadow-sm border-2 aspect-[2/3] max-h-[600px] ${
+                  placingComponentId
+                    ? "border-blue-400 cursor-crosshair"
+                    : draggingComponentId
+                      ? "border-sakura-400 cursor-grabbing"
+                      : "border-gray-200"
+                }`}
+                onClick={placingComponentId ? handleImageClick : undefined}
+              >
                 <Image
                   src={mapTemplate.imageUrl}
                   alt="套餐展示图"
                   fill
-                  className="object-contain pointer-events-none"
+                  className="object-contain pointer-events-none select-none"
                   unoptimized
+                  draggable={false}
                 />
 
-                {/* 所有槽位 */}
-                {slots.map((slot) => {
-                  const assignedComponent = slot.assignedComponentId
-                    ? getAllComponents().find(c => c.id === slot.assignedComponentId)
-                    : null;
-                  const defaultComponent = slot.defaultComponentId
-                    ? getAllComponents().find(c => c.id === slot.defaultComponentId)
-                    : null;
-                  const isEmpty = !slot.assignedComponentId;
-                  const isActive = activeSlotIndex === slot.slotIndex;
+                {/* 放置模式下的十字准星 */}
+                {placingComponentId && (
+                  <div className="absolute inset-0 pointer-events-none">
+                    <div className="absolute top-1/2 left-0 right-0 h-px bg-blue-300/50" />
+                    <div className="absolute left-1/2 top-0 bottom-0 w-px bg-blue-300/50" />
+                  </div>
+                )}
+
+                {/* 已放置的组件标记 */}
+                {placedComponents.map((config) => {
+                  const component = getAllComponents().find(c => c.id === config.componentId);
+                  if (!component || config.hotmapX == null || config.hotmapY == null) return null;
+
+                  const isDragging = draggingComponentId === config.componentId;
 
                   return (
-                    <div key={slot.slotIndex}>
-                      {/* 槽位按钮 */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (isEmpty) {
-                            setActiveSlotIndex(isActive ? null : slot.slotIndex);
-                          } else {
-                            removeFromSlot(slot.slotIndex);
+                    <div
+                      key={config.componentId}
+                      className="absolute group"
+                      style={{
+                        left: `${config.hotmapX * 100}%`,
+                        top: `${config.hotmapY * 100}%`,
+                        transform: "translate(-50%, -50%)",
+                        zIndex: isDragging ? 30 : 20,
+                      }}
+                    >
+                      {/* 主圆点 - 可拖拽 */}
+                      <div
+                        onMouseDown={(e) => handleDragStart(e, config.componentId)}
+                        className={`
+                          relative w-10 h-10 rounded-full flex items-center justify-center
+                          text-sm font-bold shadow-lg
+                          transition-all duration-150 ease-out
+                          ${isDragging
+                            ? "bg-sakura-600 text-white scale-125 ring-4 ring-sakura-300 cursor-grabbing"
+                            : "bg-sakura-500 text-white cursor-grab hover:scale-110 hover:ring-2 hover:ring-sakura-300"
                           }
-                        }}
-                        className="absolute group"
-                        style={{
-                          left: `${slot.x * 100}%`,
-                          top: `${slot.y * 100}%`,
-                          transform: "translate(-50%, -50%)",
-                          zIndex: isActive ? 30 : isEmpty ? 10 : 20,
-                        }}
+                        `}
                       >
-                        {/* 主圆点 */}
-                        <div
-                          className={`
-                            relative w-9 h-9 rounded-full flex items-center justify-center
-                            text-sm font-bold shadow-lg cursor-pointer
-                            transition-all duration-300 ease-out
-                            ${isEmpty
-                              ? isActive
-                                ? "bg-blue-500 text-white scale-110 ring-4 ring-blue-200"
-                                : "bg-white text-gray-400 border-2 border-dashed border-gray-300 hover:border-blue-400 hover:text-blue-500 hover:scale-105"
-                              : "bg-sakura-500 text-white scale-105 ring-2 ring-sakura-200 hover:bg-red-500 hover:ring-red-200"
-                            }
-                          `}
-                        >
-                          {isEmpty ? (
-                            <Plus className="w-4 h-4" />
-                          ) : (
-                            <span className="group-hover:hidden">{assignedComponent?.icon || <Check className="w-4 h-4" />}</span>
-                          )}
-                          {!isEmpty && (
-                            <X className="w-4 h-4 hidden group-hover:block" />
-                          )}
+                        <span className="text-lg">{component.icon}</span>
+                        {/* 拖拽提示 */}
+                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-white rounded-full shadow flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Move className="w-2.5 h-2.5 text-gray-500" />
                         </div>
+                      </div>
 
-                        {/* 标签 */}
-                        <div
-                          className={`
-                            absolute whitespace-nowrap rounded-lg
-                            px-2.5 py-1.5 text-xs shadow-lg
-                            transition-all duration-200
-                            pointer-events-none
-                            ${slot.labelPosition === "left"
-                              ? "right-full mr-2"
-                              : "left-full ml-2"
-                            }
-                            top-1/2 -translate-y-1/2
-                            ${isEmpty
-                              ? isActive
-                                ? "bg-blue-500 text-white"
-                                : "bg-white/95 text-gray-500 border border-dashed border-gray-300"
-                              : "bg-sakura-500 text-white group-hover:bg-red-500"
-                            }
-                          `}
-                        >
-                          {isEmpty ? (
-                            isActive ? "选择服务..." : (defaultComponent ? `推荐: ${defaultComponent.name}` : `空位 ${slot.slotIndex + 1}`)
-                          ) : (
-                            <>
-                              <span className="group-hover:hidden">
-                                {assignedComponent?.icon && <span className="mr-1">{assignedComponent.icon}</span>}
-                                {assignedComponent?.name}
-                              </span>
-                              <span className="hidden group-hover:inline">点击移除</span>
-                            </>
-                          )}
-                        </div>
-                      </button>
-
-                      {/* 组件选择弹窗 */}
-                      {isActive && (
-                        <div
-                          className="absolute z-40 w-64 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden"
-                          style={{
-                            left: slot.labelPosition === "left"
-                              ? `calc(${slot.x * 100}% - 280px)`
-                              : `calc(${slot.x * 100}% + 30px)`,
-                            top: `${Math.min(slot.y * 100, 60)}%`,
+                      {/* 标签 */}
+                      <div
+                        className={`
+                          absolute whitespace-nowrap rounded-lg
+                          px-2.5 py-1.5 text-xs shadow-lg
+                          transition-all duration-150
+                          bg-sakura-500 text-white
+                          ${config.hotmapLabelPosition === "left"
+                            ? "right-full mr-2"
+                            : "left-full ml-2"
+                          }
+                          top-1/2 -translate-y-1/2
+                        `}
+                      >
+                        {component.name}
+                        {/* 移除按钮 */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeFromMap(config.componentId);
                           }}
+                          className="ml-2 inline-flex items-center justify-center w-4 h-4 rounded-full bg-white/20 hover:bg-white/40 transition-colors"
                         >
-                          <div className="px-3 py-2 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
-                            <span className="text-sm font-medium text-gray-700">选择要放置的服务</span>
-                            <button
-                              type="button"
-                              onClick={() => setActiveSlotIndex(null)}
-                              className="p-1 hover:bg-gray-200 rounded"
-                            >
-                              <X className="w-4 h-4 text-gray-500" />
-                            </button>
-                          </div>
-                          <div className="max-h-60 overflow-y-auto p-2 space-y-1">
-                            {/* 推荐的默认组件优先显示 */}
-                            {defaultComponent && !selectedComponentIds.includes(defaultComponent.id) && (
-                              <button
-                                type="button"
-                                onClick={() => assignComponentToSlot(slot.slotIndex, defaultComponent.id)}
-                                className="w-full p-2 rounded-lg text-left hover:bg-blue-50 border-2 border-blue-200 bg-blue-50/50 transition-colors"
-                              >
-                                <div className="flex items-center gap-2">
-                                  <span>{defaultComponent.icon}</span>
-                                  <span className="font-medium text-sm text-gray-900">{defaultComponent.name}</span>
-                                  <span className="px-1.5 py-0.5 bg-blue-100 text-blue-600 text-[10px] rounded">推荐</span>
-                                </div>
-                              </button>
-                            )}
-
-                            {/* 所有可选组件 */}
-                            {getAllComponents()
-                              .filter(c => {
-                                // 排除已经分配到其他槽位的组件
-                                const assignedSlot = getSlotIndexForComponent(c.id);
-                                return assignedSlot === null || assignedSlot === slot.slotIndex;
-                              })
-                              .filter(c => c.id !== defaultComponent?.id || selectedComponentIds.includes(c.id))
-                              .map(component => (
-                                <button
-                                  key={component.id}
-                                  type="button"
-                                  onClick={() => assignComponentToSlot(slot.slotIndex, component.id)}
-                                  className="w-full p-2 rounded-lg text-left hover:bg-gray-50 border border-gray-100 transition-colors"
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <span>{component.icon}</span>
-                                    <span className="font-medium text-sm text-gray-900">{component.name}</span>
-                                    {component.tierLabel && (
-                                      <span className="px-1.5 py-0.5 bg-gray-100 text-gray-500 text-[10px] rounded">
-                                        {component.tierLabel}
-                                      </span>
-                                    )}
-                                  </div>
-                                </button>
-                              ))
-                            }
-                          </div>
-                        </div>
-                      )}
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
               </div>
 
-              {/* 未分配到槽位的组件提示 */}
-              {unassignedComponents.length > 0 && (
+              {/* 未放置的组件提示 */}
+              {unplacedComponents.length > 0 && (
                 <div className="mt-4 p-3 bg-amber-50 rounded-xl border border-amber-200">
                   <p className="text-xs text-amber-700 font-medium mb-2">
-                    以下服务已选择，但未放置到展示图中（点击空位可放置）：
+                    以下服务已选择，点击「放置」按钮可添加到展示图中：
                   </p>
                   <div className="flex flex-wrap gap-1.5">
-                    {unassignedComponents.map((id) => {
+                    {unplacedComponents.map((id) => {
                       const component = getAllComponents().find((c) => c.id === id);
                       if (!component) return null;
                       return (
-                        <span
+                        <button
                           key={id}
-                          className="inline-flex items-center gap-1 px-2 py-1 bg-white rounded-lg text-xs text-gray-700 border border-amber-200"
+                          onClick={() => startPlacing(id)}
+                          className={`
+                            inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs border transition-colors
+                            ${placingComponentId === id
+                              ? "bg-blue-100 text-blue-700 border-blue-300"
+                              : "bg-white text-gray-700 border-amber-200 hover:border-blue-300 hover:bg-blue-50"
+                            }
+                          `}
                         >
                           <span>{component.icon}</span>
                           {component.name}
-                        </span>
+                          <MapPin className="w-3 h-3 ml-1" />
+                        </button>
                       );
                     })}
                   </div>
@@ -726,13 +654,13 @@ export default function PlanComponentEditor({
                   <div className="w-6 h-6 rounded-full bg-sakura-500 flex items-center justify-center">
                     <Check className="w-3 h-3 text-white" />
                   </div>
-                  <span>已放置（套餐包含）</span>
+                  <span>已放置（可拖拽）</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-white border-2 border-dashed border-gray-300 flex items-center justify-center">
-                    <Plus className="w-3 h-3 text-gray-400" />
+                  <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center">
+                    <MapPin className="w-3 h-3 text-white" />
                   </div>
-                  <span>空位（点击添加）</span>
+                  <span>待放置</span>
                 </div>
               </div>
             </div>
@@ -745,7 +673,7 @@ export default function PlanComponentEditor({
             {/* 提示信息 */}
             {hasMapTemplate && (
               <div className="px-3 py-2 bg-gray-50 rounded-lg text-xs text-gray-600">
-                在此列表中勾选的服务会自动放置到展示图的空位上
+                勾选服务后，有默认位置的会自动放置，其他需要手动点击图片放置
               </div>
             )}
 
@@ -803,8 +731,8 @@ export default function PlanComponentEditor({
                       {category.components.map((component) => {
                         const isSelected = selectedComponentIds.includes(component.id);
                         const config = getConfig(component.id);
-                        const slotIndex = getSlotIndexForComponent(component.id);
-                        const isOnMap = slotIndex !== null;
+                        const isOnMap = isPlacedOnMap(component.id);
+                        const isPlacing = placingComponentId === component.id;
                         const componentUpgrades = upgradePaths[component.id] || [];
                         const hasUpgrades = componentUpgrades.length > 0;
                         const isUpgradeExpanded = expandedUpgrades.has(component.id);
@@ -814,23 +742,25 @@ export default function PlanComponentEditor({
                           <div key={component.id} className="space-y-2">
                             {/* 组件行 */}
                             <div
-                              onClick={() => toggleComponentFromList(component.id)}
                               className={`
-                                flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer
+                                flex items-center gap-3 p-3 rounded-xl border-2
                                 transition-all duration-200
-                                ${isSelected
-                                  ? "border-sakura-400 bg-sakura-50"
-                                  : "border-gray-100 hover:border-gray-200 bg-white hover:bg-gray-50"
+                                ${isPlacing
+                                  ? "border-blue-400 bg-blue-50 ring-2 ring-blue-200"
+                                  : isSelected
+                                    ? "border-sakura-400 bg-sakura-50"
+                                    : "border-gray-100 hover:border-gray-200 bg-white hover:bg-gray-50"
                                 }
                               `}
                             >
                               {/* 选择框 */}
                               <div
+                                onClick={() => handleComponentSelect(component.id)}
                                 className={`
-                                  flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-all
+                                  flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-all cursor-pointer
                                   ${isSelected
                                     ? "bg-sakura-500 border-sakura-500"
-                                    : "border-gray-300"
+                                    : "border-gray-300 hover:border-sakura-400"
                                   }
                                 `}
                               >
@@ -838,7 +768,10 @@ export default function PlanComponentEditor({
                               </div>
 
                               {/* 组件信息 */}
-                              <div className="flex-1 min-w-0">
+                              <div
+                                className="flex-1 min-w-0 cursor-pointer"
+                                onClick={() => handleComponentSelect(component.id)}
+                              >
                                 <div className="flex items-center gap-2">
                                   <span className="text-base">{component.icon}</span>
                                   <span className={`font-medium text-sm ${isSelected ? "text-sakura-700" : "text-gray-900"}`}>
@@ -849,16 +782,27 @@ export default function PlanComponentEditor({
                                       {component.tierLabel}
                                     </span>
                                   )}
-                                  {/* 显示是否在展示图上 */}
-                                  {isSelected && isOnMap && (
-                                    <span className="px-1.5 py-0.5 bg-sakura-100 text-sakura-600 text-[10px] rounded">
-                                      展示图 #{slotIndex! + 1}
-                                    </span>
-                                  )}
-                                  {isSelected && !isOnMap && (
-                                    <span className="px-1.5 py-0.5 bg-amber-100 text-amber-600 text-[10px] rounded">
-                                      未放置
-                                    </span>
+                                  {/* 显示放置状态 */}
+                                  {isSelected && hasMapTemplate && (
+                                    isOnMap ? (
+                                      <span className="px-1.5 py-0.5 bg-sakura-100 text-sakura-600 text-[10px] rounded">
+                                        已放置
+                                      </span>
+                                    ) : isPlacing ? (
+                                      <span className="px-1.5 py-0.5 bg-blue-100 text-blue-600 text-[10px] rounded animate-pulse">
+                                        点击图片放置
+                                      </span>
+                                    ) : (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          startPlacing(component.id);
+                                        }}
+                                        className="px-1.5 py-0.5 bg-amber-100 text-amber-600 text-[10px] rounded hover:bg-amber-200 transition-colors"
+                                      >
+                                        放置
+                                      </button>
+                                    )
                                   )}
                                 </div>
                                 {component.description && (
