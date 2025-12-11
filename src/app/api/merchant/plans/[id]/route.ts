@@ -16,11 +16,14 @@ const planComponentSchema = z.object({
   descriptionOverride: z.string().optional().nullable(),
 });
 
-// 组件配置 schema（简化版，包含升级选项）
+// 组件配置 schema（简化版，包含升级选项和位置信息）
 const componentConfigSchema = z.object({
   componentId: z.string(),
   isIncluded: z.boolean().default(true),
   enabledUpgrades: z.array(z.string()).default([]), // 启用的升级选项 ID
+  hotmapX: z.number().min(0).max(1).optional().nullable(), // 热点图 X 坐标 (0-1)
+  hotmapY: z.number().min(0).max(1).optional().nullable(), // 热点图 Y 坐标 (0-1)
+  hotmapLabelPosition: z.enum(["left", "right"]).optional().default("right"), // 标签位置
 });
 
 // 验证 schema - 简化版
@@ -241,7 +244,7 @@ export async function PATCH(
             })),
           });
         } else if (componentConfigs && componentConfigs.length > 0) {
-          // 简化版：组件配置 + 升级选项
+          // 简化版：组件配置 + 升级选项 + 位置信息
           await tx.planComponent.createMany({
             data: componentConfigs.map((cc) => ({
               planId: id,
@@ -249,6 +252,9 @@ export async function PATCH(
               isIncluded: cc.isIncluded ?? true,
               isHighlighted: false,
               quantity: 1,
+              hotmapX: cc.hotmapX ?? null,
+              hotmapY: cc.hotmapY ?? null,
+              hotmapLabelPosition: cc.hotmapLabelPosition ?? "right",
             })),
           });
 

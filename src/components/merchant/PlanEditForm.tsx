@@ -40,6 +40,9 @@ interface PlanComponent {
   componentId: string;
   isIncluded: boolean;
   isHighlighted: boolean;
+  hotmapX?: number | null;
+  hotmapY?: number | null;
+  hotmapLabelPosition?: string;
   component: {
     id: string;
     code: string;
@@ -111,12 +114,15 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
     plan.planComponents?.map(pc => pc.componentId) || []
   );
 
-  // 组件配置（包含升级选项）
+  // 组件配置（包含升级选项和位置信息）
   const [componentConfigs, setComponentConfigs] = useState<ComponentConfig[]>(
     plan.planComponents?.map(pc => ({
       componentId: pc.componentId,
       isIncluded: pc.isIncluded,
       enabledUpgrades: [], // TODO: 从后端加载已启用的升级
+      hotmapX: pc.hotmapX ?? null,
+      hotmapY: pc.hotmapY ?? null,
+      hotmapLabelPosition: pc.hotmapLabelPosition ?? "right",
     })) || []
   );
 
@@ -209,11 +215,14 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
             ? Math.round(Number(formData.originalPrice) * 100)
             : null,
           componentIds: selectedComponentIds,
-          // 组件配置（包含升级选项）
+          // 组件配置（包含升级选项和位置信息）
           componentConfigs: componentConfigs.map(config => ({
             componentId: config.componentId,
             isIncluded: config.isIncluded,
             enabledUpgrades: config.enabledUpgrades,
+            hotmapX: config.hotmapX,
+            hotmapY: config.hotmapY,
+            hotmapLabelPosition: config.hotmapLabelPosition,
           })),
           imageUrl: formData.imageUrl || null,
           storeName: formData.storeName || null,

@@ -58,7 +58,14 @@ export default async function EditListingPage({ params }: EditListingPageProps) 
         },
       },
       planComponents: {
-        include: {
+        select: {
+          id: true,
+          componentId: true,
+          isIncluded: true,
+          isHighlighted: true,
+          hotmapX: true,
+          hotmapY: true,
+          hotmapLabelPosition: true,
           component: {
             select: {
               id: true,
