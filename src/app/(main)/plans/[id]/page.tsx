@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import prisma from "@/lib/prisma";
 import PlanDetailClient from "@/components/PlanDetailClient";
-import { getDefaultMapData } from "@/lib/kimono-map";
+import { getPlanMapData } from "@/lib/kimono-map";
 
 interface PlanDetailPageProps {
   params: {
@@ -36,8 +36,8 @@ export default async function PlanDetailPage({ params }: PlanDetailPageProps) {
     notFound();
   }
 
-  // 获取和服配件地图数据
-  const mapData = await getDefaultMapData();
+  // 获取套餐专属的热点地图数据（只显示商户设置过位置的组件）
+  const mapData = await getPlanMapData(id);
 
   return <PlanDetailClient plan={plan} mapData={mapData} />;
 }

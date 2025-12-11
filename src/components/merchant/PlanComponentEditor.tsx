@@ -9,10 +9,9 @@ import {
   Sparkles,
   ArrowRight,
   Info,
-  X,
-  Move,
   MapPin,
 } from "lucide-react";
+import EditorHotspot from "@/components/shared/EditorHotspot";
 
 // ==================== 类型定义 ====================
 
@@ -506,6 +505,7 @@ export default function PlanComponentEditor({
                     <>
                       <strong>点击图片</strong>放置「{getAllComponents().find(c => c.id === placingComponentId)?.name}」
                       <button
+                        type="button"
                         onClick={() => setPlacingComponentId(null)}
                         className="ml-2 text-blue-500 hover:text-blue-700 underline"
                       >
@@ -555,63 +555,22 @@ export default function PlanComponentEditor({
                   const isDragging = draggingComponentId === config.componentId;
 
                   return (
-                    <div
+                    <EditorHotspot
                       key={config.componentId}
-                      className="absolute group"
-                      style={{
-                        left: `${config.hotmapX * 100}%`,
-                        top: `${config.hotmapY * 100}%`,
-                        transform: "translate(-50%, -50%)",
-                        zIndex: isDragging ? 30 : 20,
+                      hotspot={{
+                        id: config.componentId,
+                        x: config.hotmapX,
+                        y: config.hotmapY,
+                        labelPosition: (config.hotmapLabelPosition as "left" | "right" | "top" | "bottom") || "right",
+                        name: component.name,
+                        icon: component.icon || "📍",
+                        isIncluded: config.isIncluded,
                       }}
-                    >
-                      {/* 主圆点 - 可拖拽 */}
-                      <div
-                        onMouseDown={(e) => handleDragStart(e, config.componentId)}
-                        className={`
-                          relative w-10 h-10 rounded-full flex items-center justify-center
-                          text-sm font-bold shadow-lg
-                          transition-all duration-150 ease-out
-                          ${isDragging
-                            ? "bg-sakura-600 text-white scale-125 ring-4 ring-sakura-300 cursor-grabbing"
-                            : "bg-sakura-500 text-white cursor-grab hover:scale-110 hover:ring-2 hover:ring-sakura-300"
-                          }
-                        `}
-                      >
-                        <span className="text-lg">{component.icon}</span>
-                        {/* 拖拽提示 */}
-                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-white rounded-full shadow flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Move className="w-2.5 h-2.5 text-gray-500" />
-                        </div>
-                      </div>
-
-                      {/* 标签 */}
-                      <div
-                        className={`
-                          absolute whitespace-nowrap rounded-lg
-                          px-2.5 py-1.5 text-xs shadow-lg
-                          transition-all duration-150
-                          bg-sakura-500 text-white
-                          ${config.hotmapLabelPosition === "left"
-                            ? "right-full mr-2"
-                            : "left-full ml-2"
-                          }
-                          top-1/2 -translate-y-1/2
-                        `}
-                      >
-                        {component.name}
-                        {/* 移除按钮 */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            removeFromMap(config.componentId);
-                          }}
-                          className="ml-2 inline-flex items-center justify-center w-4 h-4 rounded-full bg-white/20 hover:bg-white/40 transition-colors"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </div>
+                      isEditable
+                      isDragging={isDragging}
+                      onDragStart={(e) => handleDragStart(e, config.componentId)}
+                      onRemove={() => removeFromMap(config.componentId)}
+                    />
                   );
                 })}
               </div>
@@ -628,6 +587,7 @@ export default function PlanComponentEditor({
                       if (!component) return null;
                       return (
                         <button
+                          type="button"
                           key={id}
                           onClick={() => startPlacing(id)}
                           className={`
@@ -794,6 +754,7 @@ export default function PlanComponentEditor({
                                       </span>
                                     ) : (
                                       <button
+                                        type="button"
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           startPlacing(component.id);
