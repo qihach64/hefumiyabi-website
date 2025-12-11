@@ -1,4 +1,4 @@
-# Service Hotmap Integration Design (v4)
+# Service Hotmap Integration Design (v5)
 
 ## 设计决策
 
@@ -9,6 +9,7 @@
 - **商户组件**：无需审核，仅创建者可用，其他商户不可见
 - **组件升级**：管理员可将优秀商户组件升级为平台组件
 - **数据存储**：热点位置存在 `PlanComponent` 里（每个套餐独立）
+- **服务升级**：同类型组件支持付费升级，提高客单价
 
 ---
 
@@ -70,6 +71,79 @@
 
 ---
 
+## 服务组件升级机制
+
+### 设计目标
+
+**提高客单价**：让用户在基础套餐上追加消费，而不是一开始就选择高价套餐。
+
+利用「锚定效应」+ 「渐进式承诺」心理：
+- 用户先被低价吸引进入
+- 看到具体内容后，愿意为「更好的体验」付费
+
+### 升级模式：混合模式
+
+```
+基础套餐 ¥9,800
+
+💎 推荐升级                        [一键升级 +¥10,000]
+┌─────────────────────────────────────────────────────────────────────────┐
+│ 升级为豪华体验：                                                         │
+│ ✓ 小纹 → 振袖                                                          │
+│ ✓ 基础造型 → 专业造型                                                  │
+│ ✓ 新增 30分钟摄影                                                      │
+│                                                                         │
+│ 单独升级需 ¥15,000，打包节省 ¥5,000                                    │
+└─────────────────────────────────────────────────────────────────────────┘
+
+🔧 自定义升级
+├─ 👘 和服升级
+│     ○ 小纹（当前）
+│     ○ 振袖 +¥5,000
+│     ○ 高级振袖 +¥10,000
+├─ 💄 造型升级
+│     ○ 基础造型（当前）
+│     ○ 专业造型 +¥2,000
+```
+
+**混合模式优势**：
+- 「推荐升级包」简化决策，打包折扣增加吸引力
+- 「自定义升级」保留灵活性，满足个性化需求
+
+### 升级发生时机
+
+| 时机 | 实现 |
+|-----|------|
+| **套餐详情页** | ✅ 显示升级选项，用户决策前信息充分 |
+| **结算页面** | ✅ 再次提醒，最后一次追加销售机会 |
+
+### 升级配置模式：混合模式
+
+- **平台预设**：按主题提供默认升级路径（如「振袖主题」的标准升级组合）
+- **商户自定义**：商户可调整升级选项和价格
+
+```
+平台预设的振袖主题升级路径：
+┌────────────────────────────────────────────────────────────────────────┐
+│  👘 和服升级路径（平台预设）                                            │
+│  小纹 → 振袖 (+¥5,000) → 高级振袖 (+¥10,000) → 顶级手工振袖 (+¥30,000) │
+│                                                                        │
+│  💄 造型升级路径（平台预设）                                            │
+│  基础造型 → 专业造型 (+¥2,000) → 明星造型师 (+¥8,000)                  │
+│                                                                        │
+│  📸 摄影升级路径（平台预设）                                            │
+│  无 → 30分钟 (+¥8,000) → 60分钟 (+¥15,000) → 半日跟拍 (+¥30,000)       │
+└────────────────────────────────────────────────────────────────────────┘
+
+商户可以：
+✓ 使用平台预设（省事）
+✓ 调整升级差价（如振袖 +¥4,500 而非 ¥5,000）
+✓ 添加自定义升级选项（如「商户独家金线刺绣」）
+✓ 禁用某些升级选项
+```
+
+---
+
 ## 数据模型设计
 
 ### ServiceComponent 更新
@@ -100,6 +174,11 @@ model ServiceComponent {
   promotedFromMerchantId  String?   @map("promoted_from_merchant_id")
   promotedAt              DateTime? @map("promoted_at")
 
+  // ========== 升级层级 ==========
+  // 同类型组件的层级（0=基础, 1=标准, 2=豪华, 3=顶级）
+  tier            Int             @default(0)
+  tierLabel       String?         @map("tier_label")  // "基础", "标准", "豪华", "顶级"
+
   // 定价信息
   basePrice       Int             @default(0) @map("base_price")
 
@@ -113,8 +192,13 @@ model ServiceComponent {
   planComponents  PlanComponent[]
   mapHotspots     MapHotspot[]
 
+  // 升级路径关联
+  upgradePathsFrom  ComponentUpgradePath[] @relation("UpgradeFrom")
+  upgradePathsTo    ComponentUpgradePath[] @relation("UpgradeTo")
+
   @@index([isSystemComponent, isActive])
   @@index([merchantId])
+  @@index([type, tier])
   @@map("service_components")
 }
 ```
@@ -155,6 +239,119 @@ model PlanComponent {
   hotmapOrder          Int      @default(0) @map("hotmap_order")
 
   updatedAt            DateTime @updatedAt @map("updated_at")
+
+  // 升级选项关联
+  upgradeOptions       PlanComponentUpgrade[]
+}
+```
+
+### ComponentUpgradePath（平台预设升级路径）
+
+```prisma
+// 平台预设的组件升级路径
+// 例如：小纹 → 振袖 (+¥5,000)
+model ComponentUpgradePath {
+  id                String   @id @default(cuid())
+
+  // 升级来源组件
+  fromComponentId   String   @map("from_component_id")
+  fromComponent     ServiceComponent @relation("UpgradeFrom", fields: [fromComponentId], references: [id])
+
+  // 升级目标组件
+  toComponentId     String   @map("to_component_id")
+  toComponent       ServiceComponent @relation("UpgradeTo", fields: [toComponentId], references: [id])
+
+  // 平台建议升级差价（商户可覆盖）
+  suggestedPriceDiff  Int    @map("suggested_price_diff")
+
+  // 适用主题（null = 全部主题适用）
+  themeId           String?  @map("theme_id")
+  theme             Theme?   @relation(fields: [themeId], references: [id])
+
+  // 是否推荐（用于「推荐升级」展示）
+  isRecommended     Boolean  @default(false) @map("is_recommended")
+
+  // 展示文案
+  label             String?  // "升级为振袖"
+  description       String?  // "更华丽的正装体验"
+
+  displayOrder      Int      @default(0) @map("display_order")
+  isActive          Boolean  @default(true) @map("is_active")
+
+  @@unique([fromComponentId, toComponentId, themeId])
+  @@index([fromComponentId, isActive])
+  @@index([themeId])
+  @@map("component_upgrade_paths")
+}
+```
+
+### PlanComponentUpgrade（套餐级升级配置）
+
+```prisma
+// 套餐中某组件的可用升级选项（商户可自定义）
+model PlanComponentUpgrade {
+  id                  String   @id @default(cuid())
+
+  // 所属套餐组件
+  planComponentId     String   @map("plan_component_id")
+  planComponent       PlanComponent @relation(fields: [planComponentId], references: [id], onDelete: Cascade)
+
+  // 升级目标组件
+  targetComponentId   String   @map("target_component_id")
+  targetComponent     ServiceComponent @relation(fields: [targetComponentId], references: [id])
+
+  // 升级差价（商户自定义，覆盖平台建议价）
+  priceDiff           Int      @map("price_diff")
+
+  // 展示文案（商户自定义，覆盖平台预设）
+  label               String?  // "升级为振袖"
+  description         String?  // "更华丽的正装体验"
+
+  // 是否推荐（用于「推荐升级」标记）
+  isRecommended       Boolean  @default(false) @map("is_recommended")
+
+  displayOrder        Int      @default(0) @map("display_order")
+  isActive            Boolean  @default(true) @map("is_active")
+
+  @@unique([planComponentId, targetComponentId])
+  @@index([planComponentId, isActive])
+  @@map("plan_component_upgrades")
+}
+```
+
+### PlanUpgradeBundle（套餐升级包）
+
+```prisma
+// 套餐的「一键升级」打包方案
+model PlanUpgradeBundle {
+  id              String   @id @default(cuid())
+
+  // 所属套餐
+  planId          String   @map("plan_id")
+  plan            RentalPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  // 展示信息
+  label           String   // "豪华升级包"
+  description     String?  // "一键升级为豪华体验"
+
+  // 升级内容（组件替换清单）
+  // JSON: [{ "fromComponentId": "xxx", "toComponentId": "yyy" }, { "addComponentId": "zzz" }]
+  upgradeItems    Json     @map("upgrade_items")
+
+  // 打包价格
+  bundlePrice     Int      @map("bundle_price")      // 打包升级价
+  originalPrice   Int      @map("original_price")    // 单独升级总价（用于显示「节省 X 元」）
+
+  // 展示配置
+  isRecommended   Boolean  @default(true) @map("is_recommended")
+  displayOrder    Int      @default(0) @map("display_order")
+  isActive        Boolean  @default(true) @map("is_active")
+
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([planId, isActive])
+  @@map("plan_upgrade_bundles")
 }
 ```
 
@@ -377,6 +574,243 @@ function ServiceComponentList({ components }: Props) {
 
 ---
 
+## 服务升级 UI
+
+### 套餐详情页升级区域
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  基础振袖体验                                              ¥9,800      │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  [套餐图片/热点图]                                                      │
+│                                                                         │
+│  套餐包含                                                               │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │ 👘 小纹和服      🎀 帯・帯締め      💄 基础造型                   │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+│  ════════════════════════════════════════════════════════════════════  │
+│                                                                         │
+│  💎 推荐升级                                                            │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │                                                                  │   │
+│  │  🌟 豪华体验升级包                            [一键升级 +¥10,000] │   │
+│  │  ┌────────────────────────────────────────────────────────────┐ │   │
+│  │  │ ✓ 小纹 → 振袖和服                                          │ │   │
+│  │  │ ✓ 基础造型 → 专业造型                                      │ │   │
+│  │  │ ✓ 新增 30分钟专业摄影                                      │ │   │
+│  │  │                                                            │ │   │
+│  │  │ 💰 单独升级需 ¥15,000，打包节省 ¥5,000                     │ │   │
+│  │  └────────────────────────────────────────────────────────────┘ │   │
+│  │                                                                  │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+│  🔧 自定义升级                                           [展开/收起]   │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │                                                                  │   │
+│  │  👘 和服                                                         │   │
+│  │  ┌────────────────────────────────────────────────────────────┐ │   │
+│  │  │  ○ 小纹和服（当前）                                        │ │   │
+│  │  │  ○ 振袖和服                                    +¥5,000     │ │   │
+│  │  │  ○ 高级振袖（手工刺绣）                        +¥10,000    │ │   │
+│  │  │  ○ 顶级手工振袖                                +¥30,000    │ │   │
+│  │  └────────────────────────────────────────────────────────────┘ │   │
+│  │                                                                  │   │
+│  │  💄 造型                                                         │   │
+│  │  ┌────────────────────────────────────────────────────────────┐ │   │
+│  │  │  ○ 基础造型（当前）                                        │ │   │
+│  │  │  ○ 专业造型（含发饰）                          +¥2,000     │ │   │
+│  │  │  ○ 明星造型师                                  +¥8,000     │ │   │
+│  │  └────────────────────────────────────────────────────────────┘ │   │
+│  │                                                                  │   │
+│  │  📸 摄影（可选添加）                                             │   │
+│  │  ┌────────────────────────────────────────────────────────────┐ │   │
+│  │  │  ☐ 30分钟专业摄影                              +¥8,000     │ │   │
+│  │  │  ☐ 60分钟专业摄影                              +¥15,000    │ │   │
+│  │  │  ☐ 半日跟拍                                    +¥30,000    │ │   │
+│  │  └────────────────────────────────────────────────────────────┘ │   │
+│  │                                                                  │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+│  ════════════════════════════════════════════════════════════════════  │
+│                                                                         │
+│  当前价格：¥9,800 + 升级 ¥7,000 = ¥16,800                              │
+│                                                                         │
+│                                              [加入购物车]  [立即预订]   │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### 结算页面升级提醒
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  确认订单                                                               │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  📦 订单内容                                                            │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │  基础振袖体验                                          ¥9,800   │   │
+│  │  └─ 升级：振袖和服                                    +¥5,000   │   │
+│  │  └─ 升级：专业造型                                    +¥2,000   │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+│  💡 还可以升级                                                          │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │  📸 添加 30分钟专业摄影                   +¥8,000   [添加]      │   │
+│  │     记录您的和服体验，专业摄影师全程跟拍                        │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+│  ─────────────────────────────────────────────────────────────────────  │
+│                                                                         │
+│  商品小计：¥16,800                                                      │
+│  服务费：¥0                                                             │
+│  ─────────────────────────────────────────────────────────────────────  │
+│  合计：¥16,800                                                          │
+│                                                                         │
+│                                                    [确认支付]           │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### 购物车中的升级展示
+
+```typescript
+// CartItem 结构
+interface CartItem {
+  type: 'PLAN';
+  planId: string;
+  name: string;
+  basePrice: number;          // 基础套餐价格
+
+  // 升级配置
+  upgrades: {
+    planComponentId: string;  // 原组件
+    targetComponentId: string; // 升级目标
+    priceDiff: number;        // 升级差价
+    label: string;            // "振袖和服"
+  }[];
+
+  // 新增组件（如摄影）
+  addons: {
+    componentId: string;
+    price: number;
+    label: string;
+  }[];
+
+  // 计算属性
+  totalPrice: number;  // basePrice + sum(upgrades) + sum(addons)
+}
+```
+
+### 升级选择逻辑
+
+```typescript
+// 获取组件的可用升级选项
+async function getUpgradeOptions(planComponent: PlanComponent) {
+  // 1. 获取商户自定义升级（优先）
+  const customUpgrades = await prisma.planComponentUpgrade.findMany({
+    where: {
+      planComponentId: planComponent.id,
+      isActive: true,
+    },
+    include: { targetComponent: true },
+    orderBy: { displayOrder: 'asc' },
+  });
+
+  if (customUpgrades.length > 0) {
+    return customUpgrades;
+  }
+
+  // 2. 如果没有自定义，使用平台预设
+  const plan = await prisma.rentalPlan.findUnique({
+    where: { id: planComponent.planId },
+    select: { themeId: true },
+  });
+
+  return prisma.componentUpgradePath.findMany({
+    where: {
+      fromComponentId: planComponent.componentId,
+      isActive: true,
+      OR: [
+        { themeId: null },          // 全局适用
+        { themeId: plan?.themeId }, // 主题特定
+      ],
+    },
+    include: { toComponent: true },
+    orderBy: { displayOrder: 'asc' },
+  });
+}
+
+// 获取套餐的推荐升级包
+async function getUpgradeBundles(planId: string) {
+  return prisma.planUpgradeBundle.findMany({
+    where: {
+      planId,
+      isActive: true,
+    },
+    orderBy: [
+      { isRecommended: 'desc' },
+      { displayOrder: 'asc' },
+    ],
+  });
+}
+```
+
+---
+
+## 商户升级配置 UI
+
+### 套餐编辑器中的升级配置
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  套餐内容编辑器                                            [保存] [预览] │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  👘 和服                                                                │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │  当前配置：小纹和服                                              │   │
+│  │                                                                  │   │
+│  │  升级选项：                                      [+ 添加升级选项] │   │
+│  │  ┌────────────────────────────────────────────────────────────┐ │   │
+│  │  │ ☑ 使用平台预设                                              │ │   │
+│  │  │   · 振袖和服      平台建议 +¥5,000    [自定义价格: ¥    ]   │ │   │
+│  │  │   · 高级振袖      平台建议 +¥10,000   [自定义价格: ¥    ]   │ │   │
+│  │  │   · 顶级手工振袖  平台建议 +¥30,000   [自定义价格: ¥    ]   │ │   │
+│  │  └────────────────────────────────────────────────────────────┘ │   │
+│  │  ┌────────────────────────────────────────────────────────────┐ │   │
+│  │  │ 商户自定义升级                                              │ │   │
+│  │  │   · 商户独家金线刺绣振袖  +¥25,000              [×删除]    │ │   │
+│  │  │   [+ 添加自定义升级]                                        │ │   │
+│  │  └────────────────────────────────────────────────────────────┘ │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+│  📸 摄影（可添加项）                                                    │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │  当前配置：不包含摄影                                            │   │
+│  │                                                                  │   │
+│  │  可选添加：                                                      │   │
+│  │  ☑ 30分钟专业摄影    平台建议 +¥8,000    [自定义价格: ¥8,000 ]  │   │
+│  │  ☑ 60分钟专业摄影    平台建议 +¥15,000   [自定义价格: ¥15,000]  │   │
+│  │  ☐ 半日跟拍          平台建议 +¥30,000   [禁用此选项]           │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+│  ════════════════════════════════════════════════════════════════════  │
+│                                                                         │
+│  💎 升级包配置                                          [+ 添加升级包] │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │  🌟 豪华体验升级包                                   [编辑] [×] │   │
+│  │  包含：振袖 + 专业造型 + 30分钟摄影                             │   │
+│  │  打包价：¥10,000（原价 ¥15,000，节省 ¥5,000）                   │   │
+│  │  ☑ 设为推荐                                                     │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 商户自定义组件
 
 ### 创建流程（无需审核）
@@ -592,10 +1026,13 @@ function getPresetPositions(plan: RentalPlan) {
 ### Phase 1：数据模型 + 组件库
 
 1. 更新 `PlanComponent` schema（添加热点字段）
-2. 更新 `ServiceComponent` schema（添加 merchantId）
+2. 更新 `ServiceComponent` schema（添加 merchantId、tier）
 3. 更新 `RentalPlan` schema（添加热点图字段）
-4. 运行 migration
-5. 更新 `/api/service-components` 返回商户组件
+4. 新增 `ComponentUpgradePath` schema（平台预设升级路径）
+5. 新增 `PlanComponentUpgrade` schema（套餐级升级配置）
+6. 新增 `PlanUpgradeBundle` schema（套餐升级包）
+7. 运行 migration
+8. 更新 `/api/service-components` 返回商户组件
 
 ### Phase 2：整合编辑器
 
@@ -616,10 +1053,29 @@ function getPresetPositions(plan: RentalPlan) {
 2. 实现模板选择 UI
 3. 实现图片预览和裁剪
 
-### Phase 5：管理员功能
+### Phase 5：服务升级功能（用户端）
+
+1. 套餐详情页：升级选项展示
+   - 推荐升级包（一键升级）
+   - 自定义升级（按组件选择）
+2. 购物车：升级状态存储和展示
+3. 结算页：追加销售提醒
+
+### Phase 6：升级配置（商户端）
+
+1. 商户编辑器：升级选项配置
+   - 使用平台预设 / 自定义价格
+   - 添加商户独家升级选项
+2. 升级包配置
+   - 创建打包升级方案
+   - 设置打包折扣
+
+### Phase 7：平台管理
 
 1. 管理员查看所有商户组件
 2. 实现组件升级为平台组件功能
+3. 管理平台预设升级路径（ComponentUpgradePath）
+4. 按主题配置默认升级路径
 
 ---
 
@@ -636,3 +1092,7 @@ function getPresetPositions(plan: RentalPlan) {
 | 无热点图时 | 套餐详情只展示服务组件列表 |
 | 热点位置 | 存在 PlanComponent，每套餐独立 |
 | MapHotspot | 仅当使用模板时提供推荐位置 |
+| **服务升级** | 混合模式：推荐升级包 + 自定义升级 |
+| **升级配置** | 混合模式：平台预设 + 商户自定义 |
+| **升级时机** | 套餐详情页 + 结算页面 |
+| **升级存储** | ComponentUpgradePath（平台）+ PlanComponentUpgrade（商户）|
