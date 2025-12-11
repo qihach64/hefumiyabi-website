@@ -1,11 +1,13 @@
-# Service Hotmap Integration Design (v2)
+# Service Hotmap Integration Design (v3)
 
-## 系统概述
+## 设计决策
 
-Kimono One 平台提供一套**服务组件库**和**热点图模板**，商户可以：
-1. 使用平台组件或自定义组件
-2. 使用平台模板图片或上传自定义图片
-3. 通过拖拽调整热点位置
+- **核心目的**：展示信息完整性（套餐包含的所有服务）
+- **热点图图片**：鼓励商户上传自定义图片，嫌麻烦可用平台模板
+- **组件分类**：只有两种 - 平台组件 / 商户组件
+- **商户组件**：无需审核，仅创建者可用，其他商户不可见
+- **组件升级**：管理员可将优秀商户组件升级为平台组件
+- **数据存储**：热点位置存在 `PlanComponent` 里（每个套餐独立）
 
 ---
 
@@ -16,16 +18,25 @@ Kimono One 平台提供一套**服务组件库**和**热点图模板**，商户�
 │                           平台层 (Platform)                             │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                         │
-│  ServiceComponent (系统组件库)          MapTemplate (热点图模板)         │
-│  ┌─────────────────────────┐          ┌─────────────────────────┐      │
-│  │ 👘 振袖和服 (KIMONO)     │          │ 默认模板 (女士和服图)    │      │
-│  │ 🎀 帯・帯締め (ACCESSORY)│          │ 情侣模板 (双人和服图)    │      │
-│  │ 💄 发型设计 (STYLING)    │          │ 男士模板 (羽织袴图)      │      │
-│  │ 📸 摄影服务 (EXPERIENCE) │          │ ...                     │      │
-│  │ ...                      │          └─────────────────────────┘      │
-│  └─────────────────────────┘                                            │
+│  ServiceComponent (组件库)                                              │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │  平台组件 (isSystemComponent = true)                             │   │
+│  │  ├── 👘 振袖和服                                                 │   │
+│  │  ├── 🎀 帯・帯締め                                               │   │
+│  │  ├── 💄 发型设计                                                 │   │
+│  │  └── 📸 摄影服务                                                 │   │
+│  │                                                                   │   │
+│  │  商户组件 (merchantId != null, 仅创建者可见)                      │   │
+│  │  ├── ✨ [商户A] 特制金箔发饰                                      │   │
+│  │  ├── 🌸 [商户B] 樱花主题小物                                      │   │
+│  │  └── ...                                                         │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
 │                                                                         │
-│  + 商户可申请新增组件 (status: PENDING → APPROVED)                       │
+│  MapTemplate (热点图模板 - 备选方案)                                    │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │  女士振袖模板 / 男士羽织袴模板 / 情侣模板 / ...                   │   │
+│  │  (商户嫌麻烦时可选择使用)                                         │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
 │                                                                         │
 └─────────────────────────────────────────────────────────────────────────┘
                                     │
@@ -36,20 +47,20 @@ Kimono One 平台提供一套**服务组件库**和**热点图模板**，商户�
 │                                                                         │
 │  RentalPlan (套餐)                                                      │
 │  ┌─────────────────────────────────────────────────────────────────┐   │
-│  │ 套餐名称: 豪华振袖体验                                            │   │
-│  │ 价格: ¥19,800                                                    │   │
-│  │                                                                   │   │
 │  │ 热点图配置:                                                       │   │
 │  │ ┌─────────────────────────────────────────────────────────────┐  │   │
-│  │ │ hotmapImageUrl: 商户自定义图片 (或 null 使用模板图片)         │  │   │
-│  │ │ hotmapTemplateId: 使用的模板 ID (当 imageUrl 为 null 时)     │  │   │
+│  │ │ hotmapImageUrl: 商户上传的图片 (推荐)                        │  │   │
+│  │ │         - 或 -                                               │  │   │
+│  │ │ hotmapTemplateId: 选择的平台模板 (备选)                      │  │   │
+│  │ │         - 或 -                                               │  │   │
+│  │ │ 都为空时: 根据 themeId 自动使用对应模板                       │  │   │
 │  │ └─────────────────────────────────────────────────────────────┘  │   │
 │  │                                                                   │   │
-│  │ PlanComponent[] (套餐包含的组件 + 热点位置)                        │   │
+│  │ PlanComponent[] (套餐组件 + 热点位置)                             │   │
 │  │ ┌─────────────────────────────────────────────────────────────┐  │   │
-│  │ │ 👘 振袖和服    hotmapX: 0.5, hotmapY: 0.3                    │  │   │
-│  │ │ 🎀 帯・帯締め  hotmapX: 0.5, hotmapY: 0.5                    │  │   │
-│  │ │ 💄 发型设计    hotmapX: null (不显示在图上)                   │  │   │
+│  │ │ 👘 振袖和服 (平台)    hotmapX: 0.5, hotmapY: 0.3             │  │   │
+│  │ │ ✨ 特制发饰 (商户自定义) hotmapX: 0.3, hotmapY: 0.2          │  │   │
+│  │ │ 💄 发型设计 (平台)    hotmapX: null (不显示在图上)           │  │   │
 │  │ └─────────────────────────────────────────────────────────────┘  │   │
 │  └─────────────────────────────────────────────────────────────────┘   │
 │                                                                         │
@@ -58,199 +69,168 @@ Kimono One 平台提供一套**服务组件库**和**热点图模板**，商户�
 
 ---
 
-## 深度思考：需要解决的问题
+## 数据模型设计
 
-### 问题 1：热点图片来源
-
-**当前设计**：`MapTemplate` 关联 `Theme`，每个主题一个模板
-
-**新需求**：
-- 商户可以上传自定义热点图片
-- 如果没有，使用平台模板
-
-**方案 A：图片 URL 存在 RentalPlan 上**
-```prisma
-model RentalPlan {
-  // 商户自定义热点图片（优先使用）
-  hotmapImageUrl     String?  @map("hotmap_image_url")
-
-  // 如果没有自定义图片，使用哪个模板
-  hotmapTemplateId   String?  @map("hotmap_template_id")
-  hotmapTemplate     MapTemplate? @relation(...)
-}
-```
-
-**方案 B：统一用 hotmapImageUrl，模板图片复制过来**
-```prisma
-model RentalPlan {
-  // 热点图片 URL（可以是商户上传的，也可以是从模板复制的）
-  hotmapImageUrl     String?  @map("hotmap_image_url")
-
-  // 记录图片来源（用于追踪/更新）
-  hotmapImageSource  String?  @map("hotmap_image_source") // 'custom' | 'template:{id}'
-}
-```
-
-**推荐方案 A**：保持关联关系，方便模板更新时同步
-
----
-
-### 问题 2：MapHotspot 的角色
-
-**当前设计**：`MapHotspot` 绑定 `templateId + componentId`，存储预设位置
-
-**思考**：
-- 如果商户使用自定义图片，预设位置还有意义吗？
-- 预设位置是给「使用平台模板」的商户参考用的
-
-**结论**：`MapHotspot` 保留，但角色变为：
-- 当商户选择使用平台模板时，提供「推荐位置」
-- 当商户使用自定义图片时，`MapHotspot` 不适用
-
-```typescript
-// 获取推荐位置
-function getPresetPositions(plan: RentalPlan) {
-  // 商户使用自定义图片 → 没有预设位置
-  if (plan.hotmapImageUrl) {
-    return [];
-  }
-
-  // 使用平台模板 → 返回模板的预设位置
-  if (plan.hotmapTemplateId) {
-    return prisma.mapHotspot.findMany({
-      where: { templateId: plan.hotmapTemplateId }
-    });
-  }
-
-  return [];
-}
-```
-
----
-
-### 问题 3：商户自定义组件
-
-**当前设计**：`ServiceComponent` 有 `status` 字段（APPROVED/PENDING/REJECTED）
-
-**需要补充**：
-- 谁创建的？（`createdBy` / `merchantId`）
-- 是平台组件还是商户组件？（`isSystemComponent`）
-- 商户组件的可见性？（只有创建者可用，还是审核后全平台可用）
-
-**方案**：
+### ServiceComponent 更新
 
 ```prisma
 model ServiceComponent {
+  id              String          @id @default(cuid())
+  code            String          @unique
+
+  // 基本信息
+  name            String
+  nameJa          String?         @map("name_ja")
+  nameEn          String?         @map("name_en")
+  description     String?         @db.Text
+  type            ComponentType   // KIMONO, STYLING, ACCESSORY, EXPERIENCE
+  icon            String?
+
+  // ========== 组件所有权 ==========
+  // true = 平台组件（全部商户可见）
+  // false = 商户组件（仅创建者可见）
+  isSystemComponent  Boolean   @default(false) @map("is_system_component")
+
+  // 商户组件的所有者（平台组件此字段为 null）
+  merchantId         String?   @map("merchant_id")
+  merchant           Merchant? @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  // 升级记录：商户组件被升级为平台组件时，记录原商户 ID
+  promotedFromMerchantId  String?   @map("promoted_from_merchant_id")
+  promotedAt              DateTime? @map("promoted_at")
+
+  // 定价信息
+  basePrice       Int             @default(0) @map("base_price")
+
+  // 元数据
+  displayOrder    Int             @default(0) @map("display_order")
+  isActive        Boolean         @default(true) @map("is_active")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  // 关联
+  planComponents  PlanComponent[]
+  mapHotspots     MapHotspot[]
+
+  @@index([isSystemComponent, isActive])
+  @@index([merchantId])
+  @@map("service_components")
+}
+```
+
+### RentalPlan 更新
+
+```prisma
+model RentalPlan {
   // ... 现有字段 ...
 
-  // 组件所有权
-  isSystemComponent  Boolean   @default(false) @map("is_system_component")
-  merchantId         String?   @map("merchant_id")  // 商户自定义组件
-  merchant           Merchant? @relation(...)
+  // ========== 热点图配置 ==========
+  // 商户自定义热点图片（推荐使用）
+  hotmapImageUrl     String?      @map("hotmap_image_url")
 
-  // 可见性
-  visibility         ComponentVisibility @default(PRIVATE)
-  // PRIVATE: 仅创建商户可用
-  // PUBLIC:  审核通过后全平台可用
-  // SYSTEM:  平台系统组件
-}
+  // 选择的平台模板（备选方案，当没有自定义图片时）
+  hotmapTemplateId   String?      @map("hotmap_template_id")
+  hotmapTemplate     MapTemplate? @relation(fields: [hotmapTemplateId], references: [id])
 
-enum ComponentVisibility {
-  PRIVATE  // 商户私有
-  PUBLIC   // 全平台公开（需审核）
-  SYSTEM   // 系统组件
+  // 如果都为空，根据 themeId 自动使用对应模板
 }
 ```
 
-**组件库查询逻辑**：
+### PlanComponent 更新
+
+```prisma
+model PlanComponent {
+  // ... 现有字段 ...
+
+  // ========== 热点图配置 ==========
+  // 热点位置（百分比坐标 0-1，null = 不显示在图上）
+  hotmapX              Float?   @map("hotmap_x")
+  hotmapY              Float?   @map("hotmap_y")
+
+  // 标签显示方向
+  hotmapLabelPosition  String   @default("right") @map("hotmap_label_position")
+
+  // 热点显示顺序（用于动画、层级）
+  hotmapOrder          Int      @default(0) @map("hotmap_order")
+
+  updatedAt            DateTime @updatedAt @map("updated_at")
+}
+```
+
+---
+
+## 组件可见性规则
+
+### 商户能看到的组件
+
 ```typescript
-// 商户能看到的组件
-const components = await prisma.serviceComponent.findMany({
-  where: {
-    isActive: true,
-    OR: [
-      { visibility: 'SYSTEM' },  // 系统组件
-      { visibility: 'PUBLIC', status: 'APPROVED' },  // 公开且已审核
-      { merchantId: currentMerchantId },  // 自己创建的
+async function getVisibleComponents(merchantId: string) {
+  return prisma.serviceComponent.findMany({
+    where: {
+      isActive: true,
+      OR: [
+        // 平台组件：全部可见
+        { isSystemComponent: true },
+        // 商户组件：仅自己创建的可见
+        { merchantId: merchantId },
+      ]
+    },
+    orderBy: [
+      { isSystemComponent: 'desc' },  // 平台组件优先
+      { type: 'asc' },
+      { displayOrder: 'asc' },
     ]
-  }
-});
+  });
+}
 ```
 
----
-
-### 问题 4：热点图的选择流程
-
-**用户旅程**：
-
-```
-商户进入套餐编辑页
-    │
-    ▼
-┌─────────────────────────────────────────┐
-│  热点图设置                              │
-│                                         │
-│  ○ 使用平台模板                          │
-│    ┌─────────┐ ┌─────────┐ ┌─────────┐ │
-│    │ 女士和服 │ │ 男士和服 │ │ 情侣   │  │
-│    │  [选择]  │ │  [选择]  │ │ [选择] │  │
-│    └─────────┘ └─────────┘ └─────────┘ │
-│                                         │
-│  ○ 上传自定义图片                        │
-│    [点击上传] 或 [拖拽图片到此处]         │
-│                                         │
-└─────────────────────────────────────────┘
-    │
-    ▼
-选择/上传完成后，进入组件编辑区域
-    │
-    ▼
-┌─────────────────────────────────────────┐
-│  组件库 (左侧)    │    热点图 (右侧)     │
-│                   │                      │
-│  [系统组件]        │    ┌──────────────┐ │
-│  👘 振袖和服       │    │              │ │
-│  🎀 帯・帯締め     │    │  [和服图片]   │ │
-│  ...              │    │              │ │
-│                   │    │  ●──振袖     │ │
-│  [我的组件]        │    │  ●──帯      │ │
-│  ✨ 特制发饰       │    │              │ │
-│  [+ 添加新组件]    │    └──────────────┘ │
-│                   │                      │
-└─────────────────────────────────────────┘
-```
-
----
-
-### 问题 5：模板选择与主题的关系
-
-**当前设计**：`MapTemplate` 关联 `Theme`
-
-**思考**：
-- 套餐已经有 `themeId`，是否自动使用对应主题的模板？
-- 还是让商户独立选择模板？
-
-**建议**：
-- **默认**：根据套餐 `themeId` 自动选择对应模板
-- **允许覆盖**：商户可以手动选择其他模板或上传自定义图片
+### 组件升级为平台组件
 
 ```typescript
-// 获取套餐的热点图
-function getHotmapImage(plan: RentalPlan) {
-  // 1. 商户自定义图片优先
+// 管理员操作：将商户组件升级为平台组件
+async function promoteToSystemComponent(componentId: string) {
+  const component = await prisma.serviceComponent.findUnique({
+    where: { id: componentId }
+  });
+
+  if (!component || component.isSystemComponent) {
+    throw new Error('组件不存在或已是平台组件');
+  }
+
+  return prisma.serviceComponent.update({
+    where: { id: componentId },
+    data: {
+      isSystemComponent: true,
+      promotedFromMerchantId: component.merchantId,
+      promotedAt: new Date(),
+      merchantId: null,  // 清除商户关联
+    }
+  });
+}
+```
+
+---
+
+## 热点图图片来源
+
+### 优先级
+
+```typescript
+async function getHotmapImage(plan: RentalPlan): Promise<string | null> {
+  // 1. 商户自定义图片（推荐）
   if (plan.hotmapImageUrl) {
     return plan.hotmapImageUrl;
   }
 
-  // 2. 商户手动选择的模板
+  // 2. 商户选择的平台模板（备选）
   if (plan.hotmapTemplateId) {
     const template = await prisma.mapTemplate.findUnique({
       where: { id: plan.hotmapTemplateId }
     });
-    return template?.imageUrl;
+    return template?.imageUrl ?? null;
   }
 
-  // 3. 根据主题自动选择
+  // 3. 根据主题自动选择模板（兜底）
   if (plan.themeId) {
     const template = await prisma.mapTemplate.findFirst({
       where: { themeId: plan.themeId, isActive: true }
@@ -262,123 +242,111 @@ function getHotmapImage(plan: RentalPlan) {
   const defaultTemplate = await prisma.mapTemplate.findFirst({
     where: { isDefault: true, isActive: true }
   });
-  return defaultTemplate?.imageUrl;
+  return defaultTemplate?.imageUrl ?? null;
 }
 ```
 
----
-
-## 更新后的数据模型
-
-### RentalPlan 扩展
-
-```prisma
-model RentalPlan {
-  // ... 现有字段 ...
-
-  // ========== 热点图配置 ==========
-  // 商户自定义热点图片（优先级最高）
-  hotmapImageUrl     String?      @map("hotmap_image_url")
-
-  // 手动选择的模板（当没有自定义图片时使用）
-  // 如果也为 null，则根据 themeId 自动选择或使用默认模板
-  hotmapTemplateId   String?      @map("hotmap_template_id")
-  hotmapTemplate     MapTemplate? @relation(fields: [hotmapTemplateId], references: [id])
-}
-```
-
-### ServiceComponent 扩展
-
-```prisma
-model ServiceComponent {
-  // ... 现有字段 ...
-
-  // ========== 组件所有权 ==========
-  // 系统组件 vs 商户自定义组件
-  isSystemComponent  Boolean   @default(false) @map("is_system_component")
-
-  // 商户自定义组件的所有者
-  merchantId         String?   @map("merchant_id")
-  merchant           Merchant? @relation(fields: [merchantId], references: [id])
-
-  // 可见性（替代原来的 status 用于访问控制）
-  // status 保留用于审核流程
-  visibility         String    @default("SYSTEM") @map("visibility")
-  // SYSTEM:  系统组件，全平台可见
-  // PUBLIC:  商户组件，审核通过后全平台可见
-  // PRIVATE: 商户组件，仅创建者可见
-}
-```
-
-### PlanComponent 扩展（热点位置）
-
-```prisma
-model PlanComponent {
-  // ... 现有字段 ...
-
-  // ========== 热点图配置 ==========
-  hotmapX              Float?   @map("hotmap_x")
-  hotmapY              Float?   @map("hotmap_y")
-  hotmapLabelPosition  String   @default("right") @map("hotmap_label_position")
-  hotmapOrder          Int      @default(0) @map("hotmap_order")
-
-  updatedAt            DateTime @updatedAt @map("updated_at")
-}
-```
-
-### MapTemplate 保持不变
-
-```prisma
-model MapTemplate {
-  id          String   @id @default(cuid())
-  themeId     String?  @unique @map("theme_id")
-  theme       Theme?   @relation(...)
-  isDefault   Boolean  @default(false)
-  name        String
-  imageUrl    String   @map("image_url")
-  isActive    Boolean  @default(true)
-
-  hotspots    MapHotspot[]
-  plans       RentalPlan[]  // 新增：被哪些套餐手动选择
-}
-```
-
-### MapHotspot 保持不变
-
-作为模板的「推荐位置」，仅当商户使用平台模板时提供参考。
-
----
-
-## 完整的交互流程
-
-### 流程 1：创建/编辑套餐时设置热点图
+### UI 引导
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│  套餐热点图设置                                                          │
+│  热点图设置                                                              │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                         │
-│  图片来源：                                                              │
+│  📸 上传您的和服展示图 (推荐)                                            │
 │  ┌─────────────────────────────────────────────────────────────────┐   │
-│  │ ○ 自动 (根据套餐主题选择)                          [当前: 女士和服] │   │
-│  │ ○ 选择平台模板                                                   │   │
-│  │ ● 上传自定义图片                                    [已上传 ✓]    │   │
-│  └─────────────────────────────────────────────────────────────────┘   │
-│                                                                         │
-│  预览：                                                                  │
-│  ┌─────────────────────────────────────────────────────────────────┐   │
-│  │                        [商户上传的图片]                          │   │
 │  │                                                                  │   │
-│  │      推荐位置不可用（自定义图片无预设位置）                        │   │
-│  │      请直接拖拽组件到图片上                                       │   │
+│  │     [点击上传] 或 拖拽图片到此处                                  │   │
+│  │                                                                  │   │
+│  │     建议比例 2:3，展示和服整体效果                                │   │
 │  │                                                                  │   │
 │  └─────────────────────────────────────────────────────────────────┘   │
 │                                                                         │
-│                                                    [下一步: 添加组件 →] │
+│  ─────────────────── 或者 ───────────────────                          │
+│                                                                         │
+│  📋 使用平台模板                                                        │
+│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐                      │
+│  │ 女士振袖 │ │ 女士访问│ │ 男士羽织│ │  情侣   │                      │
+│  │  [选择]  │ │  [选择] │ │  [选择] │ │ [选择]  │                      │
+│  └─────────┘ └─────────┘ └─────────┘ └─────────┘                      │
+│                                                                         │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 流程 2：添加组件到热点图
+---
+
+## 商户自定义组件
+
+### 创建流程（无需审核）
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  添加自定义组件                                                [×]      │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  组件名称 *                                                              │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │ 特制金箔发饰                                                     │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+│  组件类型 *                                                              │
+│  ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐                          │
+│  │👘 和服  │ │🎀 配饰 ●│ │💄 造型  │ │📸 体验  │                          │
+│  └────────┘ └────────┘ └────────┘ └────────┘                          │
+│                                                                         │
+│  图标                                                                    │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │ ✨  [选择 emoji]                                                 │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+│  描述 (可选)                                                             │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │ 纯手工制作的金箔发饰，搭配振袖更显华贵                            │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+│  ⓘ 自定义组件仅您可见，可在任意套餐中使用                              │
+│                                                                         │
+│                                              [取消]  [创建组件]         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### 组件库显示
+
+```
+┌─────────────────────────────────────┐
+│  组件库                              │
+├─────────────────────────────────────┤
+│                                     │
+│  🏢 平台组件                         │
+│  ├─────────────────────────────────┤
+│  │ 👘 和服                          │
+│  │  · 振袖和服                      │
+│  │  · 访问着                        │
+│  │  · 小纹                          │
+│  ├─────────────────────────────────┤
+│  │ 🎀 配饰                          │
+│  │  · 帯・帯締め                    │
+│  │  · 草履・足袋                    │
+│  ├─────────────────────────────────┤
+│  │ 💄 造型                          │
+│  │  · 发型设计                      │
+│  │  · 妆容服务                      │
+│  └─────────────────────────────────┘
+│                                     │
+│  ⭐ 我的组件                         │
+│  ├─────────────────────────────────┤
+│  │  ✨ 特制金箔发饰          [编辑] │
+│  │  🌸 樱花主题小物          [编辑] │
+│  ├─────────────────────────────────┤
+│  │  [+ 添加新组件]                  │
+│  └─────────────────────────────────┘
+│                                     │
+└─────────────────────────────────────┘
+```
+
+---
+
+## 完整编辑器布局
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -388,152 +356,179 @@ model MapTemplate {
 │  ┌───────────────────────┬──────────────────────────────────────────┐  │
 │  │  组件库                │  热点图                                  │  │
 │  │                       │                                          │  │
-│  │  ┌─────────────────┐  │  ┌────────────────────────────────────┐  │  │
-│  │  │ 🏢 系统组件      │  │  │                                    │  │  │
-│  │  ├─────────────────┤  │  │        [热点图图片]                 │  │  │
-│  │  │ 👘 和服         │  │  │                                    │  │  │
-│  │  │  · 振袖和服  ★  │  │  │    ●──振袖和服                     │  │  │
-│  │  │  · 访问着       │  │  │           ●──帯                    │  │  │
-│  │  │  · 小纹         │  │  │                                    │  │  │
+│  │  🏢 平台组件           │  ┌────────────────────────────────────┐  │  │
+│  │  ├─────────────────┐  │  │                                    │  │  │
+│  │  │ 👘 和服         │  │  │    [商户上传的和服图片]             │  │  │
+│  │  │  · 振袖和服     │  │  │                                    │  │  │
+│  │  │  · 访问着       │  │  │    ●──振袖和服                     │  │  │
+│  │  ├─────────────────┤  │  │           ●──特制发饰              │  │  │
+│  │  │ 🎀 配饰         │  │  │                  ●──帯             │  │  │
+│  │  │  · 帯・帯締め   │  │  │                                    │  │  │
+│  │  │  · 草履・足袋   │  │  │    [拖拽组件到此处]                 │  │  │
 │  │  ├─────────────────┤  │  │                                    │  │  │
-│  │  │ 🎀 配饰         │  │  │    [拖拽组件到此处]                 │  │  │
-│  │  │  · 帯・帯締め ★ │  │  │                                    │  │  │
-│  │  │  · 草履・足袋   │  │  └────────────────────────────────────┘  │  │
-│  │  │  · 巾着袋       │  │                                          │  │
-│  │  ├─────────────────┤  │  已添加组件：                             │  │
-│  │  │ 💄 造型         │  │  ┌────────────────────────────────────┐  │  │
-│  │  │  · 发型设计     │  │  │ 📍 显示在图上 (2)                   │  │  │
-│  │  │  · 妆容服务     │  │  │  👘 振袖和服    (0.3, 0.4) [隐藏]   │  │  │
-│  │  └─────────────────┘  │  │  🎀 帯・帯締め  (0.5, 0.6) [隐藏]   │  │  │
-│  │                       │  │                                    │  │  │
-│  │  ┌─────────────────┐  │  │ 📦 未显示 (1)                       │  │  │
-│  │  │ ⭐ 我的组件      │  │  │  💄 发型设计          [显示] [删除] │  │  │
-│  │  ├─────────────────┤  │  └────────────────────────────────────┘  │  │
-│  │  │  ✨ 特制发饰    │  │                                          │  │
-│  │  │  [+ 添加新组件] │  │                                          │  │
-│  │  └─────────────────┘  │                                          │  │
+│  │  │ 💄 造型         │  │  └────────────────────────────────────┘  │  │
+│  │  │  · 发型设计     │  │                                          │  │
+│  │  └─────────────────┘  │  已添加组件：                             │  │
+│  │                       │  ┌────────────────────────────────────┐  │  │
+│  │  ⭐ 我的组件          │  │ 📍 显示在图上 (3)                   │  │  │
+│  │  ├─────────────────┐  │  │  👘 振袖和服         [隐藏] [删除] │  │  │
+│  │  │  ✨ 特制金箔发饰│  │  │  ✨ 特制发饰         [隐藏] [删除] │  │  │
+│  │  │  🌸 樱花小物    │  │  │  🎀 帯・帯締め      [隐藏] [删除] │  │  │
+│  │  ├─────────────────┤  │  │                                    │  │  │
+│  │  │ [+ 添加新组件]  │  │  │ 📦 未显示 (1)                       │  │  │
+│  │  └─────────────────┘  │  │  💄 发型设计         [显示] [删除] │  │  │
+│  │                       │  └────────────────────────────────────┘  │  │
 │  └───────────────────────┴──────────────────────────────────────────┘  │
 │                                                                         │
-│  ★ = 有推荐位置（仅当使用平台模板时显示）                                │
-└─────────────────────────────────────────────────────────────────────────┘
-```
-
-### 流程 3：商户添加自定义组件
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│  添加新组件                                                    [×]      │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                         │
-│  组件名称：                                                              │
-│  ┌─────────────────────────────────────────────────────────────────┐   │
-│  │ 特制金箔发饰                                                     │   │
-│  └─────────────────────────────────────────────────────────────────┘   │
-│                                                                         │
-│  组件类型：                                                              │
-│  ○ 👘 和服    ○ 🎀 配饰    ○ 💄 造型    ○ 📸 体验                      │
-│                                                                         │
-│  图标 (emoji)：                                                          │
-│  ┌─────────────────────────────────────────────────────────────────┐   │
-│  │ ✨                                                               │   │
-│  └─────────────────────────────────────────────────────────────────┘   │
-│                                                                         │
-│  描述 (可选)：                                                           │
-│  ┌─────────────────────────────────────────────────────────────────┐   │
-│  │ 纯手工制作的金箔发饰，搭配振袖更显华贵                            │   │
-│  └─────────────────────────────────────────────────────────────────┘   │
-│                                                                         │
-│  可见性：                                                                │
-│  ○ 仅自己可用 (私有)                                                    │
-│  ○ 申请公开 (需审核后全平台可用)                                        │
-│                                                                         │
-│                                              [取消]  [添加到组件库]      │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 待讨论的问题
+## API 设计
 
-### 1. 热点图图片尺寸/比例
+### GET /api/service-components
 
-- 是否限制上传图片的比例？（如 2:3 或 3:4）
-- 不同比例的图片如何在页面上展示？
-- 建议：限制为 **2:3 竖版**，与和服穿着效果图匹配
+获取当前商户可见的所有组件
 
-### 2. 组件图标
+```typescript
+// Response
+{
+  components: ServiceComponent[],
+  categories: {
+    type: string,
+    label: string,
+    icon: string,
+    components: ServiceComponent[]
+  }[]
+}
+```
 
-- 当前用 emoji，是否足够？
-- 是否需要支持上传自定义图标？
-- 建议：**emoji 足够**，简单且跨平台一致
+### POST /api/merchant/components
 
-### 3. 组件审核流程
+商户创建自定义组件（无需审核）
 
-- 商户申请公开组件，管理员如何审核？
-- 是否需要单独的审核后台？
-- 建议：**先做 PRIVATE 模式**，公开审核后续再做
+```typescript
+// Request
+{
+  name: string,
+  type: 'KIMONO' | 'STYLING' | 'ACCESSORY' | 'EXPERIENCE',
+  icon?: string,
+  description?: string
+}
 
-### 4. 热点图在前台的展示
+// Response
+{
+  component: ServiceComponent
+}
+```
 
-- 套餐详情页是否展示热点图？
-- 热点是否需要交互（hover 显示详情）？
-- 建议：**需要展示**，hover 显示组件名称和描述
+### PATCH /api/merchant/components/[id]
 
-### 5. 多语言
+商户编辑自己的组件
 
-- 商户自定义组件是否需要多语言？
-- 建议：**暂不需要**，商户组件主要面向本地市场
+### DELETE /api/merchant/components/[id]
 
----
+商户删除自己的组件
 
-## 实现优先级
+### POST /api/admin/components/[id]/promote
 
-### Phase 1：核心功能 (MVP)
-1. ✅ PlanComponent 添加热点字段 (hotmapX/Y/LabelPosition/Order)
-2. ⬜ RentalPlan 添加 hotmapImageUrl
-3. ⬜ 整合编辑器：组件库 + 热点图画布 + 拖拽交互
-4. ⬜ 使用平台默认模板（根据 themeId 自动选择）
+管理员将商户组件升级为平台组件
 
-### Phase 2：模板选择
-1. ⬜ 商户手动选择模板（hotmapTemplateId）
-2. ⬜ MapHotspot 预设位置作为参考
-3. ⬜ 模板选择 UI
-
-### Phase 3：自定义图片
-1. ⬜ 商户上传自定义热点图片
-2. ⬜ 图片上传/裁剪组件
-3. ⬜ 图片存储（Supabase Storage）
-
-### Phase 4：自定义组件
-1. ⬜ ServiceComponent 添加 merchantId/visibility
-2. ⬜ 商户添加自定义组件 UI
-3. ⬜ 组件库分组显示（系统组件 / 我的组件）
-
-### Phase 5：公开组件审核（可选）
-1. ⬜ 管理员审核界面
-2. ⬜ 审核通过后更新 visibility
+```typescript
+// Response
+{
+  component: ServiceComponent,
+  message: '已升级为平台组件'
+}
+```
 
 ---
 
-## 简化版实现建议
+## MapHotspot 的角色
 
-如果要快速上线，可以先做：
+### 保留原因
 
-1. **只支持平台模板**（不支持自定义图片）
-2. **只支持系统组件**（不支持商户自定义）
-3. **拖拽编辑热点位置**
+当商户选择使用平台模板时，`MapHotspot` 提供「推荐位置」参考。
 
-这样只需要：
-- PlanComponent 加 4 个字段
-- 一个整合编辑器组件
+### 适用场景
 
-后续再逐步添加自定义图片和自定义组件功能。
+| 热点图来源 | MapHotspot 作用 |
+|-----------|----------------|
+| 商户自定义图片 | ❌ 不适用 |
+| 商户选择模板 | ✅ 提供推荐位置 |
+| 自动使用主题模板 | ✅ 提供推荐位置 |
+
+### 推荐位置的使用
+
+```typescript
+// 当商户使用平台模板时，显示推荐位置标记
+function getPresetPositions(plan: RentalPlan) {
+  // 自定义图片 → 无推荐位置
+  if (plan.hotmapImageUrl) {
+    return [];
+  }
+
+  // 获取模板 ID
+  const templateId = plan.hotmapTemplateId ??
+    await getThemeTemplateId(plan.themeId);
+
+  if (!templateId) return [];
+
+  // 返回模板的预设热点
+  return prisma.mapHotspot.findMany({
+    where: { templateId },
+    include: { component: true }
+  });
+}
+```
 
 ---
 
-## 你的反馈？
+## 实现计划
 
-1. **热点图图片**：是否需要支持商户上传？还是先只用平台模板？
-2. **自定义组件**：是否需要？优先级如何？
-3. **实现顺序**：同意先做 MVP 再迭代吗？
-4. **其他遗漏**：还有什么场景没考虑到？
+### Phase 1：数据模型 + 组件库
+
+1. 更新 `PlanComponent` schema（添加热点字段）
+2. 更新 `ServiceComponent` schema（添加 merchantId）
+3. 更新 `RentalPlan` schema（添加热点图字段）
+4. 运行 migration
+5. 更新 `/api/service-components` 返回商户组件
+
+### Phase 2：整合编辑器
+
+1. 创建 `IntegratedPlanEditor` 组件
+2. 实现组件库（平台组件 + 我的组件）
+3. 实现热点图画布（接收拖拽 + 位置编辑）
+4. 实现组件列表（显示/隐藏/删除）
+
+### Phase 3：商户自定义组件
+
+1. 实现 `POST /api/merchant/components` 创建组件
+2. 实现组件编辑/删除
+3. 添加「+ 添加新组件」UI
+
+### Phase 4：热点图图片
+
+1. 实现图片上传（Supabase Storage）
+2. 实现模板选择 UI
+3. 实现图片预览和裁剪
+
+### Phase 5：管理员功能
+
+1. 管理员查看所有商户组件
+2. 实现组件升级为平台组件功能
+
+---
+
+## 关键设计总结
+
+| 特性 | 设计 |
+|-----|------|
+| 组件分类 | 平台组件 / 商户组件（仅两种） |
+| 商户组件可见性 | 仅创建者可见 |
+| 商户组件审核 | 无需审核，创建即可用 |
+| 组件升级 | 管理员可将商户组件升级为平台组件 |
+| 热点图图片 | 推荐自定义，备选模板 |
+| 热点位置 | 存在 PlanComponent，每套餐独立 |
+| MapHotspot | 仅当使用模板时提供推荐位置 |
