@@ -1,4 +1,4 @@
-# Service Hotmap Integration Design (v5)
+# Service Hotmap Integration Design (v6)
 
 ## 设计决策
 
@@ -192,9 +192,9 @@ model ServiceComponent {
   planComponents  PlanComponent[]
   mapHotspots     MapHotspot[]
 
-  // 升级路径关联
-  upgradePathsFrom  ComponentUpgradePath[] @relation("UpgradeFrom")
-  upgradePathsTo    ComponentUpgradePath[] @relation("UpgradeTo")
+  // 升级关联
+  upgradesFrom      ComponentUpgrade[] @relation("UpgradeFrom")
+  upgradesTo        ComponentUpgrade[] @relation("UpgradeTo")
 
   @@index([isSystemComponent, isActive])
   @@index([merchantId])
@@ -239,18 +239,15 @@ model PlanComponent {
   hotmapOrder          Int      @default(0) @map("hotmap_order")
 
   updatedAt            DateTime @updatedAt @map("updated_at")
-
-  // 升级选项关联
-  upgradeOptions       PlanComponentUpgrade[]
 }
 ```
 
-### ComponentUpgradePath（平台预设升级路径）
+### ComponentUpgrade（统一升级配置表）
 
 ```prisma
-// 平台预设的组件升级路径
-// 例如：小纹 → 振袖 (+¥5,000)
-model ComponentUpgradePath {
+// 统一的组件升级配置
+// 支持两种 scope：PLATFORM（平台预设）和 MERCHANT（商户自定义）
+model ComponentUpgrade {
   id                String   @id @default(cuid())
 
   // 升级来源组件
@@ -261,61 +258,93 @@ model ComponentUpgradePath {
   toComponentId     String   @map("to_component_id")
   toComponent       ServiceComponent @relation("UpgradeTo", fields: [toComponentId], references: [id])
 
-  // 平台建议升级差价（商户可覆盖）
-  suggestedPriceDiff  Int    @map("suggested_price_diff")
+  // 升级差价
+  priceDiff         Int      @map("price_diff")
 
-  // 适用主题（null = 全部主题适用）
-  themeId           String?  @map("theme_id")
-  theme             Theme?   @relation(fields: [themeId], references: [id])
+  // ========== 作用域 ==========
+  scope             UpgradeScope  // PLATFORM | MERCHANT
 
-  // 是否推荐（用于「推荐升级」展示）
-  isRecommended     Boolean  @default(false) @map("is_recommended")
+  // 作用域 ID：
+  // - PLATFORM: themeId（按主题）或 null（全局）
+  // - MERCHANT: merchantId
+  scopeId           String?   @map("scope_id")
 
-  // 展示文案
-  label             String?  // "升级为振袖"
-  description       String?  // "更华丽的正装体验"
+  // ========== 展示信息 ==========
+  label             String?   // "升级为振袖"
+  description       String?   // "更华丽的正装体验"
+  isRecommended     Boolean   @default(false) @map("is_recommended")
+  displayOrder      Int       @default(0) @map("display_order")
+  isActive          Boolean   @default(true) @map("is_active")
 
-  displayOrder      Int      @default(0) @map("display_order")
-  isActive          Boolean  @default(true) @map("is_active")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
 
-  @@unique([fromComponentId, toComponentId, themeId])
-  @@index([fromComponentId, isActive])
-  @@index([themeId])
-  @@map("component_upgrade_paths")
+  @@unique([fromComponentId, toComponentId, scope, scopeId])
+  @@index([fromComponentId, scope, isActive])
+  @@index([scopeId])
+  @@map("component_upgrades")
+}
+
+enum UpgradeScope {
+  PLATFORM   // 平台预设（scopeId = themeId 或 null）
+  MERCHANT   // 商户自定义（scopeId = merchantId）
 }
 ```
 
-### PlanComponentUpgrade（套餐级升级配置）
+**查询优先级**：MERCHANT > PLATFORM（商户配置覆盖平台预设）
 
-```prisma
-// 套餐中某组件的可用升级选项（商户可自定义）
-model PlanComponentUpgrade {
-  id                  String   @id @default(cuid())
+```typescript
+// 获取组件的可用升级选项
+async function getUpgradeOptions(
+  fromComponentId: string,
+  merchantId: string,
+  themeId?: string
+) {
+  // 一次查询，获取所有可能的升级选项
+  const upgrades = await prisma.componentUpgrade.findMany({
+    where: {
+      fromComponentId,
+      isActive: true,
+      OR: [
+        // 商户自定义（最高优先级）
+        { scope: 'MERCHANT', scopeId: merchantId },
+        // 平台预设 - 主题特定
+        { scope: 'PLATFORM', scopeId: themeId },
+        // 平台预设 - 全局
+        { scope: 'PLATFORM', scopeId: null },
+      ],
+    },
+    include: { toComponent: true },
+    orderBy: { displayOrder: 'asc' },
+  });
 
-  // 所属套餐组件
-  planComponentId     String   @map("plan_component_id")
-  planComponent       PlanComponent @relation(fields: [planComponentId], references: [id], onDelete: Cascade)
+  // 去重：同一个 toComponentId 只保留最高优先级的
+  // 优先级：MERCHANT > PLATFORM(themeId) > PLATFORM(null)
+  const priorityMap = new Map<string, typeof upgrades[0]>();
 
-  // 升级目标组件
-  targetComponentId   String   @map("target_component_id")
-  targetComponent     ServiceComponent @relation(fields: [targetComponentId], references: [id])
+  for (const upgrade of upgrades) {
+    const key = upgrade.toComponentId;
+    const existing = priorityMap.get(key);
 
-  // 升级差价（商户自定义，覆盖平台建议价）
-  priceDiff           Int      @map("price_diff")
+    if (!existing) {
+      priorityMap.set(key, upgrade);
+      continue;
+    }
 
-  // 展示文案（商户自定义，覆盖平台预设）
-  label               String?  // "升级为振袖"
-  description         String?  // "更华丽的正装体验"
+    // 比较优先级
+    const getPriority = (u: typeof upgrade) => {
+      if (u.scope === 'MERCHANT') return 3;
+      if (u.scope === 'PLATFORM' && u.scopeId === themeId) return 2;
+      return 1; // PLATFORM global
+    };
 
-  // 是否推荐（用于「推荐升级」标记）
-  isRecommended       Boolean  @default(false) @map("is_recommended")
+    if (getPriority(upgrade) > getPriority(existing)) {
+      priorityMap.set(key, upgrade);
+    }
+  }
 
-  displayOrder        Int      @default(0) @map("display_order")
-  isActive            Boolean  @default(true) @map("is_active")
-
-  @@unique([planComponentId, targetComponentId])
-  @@index([planComponentId, isActive])
-  @@map("plan_component_upgrades")
+  return Array.from(priorityMap.values())
+    .sort((a, b) => a.displayOrder - b.displayOrder);
 }
 ```
 
@@ -705,43 +734,9 @@ interface CartItem {
 
 ### 升级选择逻辑
 
+升级查询逻辑已在 `ComponentUpgrade` 模型定义处说明。
+
 ```typescript
-// 获取组件的可用升级选项
-async function getUpgradeOptions(planComponent: PlanComponent) {
-  // 1. 获取商户自定义升级（优先）
-  const customUpgrades = await prisma.planComponentUpgrade.findMany({
-    where: {
-      planComponentId: planComponent.id,
-      isActive: true,
-    },
-    include: { targetComponent: true },
-    orderBy: { displayOrder: 'asc' },
-  });
-
-  if (customUpgrades.length > 0) {
-    return customUpgrades;
-  }
-
-  // 2. 如果没有自定义，使用平台预设
-  const plan = await prisma.rentalPlan.findUnique({
-    where: { id: planComponent.planId },
-    select: { themeId: true },
-  });
-
-  return prisma.componentUpgradePath.findMany({
-    where: {
-      fromComponentId: planComponent.componentId,
-      isActive: true,
-      OR: [
-        { themeId: null },          // 全局适用
-        { themeId: plan?.themeId }, // 主题特定
-      ],
-    },
-    include: { toComponent: true },
-    orderBy: { displayOrder: 'asc' },
-  });
-}
-
 // 获取套餐的推荐升级包
 async function getUpgradeBundles(planId: string) {
   return prisma.planUpgradeBundle.findMany({
@@ -1028,11 +1023,10 @@ function getPresetPositions(plan: RentalPlan) {
 1. 更新 `PlanComponent` schema（添加热点字段）
 2. 更新 `ServiceComponent` schema（添加 merchantId、tier）
 3. 更新 `RentalPlan` schema（添加热点图字段）
-4. 新增 `ComponentUpgradePath` schema（平台预设升级路径）
-5. 新增 `PlanComponentUpgrade` schema（套餐级升级配置）
-6. 新增 `PlanUpgradeBundle` schema（套餐升级包）
-7. 运行 migration
-8. 更新 `/api/service-components` 返回商户组件
+4. 新增 `ComponentUpgrade` schema（统一升级配置表，支持 PLATFORM/MERCHANT 两种 scope）
+5. 新增 `PlanUpgradeBundle` schema（套餐升级包）
+6. 运行 migration
+7. 更新 `/api/service-components` 返回商户组件
 
 ### Phase 2：整合编辑器
 
@@ -1095,4 +1089,4 @@ function getPresetPositions(plan: RentalPlan) {
 | **服务升级** | 混合模式：推荐升级包 + 自定义升级 |
 | **升级配置** | 混合模式：平台预设 + 商户自定义 |
 | **升级时机** | 套餐详情页 + 结算页面 |
-| **升级存储** | ComponentUpgradePath（平台）+ PlanComponentUpgrade（商户）|
+| **升级存储** | `ComponentUpgrade` 统一表（scope: PLATFORM / MERCHANT）|
