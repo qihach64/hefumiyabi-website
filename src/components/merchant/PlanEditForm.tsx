@@ -249,11 +249,10 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
       setSuccess(true);
       // 滚动到页面顶部显示成功提示
       window.scrollTo({ top: 0, behavior: 'smooth' });
-      // 显示成功提示后跳转回列表页
+      // 3秒后隐藏成功提示
       setTimeout(() => {
-        router.push("/merchant/listings");
-        router.refresh();
-      }, 2000);
+        setSuccess(false);
+      }, 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "更新失败，请重试");
     } finally {
@@ -295,10 +294,7 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
               </div>
-              <div>
-                <p className="font-semibold text-lg">保存成功！</p>
-                <p className="text-sm text-green-100">正在跳转到套餐列表...</p>
-              </div>
+              <p className="font-semibold">保存成功！</p>
             </div>
           </div>
         )}
