@@ -3,10 +3,11 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Badge } from "@/components/ui";
-import { Save, Loader2, Plus, X } from "lucide-react";
+import { Save, Loader2, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import PlanCardPreview from "@/components/PlanCard/PlanCardPreview";
+import ServiceComponentSelector from "./ServiceComponentSelector";
 
 interface Tag {
   id: string;
@@ -34,6 +35,20 @@ interface Theme {
   color: string | null;
 }
 
+interface PlanComponent {
+  id: string;
+  componentId: string;
+  isIncluded: boolean;
+  isHighlighted: boolean;
+  component: {
+    id: string;
+    code: string;
+    name: string;
+    type: string;
+    icon: string | null;
+  };
+}
+
 interface PlanEditFormProps {
   plan: {
     id: string;
@@ -45,7 +60,7 @@ interface PlanEditFormProps {
     category: string;
     price: number;
     originalPrice?: number | null;
-    includes: string[];
+    planComponents?: PlanComponent[];
     imageUrl?: string | null;
     storeName?: string | null;
     region?: string | null;
@@ -75,6 +90,11 @@ export default function PlanEditForm({ plan }: PlanEditFormProps) {
   // 主题系统
   const [themes, setThemes] = useState<Theme[]>([]);
   const [selectedThemeId, setSelectedThemeId] = useState<string | null>(plan.themeId || null);
+
+  // 服务组件系统
+  const [selectedComponentIds, setSelectedComponentIds] = useState<string[]>(
+    plan.planComponents?.map(pc => pc.componentId) || []
+  );
 
   // 获取已选标签的完整信息（合并 plan.planTags 和 tagCategories）
   const getSelectedTags = (): Tag[] => {
@@ -137,15 +157,12 @@ export default function PlanEditForm({ plan }: PlanEditFormProps) {
     highlights: plan.highlights || "",
     price: plan.price / 100, // 转换为元
     originalPrice: plan.originalPrice ? plan.originalPrice / 100 : "",
-    includes: plan.includes,
     imageUrl: plan.imageUrl || "",
     storeName: plan.storeName || "",
     region: plan.region || "",
     isActive: plan.isActive,
   });
 
-  // 新增项输入
-  const [newIncludeItem, setNewIncludeItem] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -167,7 +184,7 @@ export default function PlanEditForm({ plan }: PlanEditFormProps) {
           originalPrice: formData.originalPrice
             ? Math.round(Number(formData.originalPrice) * 100)
             : null,
-          includes: formData.includes,
+          componentIds: selectedComponentIds,
           imageUrl: formData.imageUrl || null,
           storeName: formData.storeName || null,
           region: formData.region || null,
@@ -203,23 +220,6 @@ export default function PlanEditForm({ plan }: PlanEditFormProps) {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const addIncludeItem = () => {
-    if (newIncludeItem.trim()) {
-      setFormData({
-        ...formData,
-        includes: [...formData.includes, newIncludeItem.trim()],
-      });
-      setNewIncludeItem("");
-    }
-  };
-
-  const removeIncludeItem = (index: number) => {
-    setFormData({
-      ...formData,
-      includes: formData.includes.filter((_, i) => i !== index),
-    });
   };
 
   // 新标签系统函数
@@ -480,50 +480,11 @@ export default function PlanEditForm({ plan }: PlanEditFormProps) {
         </div>
       </div>
 
-      {/* 包含内容 */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">包含内容</h2>
-
-        {/* 已添加的项目 */}
-        <div className="space-y-2 mb-4">
-          {formData.includes.map((item, index) => (
-            <div
-              key={index}
-              className="flex items-center gap-2 p-3 bg-gray-50 rounded-xl"
-            >
-              <span className="flex-1 text-gray-700">{item}</span>
-              <button
-                type="button"
-                onClick={() => removeIncludeItem(index)}
-                className="text-red-600 hover:text-red-700"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          ))}
-        </div>
-
-        {/* 添加新项目 */}
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={newIncludeItem}
-            onChange={(e) => setNewIncludeItem(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addIncludeItem())}
-            placeholder="例如：和服租赁、专业着装服务"
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sakura-500 focus:border-transparent"
-          />
-          <Button
-            type="button"
-            onClick={addIncludeItem}
-            variant="secondary"
-            size="md"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            添加
-          </Button>
-        </div>
-      </div>
+      {/* 包含内容 - 使用 ServiceComponent 选择器 */}
+      <ServiceComponentSelector
+        selectedComponentIds={selectedComponentIds}
+        onChange={setSelectedComponentIds}
+      />
 
       {/* 标签 - 新标签系统 */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6">

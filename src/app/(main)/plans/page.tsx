@@ -129,6 +129,23 @@ export default async function PlansPage({
           },
         },
       },
+      planComponents: {
+        where: { isIncluded: true },
+        include: {
+          component: {
+            select: {
+              id: true,
+              code: true,
+              name: true,
+              type: true,
+              icon: true,
+            },
+          },
+        },
+        orderBy: {
+          component: { displayOrder: 'asc' },
+        },
+      },
     },
     orderBy,
   });
@@ -153,7 +170,9 @@ export default async function PlansPage({
     category: plan.category,
     duration: plan.duration,
     isCampaign: !!plan.originalPrice && plan.originalPrice > plan.price,
-    includes: plan.includes,
+    includes: plan.planComponents
+      .filter(pc => pc.isIncluded)
+      .map(pc => pc.component.name),
     planTags: plan.planTags.map(pt => ({ tag: pt.tag })),
     themeId: plan.themeId || undefined,
     themeName: plan.theme?.name || undefined,

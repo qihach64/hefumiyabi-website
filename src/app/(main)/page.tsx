@@ -69,6 +69,23 @@ export default async function HomePage({
           },
         },
       },
+      planComponents: {
+        where: { isIncluded: true },
+        include: {
+          component: {
+            select: {
+              id: true,
+              code: true,
+              name: true,
+              type: true,
+              icon: true,
+            },
+          },
+        },
+        orderBy: {
+          component: { displayOrder: 'asc' },
+        },
+      },
     },
     orderBy: [
       { isFeatured: 'desc' },
@@ -92,8 +109,8 @@ export default async function HomePage({
   const themeSections = themes.map((theme) => {
     const themePlans = themedPlans
       .filter((plan) => plan.themeId === theme.id)
-      // 按 includes 数量降序排序，包含服务最多的作为 featured
-      .sort((a, b) => (b.includes?.length || 0) - (a.includes?.length || 0))
+      // 按 planComponents 数量降序排序，包含服务最多的作为 featured
+      .sort((a, b) => (b.planComponents?.length || 0) - (a.planComponents?.length || 0))
       .slice(0, 8);
 
     return {
@@ -106,7 +123,6 @@ export default async function HomePage({
       plans: themePlans.map((plan) => ({
         id: plan.id,
         name: plan.name,
-        nameEn: plan.nameEn,
         description: plan.description,
         price: plan.price,
         originalPrice: plan.originalPrice,
@@ -116,7 +132,9 @@ export default async function HomePage({
         category: plan.category,
         duration: plan.duration,
         isCampaign: !!plan.originalPrice && plan.originalPrice > plan.price,
-        includes: plan.includes,
+        includes: plan.planComponents
+          .filter(pc => pc.isIncluded)
+          .map(pc => pc.component.name),
         planTags: plan.planTags,
       })),
     };
@@ -173,13 +191,14 @@ export default async function HomePage({
   const allPlansForClient = themedPlans.map((plan) => ({
     id: plan.id,
     name: plan.name,
-    nameEn: plan.nameEn,
     description: plan.description,
     price: plan.price,
     originalPrice: plan.originalPrice,
     category: plan.category,
     duration: plan.duration,
-    includes: plan.includes,
+    includes: plan.planComponents
+      .filter(pc => pc.isIncluded)
+      .map(pc => pc.component.name),
     imageUrl: plan.imageUrl,
     merchantName: plan.merchant?.businessName || plan.storeName || "",
     region: plan.region || "",

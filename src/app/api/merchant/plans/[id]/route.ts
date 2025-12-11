@@ -3,6 +3,19 @@ import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+// PlanComponent 配置 schema
+const planComponentSchema = z.object({
+  componentId: z.string(),
+  isIncluded: z.boolean().default(true),
+  isHighlighted: z.boolean().default(false),
+  tier: z.string().optional().nullable(),
+  tierLabel: z.string().optional().nullable(),
+  quantity: z.number().int().positive().default(1),
+  customNote: z.string().optional().nullable(),
+  nameOverride: z.string().optional().nullable(),
+  descriptionOverride: z.string().optional().nullable(),
+});
+
 // 验证 schema - 简化版
 const updatePlanSchema = z.object({
   name: z.string().min(1, "套餐名称不能为空"),
@@ -10,12 +23,13 @@ const updatePlanSchema = z.object({
   highlights: z.string().optional().nullable(),
   price: z.number().int().positive("价格必须大于0"),
   originalPrice: z.number().int().positive().optional().nullable(),
-  includes: z.array(z.string()),
+  componentIds: z.array(z.string()).optional(), // 简化版：只传组件 ID 数组
+  planComponents: z.array(planComponentSchema).optional(), // 完整版：传组件配置
   imageUrl: z.union([z.string().url(), z.literal("")]).optional().nullable().transform(val => val || null),
   storeName: z.string().optional().nullable(),
   region: z.string().optional().nullable(),
   themeId: z.string().optional().nullable(),
-  tagIds: z.array(z.string()).optional(), // 新标签系统
+  tagIds: z.array(z.string()).optional(),
   isActive: z.boolean(),
 });
 
@@ -53,6 +67,28 @@ export async function GET(
                 color: true,
                 categoryId: true,
               },
+            },
+          },
+        },
+        planComponents: {
+          include: {
+            component: {
+              select: {
+                id: true,
+                code: true,
+                name: true,
+                nameJa: true,
+                nameEn: true,
+                description: true,
+                type: true,
+                icon: true,
+                highlights: true,
+              },
+            },
+          },
+          orderBy: {
+            component: {
+              displayOrder: 'asc',
             },
           },
         },
@@ -116,7 +152,7 @@ export async function PATCH(
       );
     }
 
-    // 使用事务更新套餐和标签
+    // 使用事务更新套餐、标签和组件
     const result = await prisma.$transaction(async (tx) => {
       // 更新套餐 - 简化字段
       const updatedPlan = await tx.rentalPlan.update({
@@ -127,7 +163,7 @@ export async function PATCH(
           highlights: validatedData.highlights || null,
           price: validatedData.price,
           originalPrice: validatedData.originalPrice || null,
-          includes: validatedData.includes,
+          includes: [], // 已废弃，使用 PlanComponent
           imageUrl: validatedData.imageUrl || null,
           storeName: validatedData.storeName || null,
           region: validatedData.region || null,
@@ -157,6 +193,48 @@ export async function PATCH(
           await tx.tag.updateMany({
             where: { id: { in: validatedData.tagIds } },
             data: { usageCount: { increment: 1 } },
+          });
+        }
+      }
+
+      // 处理 PlanComponent（服务组件）
+      // 支持两种方式：简化版（componentIds）和完整版（planComponents）
+      const componentIds = validatedData.componentIds;
+      const planComponents = validatedData.planComponents;
+
+      if (componentIds !== undefined || planComponents !== undefined) {
+        // 删除所有旧组件关联
+        await tx.planComponent.deleteMany({
+          where: { planId: id },
+        });
+
+        // 创建新组件关联
+        if (planComponents && planComponents.length > 0) {
+          // 完整版：使用详细配置
+          await tx.planComponent.createMany({
+            data: planComponents.map((pc) => ({
+              planId: id,
+              componentId: pc.componentId,
+              isIncluded: pc.isIncluded ?? true,
+              isHighlighted: pc.isHighlighted ?? false,
+              tier: pc.tier || null,
+              tierLabel: pc.tierLabel || null,
+              quantity: pc.quantity ?? 1,
+              customNote: pc.customNote || null,
+              nameOverride: pc.nameOverride || null,
+              descriptionOverride: pc.descriptionOverride || null,
+            })),
+          });
+        } else if (componentIds && componentIds.length > 0) {
+          // 简化版：只有组件 ID，使用默认配置
+          await tx.planComponent.createMany({
+            data: componentIds.map((componentId) => ({
+              planId: id,
+              componentId,
+              isIncluded: true,
+              isHighlighted: false,
+              quantity: 1,
+            })),
           });
         }
       }
