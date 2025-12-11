@@ -4,7 +4,6 @@ import prisma from "@/lib/prisma";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import PlanEditForm from "@/components/merchant/PlanEditForm";
-import HotspotEditor from "@/components/merchant/HotspotEditor";
 
 interface EditListingPageProps {
   params: {
@@ -127,16 +126,19 @@ export default async function EditListingPage({ params }: EditListingPageProps) 
     });
   }
 
-  // 转换热点数据格式
-  const hotspotData = mapTemplate?.hotspots.map((h) => ({
-    id: h.id,
-    x: h.x,
-    y: h.y,
-    labelPosition: h.labelPosition as "left" | "right" | "top" | "bottom",
-    displayOrder: h.displayOrder,
-    componentName: h.component.name,
-    componentIcon: h.component.icon,
-  })) || [];
+  // 转换地图模板数据格式给 PlanComponentEditor 使用
+  const mapTemplateData = mapTemplate
+    ? {
+        id: mapTemplate.id,
+        imageUrl: mapTemplate.imageUrl,
+        hotspots: mapTemplate.hotspots.map((h) => ({
+          componentId: h.componentId,
+          x: h.x,
+          y: h.y,
+          labelPosition: h.labelPosition,
+        })),
+      }
+    : null;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -155,19 +157,8 @@ export default async function EditListingPage({ params }: EditListingPageProps) 
           <p className="text-gray-600">{plan.name}</p>
         </div>
 
-        {/* 编辑表单 - 传递plan数据用于预览 */}
-        <PlanEditForm plan={plan} />
-
-        {/* 热点编辑器 */}
-        {mapTemplate && hotspotData.length > 0 && (
-          <div className="mt-8">
-            <HotspotEditor
-              templateId={mapTemplate.id}
-              imageUrl={mapTemplate.imageUrl}
-              hotspots={hotspotData}
-            />
-          </div>
-        )}
+        {/* 编辑表单 - 包含统一的组件选择、升级配置和热点编辑 */}
+        <PlanEditForm plan={plan} mapTemplate={mapTemplateData} />
       </div>
     </div>
   );

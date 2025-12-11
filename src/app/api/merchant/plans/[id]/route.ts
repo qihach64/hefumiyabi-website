@@ -16,6 +16,13 @@ const planComponentSchema = z.object({
   descriptionOverride: z.string().optional().nullable(),
 });
 
+// 组件配置 schema（简化版，包含升级选项）
+const componentConfigSchema = z.object({
+  componentId: z.string(),
+  isIncluded: z.boolean().default(true),
+  enabledUpgrades: z.array(z.string()).default([]), // 启用的升级选项 ID
+});
+
 // 验证 schema - 简化版
 const updatePlanSchema = z.object({
   name: z.string().min(1, "套餐名称不能为空"),
@@ -25,6 +32,7 @@ const updatePlanSchema = z.object({
   originalPrice: z.number().int().positive().optional().nullable(),
   componentIds: z.array(z.string()).optional(), // 简化版：只传组件 ID 数组
   planComponents: z.array(planComponentSchema).optional(), // 完整版：传组件配置
+  componentConfigs: z.array(componentConfigSchema).optional(), // 简化版：组件配置（含升级）
   imageUrl: z.union([z.string().url(), z.literal("")]).optional().nullable().transform(val => val || null),
   storeName: z.string().optional().nullable(),
   region: z.string().optional().nullable(),
@@ -198,15 +206,22 @@ export async function PATCH(
       }
 
       // 处理 PlanComponent（服务组件）
-      // 支持两种方式：简化版（componentIds）和完整版（planComponents）
+      // 支持三种方式：
+      // 1. componentConfigs - 简化版，包含升级选项
+      // 2. planComponents - 完整版配置
+      // 3. componentIds - 最简版，只有 ID
       const componentIds = validatedData.componentIds;
       const planComponents = validatedData.planComponents;
+      const componentConfigs = validatedData.componentConfigs;
 
-      if (componentIds !== undefined || planComponents !== undefined) {
+      if (componentIds !== undefined || planComponents !== undefined || componentConfigs !== undefined) {
         // 删除所有旧组件关联
         await tx.planComponent.deleteMany({
           where: { planId: id },
         });
+
+        // 收集所有启用的升级选项
+        const allEnabledUpgrades: string[] = [];
 
         // 创建新组件关联
         if (planComponents && planComponents.length > 0) {
@@ -225,8 +240,24 @@ export async function PATCH(
               descriptionOverride: pc.descriptionOverride || null,
             })),
           });
+        } else if (componentConfigs && componentConfigs.length > 0) {
+          // 简化版：组件配置 + 升级选项
+          await tx.planComponent.createMany({
+            data: componentConfigs.map((cc) => ({
+              planId: id,
+              componentId: cc.componentId,
+              isIncluded: cc.isIncluded ?? true,
+              isHighlighted: false,
+              quantity: 1,
+            })),
+          });
+
+          // 收集所有启用的升级选项
+          componentConfigs.forEach((cc) => {
+            allEnabledUpgrades.push(...cc.enabledUpgrades);
+          });
         } else if (componentIds && componentIds.length > 0) {
-          // 简化版：只有组件 ID，使用默认配置
+          // 最简版：只有组件 ID，使用默认配置
           await tx.planComponent.createMany({
             data: componentIds.map((componentId) => ({
               planId: id,
@@ -235,6 +266,50 @@ export async function PATCH(
               isHighlighted: false,
               quantity: 1,
             })),
+          });
+        }
+
+        // 处理升级选项：将启用的升级保存到 PlanUpgradeBundle
+        // 先删除旧的升级包
+        await tx.planUpgradeBundle.deleteMany({
+          where: { planId: id },
+        });
+
+        // 如果有启用的升级选项，创建一个「自定义升级」包
+        if (allEnabledUpgrades.length > 0) {
+          // 获取升级选项的详情
+          const upgradeDetails = await tx.componentUpgrade.findMany({
+            where: { id: { in: allEnabledUpgrades } },
+            select: {
+              id: true,
+              fromComponentId: true,
+              toComponentId: true,
+              priceDiff: true,
+              label: true,
+            },
+          });
+
+          // 计算总价
+          const totalOriginalPrice = upgradeDetails.reduce((sum, u) => sum + u.priceDiff, 0);
+
+          // 创建升级包（单个升级不打折，只是记录启用状态）
+          await tx.planUpgradeBundle.create({
+            data: {
+              planId: id,
+              label: "可选升级",
+              description: `${upgradeDetails.length} 个升级选项`,
+              upgradeItems: upgradeDetails.map((u) => ({
+                upgradeId: u.id,
+                fromComponentId: u.fromComponentId,
+                toComponentId: u.toComponentId,
+                priceDiff: u.priceDiff,
+              })),
+              bundlePrice: totalOriginalPrice, // 不打折
+              originalPrice: totalOriginalPrice,
+              isRecommended: false,
+              displayOrder: 0,
+              isActive: true,
+            },
           });
         }
       }

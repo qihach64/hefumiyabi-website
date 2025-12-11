@@ -158,6 +158,7 @@ model Merchant {
   bookings       Booking[]
   reviews        MerchantReview[]
   payouts        Payout[]
+  serviceComponents ServiceComponent[]  // 商户自定义组件
 
   @@index([status])
   @@index([verified])
@@ -300,6 +301,7 @@ model RentalPlan {
   cartItems      CartItem[]
   planTags       PlanTag[]
   planComponents PlanComponent[]  // 套餐包含的服务组件
+  upgradeBundles PlanUpgradeBundle[]  // 一键升级包
 
   @@index([merchantId])
   @@index([themeId])
@@ -919,7 +921,25 @@ model ServiceComponent {
   type            ComponentType
   icon            String?
 
-  // 升级链设计
+  // ========== 组件所有权 ==========
+  // true = 平台组件（全部商户可见）
+  // false = 商户组件（仅创建者可见）
+  isSystemComponent  Boolean      @default(true) @map("is_system_component")
+
+  // 商户组件的所有者（平台组件此字段为 null）
+  merchantId         String?      @map("merchant_id")
+  merchant           Merchant?    @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  // 升级记录：商户组件被升级为平台组件时，记录原商户 ID
+  promotedFromMerchantId  String?   @map("promoted_from_merchant_id")
+  promotedAt              DateTime? @map("promoted_at")
+
+  // ========== 升级层级 ==========
+  // 同类型组件的层级（0=基础, 1=标准, 2=豪华, 3=顶级）
+  tier            Int             @default(0)
+  tierLabel       String?         @map("tier_label")  // "基础", "标准", "豪华", "顶级"
+
+  // 旧版升级链设计（保留兼容，后续可移除）
   upgradeFromId   String?         @map("upgrade_from_id")
   upgradeFrom     ServiceComponent?  @relation("UpgradePath", fields: [upgradeFromId], references: [id])
   upgradesTo      ServiceComponent[] @relation("UpgradePath")
@@ -933,7 +953,7 @@ model ServiceComponent {
   highlights      String[]        @default([])
   images          String[]        @default([])
 
-  // 审核状态
+  // 审核状态（商户组件无需审核，平台组件使用）
   status          ComponentStatus @default(APPROVED)
   requestedBy     String?         @map("requested_by")
   rejectionReason String?         @map("rejection_reason")
@@ -948,10 +968,17 @@ model ServiceComponent {
   planComponents  PlanComponent[]
   mapHotspots     MapHotspot[]
 
+  // 升级关联（新版）
+  upgradesFrom    ComponentUpgrade[] @relation("UpgradeFrom")
+  upgradesTo_new  ComponentUpgrade[] @relation("UpgradeTo")
+
   @@index([type, isActive, displayOrder])
   @@index([status])
   @@index([isBaseComponent])
   @@index([upgradeFromId])
+  @@index([isSystemComponent, isActive])
+  @@index([merchantId])
+  @@index([type, tier])
   @@map("service_components")
 }
 
@@ -979,8 +1006,102 @@ model PlanComponent {
   upgradePriceOverride Int?             @map("upgrade_price_override")
 
   createdAt            DateTime         @default(now()) @map("created_at")
+  updatedAt            DateTime         @updatedAt @map("updated_at")
+
+  // ========== 热点图配置 ==========
+  // 热点位置（百分比坐标 0-1，null = 不显示在图上）
+  hotmapX              Float?           @map("hotmap_x")
+  hotmapY              Float?           @map("hotmap_y")
+
+  // 标签显示方向
+  hotmapLabelPosition  String           @default("right") @map("hotmap_label_position")
+
+  // 热点显示顺序（用于动画、层级）
+  hotmapOrder          Int              @default(0) @map("hotmap_order")
 
   @@unique([planId, componentId])
   @@index([planId])
   @@map("plan_components")
+}
+
+// ============================================
+// 组件升级系统 (Component Upgrade System)
+// ============================================
+
+// 升级作用域
+enum UpgradeScope {
+  PLATFORM   // 平台预设（scopeId = themeId 或 null）
+  MERCHANT   // 商户自定义（scopeId = merchantId）
+}
+
+// 统一的组件升级配置
+// 支持两种 scope：PLATFORM（平台预设）和 MERCHANT（商户自定义）
+model ComponentUpgrade {
+  id                String   @id @default(cuid())
+
+  // 升级来源组件
+  fromComponentId   String   @map("from_component_id")
+  fromComponent     ServiceComponent @relation("UpgradeFrom", fields: [fromComponentId], references: [id], onDelete: Cascade)
+
+  // 升级目标组件
+  toComponentId     String   @map("to_component_id")
+  toComponent       ServiceComponent @relation("UpgradeTo", fields: [toComponentId], references: [id], onDelete: Cascade)
+
+  // 升级差价
+  priceDiff         Int      @map("price_diff")
+
+  // ========== 作用域 ==========
+  scope             UpgradeScope
+
+  // 作用域 ID：
+  // - PLATFORM: themeId（按主题）或 null（全局）
+  // - MERCHANT: merchantId
+  scopeId           String?   @map("scope_id")
+
+  // ========== 展示信息 ==========
+  label             String?   // "升级为振袖"
+  description       String?   // "更华丽的正装体验"
+  isRecommended     Boolean   @default(false) @map("is_recommended")
+  displayOrder      Int       @default(0) @map("display_order")
+  isActive          Boolean   @default(true) @map("is_active")
+
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@unique([fromComponentId, toComponentId, scope, scopeId])
+  @@index([fromComponentId, scope, isActive])
+  @@index([scopeId])
+  @@map("component_upgrades")
+}
+
+// 套餐的「一键升级」打包方案
+model PlanUpgradeBundle {
+  id              String   @id @default(cuid())
+
+  // 所属套餐
+  planId          String   @map("plan_id")
+  plan            RentalPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  // 展示信息
+  label           String   // "豪华升级包"
+  description     String?  // "一键升级为豪华体验"
+
+  // 升级内容（组件替换清单）
+  // JSON: [{ "fromComponentId": "xxx", "toComponentId": "yyy" }, { "addComponentId": "zzz" }]
+  upgradeItems    Json     @map("upgrade_items")
+
+  // 打包价格
+  bundlePrice     Int      @map("bundle_price")      // 打包升级价
+  originalPrice   Int      @map("original_price")    // 单独升级总价（用于显示「节省 X 元」）
+
+  // 展示配置
+  isRecommended   Boolean  @default(true) @map("is_recommended")
+  displayOrder    Int      @default(0) @map("display_order")
+  isActive        Boolean  @default(true) @map("is_active")
+
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([planId, isActive])
+  @@map("plan_upgrade_bundles")
 }

@@ -17,7 +17,7 @@ interface PlanCardPreviewProps {
     highlights: string;
     price: number; // 表单中是元
     originalPrice: number | string;
-    includes: string[];
+    includes?: string[];  // 可选，已废弃，使用 components
     imageUrl: string;
     storeName: string;
     region: string;
@@ -43,7 +43,7 @@ export default function PlanCardPreview({
       ? Math.round(Number(formData.originalPrice) * 100)
       : undefined,
     imageUrl: formData.imageUrl || undefined,
-    includes: formData.includes,
+    includes: formData.includes || [],
     planTags: selectedTags.map(tag => ({ tag })),
     isCampaign,
     storeName: formData.storeName || undefined,
