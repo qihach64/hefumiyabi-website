@@ -273,6 +273,10 @@ export default function PlanComponentEditor({
   const handleComponentSelect = useCallback((componentId: string) => {
     const isSelected = selectedComponentIds.includes(componentId);
 
+    // 检查组件是否可以放到热图上
+    const component = getAllComponents().find(c => c.id === componentId);
+    const canPlaceOnHotmap = component && ['OUTFIT', 'KIMONO', 'STYLING', 'ACCESSORY'].includes(component.type);
+
     if (isSelected) {
       // 取消选择
       onChange(selectedComponentIds.filter(id => id !== componentId));
@@ -281,10 +285,23 @@ export default function PlanComponentEditor({
         setPlacingComponentId(null);
       }
     } else {
-      // 选择组件并进入放置模式
+      // 选择组件
       onChange([...selectedComponentIds, componentId]);
 
-      // 查找模板中的默认位置
+      // ADDON 类型不需要热图位置
+      if (!canPlaceOnHotmap) {
+        setConfigs([...configs, {
+          componentId,
+          isIncluded: true,
+          enabledUpgrades: [],
+          hotmapX: null,
+          hotmapY: null,
+          hotmapLabelPosition: "right",
+        }]);
+        return;
+      }
+
+      // OUTFIT 类型：查找模板中的默认位置
       const templateHotspot = mapTemplate?.hotspots.find(h => h.componentId === componentId);
 
       if (templateHotspot) {
@@ -320,7 +337,7 @@ export default function PlanComponentEditor({
         }]);
       }
     }
-  }, [selectedComponentIds, onChange, configs, setConfigs, mapTemplate, placingComponentId]);
+  }, [selectedComponentIds, onChange, configs, setConfigs, mapTemplate, placingComponentId, getAllComponents]);
 
   // 点击"放置到图片"按钮
   const startPlacing = useCallback((componentId: string) => {
@@ -403,20 +420,37 @@ export default function PlanComponentEditor({
     return categories.flatMap((cat) => cat.components);
   };
 
+  // 判断组件类型是否可以放置到热图上（只有 OUTFIT 类型可以）
+  // 兼容旧类型：KIMONO, STYLING, ACCESSORY 也视为可放置
+  const isHotmapEligible = (componentId: string): boolean => {
+    const component = getAllComponents().find(c => c.id === componentId);
+    if (!component) return false;
+    // OUTFIT 或旧的可视化类型都可以放到热图
+    const hotmapTypes = ['OUTFIT', 'KIMONO', 'STYLING', 'ACCESSORY'];
+    return hotmapTypes.includes(component.type);
+  };
+
   // 检查组件是否已放置到图片上
   const isPlacedOnMap = (componentId: string): boolean => {
     const config = getConfig(componentId);
     return config?.hotmapX != null && config?.hotmapY != null;
   };
 
-  // 获取已放置到图片上的组件
+  // 获取已放置到图片上的组件（只计算可放置类型）
   const getPlacedComponents = () => {
-    return configs.filter(c => c.hotmapX != null && c.hotmapY != null && selectedComponentIds.includes(c.componentId));
+    return configs.filter(c =>
+      c.hotmapX != null &&
+      c.hotmapY != null &&
+      selectedComponentIds.includes(c.componentId) &&
+      isHotmapEligible(c.componentId)
+    );
   };
 
-  // 获取未放置到图片上的已选组件
+  // 获取未放置到图片上的已选组件（只计算可放置类型）
   const getUnplacedComponents = () => {
-    return selectedComponentIds.filter(id => !isPlacedOnMap(id));
+    return selectedComponentIds.filter(id =>
+      isHotmapEligible(id) && !isPlacedOnMap(id)
+    );
   };
 
   // 统计
@@ -742,8 +776,14 @@ export default function PlanComponentEditor({
                                       {component.tierLabel}
                                     </span>
                                   )}
-                                  {/* 显示放置状态 */}
-                                  {isSelected && hasMapTemplate && (
+                                  {/* ADDON 类型标识 */}
+                                  {!isHotmapEligible(component.id) && (
+                                    <span className="px-1.5 py-0.5 bg-purple-100 text-purple-600 text-[10px] rounded">
+                                      增值
+                                    </span>
+                                  )}
+                                  {/* 显示放置状态 - 只有 OUTFIT 类型可以放置在热图上 */}
+                                  {isSelected && hasMapTemplate && isHotmapEligible(component.id) && (
                                     isOnMap ? (
                                       <span className="px-1.5 py-0.5 bg-sakura-100 text-sakura-600 text-[10px] rounded">
                                         已放置

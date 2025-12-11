@@ -833,12 +833,17 @@ model PlanTag {
 // 交互式配件地图系统 (Interactive Component Map)
 // ============================================
 
-// 服务组件类型 - 对应积木模型的三层
+// 服务组件类型 - 二分法设计
 enum ComponentType {
-  KIMONO     // 主菜：和服本体
-  STYLING    // 配菜：造型服务
-  ACCESSORY  // 配件：物理配件
-  EXPERIENCE // 饮料：增值体验
+  // === 新分类（2024.12） ===
+  OUTFIT     // 着装：可在热图展示，支持升级（和服+配饰+造型）
+  ADDON      // 增值服务：独立于热图，附加购买（跟拍、延时等）
+
+  // === 旧分类（保留兼容，将被迁移） ===
+  KIMONO     // @deprecated → OUTFIT
+  STYLING    // @deprecated → OUTFIT
+  ACCESSORY  // @deprecated → OUTFIT
+  EXPERIENCE // @deprecated → ADDON
 }
 
 // 组件审核状态（商家申请新配件时使用）

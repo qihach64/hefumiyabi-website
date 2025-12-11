@@ -101,8 +101,12 @@ export async function GET(request: Request) {
       return acc;
     }, {} as Record<string, typeof components>);
 
-    // 定义类型顺序和显示名称
+    // 定义类型顺序和显示名称（二分法：OUTFIT + ADDON）
     const typeOrder = [
+      // === 新分类 ===
+      { type: 'OUTFIT', label: '着装项', icon: '👘' },
+      { type: 'ADDON', label: '增值服务', icon: '✨' },
+      // === 旧分类（兼容期，将逐步淘汰） ===
       { type: 'KIMONO', label: '和服类型', icon: '👘' },
       { type: 'STYLING', label: '造型服务', icon: '💇' },
       { type: 'ACCESSORY', label: '配饰', icon: '🎀' },
