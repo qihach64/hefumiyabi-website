@@ -8,10 +8,8 @@ import {
   ChevronUp,
   Sparkles,
   ArrowRight,
-  GripVertical,
-  Plus,
-  Eye,
-  EyeOff,
+  Info,
+  Minus,
 } from "lucide-react";
 
 // ==================== 类型定义 ====================
@@ -64,8 +62,7 @@ interface UpgradeOption {
 export interface ComponentConfig {
   componentId: string;
   isIncluded: boolean;
-  enabledUpgrades: string[]; // 启用的升级选项 ID 列表
-  // 热点位置（可选）
+  enabledUpgrades: string[];
   hotmapX?: number | null;
   hotmapY?: number | null;
   hotmapLabelPosition?: string;
@@ -109,13 +106,10 @@ export default function PlanComponentEditor({
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [expandedUpgrades, setExpandedUpgrades] = useState<Set<string>>(new Set());
 
-  // 热点编辑器状态
-  const [activeHotspotId, setActiveHotspotId] = useState<string | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [showHotspots, setShowHotspots] = useState(true);
-  const containerRef = useRef<HTMLDivElement>(null);
+  // 最近选中的组件（用于闪烁动画）
+  const [recentlySelectedId, setRecentlySelectedId] = useState<string | null>(null);
 
-  // 内部状态：组件配置（如果外部没有传入）
+  // 内部状态：组件配置
   const [internalConfigs, setInternalConfigs] = useState<ComponentConfig[]>([]);
   const configs = componentConfigs || internalConfigs;
   const setConfigs = onConfigChange || setInternalConfigs;
@@ -133,8 +127,7 @@ export default function PlanComponentEditor({
           const data = await response.json();
           setCategories(data.categories || []);
           setUpgradePaths(data.upgradePaths || {});
-
-          // 默认展开所有分类（方便快速选择）
+          // 默认展开所有分类
           const allTypes = (data.categories || []).map((c: ComponentCategory) => c.type);
           setExpandedCategories(new Set(allTypes));
         }
@@ -144,9 +137,16 @@ export default function PlanComponentEditor({
         setIsLoading(false);
       }
     }
-
     fetchComponents();
   }, [themeId]);
+
+  // 清除闪烁动画
+  useEffect(() => {
+    if (recentlySelectedId) {
+      const timer = setTimeout(() => setRecentlySelectedId(null), 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [recentlySelectedId]);
 
   // ==================== 组件选择逻辑 ====================
 
@@ -162,19 +162,19 @@ export default function PlanComponentEditor({
     });
   };
 
+  // 统一的选择/取消组件函数
   const toggleComponent = useCallback(
-    (componentId: string) => {
+    (componentId: string, fromHotspot: boolean = false) => {
       const isSelected = selectedComponentIds.includes(componentId);
 
       if (isSelected) {
+        // 取消选择
         onChange(selectedComponentIds.filter((id) => id !== componentId));
         setConfigs(configs.filter((c) => c.componentId !== componentId));
-        if (activeHotspotId === componentId) {
-          setActiveHotspotId(null);
-        }
       } else {
+        // 选择组件
         onChange([...selectedComponentIds, componentId]);
-        // 创建默认配置，使用模板的热点位置（如果有）
+        // 使用模板的热点位置（如果有）
         const templateHotspot = mapTemplate?.hotspots.find(
           (h) => h.componentId === componentId
         );
@@ -189,9 +189,11 @@ export default function PlanComponentEditor({
             hotmapLabelPosition: templateHotspot?.labelPosition ?? "right",
           },
         ]);
+        // 触发闪烁动画
+        setRecentlySelectedId(componentId);
       }
     },
-    [selectedComponentIds, onChange, configs, setConfigs, mapTemplate, activeHotspotId]
+    [selectedComponentIds, onChange, configs, setConfigs, mapTemplate]
   );
 
   const selectAllInCategory = (components: ServiceComponent[]) => {
@@ -251,68 +253,6 @@ export default function PlanComponentEditor({
     });
   };
 
-  // ==================== 热点编辑逻辑 ====================
-
-  const handleHotspotMouseDown = useCallback((e: React.MouseEvent, componentId: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setActiveHotspotId(componentId);
-    setIsDragging(true);
-  }, []);
-
-  const handleMouseMove = useCallback(
-    (e: MouseEvent) => {
-      if (!isDragging || !activeHotspotId || !containerRef.current) return;
-
-      const rect = containerRef.current.getBoundingClientRect();
-      const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-      const y = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
-
-      setConfigs(
-        configs.map((c) =>
-          c.componentId === activeHotspotId ? { ...c, hotmapX: x, hotmapY: y } : c
-        )
-      );
-    },
-    [isDragging, activeHotspotId, configs, setConfigs]
-  );
-
-  const handleMouseUp = useCallback(() => {
-    setIsDragging(false);
-  }, []);
-
-  // 点击图片空白处添加热点
-  const handleImageClick = useCallback(
-    (e: React.MouseEvent) => {
-      if (isDragging || !containerRef.current || !activeHotspotId) return;
-
-      const config = configs.find(c => c.componentId === activeHotspotId);
-      if (config?.hotmapX != null) return; // 已有位置的不处理
-
-      const rect = containerRef.current.getBoundingClientRect();
-      const x = (e.clientX - rect.left) / rect.width;
-      const y = (e.clientY - rect.top) / rect.height;
-
-      setConfigs(
-        configs.map((c) =>
-          c.componentId === activeHotspotId ? { ...c, hotmapX: x, hotmapY: y } : c
-        )
-      );
-    },
-    [isDragging, activeHotspotId, configs, setConfigs]
-  );
-
-  useEffect(() => {
-    if (isDragging) {
-      window.addEventListener("mousemove", handleMouseMove);
-      window.addEventListener("mouseup", handleMouseUp);
-      return () => {
-        window.removeEventListener("mousemove", handleMouseMove);
-        window.removeEventListener("mouseup", handleMouseUp);
-      };
-    }
-  }, [isDragging, handleMouseMove, handleMouseUp]);
-
   // ==================== 辅助函数 ====================
 
   const getConfig = (componentId: string): ComponentConfig | undefined => {
@@ -323,18 +263,19 @@ export default function PlanComponentEditor({
     return categories.flatMap((cat) => cat.components);
   };
 
-  const getSelectedComponents = (): ServiceComponent[] => {
-    return getAllComponents().filter((c) => selectedComponentIds.includes(c.id));
-  };
-
   // 统计
   const totalEnabledUpgrades = configs.reduce(
     (sum, c) => sum + c.enabledUpgrades.length,
     0
   );
-  const configuredHotspots = configs.filter(
-    (c) => c.hotmapX !== null && c.hotmapY !== null
-  ).length;
+
+  // 获取有预设位置的组件列表（用于热点图显示）
+  const hotspotsToShow = mapTemplate?.hotspots || [];
+
+  // 获取没有预设位置的已选组件
+  const selectedWithoutHotspot = selectedComponentIds.filter(
+    (id) => !mapTemplate?.hotspots.find((h) => h.componentId === id)
+  );
 
   // ==================== 渲染 ====================
 
@@ -360,7 +301,6 @@ export default function PlanComponentEditor({
     );
   }
 
-  const selectedComponents = getSelectedComponents();
   const hasMapTemplate = !!mapTemplate;
 
   return (
@@ -371,7 +311,9 @@ export default function PlanComponentEditor({
           <div>
             <h2 className="text-lg font-bold text-gray-900">套餐包含内容</h2>
             <p className="text-sm text-gray-500 mt-0.5">
-              选择服务项目，{hasMapTemplate ? "点击图片定位展示位置" : "配置升级选项"}
+              {hasMapTemplate
+                ? "点击图片上的标记选择服务，或在右侧列表中勾选"
+                : "勾选套餐包含的服务项目"}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -391,35 +333,20 @@ export default function PlanComponentEditor({
 
       {/* 主内容区 - 左右分栏 */}
       <div className={`flex flex-col ${hasMapTemplate ? "lg:flex-row" : ""}`}>
-        {/* 左侧：展示图预览（如果有模板） */}
+        {/* 左侧：可交互的热点图 */}
         {hasMapTemplate && (
           <div className="lg:w-1/2 flex-shrink-0 border-b lg:border-b-0 lg:border-r border-gray-100 bg-gradient-to-br from-gray-50 to-white">
             <div className="p-4">
-              {/* 图片标题和控制 */}
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-medium text-gray-700">套餐展示预览</p>
-                <button
-                  type="button"
-                  onClick={() => setShowHotspots(!showHotspots)}
-                  className={`p-1.5 rounded-lg transition-colors ${
-                    showHotspots
-                      ? "bg-sakura-100 text-sakura-600"
-                      : "bg-gray-100 text-gray-400"
-                  }`}
-                  title={showHotspots ? "隐藏标注" : "显示标注"}
-                >
-                  {showHotspots ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                </button>
+              {/* 操作提示 */}
+              <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-blue-50 rounded-lg">
+                <Info className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                <p className="text-xs text-blue-700">
+                  <strong>点击标记</strong>选择/取消服务项目，选中的服务会包含在套餐中
+                </p>
               </div>
 
-              {/* 图片容器 - 限制最大高度 */}
-              <div
-                ref={containerRef}
-                onClick={handleImageClick}
-                className={`relative rounded-xl overflow-hidden bg-white shadow-sm border border-gray-200 aspect-[2/3] max-h-[600px] ${
-                  isDragging ? "cursor-grabbing" : activeHotspotId ? "cursor-crosshair" : "cursor-default"
-                }`}
-              >
+              {/* 图片容器 */}
+              <div className="relative rounded-xl overflow-hidden bg-white shadow-sm border border-gray-200 aspect-[2/3] max-h-[600px]">
                 <Image
                   src={mapTemplate.imageUrl}
                   alt="套餐展示图"
@@ -428,134 +355,139 @@ export default function PlanComponentEditor({
                   unoptimized
                 />
 
-                {/* 热点标记 */}
-                {showHotspots && configs
-                  .filter((c) => c.hotmapX != null && c.hotmapY != null && selectedComponentIds.includes(c.componentId))
-                  .map((config, index) => {
-                    const component = getAllComponents().find(
-                      (c) => c.id === config.componentId
-                    );
-                    if (!component) return null;
+                {/* 所有预设热点（无论是否选中都显示，但样式不同） */}
+                {hotspotsToShow.map((hotspot, index) => {
+                  const component = getAllComponents().find(
+                    (c) => c.id === hotspot.componentId
+                  );
+                  if (!component) return null;
 
-                    const isActive = activeHotspotId === config.componentId;
-                    return (
+                  const isSelected = selectedComponentIds.includes(hotspot.componentId);
+                  const isRecent = recentlySelectedId === hotspot.componentId;
+
+                  return (
+                    <button
+                      key={hotspot.componentId}
+                      type="button"
+                      onClick={() => toggleComponent(hotspot.componentId, true)}
+                      className="absolute group"
+                      style={{
+                        left: `${hotspot.x * 100}%`,
+                        top: `${hotspot.y * 100}%`,
+                        transform: "translate(-50%, -50%)",
+                        zIndex: isSelected ? 20 : 10,
+                      }}
+                    >
+                      {/* 选中时的脉冲动画 */}
+                      {isRecent && (
+                        <div className="absolute inset-0 rounded-full animate-ping bg-sakura-400/60" />
+                      )}
+
+                      {/* 主圆点 */}
                       <div
-                        key={config.componentId}
-                        className="absolute"
-                        style={{
-                          left: `${(config.hotmapX ?? 0) * 100}%`,
-                          top: `${(config.hotmapY ?? 0) * 100}%`,
-                          transform: "translate(-50%, -50%)",
-                          zIndex: isActive ? 20 : 10,
-                        }}
+                        className={`
+                          relative w-9 h-9 rounded-full flex items-center justify-center
+                          text-sm font-bold shadow-lg cursor-pointer
+                          transition-all duration-300 ease-out
+                          ${isSelected
+                            ? "bg-sakura-500 text-white scale-110 ring-4 ring-sakura-200"
+                            : "bg-white text-gray-400 border-2 border-gray-300 hover:border-sakura-400 hover:text-sakura-500 hover:scale-105"
+                          }
+                        `}
                       >
-                        {/* 热点圆点 */}
-                        <div
-                          onMouseDown={(e) => handleHotspotMouseDown(e, config.componentId)}
-                          className={`
-                            group relative cursor-grab transition-all duration-200
-                            ${isActive ? "scale-110" : "hover:scale-105"}
-                          `}
-                        >
-                          {/* 外环动画 */}
-                          <div className={`
-                            absolute inset-0 rounded-full
-                            ${isActive ? "animate-ping bg-sakura-400/40" : ""}
-                          `} />
-
-                          {/* 主圆点 */}
-                          <div
-                            className={`
-                              relative w-7 h-7 rounded-full flex items-center justify-center
-                              text-white text-xs font-bold shadow-lg
-                              ${isActive
-                                ? "bg-sakura-600 ring-2 ring-sakura-300"
-                                : "bg-sakura-500 group-hover:bg-sakura-600"
-                              }
-                            `}
-                          >
-                            {index + 1}
-                          </div>
-
-                          {/* 悬停标签 */}
-                          <div
-                            className={`
-                              absolute left-full ml-2 top-1/2 -translate-y-1/2
-                              whitespace-nowrap bg-gray-900/90 text-white rounded-lg
-                              px-2.5 py-1.5 text-xs shadow-xl
-                              opacity-0 group-hover:opacity-100 pointer-events-none
-                              transition-opacity duration-200
-                            `}
-                          >
-                            <span className="mr-1">{component.icon}</span>
-                            {component.name}
-                          </div>
-                        </div>
+                        {isSelected ? (
+                          <Check className="w-5 h-5" />
+                        ) : (
+                          <span className="text-xs">{index + 1}</span>
+                        )}
                       </div>
-                    );
-                  })}
 
-                {/* 提示文字 */}
-                {activeHotspotId && !configs.find(c => c.componentId === activeHotspotId)?.hotmapX && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/20 pointer-events-none">
-                    <div className="bg-white rounded-xl px-4 py-3 shadow-xl text-center">
-                      <Plus className="w-6 h-6 text-sakura-500 mx-auto mb-1" />
-                      <p className="text-sm font-medium text-gray-700">点击设置位置</p>
-                    </div>
-                  </div>
-                )}
+                      {/* 标签（始终显示） */}
+                      <div
+                        className={`
+                          absolute whitespace-nowrap rounded-lg
+                          px-2.5 py-1.5 text-xs shadow-lg
+                          transition-all duration-200
+                          pointer-events-none
+                          ${hotspot.labelPosition === "left"
+                            ? "right-full mr-2"
+                            : "left-full ml-2"
+                          }
+                          top-1/2 -translate-y-1/2
+                          ${isSelected
+                            ? "bg-sakura-500 text-white"
+                            : "bg-white/95 text-gray-600 border border-gray-200 group-hover:border-sakura-300 group-hover:text-sakura-600"
+                          }
+                        `}
+                      >
+                        <span className="mr-1">{component.icon}</span>
+                        {component.name}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
 
-              {/* 已选组件快捷列表 */}
-              {selectedComponents.length > 0 && (
-                <div className="mt-4">
-                  <p className="text-xs text-gray-500 mb-2">已选服务 · 点击定位</p>
+              {/* 没有预设位置但已选中的组件提示 */}
+              {selectedWithoutHotspot.length > 0 && (
+                <div className="mt-4 p-3 bg-amber-50 rounded-xl border border-amber-200">
+                  <p className="text-xs text-amber-700 font-medium mb-2">
+                    以下服务已选择，但不在展示图中显示：
+                  </p>
                   <div className="flex flex-wrap gap-1.5">
-                    {selectedComponents.map((component, index) => {
-                      const config = getConfig(component.id);
-                      const hasPosition = config?.hotmapX != null;
-                      const isActive = activeHotspotId === component.id;
-
+                    {selectedWithoutHotspot.map((id) => {
+                      const component = getAllComponents().find((c) => c.id === id);
+                      if (!component) return null;
                       return (
-                        <button
-                          key={component.id}
-                          type="button"
-                          onClick={() => setActiveHotspotId(isActive ? null : component.id)}
-                          className={`
-                            inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs
-                            transition-all duration-200 border
-                            ${isActive
-                              ? "bg-sakura-500 text-white border-sakura-500 shadow-md"
-                              : hasPosition
-                              ? "bg-sakura-50 text-sakura-700 border-sakura-200 hover:bg-sakura-100"
-                              : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
-                            }
-                          `}
+                        <span
+                          key={id}
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-white rounded-lg text-xs text-gray-700 border border-amber-200"
                         >
-                          {hasPosition && (
-                            <span className={`
-                              w-4 h-4 rounded-full text-[10px] flex items-center justify-center font-bold
-                              ${isActive ? "bg-white/20" : "bg-sakura-200 text-sakura-700"}
-                            `}>
-                              {configs.filter(c => c.hotmapX != null && selectedComponentIds.includes(c.componentId))
-                                .findIndex(c => c.componentId === component.id) + 1}
-                            </span>
-                          )}
                           <span>{component.icon}</span>
-                          <span className="font-medium">{component.name}</span>
-                        </button>
+                          {component.name}
+                          <button
+                            type="button"
+                            onClick={() => toggleComponent(id)}
+                            className="ml-1 text-gray-400 hover:text-red-500"
+                          >
+                            <Minus className="w-3 h-3" />
+                          </button>
+                        </span>
                       );
                     })}
                   </div>
                 </div>
               )}
+
+              {/* 图例说明 */}
+              <div className="mt-4 flex items-center justify-center gap-6 text-xs text-gray-500">
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-full bg-sakura-500 flex items-center justify-center">
+                    <Check className="w-3 h-3 text-white" />
+                  </div>
+                  <span>已选择（包含在套餐中）</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-full bg-white border-2 border-gray-300 flex items-center justify-center text-[10px] text-gray-400">
+                    1
+                  </div>
+                  <span>未选择</span>
+                </div>
+              </div>
             </div>
           </div>
         )}
 
         {/* 右侧：组件选择列表 */}
         <div className="flex-1 min-w-0">
-          <div className="p-4 space-y-3 max-h-[600px] overflow-y-auto">
+          <div className="p-4 space-y-3 max-h-[700px] overflow-y-auto">
+            {/* 提示信息 */}
+            {hasMapTemplate && (
+              <div className="px-3 py-2 bg-gray-50 rounded-lg text-xs text-gray-600">
+                也可以在此列表中勾选服务，已勾选的服务会自动显示在左侧图片上
+              </div>
+            )}
+
             {categories.map((category) => {
               const isExpanded = expandedCategories.has(category.type);
               const selectedCount = category.components.filter((c) =>
@@ -610,67 +542,46 @@ export default function PlanComponentEditor({
                       {category.components.map((component) => {
                         const isSelected = selectedComponentIds.includes(component.id);
                         const config = getConfig(component.id);
-                        const hasPosition = config?.hotmapX != null;
-                        const isActive = activeHotspotId === component.id;
+                        const hasHotspot = mapTemplate?.hotspots.find(
+                          (h) => h.componentId === component.id
+                        );
                         const componentUpgrades = upgradePaths[component.id] || [];
                         const hasUpgrades = componentUpgrades.length > 0;
                         const isUpgradeExpanded = expandedUpgrades.has(component.id);
                         const enabledUpgradeCount = config?.enabledUpgrades.length || 0;
+                        const isRecent = recentlySelectedId === component.id;
 
                         return (
                           <div key={component.id} className="space-y-2">
                             {/* 组件行 */}
                             <div
+                              onClick={() => toggleComponent(component.id)}
                               className={`
-                                flex items-center gap-3 p-3 rounded-xl border-2 transition-all duration-200
+                                flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer
+                                transition-all duration-200
                                 ${isSelected
-                                  ? isActive
-                                    ? "border-sakura-500 bg-sakura-50 shadow-sm"
-                                    : "border-sakura-300 bg-sakura-50/50"
-                                  : "border-gray-100 hover:border-gray-200 bg-white"
+                                  ? isRecent
+                                    ? "border-sakura-500 bg-sakura-100 shadow-md"
+                                    : "border-sakura-400 bg-sakura-50"
+                                  : "border-gray-100 hover:border-gray-200 bg-white hover:bg-gray-50"
                                 }
                               `}
                             >
                               {/* 选择框 */}
-                              <button
-                                type="button"
-                                onClick={() => toggleComponent(component.id)}
+                              <div
                                 className={`
                                   flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-all
                                   ${isSelected
                                     ? "bg-sakura-500 border-sakura-500"
-                                    : "border-gray-300 hover:border-sakura-400"
+                                    : "border-gray-300"
                                   }
                                 `}
                               >
                                 {isSelected && <Check className="w-3 h-3 text-white" />}
-                              </button>
-
-                              {/* 拖拽手柄（选中时显示） */}
-                              {isSelected && hasMapTemplate && (
-                                <button
-                                  type="button"
-                                  onClick={() => setActiveHotspotId(isActive ? null : component.id)}
-                                  className={`
-                                    flex-shrink-0 p-1 rounded transition-colors
-                                    ${isActive
-                                      ? "bg-sakura-200 text-sakura-700"
-                                      : hasPosition
-                                      ? "bg-sakura-100 text-sakura-600 hover:bg-sakura-200"
-                                      : "bg-gray-100 text-gray-400 hover:bg-gray-200"
-                                    }
-                                  `}
-                                  title={hasPosition ? "调整位置" : "设置位置"}
-                                >
-                                  <GripVertical className="w-4 h-4" />
-                                </button>
-                              )}
+                              </div>
 
                               {/* 组件信息 */}
-                              <div
-                                className="flex-1 min-w-0 cursor-pointer"
-                                onClick={() => toggleComponent(component.id)}
-                              >
+                              <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
                                   <span className="text-base">{component.icon}</span>
                                   <span className={`font-medium text-sm ${isSelected ? "text-sakura-700" : "text-gray-900"}`}>
@@ -681,10 +592,10 @@ export default function PlanComponentEditor({
                                       {component.tierLabel}
                                     </span>
                                   )}
-                                  {isSelected && hasPosition && (
-                                    <span className="w-4 h-4 rounded-full bg-sakura-500 text-white text-[10px] flex items-center justify-center font-bold">
-                                      {configs.filter(c => c.hotmapX != null && selectedComponentIds.includes(c.componentId))
-                                        .findIndex(c => c.componentId === component.id) + 1}
+                                  {/* 显示是否在热点图上 */}
+                                  {hasHotspot && isSelected && (
+                                    <span className="px-1.5 py-0.5 bg-sakura-100 text-sakura-600 text-[10px] rounded">
+                                      展示图
                                     </span>
                                   )}
                                 </div>
@@ -699,7 +610,10 @@ export default function PlanComponentEditor({
                               {isSelected && hasUpgrades && (
                                 <button
                                   type="button"
-                                  onClick={() => toggleUpgradePanel(component.id)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleUpgradePanel(component.id);
+                                  }}
                                   className={`
                                     flex-shrink-0 px-2.5 py-1 rounded-lg text-xs font-medium transition-all
                                     ${enabledUpgradeCount > 0
