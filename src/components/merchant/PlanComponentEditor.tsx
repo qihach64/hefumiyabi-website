@@ -307,43 +307,18 @@ export default function PlanComponentEditor({
         return;
       }
 
-      // OUTFIT 类型：查找模板中的默认位置
-      const templateHotspot = mapTemplate?.hotspots.find(h => h.componentId === componentId);
-
-      if (templateHotspot) {
-        // 有默认位置，直接使用
-        setConfigs([...configs, {
-          componentId,
-          isIncluded: true,
-          enabledUpgrades: [],
-          hotmapX: templateHotspot.x,
-          hotmapY: templateHotspot.y,
-          hotmapLabelPosition: templateHotspot.labelPosition,
-        }]);
-      } else if (mapTemplate) {
-        // 没有默认位置，进入放置模式
-        setConfigs([...configs, {
-          componentId,
-          isIncluded: true,
-          enabledUpgrades: [],
-          hotmapX: null,
-          hotmapY: null,
-          hotmapLabelPosition: "right",
-        }]);
-        setPlacingComponentId(componentId);
-      } else {
-        // 没有地图模板
-        setConfigs([...configs, {
-          componentId,
-          isIncluded: true,
-          enabledUpgrades: [],
-          hotmapX: null,
-          hotmapY: null,
-          hotmapLabelPosition: "right",
-        }]);
-      }
+      // OUTFIT 类型：不自动使用模板默认位置，让商户自己放置
+      // 添加到配置，但不设置坐标，商户可以点击"放置"按钮手动放置
+      setConfigs([...configs, {
+        componentId,
+        isIncluded: true,
+        enabledUpgrades: [],
+        hotmapX: null,
+        hotmapY: null,
+        hotmapLabelPosition: "right",
+      }]);
     }
-  }, [selectedComponentIds, onChange, configs, setConfigs, mapTemplate, placingComponentId, categories]);
+  }, [selectedComponentIds, onChange, configs, setConfigs, placingComponentId, categories]);
 
   // 点击"放置到图片"按钮
   const startPlacing = useCallback((componentId: string) => {
@@ -422,10 +397,20 @@ export default function PlanComponentEditor({
 
   // 判断组件类型是否可以放置到热图上（只有 OUTFIT 类型可以）
   // 兼容旧类型：KIMONO, STYLING, ACCESSORY 也视为可放置
+  // 如果组件数据还未加载，返回 true（假设可放置）
   const isHotmapEligible = (componentId: string): boolean => {
     const component = getAllComponents().find(c => c.id === componentId);
-    if (!component) return false;
+    // 如果组件数据还没加载完，假设已有坐标的组件是可放置的
+    if (!component) return true;
     // OUTFIT 或旧的可视化类型都可以放到热图
+    const hotmapTypes = ['OUTFIT', 'KIMONO', 'STYLING', 'ACCESSORY'];
+    return hotmapTypes.includes(component.type);
+  };
+
+  // 严格判断组件类型是否可以放置到热图上（数据必须已加载）
+  const isHotmapEligibleStrict = (componentId: string): boolean => {
+    const component = getAllComponents().find(c => c.id === componentId);
+    if (!component) return false;
     const hotmapTypes = ['OUTFIT', 'KIMONO', 'STYLING', 'ACCESSORY'];
     return hotmapTypes.includes(component.type);
   };
@@ -436,20 +421,21 @@ export default function PlanComponentEditor({
     return config?.hotmapX != null && config?.hotmapY != null;
   };
 
-  // 获取已放置到图片上的组件（只计算可放置类型）
+  // 获取已放置到图片上的组件
+  // 注意：已有坐标的组件总是显示，即使组件数据还没加载
   const getPlacedComponents = () => {
     return configs.filter(c =>
       c.hotmapX != null &&
       c.hotmapY != null &&
-      selectedComponentIds.includes(c.componentId) &&
-      isHotmapEligible(c.componentId)
+      selectedComponentIds.includes(c.componentId)
     );
   };
 
   // 获取未放置到图片上的已选组件（只计算可放置类型）
+  // 这里使用严格检查，确保只有可放置类型才显示"放置"按钮
   const getUnplacedComponents = () => {
     return selectedComponentIds.filter(id =>
-      isHotmapEligible(id) && !isPlacedOnMap(id)
+      isHotmapEligibleStrict(id) && !isPlacedOnMap(id)
     );
   };
 
