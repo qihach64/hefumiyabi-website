@@ -1,15 +1,92 @@
-# Service Hotmap Integration Design (v6)
+# Service Hotmap Integration Design (v7)
 
 ## 设计决策
 
 - **核心目的**：展示信息完整性（套餐包含的所有服务）
 - **热点图可选**：商户可以选择不创建热点图，只选服务组件即可
 - **热点图图片**：只有两种来源 - 自定义上传 或 平台模板
-- **组件分类**：只有两种 - 平台组件 / 商户组件
-- **商户组件**：无需审核，仅创建者可用，其他商户不可见
+- **组件分类**：两种类型 - OUTFIT (着装项) / ADDON (增值服务)
+- **组件所有权**：平台组件 / 商户组件（仅创建者可见，无需审核）
 - **组件升级**：管理员可将优秀商户组件升级为平台组件
 - **数据存储**：热点位置存在 `PlanComponent` 里（每个套餐独立）
 - **服务升级**：同类型组件支持付费升级，提高客单价
+- **价格覆盖**：商户级别覆盖（适用于该商户所有套餐）
+
+---
+
+## 组件类型设计
+
+### OUTFIT vs ADDON 的核心差异
+
+| 特性 | OUTFIT (着装项) | ADDON (增值服务) |
+|------|----------------|------------------|
+| 热图定位 | ✅ 需要 hotmapX/Y | ❌ 不需要 |
+| 图片展示 | ✅ 可选 imageUrl | ✅ 可选 imageUrl |
+| 基础价格 | ✅ 支持 basePrice | ✅ 支持 basePrice |
+| 包含模式 | ✅ isIncluded=true | ✅ isIncluded=true |
+| 可选加购 | ✅ isIncluded=false | ✅ isIncluded=false |
+| 升级路径 | ✅ ComponentUpgrade | ✅ ComponentUpgrade |
+| 商户价格覆盖 | ✅ MerchantComponentConfig | ✅ MerchantComponentConfig |
+
+**结论：两种类型共用同一套数据模型，只有热图定位的差异。**
+
+### 包含模式 vs 可选加购模式
+
+```
+包含模式 (isIncluded = true)
+├── 组件已包含在套餐基础价中
+├── 顾客无需额外付费
+└── 示例：豪华套餐自带「专业跟拍」
+
+可选加购模式 (isIncluded = false)
+├── 组件不在套餐基础价中
+├── 顾客选中后额外付费
+└── 示例：基础套餐可选加购「专业跟拍 +¥1,800」
+```
+
+### 价格计算
+
+```typescript
+// 套餐总价 = 基础价 + Σ(顾客选中的可选组件价格)
+function calculateTotal(
+  plan: RentalPlan,
+  selectedOptionalIds: string[],  // 顾客选中的可选组件
+  merchantId: string
+) {
+  let total = plan.price;  // 基础套餐价
+
+  for (const pc of plan.planComponents) {
+    // 跳过已包含的组件 (不额外收费)
+    if (pc.isIncluded) continue;
+
+    // 顾客选中了这个可选组件
+    if (selectedOptionalIds.includes(pc.componentId)) {
+      total += await getComponentPrice(pc.component, merchantId);
+    }
+  }
+
+  return total;
+}
+
+// 获取组件价格 (考虑商户级覆盖)
+async function getComponentPrice(
+  component: ServiceComponent,
+  merchantId: string
+): Promise<number> {
+  // 1. 商户自己的组件 → 直接用 basePrice
+  if (component.merchantId === merchantId) {
+    return component.basePrice;
+  }
+
+  // 2. 平台组件 → 查找商户配置
+  const config = await prisma.merchantComponentConfig.findUnique({
+    where: { merchantId_componentId: { merchantId, componentId: component.id } }
+  });
+
+  // 3. 有配置用 customPrice，否则用平台 basePrice
+  return config?.customPrice ?? component.basePrice;
+}
+```
 
 ---
 
@@ -158,8 +235,15 @@ model ServiceComponent {
   nameJa          String?         @map("name_ja")
   nameEn          String?         @map("name_en")
   description     String?         @db.Text
-  type            ComponentType   // KIMONO, STYLING, ACCESSORY, EXPERIENCE
-  icon            String?
+
+  // ========== 组件类型 ==========
+  // OUTFIT = 着装项 (需要热图定位)
+  // ADDON = 增值服务 (不需要热图定位)
+  type            ComponentType   // OUTFIT | ADDON
+
+  // ========== 展示信息 ==========
+  icon            String?         // Emoji 图标
+  imageUrl        String?         @map("image_url")  // 卡片图片 (可选)
 
   // ========== 组件所有权 ==========
   // true = 平台组件（全部商户可见）
@@ -179,7 +263,9 @@ model ServiceComponent {
   tier            Int             @default(0)
   tierLabel       String?         @map("tier_label")  // "基础", "标准", "豪华", "顶级"
 
-  // 定价信息
+  // ========== 定价信息 ==========
+  // 平台组件：建议价格
+  // 商户组件：商户设定价格
   basePrice       Int             @default(0) @map("base_price")
 
   // 元数据
@@ -189,8 +275,9 @@ model ServiceComponent {
   updatedAt       DateTime        @updatedAt @map("updated_at")
 
   // 关联
-  planComponents  PlanComponent[]
-  mapHotspots     MapHotspot[]
+  planComponents       PlanComponent[]
+  mapHotspots          MapHotspot[]
+  merchantConfigs      MerchantComponentConfig[]  // 商户价格配置
 
   // 升级关联
   upgradesFrom      ComponentUpgrade[] @relation("UpgradeFrom")
@@ -201,6 +288,53 @@ model ServiceComponent {
   @@index([type, tier])
   @@map("service_components")
 }
+
+enum ComponentType {
+  OUTFIT    // 着装项 (需要热图定位)
+  ADDON     // 增值服务 (不需要热图定位)
+}
+```
+
+### MerchantComponentConfig (商户组件配置) 【新增】
+
+```prisma
+// 商户对平台组件的自定义配置
+// 主要用于：价格覆盖、启用/禁用
+model MerchantComponentConfig {
+  id            String   @id @default(cuid())
+
+  // 商户
+  merchantId    String   @map("merchant_id")
+  merchant      Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  // 平台组件 (只对平台组件有意义，商户自己的组件直接修改 basePrice)
+  componentId   String   @map("component_id")
+  component     ServiceComponent @relation(fields: [componentId], references: [id], onDelete: Cascade)
+
+  // ========== 价格覆盖 ==========
+  // 商户自定义价格，覆盖 component.basePrice
+  // null = 使用平台建议价
+  customPrice   Int?     @map("custom_price")
+
+  // ========== 启用状态 ==========
+  // 商户是否启用此平台组件
+  isEnabled     Boolean  @default(true) @map("is_enabled")
+
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@unique([merchantId, componentId])
+  @@index([merchantId])
+  @@map("merchant_component_configs")
+}
+```
+
+**价格解析优先级：**
+
+```
+1. 商户自己创建的组件 → component.basePrice
+2. 平台组件 + 有 MerchantComponentConfig → config.customPrice
+3. 平台组件 + 无配置 → component.basePrice (平台建议价)
 ```
 
 ### RentalPlan 更新
@@ -877,7 +1011,189 @@ async function getUpgradeBundles(planId: string) {
 
 ---
 
-## 完整编辑器布局
+## 商户增值服务管理
+
+### 独立管理页面 (/merchant/services)
+
+商户可以在此页面统一管理增值服务的定价，适用于所有套餐。
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  增值服务管理                                              [+ 创建服务] │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  💡 在此设置的价格适用于您的所有套餐                                    │
+│                                                                         │
+│  ════════════════════════════════════════════════════════════════════   │
+│                                                                         │
+│  🏢 平台服务                                                            │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │                                                                  │   │
+│  │  ┌───────────┬──────────────┬─────────────┬─────────┐           │   │
+│  │  │ 服务      │ 平台建议价    │ 我的定价    │ 状态    │           │   │
+│  │  ├───────────┼──────────────┼─────────────┼─────────┤           │   │
+│  │  │ 📷 专业跟拍│ ¥2,000       │ [¥1,800   ] │ ☑ 启用  │           │   │
+│  │  │ 💇 发型设计│ ¥500         │ [¥500     ] │ ☑ 启用  │           │   │
+│  │  │ 🚗 接送服务│ ¥1,500       │ [         ] │ ☐ 禁用  │           │   │
+│  │  │ 🎒 行李寄存│ ¥300         │ [¥300     ] │ ☑ 启用  │           │   │
+│  │  └───────────┴──────────────┴─────────────┴─────────┘           │   │
+│  │                                                                  │   │
+│  │  ⓘ 留空定价 = 使用平台建议价                                     │   │
+│  │                                                                  │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+│  ════════════════════════════════════════════════════════════════════   │
+│                                                                         │
+│  ⭐ 我的服务                                                            │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │                                                                  │   │
+│  │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐                │   │
+│  │  │ [图片]      │ │ [图片]      │ │             │                │   │
+│  │  │ 🍵 茶道体验 │ │ 🎁 特别礼品 │ │     ➕      │                │   │
+│  │  │ ¥1,200     │ │ ¥800       │ │   创建服务   │                │   │
+│  │  │ [编辑]     │ │ [编辑]     │ │             │                │   │
+│  │  └─────────────┘ └─────────────┘ └─────────────┘                │   │
+│  │                                                                  │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### 创建自定义服务弹窗
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  创建增值服务                                                    [✕]    │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  服务图片 (可选)                                                        │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │                                                                  │   │
+│  │     [点击上传] 或 拖拽图片到此处                                  │   │
+│  │                                                                  │   │
+│  │     建议尺寸 400x300，支持 JPG/PNG                               │   │
+│  │                                                                  │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+│  服务名称 *                                                              │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │ 茶道体验                                                         │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+│  图标                                                                    │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │ 🍵  [选择 emoji]                                                 │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+│  价格 *                                                                  │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │ ¥ 1,200                                                          │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+│  描述 (可选)                                                             │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │ 体验正宗日本茶道文化，含抹茶和和果子                              │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+│  ⓘ 此服务仅您可见，可在任意套餐中使用                                   │
+│                                                                         │
+│                                              [取消]  [创建服务]         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 套餐编辑器布局 (v2)
+
+将「着装项+热图」和「增值服务」分为两个独立区域。
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  套餐内容编辑器                                            [保存] [预览] │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  ┌─ 着装项 + 热点图 ────────────────────────────────────────────────────┐
+│  │                                                                      │
+│  │  ┌── 着装项列表 ──────────┐   ┌── 热点图预览 (3:4) ──────────────┐ │
+│  │  │                        │   │                                   │ │
+│  │  │  👘 着装项 (3)         │   │      [商户上传的和服图片]          │ │
+│  │  │  ┌────────────────┐   │   │                                   │ │
+│  │  │  │ ☑ 基础和服     │   │   │      • 基础和服 ──●               │ │
+│  │  │  │   ● 包含       │   │   │                                   │ │
+│  │  │  │ ☑ 基础腰带     │   │   │           ●── 基础腰带            │ │
+│  │  │  │   ● 包含       │   │   │                                   │ │
+│  │  │  │ ☐ 高级小物     │   │   │                                   │ │
+│  │  │  │   ○ 可选 +¥500 │   │   │                                   │ │
+│  │  │  └────────────────┘   │   │                                   │ │
+│  │  │                        │   │                                   │ │
+│  │  │  [+ 添加着装项]        │   │   拖拽调整位置 · 点击移除          │ │
+│  │  └────────────────────────┘   └───────────────────────────────────┘ │
+│  │                                                                      │
+│  │  💡 勾选着装项后自动进入放置模式，点击热图确定位置                    │
+│  │                                                                      │
+│  └──────────────────────────────────────────────────────────────────────┘
+│                                                                         │
+│  ┌─ 增值服务 ───────────────────────────────────────────────────────────┐
+│  │                                                                      │
+│  │  ✨ 增值服务 (3)                                  [+ 添加增值服务]   │
+│  │                                                                      │
+│  │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐                    │
+│  │  │ [图片]      │ │ [图片]      │ │ [图片]      │                    │
+│  │  │ 📷 专业跟拍 │ │ 💇 发型设计 │ │ 🎒 行李寄存 │                    │
+│  │  │ ¥1,800     │ │ ¥500       │ │ ¥300       │                    │
+│  │  │             │ │             │ │             │                    │
+│  │  │ ● 包含      │ │ ○ 可选     │ │ ○ 可选     │                    │
+│  │  │     [✕]     │ │     [✕]     │ │     [✕]     │                    │
+│  │  └─────────────┘ └─────────────┘ └─────────────┘                    │
+│  │                                                                      │
+│  │  💡 「包含」= 已含在套餐价中，「可选」= 顾客可加购                    │
+│  │  💡 价格在「增值服务管理」中统一设置                                  │
+│  │                                                                      │
+│  └──────────────────────────────────────────────────────────────────────┘
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### 添加增值服务弹窗
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  添加增值服务                                                    [✕]    │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  🏢 平台服务                                                            │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │                                                                  │   │
+│  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐           │   │
+│  │  │ [图片]   │ │ [图片]   │ │ [图片]   │ │ [图片]   │           │   │
+│  │  │ 📷 跟拍  │ │ 💇 发型  │ │ 🚗 接送  │ │ 🎒 寄存  │           │   │
+│  │  │ ¥1,800  │ │ ¥500    │ │ ¥1,500  │ │ ¥300    │           │   │
+│  │  │ [已添加] │ │ [+ 添加] │ │ [+ 添加] │ │ [已添加] │           │   │
+│  │  └──────────┘ └──────────┘ └──────────┘ └──────────┘           │   │
+│  │                                                                  │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+│  ⭐ 我的服务                                                            │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │                                                                  │   │
+│  │  ┌──────────┐ ┌──────────┐ ┌──────────┐                         │   │
+│  │  │ [图片]   │ │ [图片]   │ │          │                         │   │
+│  │  │ 🍵 茶道  │ │ 🎁 礼品  │ │    ➕    │                         │   │
+│  │  │ ¥1,200  │ │ ¥800    │ │ 创建服务  │                         │   │
+│  │  │ [+ 添加] │ │ [+ 添加] │ │          │                         │   │
+│  │  └──────────┘ └──────────┘ └──────────┘                         │   │
+│  │                                                                  │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+│  ⓘ 价格显示为您在「增值服务管理」中设置的价格                           │
+│                                                                         │
+│                                                            [完成]       │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 旧版编辑器布局 (v1 - 仅供参考)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -918,16 +1234,26 @@ async function getUpgradeBundles(planId: string) {
 
 ## API 设计
 
-### GET /api/service-components
+### 组件相关
 
-获取当前商户可见的所有组件
+#### GET /api/service-components
+
+获取当前商户可见的所有组件（含商户价格配置）
 
 ```typescript
+// Query params
+?type=OUTFIT|ADDON  // 可选，按类型过滤
+
 // Response
 {
-  components: ServiceComponent[],
+  components: (ServiceComponent & {
+    // 商户价格（已计算优先级）
+    effectivePrice: number,
+    // 是否为商户自定义价格
+    isCustomPrice: boolean,
+  })[],
   categories: {
-    type: string,
+    type: 'OUTFIT' | 'ADDON',
     label: string,
     icon: string,
     components: ServiceComponent[]
@@ -935,7 +1261,7 @@ async function getUpgradeBundles(planId: string) {
 }
 ```
 
-### POST /api/merchant/components
+#### POST /api/merchant/components
 
 商户创建自定义组件（无需审核）
 
@@ -943,8 +1269,10 @@ async function getUpgradeBundles(planId: string) {
 // Request
 {
   name: string,
-  type: 'KIMONO' | 'STYLING' | 'ACCESSORY' | 'EXPERIENCE',
+  type: 'OUTFIT' | 'ADDON',
   icon?: string,
+  imageUrl?: string,  // 图片 URL
+  basePrice: number,  // 价格（分）
   description?: string
 }
 
@@ -954,15 +1282,50 @@ async function getUpgradeBundles(planId: string) {
 }
 ```
 
-### PATCH /api/merchant/components/[id]
+#### PATCH /api/merchant/components/[id]
 
 商户编辑自己的组件
 
-### DELETE /api/merchant/components/[id]
+#### DELETE /api/merchant/components/[id]
 
 商户删除自己的组件
 
-### POST /api/admin/components/[id]/promote
+### 商户组件配置相关
+
+#### GET /api/merchant/component-configs
+
+获取商户对平台组件的价格配置
+
+```typescript
+// Response
+{
+  configs: MerchantComponentConfig[]
+}
+```
+
+#### PUT /api/merchant/component-configs
+
+批量更新商户组件配置
+
+```typescript
+// Request
+{
+  configs: {
+    componentId: string,
+    customPrice?: number | null,  // null = 使用平台价
+    isEnabled: boolean
+  }[]
+}
+
+// Response
+{
+  configs: MerchantComponentConfig[]
+}
+```
+
+### 管理员相关
+
+#### POST /api/admin/components/[id]/promote
 
 管理员将商户组件升级为平台组件
 
@@ -1018,36 +1381,48 @@ function getPresetPositions(plan: RentalPlan) {
 
 ## 实现计划
 
-### Phase 1：数据模型 + 组件库
+### Phase 1：数据模型更新
 
-1. 更新 `PlanComponent` schema（添加热点字段）
-2. 更新 `ServiceComponent` schema（添加 merchantId、tier）
-3. 更新 `RentalPlan` schema（添加热点图字段）
-4. 新增 `ComponentUpgrade` schema（统一升级配置表，支持 PLATFORM/MERCHANT 两种 scope）
-5. 新增 `PlanUpgradeBundle` schema（套餐升级包）
-6. 运行 migration
-7. 更新 `/api/service-components` 返回商户组件
+1. 更新 `ServiceComponent` schema
+   - 添加 `imageUrl` 字段
+   - 更新 `type` 为 `OUTFIT | ADDON`
+2. 新增 `MerchantComponentConfig` schema（商户价格配置）
+3. 保留现有 `ComponentUpgrade` schema（升级配置）
+4. 保留现有 `PlanUpgradeBundle` schema（套餐升级包）
+5. 运行 migration
 
-### Phase 2：整合编辑器
+### Phase 2：商户增值服务管理页面
 
-1. 创建 `IntegratedPlanEditor` 组件
-2. 实现组件库（平台组件 + 我的组件）
-3. 实现热点图画布（接收拖拽 + 位置编辑）
-4. 实现组件列表（显示/隐藏/删除）
+1. 创建 `/merchant/services` 页面
+2. 实现平台服务列表（价格配置、启用/禁用）
+3. 实现「我的服务」卡片网格
+4. 实现「创建服务」弹窗
+5. 实现 `GET/PUT /api/merchant/component-configs` API
 
-### Phase 3：商户自定义组件
+### Phase 3：套餐编辑器重构
 
-1. 实现 `POST /api/merchant/components` 创建组件
-2. 实现组件编辑/删除
-3. 添加「+ 添加新组件」UI
+1. 分离「着装项+热图」和「增值服务」两个区域
+2. 着装项区域：保持现有热图编辑器逻辑
+3. 增值服务区域：
+   - 卡片网格展示
+   - 包含/可选切换
+   - 「添加增值服务」弹窗
+4. 更新 `PlanComponent` 保存逻辑
 
-### Phase 4：热点图图片
+### Phase 4：用户端套餐详情页
 
-1. 实现图片上传（Supabase Storage）
-2. 实现模板选择 UI
-3. 实现图片预览和裁剪
+1. 显示「已包含」组件列表
+2. 显示「可选增值服务」卡片
+3. 实现加购选择交互
+4. 实现价格动态计算
 
-### Phase 5：服务升级功能（用户端）
+### Phase 5：购物车和结算
+
+1. 更新 `CartItem` 结构（支持可选组件）
+2. 结算页显示选中的增值服务
+3. 订单创建时记录选中的组件
+
+### Phase 6：服务升级功能
 
 1. 套餐详情页：升级选项展示
    - 推荐升级包（一键升级）
@@ -1055,20 +1430,11 @@ function getPresetPositions(plan: RentalPlan) {
 2. 购物车：升级状态存储和展示
 3. 结算页：追加销售提醒
 
-### Phase 6：升级配置（商户端）
-
-1. 商户编辑器：升级选项配置
-   - 使用平台预设 / 自定义价格
-   - 添加商户独家升级选项
-2. 升级包配置
-   - 创建打包升级方案
-   - 设置打包折扣
-
 ### Phase 7：平台管理
 
 1. 管理员查看所有商户组件
 2. 实现组件升级为平台组件功能
-3. 管理平台预设升级路径（ComponentUpgradePath）
+3. 管理平台预设升级路径
 4. 按主题配置默认升级路径
 
 ---
@@ -1077,16 +1443,39 @@ function getPresetPositions(plan: RentalPlan) {
 
 | 特性 | 设计 |
 |-----|------|
-| 组件分类 | 平台组件 / 商户组件（仅两种） |
-| 商户组件可见性 | 仅创建者可见 |
-| 商户组件审核 | 无需审核，创建即可用 |
-| 组件升级 | 管理员可将商户组件升级为平台组件 |
-| 热点图 | **可选**，商户可以不创建热点图 |
-| 热点图来源 | 仅两种：自定义上传 或 平台模板 |
-| 无热点图时 | 套餐详情只展示服务组件列表 |
-| 热点位置 | 存在 PlanComponent，每套餐独立 |
-| MapHotspot | 仅当使用模板时提供推荐位置 |
+| **组件类型** | OUTFIT (着装项，需热图) / ADDON (增值服务，无需热图) |
+| **组件所有权** | 平台组件 / 商户组件（仅创建者可见，无需审核） |
+| **组件升级** | 管理员可将商户组件升级为平台组件 |
+| **价格覆盖** | 商户级别 (`MerchantComponentConfig`)，适用于所有套餐 |
+| **包含模式** | `isIncluded=true` 组件包含在套餐基础价中 |
+| **可选加购** | `isIncluded=false` 顾客选中后额外付费 |
+| **热点图** | **可选**，仅 OUTFIT 类型需要热图位置 |
+| **热点图来源** | 仅两种：自定义上传 或 平台模板 |
+| **热点位置** | 存在 `PlanComponent.hotmapX/Y`，每套餐独立 |
+| **图片展示** | `ServiceComponent.imageUrl`，OUTFIT 和 ADDON 都支持 |
 | **服务升级** | 混合模式：推荐升级包 + 自定义升级 |
 | **升级配置** | 混合模式：平台预设 + 商户自定义 |
 | **升级时机** | 套餐详情页 + 结算页面 |
 | **升级存储** | `ComponentUpgrade` 统一表（scope: PLATFORM / MERCHANT）|
+
+### 价格解析优先级
+
+```
+1. 商户自己创建的组件 → component.basePrice
+2. 平台组件 + 有 MerchantComponentConfig → config.customPrice
+3. 平台组件 + 无配置 → component.basePrice (平台建议价)
+```
+
+### UI 分区
+
+```
+套餐编辑器
+├── 着装项 + 热点图 区域
+│   ├── 左侧：着装项列表 (OUTFIT 类型)
+│   └── 右侧：3:4 热图预览
+│
+└── 增值服务 区域
+    ├── 卡片网格 (ADDON 类型)
+    ├── 包含/可选 切换
+    └── 添加增值服务弹窗
+```
