@@ -9,7 +9,6 @@ import {
   Sparkles,
   ArrowRight,
   Info,
-  MapPin,
 } from "lucide-react";
 import EditorHotspot from "@/components/shared/EditorHotspot";
 
@@ -282,6 +281,7 @@ export default function PlanComponentEditor({
     // 检查组件是否可以放到热图上
     const component = getAllComponents().find(c => c.id === componentId);
     const canPlaceOnHotmap = component && ['OUTFIT', 'KIMONO', 'STYLING', 'ACCESSORY'].includes(component.type);
+    const hasMap = !!mapTemplate;
 
     if (isSelected) {
       // 取消选择
@@ -307,8 +307,7 @@ export default function PlanComponentEditor({
         return;
       }
 
-      // OUTFIT 类型：不自动使用模板默认位置，让商户自己放置
-      // 添加到配置，但不设置坐标，商户可以点击"放置"按钮手动放置
+      // OUTFIT 类型：添加到配置
       setConfigs([...configs, {
         componentId,
         isIncluded: true,
@@ -317,22 +316,19 @@ export default function PlanComponentEditor({
         hotmapY: null,
         hotmapLabelPosition: "right",
       }]);
+
+      // 如果有热图模板，自动进入放置模式
+      if (hasMap) {
+        setPlacingComponentId(componentId);
+      }
     }
-  }, [selectedComponentIds, onChange, configs, setConfigs, placingComponentId, categories]);
+  }, [selectedComponentIds, onChange, configs, setConfigs, placingComponentId, categories, mapTemplate]);
 
-  // 点击"放置到图片"按钮
-  const startPlacing = useCallback((componentId: string) => {
-    setPlacingComponentId(componentId);
-  }, []);
-
-  // 从图片移除组件（清除位置但保留选中状态）
+  // 从图片移除组件 = 取消选中
   const removeFromMap = useCallback((componentId: string) => {
-    setConfigs(configs.map(c =>
-      c.componentId === componentId
-        ? { ...c, hotmapX: null, hotmapY: null }
-        : c
-    ));
-  }, [configs, setConfigs]);
+    onChange(selectedComponentIds.filter(id => id !== componentId));
+    setConfigs(configs.filter(c => c.componentId !== componentId));
+  }, [configs, setConfigs, selectedComponentIds, onChange]);
 
   const selectAllInCategory = (components: ServiceComponent[]) => {
     const categoryIds = components.map((c) => c.id);
@@ -407,20 +403,6 @@ export default function PlanComponentEditor({
     return hotmapTypes.includes(component.type);
   };
 
-  // 严格判断组件类型是否可以放置到热图上（数据必须已加载）
-  const isHotmapEligibleStrict = (componentId: string): boolean => {
-    const component = getAllComponents().find(c => c.id === componentId);
-    if (!component) return false;
-    const hotmapTypes = ['OUTFIT', 'KIMONO', 'STYLING', 'ACCESSORY'];
-    return hotmapTypes.includes(component.type);
-  };
-
-  // 检查组件是否已放置到图片上
-  const isPlacedOnMap = (componentId: string): boolean => {
-    const config = getConfig(componentId);
-    return config?.hotmapX != null && config?.hotmapY != null;
-  };
-
   // 获取已放置到图片上的组件
   // 注意：已有坐标的组件总是显示，即使组件数据还没加载
   const getPlacedComponents = () => {
@@ -431,13 +413,6 @@ export default function PlanComponentEditor({
     );
   };
 
-  // 获取未放置到图片上的已选组件（只计算可放置类型）
-  // 这里使用严格检查，确保只有可放置类型才显示"放置"按钮
-  const getUnplacedComponents = () => {
-    return selectedComponentIds.filter(id =>
-      isHotmapEligibleStrict(id) && !isPlacedOnMap(id)
-    );
-  };
 
   // 统计
   const totalEnabledUpgrades = configs.reduce(
@@ -446,7 +421,6 @@ export default function PlanComponentEditor({
   );
 
   const placedComponents = getPlacedComponents();
-  const unplacedComponents = getUnplacedComponents();
 
   // ==================== 渲染 ====================
 
@@ -483,7 +457,7 @@ export default function PlanComponentEditor({
             <h2 className="text-lg font-bold text-gray-900">套餐包含内容</h2>
             <p className="text-sm text-gray-500 mt-0.5">
               {hasMapTemplate
-                ? "在右侧选择服务，然后点击图片放置位置"
+                ? "在左侧勾选服务，在右侧预览热图放置位置"
                 : "勾选套餐包含的服务项目"}
             </p>
           </div>
@@ -507,154 +481,15 @@ export default function PlanComponentEditor({
         </div>
       </div>
 
-      {/* 主内容区 - 左右分栏 */}
+      {/* 主内容区 - 左右分栏（左侧选择，右侧预览） */}
       <div className={`flex flex-col ${hasMapTemplate ? "lg:flex-row" : ""}`}>
-        {/* 左侧：可交互的热点图 */}
-        {hasMapTemplate && (
-          <div className="lg:w-1/2 flex-shrink-0 border-b lg:border-b-0 lg:border-r border-gray-100 bg-gradient-to-br from-gray-50 to-white">
-            <div className="p-4">
-              {/* 操作提示 */}
-              <div className={`flex items-center gap-2 mb-3 px-3 py-2 rounded-lg ${
-                placingComponentId
-                  ? "bg-blue-100 border border-blue-300"
-                  : "bg-gray-50"
-              }`}>
-                <Info className={`w-4 h-4 flex-shrink-0 ${placingComponentId ? "text-blue-600" : "text-gray-400"}`} />
-                <p className={`text-xs ${placingComponentId ? "text-blue-700 font-medium" : "text-gray-600"}`}>
-                  {placingComponentId ? (
-                    <>
-                      <strong>点击图片</strong>放置「{getAllComponents().find(c => c.id === placingComponentId)?.name}」
-                      <button
-                        type="button"
-                        onClick={() => setPlacingComponentId(null)}
-                        className="ml-2 text-blue-500 hover:text-blue-700 underline"
-                      >
-                        取消
-                      </button>
-                    </>
-                  ) : (
-                    <>拖拽调整位置 · 点击标记可移除</>
-                  )}
-                </p>
-              </div>
-
-              {/* 图片容器 */}
-              <div
-                ref={imageContainerRef}
-                className={`relative rounded-xl overflow-hidden bg-white shadow-sm border-2 aspect-[2/3] max-h-[600px] ${
-                  placingComponentId
-                    ? "border-blue-400 cursor-crosshair"
-                    : draggingComponentId
-                      ? "border-sakura-400 cursor-grabbing"
-                      : "border-gray-200"
-                }`}
-                onClick={placingComponentId ? handleImageClick : undefined}
-              >
-                <Image
-                  src={mapTemplate.imageUrl}
-                  alt="套餐展示图"
-                  fill
-                  className="object-contain pointer-events-none select-none"
-                  unoptimized
-                  draggable={false}
-                />
-
-                {/* 放置模式下的十字准星 */}
-                {placingComponentId && (
-                  <div className="absolute inset-0 pointer-events-none">
-                    <div className="absolute top-1/2 left-0 right-0 h-px bg-blue-300/50" />
-                    <div className="absolute left-1/2 top-0 bottom-0 w-px bg-blue-300/50" />
-                  </div>
-                )}
-
-                {/* 已放置的组件标记 */}
-                {placedComponents.map((config) => {
-                  // 即使组件数据未加载，也要显示热点（使用占位符）
-                  if (config.hotmapX == null || config.hotmapY == null) return null;
-
-                  const component = getAllComponents().find(c => c.id === config.componentId);
-                  const isDragging = draggingComponentId === config.componentId;
-
-                  return (
-                    <EditorHotspot
-                      key={config.componentId}
-                      hotspot={{
-                        id: config.componentId,
-                        x: config.hotmapX,
-                        y: config.hotmapY,
-                        labelPosition: (config.hotmapLabelPosition as "left" | "right" | "top" | "bottom") || "right",
-                        name: component?.name ?? "加载中...",
-                        icon: component?.icon ?? "📍",
-                        isIncluded: config.isIncluded,
-                      }}
-                      isEditable
-                      isDragging={isDragging}
-                      onDragStart={(e) => handleDragStart(e, config.componentId)}
-                      onRemove={() => removeFromMap(config.componentId)}
-                    />
-                  );
-                })}
-              </div>
-
-              {/* 未放置的组件提示 */}
-              {unplacedComponents.length > 0 && (
-                <div className="mt-4 p-3 bg-amber-50 rounded-xl border border-amber-200">
-                  <p className="text-xs text-amber-700 font-medium mb-2">
-                    以下服务已选择，点击「放置」按钮可添加到展示图中：
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {unplacedComponents.map((id) => {
-                      const component = getAllComponents().find((c) => c.id === id);
-                      if (!component) return null;
-                      return (
-                        <button
-                          type="button"
-                          key={id}
-                          onClick={() => startPlacing(id)}
-                          className={`
-                            inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs border transition-colors
-                            ${placingComponentId === id
-                              ? "bg-blue-100 text-blue-700 border-blue-300"
-                              : "bg-white text-gray-700 border-amber-200 hover:border-blue-300 hover:bg-blue-50"
-                            }
-                          `}
-                        >
-                          <span>{component.icon}</span>
-                          {component.name}
-                          <MapPin className="w-3 h-3 ml-1" />
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* 图例说明 */}
-              <div className="mt-4 flex items-center justify-center gap-6 text-xs text-gray-500">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-sakura-500 flex items-center justify-center">
-                    <Check className="w-3 h-3 text-white" />
-                  </div>
-                  <span>已放置（可拖拽）</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center">
-                    <MapPin className="w-3 h-3 text-white" />
-                  </div>
-                  <span>待放置</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 右侧：组件选择列表 */}
-        <div className="flex-1 min-w-0">
+        {/* 左侧：组件选择列表 */}
+        <div className={`${hasMapTemplate ? "lg:w-[45%]" : "w-full"} flex-shrink-0 ${hasMapTemplate ? "border-b lg:border-b-0 lg:border-r border-gray-100" : ""}`}>
           <div className="p-4 space-y-3 max-h-[700px] overflow-y-auto">
             {/* 提示信息 */}
             {hasMapTemplate && (
-              <div className="px-3 py-2 bg-gray-50 rounded-lg text-xs text-gray-600">
-                勾选服务后，有默认位置的会自动放置，其他需要手动点击图片放置
+              <div className="px-3 py-2 bg-sakura-50 rounded-lg text-xs text-gray-700 border border-sakura-100">
+                勾选着装项后自动进入放置模式，点击右侧热图确定位置
               </div>
             )}
 
@@ -712,7 +547,6 @@ export default function PlanComponentEditor({
                       {category.components.map((component) => {
                         const isSelected = selectedComponentIds.includes(component.id);
                         const config = getConfig(component.id);
-                        const isOnMap = isPlacedOnMap(component.id);
                         const isPlacing = placingComponentId === component.id;
                         const componentUpgrades = upgradePaths[component.id] || [];
                         const hasUpgrades = componentUpgrades.length > 0;
@@ -769,28 +603,11 @@ export default function PlanComponentEditor({
                                       增值
                                     </span>
                                   )}
-                                  {/* 显示放置状态 - 只有 OUTFIT 类型可以放置在热图上 */}
-                                  {isSelected && hasMapTemplate && isHotmapEligible(component.id) && (
-                                    isOnMap ? (
-                                      <span className="px-1.5 py-0.5 bg-sakura-100 text-sakura-600 text-[10px] rounded">
-                                        已放置
-                                      </span>
-                                    ) : isPlacing ? (
-                                      <span className="px-1.5 py-0.5 bg-blue-100 text-blue-600 text-[10px] rounded animate-pulse">
-                                        点击图片放置
-                                      </span>
-                                    ) : (
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          startPlacing(component.id);
-                                        }}
-                                        className="px-1.5 py-0.5 bg-amber-100 text-amber-600 text-[10px] rounded hover:bg-amber-200 transition-colors"
-                                      >
-                                        放置
-                                      </button>
-                                    )
+                                  {/* 放置中状态提示 */}
+                                  {isPlacing && (
+                                    <span className="px-1.5 py-0.5 bg-sakura-100 text-sakura-600 text-[10px] rounded animate-pulse">
+                                      点击右侧图片
+                                    </span>
                                   )}
                                 </div>
                                 {component.description && (
@@ -886,6 +703,108 @@ export default function PlanComponentEditor({
             })}
           </div>
         </div>
+
+        {/* 右侧：热点图预览（3:4 比例，与用户端一致） */}
+        {hasMapTemplate && (
+          <div className="flex-1 min-w-0 bg-gradient-to-br from-gray-50 to-white">
+            <div className="p-4 sticky top-0 max-h-[calc(100vh-120px)] overflow-y-auto">
+              {/* 操作提示 */}
+              <div className={`flex items-center gap-2 mb-3 px-3 py-2 rounded-lg ${
+                placingComponentId
+                  ? "bg-sakura-100 border border-sakura-300"
+                  : "bg-gray-50"
+              }`}>
+                <Info className={`w-4 h-4 flex-shrink-0 ${placingComponentId ? "text-sakura-600" : "text-gray-400"}`} />
+                <p className={`text-xs ${placingComponentId ? "text-sakura-700 font-medium" : "text-gray-600"}`}>
+                  {placingComponentId ? (
+                    <>
+                      <strong>点击图片</strong>放置「{getAllComponents().find(c => c.id === placingComponentId)?.name}」
+                      <button
+                        type="button"
+                        onClick={() => {
+                          // 取消放置 = 取消选中该组件
+                          onChange(selectedComponentIds.filter(id => id !== placingComponentId));
+                          setConfigs(configs.filter(c => c.componentId !== placingComponentId));
+                          setPlacingComponentId(null);
+                        }}
+                        className="ml-2 text-sakura-500 hover:text-sakura-700 underline"
+                      >
+                        取消
+                      </button>
+                    </>
+                  ) : (
+                    <>预览效果 · 拖拽调整位置 · 点击标记可移除</>
+                  )}
+                </p>
+              </div>
+
+              {/* 图片容器 - 3:4 比例 */}
+              <div
+                ref={imageContainerRef}
+                className={`relative rounded-xl overflow-hidden bg-white shadow-sm border-2 aspect-[3/4] ${
+                  placingComponentId
+                    ? "border-sakura-400 cursor-crosshair"
+                    : draggingComponentId
+                      ? "border-sakura-400 cursor-grabbing"
+                      : "border-gray-200"
+                }`}
+                onClick={placingComponentId ? handleImageClick : undefined}
+              >
+                <Image
+                  src={mapTemplate.imageUrl}
+                  alt="套餐展示图"
+                  fill
+                  className="object-cover pointer-events-none select-none"
+                  unoptimized
+                  draggable={false}
+                />
+
+                {/* 放置模式下的十字准星 */}
+                {placingComponentId && (
+                  <div className="absolute inset-0 pointer-events-none">
+                    <div className="absolute top-1/2 left-0 right-0 h-px bg-sakura-300/50" />
+                    <div className="absolute left-1/2 top-0 bottom-0 w-px bg-sakura-300/50" />
+                  </div>
+                )}
+
+                {/* 已放置的组件标记 */}
+                {placedComponents.map((config) => {
+                  if (config.hotmapX == null || config.hotmapY == null) return null;
+
+                  const component = getAllComponents().find(c => c.id === config.componentId);
+                  const isDragging = draggingComponentId === config.componentId;
+
+                  return (
+                    <EditorHotspot
+                      key={config.componentId}
+                      hotspot={{
+                        id: config.componentId,
+                        x: config.hotmapX,
+                        y: config.hotmapY,
+                        labelPosition: (config.hotmapLabelPosition as "left" | "right" | "top" | "bottom") || "right",
+                        name: component?.name ?? "加载中...",
+                        icon: component?.icon ?? "📍",
+                        isIncluded: config.isIncluded,
+                      }}
+                      isEditable
+                      isDragging={isDragging}
+                      onDragStart={(e) => handleDragStart(e, config.componentId)}
+                      onRemove={() => removeFromMap(config.componentId)}
+                    />
+                  );
+                })}
+              </div>
+
+
+              {/* 图例说明 */}
+              <div className="mt-4 flex items-center justify-center gap-4 text-xs text-gray-500">
+                <span>拖拽调整位置</span>
+                <span>·</span>
+                <span>点击热点可移除</span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
