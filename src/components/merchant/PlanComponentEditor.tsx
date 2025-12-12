@@ -569,9 +569,10 @@ export default function PlanComponentEditor({
 
                 {/* 已放置的组件标记 */}
                 {placedComponents.map((config) => {
-                  const component = getAllComponents().find(c => c.id === config.componentId);
-                  if (!component || config.hotmapX == null || config.hotmapY == null) return null;
+                  // 即使组件数据未加载，也要显示热点（使用占位符）
+                  if (config.hotmapX == null || config.hotmapY == null) return null;
 
+                  const component = getAllComponents().find(c => c.id === config.componentId);
                   const isDragging = draggingComponentId === config.componentId;
 
                   return (
@@ -582,8 +583,8 @@ export default function PlanComponentEditor({
                         x: config.hotmapX,
                         y: config.hotmapY,
                         labelPosition: (config.hotmapLabelPosition as "left" | "right" | "top" | "bottom") || "right",
-                        name: component.name,
-                        icon: component.icon || "📍",
+                        name: component?.name ?? "加载中...",
+                        icon: component?.icon ?? "📍",
                         isIncluded: config.isIncluded,
                       }}
                       isEditable
