@@ -255,6 +255,12 @@ export default function PlanComponentEditor({
     }
   }, [draggingComponentId, handleDragMove, handleDragEnd]);
 
+  // ==================== 辅助函数 ====================
+
+  const getAllComponents = (): ServiceComponent[] => {
+    return categories.flatMap((cat) => cat.components);
+  };
+
   // ==================== 组件选择逻辑 ====================
 
   const toggleCategory = (type: string) => {
@@ -337,7 +343,7 @@ export default function PlanComponentEditor({
         }]);
       }
     }
-  }, [selectedComponentIds, onChange, configs, setConfigs, mapTemplate, placingComponentId, getAllComponents]);
+  }, [selectedComponentIds, onChange, configs, setConfigs, mapTemplate, placingComponentId, categories]);
 
   // 点击"放置到图片"按钮
   const startPlacing = useCallback((componentId: string) => {
@@ -410,14 +416,8 @@ export default function PlanComponentEditor({
     });
   };
 
-  // ==================== 辅助函数 ====================
-
   const getConfig = (componentId: string): ComponentConfig | undefined => {
     return configs.find((c) => c.componentId === componentId);
-  };
-
-  const getAllComponents = (): ServiceComponent[] => {
-    return categories.flatMap((cat) => cat.components);
   };
 
   // 判断组件类型是否可以放置到热图上（只有 OUTFIT 类型可以）
