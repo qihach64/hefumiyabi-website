@@ -35,14 +35,16 @@ interface Theme {
   color: string | null;
 }
 
+// v9.1: 简化版 PlanComponent（移除了商户覆盖字段）
 interface PlanComponent {
   id: string;
   componentId: string;
   isIncluded: boolean;
-  isHighlighted: boolean;
+  quantity: number;
   hotmapX?: number | null;
   hotmapY?: number | null;
   hotmapLabelPosition?: string;
+  hotmapOrder?: number;
   component: {
     id: string;
     code: string;

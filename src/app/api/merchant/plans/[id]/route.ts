@@ -3,17 +3,15 @@ import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-// PlanComponent 配置 schema
+// PlanComponent 配置 schema（v9.1 简化版 - 移除了商户覆盖字段）
 const planComponentSchema = z.object({
   componentId: z.string(),
   isIncluded: z.boolean().default(true),
-  isHighlighted: z.boolean().default(false),
-  tier: z.string().optional().nullable(),
-  tierLabel: z.string().optional().nullable(),
   quantity: z.number().int().positive().default(1),
-  customNote: z.string().optional().nullable(),
-  nameOverride: z.string().optional().nullable(),
-  descriptionOverride: z.string().optional().nullable(),
+  hotmapX: z.number().min(0).max(1).optional().nullable(),
+  hotmapY: z.number().min(0).max(1).optional().nullable(),
+  hotmapLabelPosition: z.enum(["left", "right"]).optional().default("right"),
+  hotmapOrder: z.number().int().optional().default(0),
 });
 
 // 组件配置 schema（简化版，包含升级选项和位置信息）
@@ -58,6 +56,12 @@ export async function GET(
       return NextResponse.json({ message: "请先登录" }, { status: 401 });
     }
 
+    // 获取商户信息以查询价格覆盖
+    const merchant = await prisma.merchant.findUnique({
+      where: { ownerId: session.user.id },
+      select: { id: true },
+    });
+
     const plan = await prisma.rentalPlan.findUnique({
       where: { id },
       include: {
@@ -94,14 +98,16 @@ export async function GET(
                 type: true,
                 icon: true,
                 highlights: true,
+                basePrice: true,
+                tier: true,
+                tierLabel: true,
               },
             },
           },
-          orderBy: {
-            component: {
-              displayOrder: 'asc',
-            },
-          },
+          orderBy: [
+            { hotmapOrder: 'asc' },
+            { component: { displayOrder: 'asc' } },
+          ],
         },
       },
     });
@@ -110,7 +116,35 @@ export async function GET(
       return NextResponse.json({ message: "套餐不存在" }, { status: 404 });
     }
 
-    return NextResponse.json(plan);
+    // 获取商户的组件价格覆盖
+    let componentOverrides: Record<string, { price: number | null; isEnabled: boolean }> = {};
+    if (merchant) {
+      const overrides = await prisma.merchantComponentOverride.findMany({
+        where: { merchantId: merchant.id },
+      });
+      componentOverrides = Object.fromEntries(
+        overrides.map(o => [o.componentId, { price: o.price, isEnabled: o.isEnabled }])
+      );
+    }
+
+    // 增强 planComponents 数据，添加有效价格
+    const enhancedPlanComponents = plan.planComponents.map(pc => {
+      const override = componentOverrides[pc.componentId];
+      return {
+        ...pc,
+        // 有效价格 = 商户覆盖价格 ?? 平台建议价
+        effectivePrice: override?.price ?? pc.component.basePrice,
+        // 是否启用（商户配置）
+        isEnabled: override?.isEnabled ?? true,
+        // 商户是否有自定义价格
+        hasCustomPrice: override?.price != null,
+      };
+    });
+
+    return NextResponse.json({
+      ...plan,
+      planComponents: enhancedPlanComponents,
+    });
   } catch (error) {
     console.error("获取套餐失败:", error);
     return NextResponse.json({ message: "获取套餐失败" }, { status: 500 });
@@ -228,33 +262,31 @@ export async function PATCH(
 
         // 创建新组件关联
         if (planComponents && planComponents.length > 0) {
-          // 完整版：使用详细配置
+          // 完整版：使用详细配置（v9.1 简化版）
           await tx.planComponent.createMany({
             data: planComponents.map((pc) => ({
               planId: id,
               componentId: pc.componentId,
               isIncluded: pc.isIncluded ?? true,
-              isHighlighted: pc.isHighlighted ?? false,
-              tier: pc.tier || null,
-              tierLabel: pc.tierLabel || null,
               quantity: pc.quantity ?? 1,
-              customNote: pc.customNote || null,
-              nameOverride: pc.nameOverride || null,
-              descriptionOverride: pc.descriptionOverride || null,
+              hotmapX: pc.hotmapX ?? null,
+              hotmapY: pc.hotmapY ?? null,
+              hotmapLabelPosition: pc.hotmapLabelPosition ?? "right",
+              hotmapOrder: pc.hotmapOrder ?? 0,
             })),
           });
         } else if (componentConfigs && componentConfigs.length > 0) {
           // 简化版：组件配置 + 升级选项 + 位置信息
           await tx.planComponent.createMany({
-            data: componentConfigs.map((cc) => ({
+            data: componentConfigs.map((cc, index) => ({
               planId: id,
               componentId: cc.componentId,
               isIncluded: cc.isIncluded ?? true,
-              isHighlighted: false,
               quantity: 1,
               hotmapX: cc.hotmapX ?? null,
               hotmapY: cc.hotmapY ?? null,
               hotmapLabelPosition: cc.hotmapLabelPosition ?? "right",
+              hotmapOrder: index,
             })),
           });
 
@@ -265,12 +297,12 @@ export async function PATCH(
         } else if (componentIds && componentIds.length > 0) {
           // 最简版：只有组件 ID，使用默认配置
           await tx.planComponent.createMany({
-            data: componentIds.map((componentId) => ({
+            data: componentIds.map((componentId, index) => ({
               planId: id,
               componentId,
               isIncluded: true,
-              isHighlighted: false,
               quantity: 1,
+              hotmapOrder: index,
             })),
           });
         }

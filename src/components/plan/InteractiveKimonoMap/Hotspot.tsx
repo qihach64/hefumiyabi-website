@@ -15,7 +15,8 @@ interface HotspotProps {
  */
 export default function Hotspot({ hotspot, onClick, isSelected }: HotspotProps) {
   const { x, y, labelPosition, component, isIncluded = true } = hotspot;
-  const displayName = hotspot.nameOverride || component.name;
+  // v9.1: 直接使用组件原生名称（不再支持套餐级别名称覆盖）
+  const displayName = component.name;
   const icon = component.icon || "📍";
 
   return (

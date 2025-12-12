@@ -82,16 +82,17 @@ export default function ServiceMap({
   const [hoveredHotspot, setHoveredHotspot] = useState<string | null>(null);
 
   // 构建统一的项目列表
+  // v9.1: 直接使用组件原生字段（不再支持套餐级别覆盖）
   const includedItems: UnifiedItem[] = mapData?.hotspots
     .filter(h => h.isIncluded !== false)
     .sort((a, b) => a.displayOrder - b.displayOrder)
     .map(h => ({
       id: h.id,
-      name: h.nameOverride || h.component.name,
+      name: h.component.name,
       icon: h.component.icon || "◇",
       type: "included" as ItemType,
-      description: h.descriptionOverride || h.component.description || undefined,
-      highlights: h.highlightsOverride?.length ? h.highlightsOverride : h.component.highlights,
+      description: h.component.description || undefined,
+      highlights: h.component.highlights,
       hotspot: h,
     })) || [];
 
@@ -397,23 +398,6 @@ export default function ServiceMap({
                 </div>
               )}
 
-              {/* Hotspot 特有信息 */}
-              {selectedItem.hotspot?.tierLabel && (
-                <div className="flex items-center gap-2">
-                  <span className="text-[12px] text-gray-500">等级</span>
-                  <span className="text-[13px] text-sakura-600 font-medium">
-                    {selectedItem.hotspot.tierLabel}
-                  </span>
-                </div>
-              )}
-
-              {selectedItem.hotspot?.customNote && (
-                <div className="p-3 bg-sakura-50 rounded-xl border border-sakura-100">
-                  <p className="text-[13px] text-sakura-700">
-                    💡 {selectedItem.hotspot.customNote}
-                  </p>
-                </div>
-              )}
             </div>
 
             {/* 底部操作 */}

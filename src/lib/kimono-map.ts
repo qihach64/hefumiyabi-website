@@ -159,15 +159,9 @@ export async function getPlanMapData(planId: string): Promise<MapData | null> {
             upgradeCost: u.upgradeCost,
           })),
         },
-        // 套餐特定配置
+        // 套餐特定配置 (v9.1 simplified)
         isIncluded: pc.isIncluded,
-        isHighlighted: pc.isHighlighted,
-        tier: pc.tier,
-        tierLabel: pc.tierLabel,
-        customNote: pc.customNote,
-        nameOverride: pc.nameOverride,
-        descriptionOverride: pc.descriptionOverride,
-        highlightsOverride: pc.highlightsOverride ?? [],
+        quantity: pc.quantity,
       }));
 
     return {

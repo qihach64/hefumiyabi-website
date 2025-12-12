@@ -9,11 +9,9 @@ import type { InteractiveKimonoMapProps, HotspotData } from "./types";
 // 内联详情组件 - 极简设计 (用于 horizontal 模式)
 function InlineDetail({ hotspot, onClose }: { hotspot: HotspotData; onClose: () => void }) {
   const { component, isIncluded = true } = hotspot;
-  const displayDescription = hotspot.descriptionOverride || component.description;
-  const displayHighlights =
-    hotspot.highlightsOverride && hotspot.highlightsOverride.length > 0
-      ? hotspot.highlightsOverride
-      : component.highlights;
+  // v9.1: 直接使用组件原生字段（不再支持套餐级别覆盖）
+  const displayDescription = component.description;
+  const displayHighlights = component.highlights;
 
   const getTypeLabel = () => {
     switch (component.type) {
@@ -44,16 +42,6 @@ function InlineDetail({ hotspot, onClose }: { hotspot: HotspotData; onClose: () 
         )}
       </div>
 
-      {/* 等级标签 */}
-      {hotspot.tierLabel && (
-        <div className="flex items-center gap-2">
-          <span className="text-[12px] text-gray-400">等级</span>
-          <span className="text-[12px] text-sakura-600 font-medium">
-            {hotspot.tierLabel}
-          </span>
-        </div>
-      )}
-
       {/* 描述 */}
       {displayDescription && (
         <p className="text-[13px] text-gray-500 leading-relaxed">
@@ -70,13 +58,6 @@ function InlineDetail({ hotspot, onClose }: { hotspot: HotspotData; onClose: () 
               <span className="text-[12px] text-gray-500">{highlight}</span>
             </div>
           ))}
-        </div>
-      )}
-
-      {/* 自定义说明 */}
-      {hotspot.customNote && (
-        <div className="pl-3 border-l-2 border-sakura-200">
-          <p className="text-[12px] text-sakura-600 italic">{hotspot.customNote}</p>
         </div>
       )}
 
@@ -110,12 +91,10 @@ function InlineDetail({ hotspot, onClose }: { hotspot: HotspotData; onClose: () 
 
 // 紧凑详情组件 - 用于 vertical 模式的展开详情
 function CompactDetail({ hotspot }: { hotspot: HotspotData }) {
-  const { component, isIncluded = true } = hotspot;
-  const displayDescription = hotspot.descriptionOverride || component.description;
-  const displayHighlights =
-    hotspot.highlightsOverride && hotspot.highlightsOverride.length > 0
-      ? hotspot.highlightsOverride
-      : component.highlights;
+  const { component } = hotspot;
+  // v9.1: 直接使用组件原生字段
+  const displayDescription = component.description;
+  const displayHighlights = component.highlights;
 
   return (
     <div className="px-3 pb-3 space-y-2 animate-in fade-in duration-200">
@@ -138,13 +117,6 @@ function CompactDetail({ hotspot }: { hotspot: HotspotData }) {
             </span>
           ))}
         </div>
-      )}
-
-      {/* 自定义说明 */}
-      {hotspot.customNote && (
-        <p className="text-[11px] text-sakura-600 italic">
-          💡 {hotspot.customNote}
-        </p>
       )}
     </div>
   );
@@ -264,7 +236,8 @@ export default function InteractiveKimonoMap({
             <div className="grid grid-cols-2 gap-2">
               {sortedHotspots.map((hotspot) => {
                 const { component, isIncluded = true } = hotspot;
-                const displayName = hotspot.nameOverride || component.name;
+                // v9.1: 直接使用组件原生名称
+                const displayName = component.name;
                 const icon = component.icon || "◇";
                 const isSelected = selectedHotspot?.id === hotspot.id;
 
@@ -388,7 +361,8 @@ export default function InteractiveKimonoMap({
             <div className="divide-y divide-gray-100">
               {sortedHotspots.map((hotspot) => {
                 const { component, isIncluded = true } = hotspot;
-                const displayName = hotspot.nameOverride || component.name;
+                // v9.1: 直接使用组件原生名称
+                const displayName = component.name;
                 const icon = component.icon || "◇";
                 const isSelected = selectedHotspot?.id === hotspot.id;
 
@@ -481,7 +455,7 @@ export default function InteractiveKimonoMap({
                 <span className="text-3xl">{selectedHotspot.component.icon || "◇"}</span>
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">
-                    {selectedHotspot.nameOverride || selectedHotspot.component.name}
+                    {selectedHotspot.component.name}
                   </h3>
                   <span className="text-[11px] uppercase tracking-widest text-gray-400">
                     {selectedHotspot.component.type === "KIMONO" ? "和服本体" :
@@ -515,40 +489,20 @@ export default function InteractiveKimonoMap({
                 )}
               </div>
 
-              {selectedHotspot.tierLabel && (
-                <div className="flex items-center gap-3">
-                  <span className="text-[12px] text-gray-400 uppercase tracking-wide">等级</span>
-                  <span className="text-[13px] text-sakura-600 font-medium">
-                    {selectedHotspot.tierLabel}
-                  </span>
-                </div>
-              )}
-
-              {(selectedHotspot.descriptionOverride || selectedHotspot.component.description) && (
+              {selectedHotspot.component.description && (
                 <p className="text-[14px] text-gray-500 leading-relaxed">
-                  {selectedHotspot.descriptionOverride || selectedHotspot.component.description}
+                  {selectedHotspot.component.description}
                 </p>
               )}
 
-              {(() => {
-                const highlights = selectedHotspot.highlightsOverride?.length
-                  ? selectedHotspot.highlightsOverride
-                  : selectedHotspot.component.highlights;
-                return highlights?.length > 0 && (
-                  <div className="space-y-2">
-                    {highlights.map((h, i) => (
-                      <div key={i} className="flex items-start gap-3">
-                        <div className="w-1.5 h-1.5 rounded-full bg-sakura-400 mt-1.5 flex-shrink-0" />
-                        <span className="text-[13px] text-gray-500">{h}</span>
-                      </div>
-                    ))}
-                  </div>
-                );
-              })()}
-
-              {selectedHotspot.customNote && (
-                <div className="pl-4 border-l-2 border-sakura-200">
-                  <p className="text-[13px] text-sakura-600 italic">{selectedHotspot.customNote}</p>
+              {selectedHotspot.component.highlights?.length > 0 && (
+                <div className="space-y-2">
+                  {selectedHotspot.component.highlights.map((h, i) => (
+                    <div key={i} className="flex items-start gap-3">
+                      <div className="w-1.5 h-1.5 rounded-full bg-sakura-400 mt-1.5 flex-shrink-0" />
+                      <span className="text-[13px] text-gray-500">{h}</span>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

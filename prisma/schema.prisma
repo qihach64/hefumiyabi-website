@@ -159,6 +159,7 @@ model Merchant {
   reviews        MerchantReview[]
   payouts        Payout[]
   serviceComponents ServiceComponent[]  // 商户自定义组件
+  componentOverrides MerchantComponentOverride[]  // 商户组件覆盖配置
 
   @@index([status])
   @@index([verified])
@@ -970,8 +971,9 @@ model ServiceComponent {
   updatedAt       DateTime        @updatedAt @map("updated_at")
 
   // 关联
-  planComponents  PlanComponent[]
-  mapHotspots     MapHotspot[]
+  planComponents      PlanComponent[]
+  mapHotspots         MapHotspot[]
+  merchantOverrides   MerchantComponentOverride[]  // 商户覆盖配置
 
   // 升级关联（新版）
   upgradesFrom    ComponentUpgrade[] @relation("UpgradeFrom")
@@ -987,7 +989,43 @@ model ServiceComponent {
   @@map("service_components")
 }
 
-// 套餐-组件关联 - 记录套餐包含哪些组件及商家自定义配置
+// ============================================
+// 商户组件覆盖配置 (Merchant Component Override)
+// ============================================
+// 商户级别的组件配置，适用于该商户的所有套餐
+model MerchantComponentOverride {
+  id            String   @id @default(cuid())
+
+  // 商户
+  merchantId    String   @map("merchant_id")
+  merchant      Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  // 平台组件
+  componentId   String   @map("component_id")
+  component     ServiceComponent @relation(fields: [componentId], references: [id], onDelete: Cascade)
+
+  // ========== 价格覆盖 ==========
+  // null = 使用平台建议价 (ServiceComponent.basePrice)
+  price         Int?
+
+  // ========== 启用状态 ==========
+  // false = 商户不提供此组件
+  isEnabled     Boolean  @default(true) @map("is_enabled")
+
+  // ========== 预留扩展字段 ==========
+  // sortOrder     Int?     @map("sort_order")  // 商户自定义排序
+
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@unique([merchantId, componentId])
+  @@index([merchantId])
+  @@index([componentId])
+  @@map("merchant_component_overrides")
+}
+
+// 套餐-组件关联 - 记录套餐包含哪些组件及热点位置
+// 注意：组件名称、描述、价格等信息由平台统一管理，商户通过 MerchantComponentOverride 设置价格
 model PlanComponent {
   id                   String           @id @default(cuid())
   planId               String           @map("plan_id")
@@ -996,19 +1034,9 @@ model PlanComponent {
   plan                 RentalPlan       @relation(fields: [planId], references: [id], onDelete: Cascade)
   component            ServiceComponent @relation(fields: [componentId], references: [id], onDelete: Cascade)
 
-  // 该套餐中此配件的具体配置
-  tier                 String?
-  tierLabel            String?          @map("tier_label")
-  isIncluded           Boolean          @default(true) @map("is_included")
-  isHighlighted        Boolean          @default(false) @map("is_highlighted")
+  // 该套餐中此组件的配置
+  isIncluded           Boolean          @default(true) @map("is_included")  // true=包含在套餐价, false=可选加购
   quantity             Int              @default(1)
-  customNote           String?          @map("custom_note")
-
-  // 商家可覆盖的字段
-  nameOverride         String?          @map("name_override")
-  descriptionOverride  String?          @map("description_override") @db.Text
-  highlightsOverride   String[]         @default([]) @map("highlights_override")
-  upgradePriceOverride Int?             @map("upgrade_price_override")
 
   createdAt            DateTime         @default(now()) @map("created_at")
   updatedAt            DateTime         @updatedAt @map("updated_at")

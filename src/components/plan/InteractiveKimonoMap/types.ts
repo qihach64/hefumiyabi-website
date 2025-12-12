@@ -23,15 +23,9 @@ export interface HotspotData {
   labelPosition: "left" | "right" | "top" | "bottom";
   displayOrder: number;
   component: ServiceComponentData;
-  // Plan-specific overrides
+  // Plan-specific config (v9.1 simplified)
   isIncluded?: boolean;
-  isHighlighted?: boolean;
-  tier?: string | null;
-  tierLabel?: string | null;
-  customNote?: string | null;
-  nameOverride?: string | null;
-  descriptionOverride?: string | null;
-  highlightsOverride?: string[];
+  quantity?: number;
 }
 
 export interface MapData {

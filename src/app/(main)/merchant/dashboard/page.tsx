@@ -16,6 +16,7 @@ import {
   User,
   ChevronLeft,
   ChevronRight,
+  Settings,
 } from "lucide-react";
 import { Button, Badge } from "@/components/ui";
 
@@ -502,6 +503,20 @@ export default async function MerchantDashboardPage({ searchParams }: MerchantDa
                     <p className="text-xs text-gray-600">查看和编辑店铺信息</p>
                   </div>
                   <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                </Link>
+
+                <Link
+                  href="/merchant/components"
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-emerald-50 transition-colors group"
+                >
+                  <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center group-hover:bg-emerald-200 transition-colors">
+                    <Settings className="w-5 h-5 text-emerald-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900">组件配置</p>
+                    <p className="text-xs text-gray-600">设置服务组件和价格</p>
+                  </div>
+                  <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-emerald-600 transition-colors" />
                 </Link>
 
                 <Link

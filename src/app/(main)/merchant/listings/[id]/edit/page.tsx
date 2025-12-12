@@ -62,10 +62,11 @@ export default async function EditListingPage({ params }: EditListingPageProps) 
           id: true,
           componentId: true,
           isIncluded: true,
-          isHighlighted: true,
+          quantity: true,
           hotmapX: true,
           hotmapY: true,
           hotmapLabelPosition: true,
+          hotmapOrder: true,
           component: {
             select: {
               id: true,

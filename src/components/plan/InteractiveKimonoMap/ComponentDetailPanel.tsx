@@ -18,13 +18,10 @@ export default function ComponentDetailPanel({
   if (!hotspot) return null;
 
   const { component, isIncluded = true } = hotspot;
-  const displayName = hotspot.nameOverride || component.name;
-  const displayDescription =
-    hotspot.descriptionOverride || component.description;
-  const displayHighlights =
-    hotspot.highlightsOverride && hotspot.highlightsOverride.length > 0
-      ? hotspot.highlightsOverride
-      : component.highlights;
+  // v9.1: 直接使用组件原生字段（不再支持套餐级别覆盖）
+  const displayName = component.name;
+  const displayDescription = component.description;
+  const displayHighlights = component.highlights;
   const icon = component.icon || "📍";
 
   // 获取组件类型标签
@@ -83,15 +80,6 @@ export default function ComponentDetailPanel({
 
         {/* 内容区域 */}
         <div className="space-y-4">
-          {/* 等级标签 */}
-          {hotspot.tierLabel && (
-            <div className="flex items-center gap-2">
-              <span className="text-[14px] text-gray-600">等级：</span>
-              <span className="px-2.5 py-1 bg-sakura-50 text-sakura-700 text-[13px] font-medium rounded-lg">
-                {hotspot.tierLabel}
-              </span>
-            </div>
-          )}
 
           {/* 描述 */}
           {displayDescription && (
@@ -109,15 +97,6 @@ export default function ComponentDetailPanel({
                   <span className="text-[14px] text-gray-600">{highlight}</span>
                 </div>
               ))}
-            </div>
-          )}
-
-          {/* 自定义说明 */}
-          {hotspot.customNote && (
-            <div className="p-3 bg-sakura-50 rounded-lg">
-              <p className="text-[14px] text-sakura-700">
-                {hotspot.customNote}
-              </p>
             </div>
           )}
 
@@ -213,16 +192,6 @@ export default function ComponentDetailPanel({
 
         {/* 内容区域 - 可滚动 */}
         <div className="p-5 space-y-5 overflow-y-auto max-h-[calc(75vh-100px)]">
-          {/* 等级标签 */}
-          {hotspot.tierLabel && (
-            <div className="flex items-center gap-2">
-              <span className="text-[14px] text-gray-600">等级：</span>
-              <span className="px-2.5 py-1 bg-sakura-50 text-sakura-700 text-[13px] font-medium rounded-lg">
-                {hotspot.tierLabel}
-              </span>
-            </div>
-          )}
-
           {/* 描述 */}
           {displayDescription && (
             <div>
@@ -249,15 +218,6 @@ export default function ComponentDetailPanel({
                   </li>
                 ))}
               </ul>
-            </div>
-          )}
-
-          {/* 自定义说明 */}
-          {hotspot.customNote && (
-            <div className="p-4 bg-sakura-50 rounded-xl">
-              <p className="text-[15px] text-sakura-700">
-                {hotspot.customNote}
-              </p>
             </div>
           )}
 
