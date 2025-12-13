@@ -1,14 +1,23 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import Image from "next/image";
 import {
   Check,
   ChevronDown,
-  ChevronUp,
+  ChevronRight,
+  Search,
   Sparkles,
   ArrowRight,
   Info,
+  Layers,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
+  Package,
+  Settings,
+  X,
+  GripVertical,
 } from "lucide-react";
 import EditorHotspot from "@/components/shared/EditorHotspot";
 
@@ -58,7 +67,6 @@ interface UpgradeOption {
   };
 }
 
-// 组件配置（包含升级选项和热点位置）
 export interface ComponentConfig {
   componentId: string;
   isIncluded: boolean;
@@ -89,6 +97,21 @@ interface PlanComponentEditorProps {
   className?: string;
 }
 
+// ==================== 类型分类配置 ====================
+
+const TYPE_CONFIG: Record<string, { label: string; icon: string; color: string }> = {
+  OUTFIT: { label: "着装项目", icon: "👘", color: "sakura" },
+  KIMONO: { label: "和服本体", icon: "👘", color: "sakura" },
+  STYLING: { label: "造型服务", icon: "💇", color: "purple" },
+  ACCESSORY: { label: "配饰", icon: "🎀", color: "blue" },
+  ADDON: { label: "增值服务", icon: "✨", color: "amber" },
+  EXPERIENCE: { label: "增值体验", icon: "📸", color: "amber" },
+  OTHER: { label: "其他", icon: "📦", color: "gray" },
+};
+
+// 可放置到热图的类型
+const HOTMAP_ELIGIBLE_TYPES = ["OUTFIT", "KIMONO", "STYLING", "ACCESSORY"];
+
 // ==================== 主组件 ====================
 
 export default function PlanComponentEditor({
@@ -100,28 +123,33 @@ export default function PlanComponentEditor({
   mapTemplate,
   className = "",
 }: PlanComponentEditorProps) {
+  // 数据状态
   const [categories, setCategories] = useState<ComponentCategory[]>([]);
   const [upgradePaths, setUpgradePaths] = useState<Record<string, UpgradeOption[]>>({});
   const [isLoading, setIsLoading] = useState(true);
+
+  // UI 状态
+  const [searchQuery, setSearchQuery] = useState("");
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
-  const [expandedUpgrades, setExpandedUpgrades] = useState<Set<string>>(new Set());
+  const [selectedComponentId, setSelectedComponentId] = useState<string | null>(null);
+  const [canvasZoom, setCanvasZoom] = useState(1);
 
-  // 放置模式：选中一个组件后，点击图片可以放置
+  // 编辑状态
   const [placingComponentId, setPlacingComponentId] = useState<string | null>(null);
-
-  // 拖拽状态
   const [draggingComponentId, setDraggingComponentId] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
-  // 图片容器引用
+  // Refs
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
   const imageContainerRef = useRef<HTMLDivElement>(null);
 
-  // 内部状态：组件配置
+  // 内部配置状态
   const [internalConfigs, setInternalConfigs] = useState<ComponentConfig[]>([]);
   const configs = componentConfigs || internalConfigs;
   const setConfigs = onConfigChange || setInternalConfigs;
 
-  // 加载服务组件
+  // ==================== 数据加载 ====================
+
   useEffect(() => {
     async function fetchComponents() {
       try {
@@ -147,102 +175,240 @@ export default function PlanComponentEditor({
     fetchComponents();
   }, [themeId]);
 
-  // ==================== 位置计算辅助函数 ====================
+  // ==================== 计算属性 ====================
 
-  // 根据点击位置计算标签应该在左边还是右边
+  const getAllComponents = useCallback((): ServiceComponent[] => {
+    return categories.flatMap((cat) => cat.components);
+  }, [categories]);
+
+  // 过滤后的分类（搜索）
+  const filteredCategories = useMemo(() => {
+    if (!searchQuery.trim()) return categories;
+
+    const query = searchQuery.toLowerCase();
+    return categories
+      .map((cat) => ({
+        ...cat,
+        components: cat.components.filter(
+          (c) =>
+            c.name.toLowerCase().includes(query) ||
+            c.nameJa?.toLowerCase().includes(query) ||
+            c.code.toLowerCase().includes(query) ||
+            c.description?.toLowerCase().includes(query)
+        ),
+      }))
+      .filter((cat) => cat.components.length > 0);
+  }, [categories, searchQuery]);
+
+  // 已放置的组件
+  const placedComponents = useMemo(() => {
+    return configs.filter(
+      (c) =>
+        c.hotmapX != null &&
+        c.hotmapY != null &&
+        selectedComponentIds.includes(c.componentId)
+    );
+  }, [configs, selectedComponentIds]);
+
+  // 统计
+  const stats = useMemo(() => {
+    const totalSelected = selectedComponentIds.length;
+    const totalPlaced = placedComponents.length;
+    const totalUpgrades = configs.reduce((sum, c) => sum + c.enabledUpgrades.length, 0);
+    return { totalSelected, totalPlaced, totalUpgrades };
+  }, [selectedComponentIds, placedComponents, configs]);
+
+  // 当前选中的组件详情
+  const selectedComponent = useMemo(() => {
+    if (!selectedComponentId) return null;
+    return getAllComponents().find((c) => c.id === selectedComponentId) || null;
+  }, [selectedComponentId, getAllComponents]);
+
+  const selectedConfig = useMemo(() => {
+    if (!selectedComponentId) return null;
+    return configs.find((c) => c.componentId === selectedComponentId) || null;
+  }, [selectedComponentId, configs]);
+
+  // ==================== 辅助函数 ====================
+
+  const isHotmapEligible = useCallback(
+    (componentId: string): boolean => {
+      const component = getAllComponents().find((c) => c.id === componentId);
+      if (!component) return true;
+      return HOTMAP_ELIGIBLE_TYPES.includes(component.type);
+    },
+    [getAllComponents]
+  );
+
   const calculateLabelPosition = (x: number): string => {
     return x > 0.5 ? "left" : "right";
   };
 
-  // 将鼠标事件坐标转换为相对位置 (0-1)
-  const getRelativePosition = useCallback((e: React.MouseEvent | MouseEvent): { x: number; y: number } | null => {
-    if (!imageContainerRef.current) return null;
-    const rect = imageContainerRef.current.getBoundingClientRect();
-    const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    const y = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
-    return { x, y };
+  const getRelativePosition = useCallback(
+    (e: React.MouseEvent | MouseEvent): { x: number; y: number } | null => {
+      if (!imageContainerRef.current) return null;
+      const rect = imageContainerRef.current.getBoundingClientRect();
+      const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      const y = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+      return { x, y };
+    },
+    []
+  );
+
+  const getConfig = useCallback(
+    (componentId: string): ComponentConfig | undefined => {
+      return configs.find((c) => c.componentId === componentId);
+    },
+    [configs]
+  );
+
+  // ==================== 组件选择逻辑 ====================
+
+  const toggleCategory = useCallback((type: string) => {
+    setExpandedCategories((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(type)) {
+        newSet.delete(type);
+      } else {
+        newSet.add(type);
+      }
+      return newSet;
+    });
   }, []);
 
-  // ==================== 放置组件逻辑 ====================
+  const handleComponentClick = useCallback(
+    (componentId: string) => {
+      const isSelected = selectedComponentIds.includes(componentId);
+      const component = getAllComponents().find((c) => c.id === componentId);
+      const canPlaceOnHotmap = component && HOTMAP_ELIGIBLE_TYPES.includes(component.type);
+      const hasMap = !!mapTemplate;
 
-  // 点击图片放置组件
-  const handleImageClick = useCallback((e: React.MouseEvent) => {
-    if (!placingComponentId) return;
+      if (isSelected) {
+        // 取消选择
+        onChange(selectedComponentIds.filter((id) => id !== componentId));
+        setConfigs(configs.filter((c) => c.componentId !== componentId));
+        if (placingComponentId === componentId) {
+          setPlacingComponentId(null);
+        }
+        if (selectedComponentId === componentId) {
+          setSelectedComponentId(null);
+        }
+      } else {
+        // 选择组件
+        onChange([...selectedComponentIds, componentId]);
 
-    const pos = getRelativePosition(e);
-    if (!pos) return;
+        const newConfig: ComponentConfig = {
+          componentId,
+          isIncluded: true,
+          enabledUpgrades: [],
+          hotmapX: null,
+          hotmapY: null,
+          hotmapLabelPosition: "right",
+        };
+        setConfigs([...configs, newConfig]);
 
-    const labelPosition = calculateLabelPosition(pos.x);
+        // 如果有热图且组件可放置，进入放置模式
+        if (hasMap && canPlaceOnHotmap) {
+          setPlacingComponentId(componentId);
+        }
+      }
 
-    // 更新或添加配置
-    const existingConfig = configs.find(c => c.componentId === placingComponentId);
-    if (existingConfig) {
-      setConfigs(configs.map(c =>
-        c.componentId === placingComponentId
-          ? { ...c, hotmapX: pos.x, hotmapY: pos.y, hotmapLabelPosition: labelPosition }
-          : c
-      ));
-    } else {
-      setConfigs([...configs, {
-        componentId: placingComponentId,
-        isIncluded: true,
-        enabledUpgrades: [],
-        hotmapX: pos.x,
-        hotmapY: pos.y,
-        hotmapLabelPosition: labelPosition,
-      }]);
-    }
+      // 选中以显示属性面板
+      setSelectedComponentId(componentId);
+    },
+    [
+      selectedComponentIds,
+      onChange,
+      configs,
+      setConfigs,
+      placingComponentId,
+      selectedComponentId,
+      getAllComponents,
+      mapTemplate,
+    ]
+  );
 
-    // 如果组件未被选中，添加到选中列表
-    if (!selectedComponentIds.includes(placingComponentId)) {
-      onChange([...selectedComponentIds, placingComponentId]);
-    }
+  // 从画布选中组件
+  const handleCanvasComponentClick = useCallback((componentId: string) => {
+    setSelectedComponentId(componentId);
+  }, []);
 
-    // 退出放置模式
-    setPlacingComponentId(null);
-  }, [placingComponentId, getRelativePosition, configs, setConfigs, selectedComponentIds, onChange]);
+  // ==================== 放置逻辑 ====================
+
+  const handleCanvasClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (!placingComponentId) return;
+
+      const pos = getRelativePosition(e);
+      if (!pos) return;
+
+      const labelPosition = calculateLabelPosition(pos.x);
+
+      setConfigs(
+        configs.map((c) =>
+          c.componentId === placingComponentId
+            ? { ...c, hotmapX: pos.x, hotmapY: pos.y, hotmapLabelPosition: labelPosition }
+            : c
+        )
+      );
+
+      if (!selectedComponentIds.includes(placingComponentId)) {
+        onChange([...selectedComponentIds, placingComponentId]);
+      }
+
+      setPlacingComponentId(null);
+    },
+    [placingComponentId, getRelativePosition, configs, setConfigs, selectedComponentIds, onChange]
+  );
 
   // ==================== 拖拽逻辑 ====================
 
-  const handleDragStart = useCallback((e: React.MouseEvent, componentId: string) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleDragStart = useCallback(
+    (e: React.MouseEvent, componentId: string) => {
+      e.preventDefault();
+      e.stopPropagation();
 
-    const config = configs.find(c => c.componentId === componentId);
-    if (!config?.hotmapX || !config?.hotmapY) return;
+      const config = configs.find((c) => c.componentId === componentId);
+      if (!config?.hotmapX || !config?.hotmapY) return;
 
-    const pos = getRelativePosition(e);
-    if (!pos) return;
+      const pos = getRelativePosition(e);
+      if (!pos) return;
 
-    setDraggingComponentId(componentId);
-    setDragOffset({
-      x: pos.x - config.hotmapX,
-      y: pos.y - config.hotmapY,
-    });
-  }, [configs, getRelativePosition]);
+      setDraggingComponentId(componentId);
+      setDragOffset({
+        x: pos.x - config.hotmapX,
+        y: pos.y - config.hotmapY,
+      });
+    },
+    [configs, getRelativePosition]
+  );
 
-  const handleDragMove = useCallback((e: MouseEvent) => {
-    if (!draggingComponentId) return;
+  const handleDragMove = useCallback(
+    (e: MouseEvent) => {
+      if (!draggingComponentId) return;
 
-    const pos = getRelativePosition(e);
-    if (!pos) return;
+      const pos = getRelativePosition(e);
+      if (!pos) return;
 
-    const newX = Math.max(0.05, Math.min(0.95, pos.x - dragOffset.x));
-    const newY = Math.max(0.05, Math.min(0.95, pos.y - dragOffset.y));
-    const labelPosition = calculateLabelPosition(newX);
+      const newX = Math.max(0.05, Math.min(0.95, pos.x - dragOffset.x));
+      const newY = Math.max(0.05, Math.min(0.95, pos.y - dragOffset.y));
+      const labelPosition = calculateLabelPosition(newX);
 
-    setConfigs(configs.map(c =>
-      c.componentId === draggingComponentId
-        ? { ...c, hotmapX: newX, hotmapY: newY, hotmapLabelPosition: labelPosition }
-        : c
-    ));
-  }, [draggingComponentId, dragOffset, getRelativePosition, configs, setConfigs]);
+      setConfigs(
+        configs.map((c) =>
+          c.componentId === draggingComponentId
+            ? { ...c, hotmapX: newX, hotmapY: newY, hotmapLabelPosition: labelPosition }
+            : c
+        )
+      );
+    },
+    [draggingComponentId, dragOffset, getRelativePosition, configs, setConfigs]
+  );
 
   const handleDragEnd = useCallback(() => {
     setDraggingComponentId(null);
   }, []);
 
-  // 添加全局鼠标事件监听
   useEffect(() => {
     if (draggingComponentId) {
       window.addEventListener("mousemove", handleDragMove);
@@ -254,193 +420,49 @@ export default function PlanComponentEditor({
     }
   }, [draggingComponentId, handleDragMove, handleDragEnd]);
 
-  // ==================== 辅助函数 ====================
+  // ==================== 升级选项 ====================
 
-  const getAllComponents = (): ServiceComponent[] => {
-    return categories.flatMap((cat) => cat.components);
-  };
-
-  // ==================== 组件选择逻辑 ====================
-
-  const toggleCategory = (type: string) => {
-    setExpandedCategories((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(type)) {
-        newSet.delete(type);
-      } else {
-        newSet.add(type);
-      }
-      return newSet;
-    });
-  };
-
-  // 从列表选择组件 - 进入放置模式或取消选择
-  const handleComponentSelect = useCallback((componentId: string) => {
-    const isSelected = selectedComponentIds.includes(componentId);
-
-    // 检查组件是否可以放到热图上
-    const component = getAllComponents().find(c => c.id === componentId);
-    const canPlaceOnHotmap = component && ['OUTFIT', 'KIMONO', 'STYLING', 'ACCESSORY'].includes(component.type);
-    const hasMap = !!mapTemplate;
-
-    if (isSelected) {
-      // 取消选择
-      onChange(selectedComponentIds.filter(id => id !== componentId));
-      setConfigs(configs.filter(c => c.componentId !== componentId));
-      if (placingComponentId === componentId) {
-        setPlacingComponentId(null);
-      }
-    } else {
-      // 选择组件
-      onChange([...selectedComponentIds, componentId]);
-
-      // ADDON 类型不需要热图位置
-      if (!canPlaceOnHotmap) {
-        setConfigs([...configs, {
-          componentId,
-          isIncluded: true,
-          enabledUpgrades: [],
-          hotmapX: null,
-          hotmapY: null,
-          hotmapLabelPosition: "right",
-        }]);
-        return;
-      }
-
-      // OUTFIT 类型：添加到配置
-      setConfigs([...configs, {
-        componentId,
-        isIncluded: true,
-        enabledUpgrades: [],
-        hotmapX: null,
-        hotmapY: null,
-        hotmapLabelPosition: "right",
-      }]);
-
-      // 如果有热图模板，自动进入放置模式
-      if (hasMap) {
-        setPlacingComponentId(componentId);
-      }
-    }
-  }, [selectedComponentIds, onChange, configs, setConfigs, placingComponentId, categories, mapTemplate]);
-
-  // 从图片移除组件 = 取消选中
-  const removeFromMap = useCallback((componentId: string) => {
-    onChange(selectedComponentIds.filter(id => id !== componentId));
-    setConfigs(configs.filter(c => c.componentId !== componentId));
-  }, [configs, setConfigs, selectedComponentIds, onChange]);
-
-  const selectAllInCategory = (components: ServiceComponent[]) => {
-    const categoryIds = components.map((c) => c.id);
-    const allSelected = categoryIds.every((id) => selectedComponentIds.includes(id));
-
-    if (allSelected) {
-      onChange(selectedComponentIds.filter((id) => !categoryIds.includes(id)));
-      setConfigs(configs.filter((c) => !categoryIds.includes(c.componentId)));
-    } else {
-      const newIds = new Set([...selectedComponentIds, ...categoryIds]);
-      onChange(Array.from(newIds));
-
-      const existingConfigIds = new Set(configs.map((c) => c.componentId));
-      const newConfigs = categoryIds
-        .filter((id) => !existingConfigIds.has(id))
-        .map((componentId) => {
-          const templateHotspot = mapTemplate?.hotspots.find(
-            (h) => h.componentId === componentId
-          );
-          return {
-            componentId,
-            isIncluded: true,
-            enabledUpgrades: [],
-            hotmapX: templateHotspot?.x ?? null,
-            hotmapY: templateHotspot?.y ?? null,
-            hotmapLabelPosition: templateHotspot?.labelPosition ?? "right",
-          };
-        });
-      setConfigs([...configs, ...newConfigs]);
-    }
-  };
-
-  // ==================== 升级选项逻辑 ====================
-
-  const toggleUpgrade = (componentId: string, upgradeId: string) => {
-    setConfigs(
-      configs.map((config) => {
-        if (config.componentId !== componentId) return config;
-        const enabledUpgrades = config.enabledUpgrades.includes(upgradeId)
-          ? config.enabledUpgrades.filter((id) => id !== upgradeId)
-          : [...config.enabledUpgrades, upgradeId];
-        return { ...config, enabledUpgrades };
-      })
-    );
-  };
-
-  const toggleUpgradePanel = (componentId: string) => {
-    setExpandedUpgrades((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(componentId)) {
-        newSet.delete(componentId);
-      } else {
-        newSet.add(componentId);
-      }
-      return newSet;
-    });
-  };
-
-  const getConfig = (componentId: string): ComponentConfig | undefined => {
-    return configs.find((c) => c.componentId === componentId);
-  };
-
-  // 判断组件类型是否可以放置到热图上（只有 OUTFIT 类型可以）
-  // 兼容旧类型：KIMONO, STYLING, ACCESSORY 也视为可放置
-  // 如果组件数据还未加载，返回 true（假设可放置）
-  const isHotmapEligible = (componentId: string): boolean => {
-    const component = getAllComponents().find(c => c.id === componentId);
-    // 如果组件数据还没加载完，假设已有坐标的组件是可放置的
-    if (!component) return true;
-    // OUTFIT 或旧的可视化类型都可以放到热图
-    const hotmapTypes = ['OUTFIT', 'KIMONO', 'STYLING', 'ACCESSORY'];
-    return hotmapTypes.includes(component.type);
-  };
-
-  // 获取已放置到图片上的组件
-  // 注意：已有坐标的组件总是显示，即使组件数据还没加载
-  const getPlacedComponents = () => {
-    return configs.filter(c =>
-      c.hotmapX != null &&
-      c.hotmapY != null &&
-      selectedComponentIds.includes(c.componentId)
-    );
-  };
-
-
-  // 统计
-  const totalEnabledUpgrades = configs.reduce(
-    (sum, c) => sum + c.enabledUpgrades.length,
-    0
+  const toggleUpgrade = useCallback(
+    (componentId: string, upgradeId: string) => {
+      setConfigs(
+        configs.map((config) => {
+          if (config.componentId !== componentId) return config;
+          const enabledUpgrades = config.enabledUpgrades.includes(upgradeId)
+            ? config.enabledUpgrades.filter((id) => id !== upgradeId)
+            : [...config.enabledUpgrades, upgradeId];
+          return { ...config, enabledUpgrades };
+        })
+      );
+    },
+    [configs, setConfigs]
   );
 
-  const placedComponents = getPlacedComponents();
+  // 移除组件
+  const removeComponent = useCallback(
+    (componentId: string) => {
+      onChange(selectedComponentIds.filter((id) => id !== componentId));
+      setConfigs(configs.filter((c) => c.componentId !== componentId));
+      if (selectedComponentId === componentId) {
+        setSelectedComponentId(null);
+      }
+    },
+    [selectedComponentIds, onChange, configs, setConfigs, selectedComponentId]
+  );
+
+  // ==================== 缩放控制 ====================
+
+  const handleZoomIn = () => setCanvasZoom((z) => Math.min(z + 0.25, 2));
+  const handleZoomOut = () => setCanvasZoom((z) => Math.max(z - 0.25, 0.5));
+  const handleZoomReset = () => setCanvasZoom(1);
 
   // ==================== 渲染 ====================
 
   if (isLoading) {
     return (
-      <div className={`bg-white rounded-2xl border border-gray-200 p-6 ${className}`}>
-        <div className="text-center py-12 text-gray-500">
-          <div className="w-8 h-8 border-2 border-sakura-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          加载服务组件中...
-        </div>
-      </div>
-    );
-  }
-
-  if (categories.length === 0) {
-    return (
-      <div className={`bg-white rounded-2xl border border-gray-200 p-6 ${className}`}>
-        <div className="text-center py-12 text-gray-500">
-          <p className="text-lg">暂无可用服务组件</p>
-          <p className="text-sm mt-2">请联系管理员添加</p>
+      <div className={`bg-[#1a1a1a] rounded-2xl h-[700px] flex items-center justify-center ${className}`}>
+        <div className="text-center text-gray-400">
+          <div className="w-10 h-10 border-2 border-sakura-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p>加载组件库...</p>
         </div>
       </div>
     );
@@ -449,307 +471,243 @@ export default function PlanComponentEditor({
   const hasMapTemplate = !!mapTemplate;
 
   return (
-    <div className={`bg-white rounded-2xl border border-gray-200 overflow-hidden ${className}`}>
-      {/* 标题栏 */}
-      <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-bold text-gray-900">套餐包含内容</h2>
-            <p className="text-sm text-gray-500 mt-0.5">
-              {hasMapTemplate
-                ? "在左侧勾选服务，在右侧预览热图放置位置"
-                : "勾选套餐包含的服务项目"}
-            </p>
+    <div className={`bg-[#1a1a1a] rounded-2xl overflow-hidden ${className}`}>
+      {/* 工具栏 */}
+      <div className="h-12 px-4 bg-[#252525] border-b border-[#333] flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 text-gray-300">
+            <Layers className="w-4 h-4" />
+            <span className="text-sm font-medium">套餐组件编辑器</span>
           </div>
-          <div className="flex items-center gap-3">
-            {selectedComponentIds.length > 0 && (
-              <span className="px-3 py-1.5 bg-sakura-100 text-sakura-700 rounded-full text-sm font-medium">
-                已选 {selectedComponentIds.length} 项
+          <div className="h-4 w-px bg-[#444]" />
+          <div className="flex items-center gap-2 text-xs text-gray-500">
+            <span className="px-2 py-0.5 bg-sakura-500/20 text-sakura-400 rounded">
+              {stats.totalSelected} 已选
+            </span>
+            {hasMapTemplate && (
+              <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded">
+                {stats.totalPlaced} 已放置
               </span>
             )}
-            {hasMapTemplate && placedComponents.length > 0 && (
-              <span className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
-                已放置 {placedComponents.length} 项
-              </span>
-            )}
-            {totalEnabledUpgrades > 0 && (
-              <span className="px-3 py-1.5 bg-amber-100 text-amber-700 rounded-full text-sm font-medium">
-                {totalEnabledUpgrades} 个升级
+            {stats.totalUpgrades > 0 && (
+              <span className="px-2 py-0.5 bg-amber-500/20 text-amber-400 rounded">
+                {stats.totalUpgrades} 升级
               </span>
             )}
           </div>
         </div>
+
+        {/* 缩放控制 */}
+        {hasMapTemplate && (
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={handleZoomOut}
+              className="p-1.5 text-gray-400 hover:text-white hover:bg-[#333] rounded transition-colors"
+              title="缩小"
+            >
+              <ZoomOut className="w-4 h-4" />
+            </button>
+            <span className="px-2 text-xs text-gray-500 min-w-[48px] text-center">
+              {Math.round(canvasZoom * 100)}%
+            </span>
+            <button
+              type="button"
+              onClick={handleZoomIn}
+              className="p-1.5 text-gray-400 hover:text-white hover:bg-[#333] rounded transition-colors"
+              title="放大"
+            >
+              <ZoomIn className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={handleZoomReset}
+              className="p-1.5 text-gray-400 hover:text-white hover:bg-[#333] rounded transition-colors"
+              title="重置"
+            >
+              <Maximize2 className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* 主内容区 - 左右分栏（左侧选择，右侧预览） */}
-      <div className={`flex flex-col ${hasMapTemplate ? "lg:flex-row" : ""}`}>
-        {/* 左侧：组件选择列表 */}
-        <div className={`${hasMapTemplate ? "lg:w-[45%]" : "w-full"} flex-shrink-0 ${hasMapTemplate ? "border-b lg:border-b-0 lg:border-r border-gray-100" : ""}`}>
-          <div className="p-4 space-y-3 max-h-[700px] overflow-y-auto">
-            {/* 提示信息 */}
-            {hasMapTemplate && (
-              <div className="px-3 py-2 bg-sakura-50 rounded-lg text-xs text-gray-700 border border-sakura-100">
-                勾选着装项后自动进入放置模式，点击右侧热图确定位置
+      {/* 三栏式主体 */}
+      <div className="flex h-[650px]">
+        {/* ==================== 左侧：组件库 ==================== */}
+        <div className="w-64 flex-shrink-0 border-r border-[#333] bg-[#1f1f1f] flex flex-col">
+          {/* 搜索框 */}
+          <div className="p-3 border-b border-[#333]">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="搜索组件..."
+                className="w-full pl-9 pr-3 py-2 bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-sakura-500/50"
+              />
+            </div>
+          </div>
+
+          {/* 组件列表 */}
+          <div className="flex-1 overflow-y-auto">
+            {filteredCategories.length === 0 ? (
+              <div className="p-4 text-center text-gray-500 text-sm">
+                {searchQuery ? "未找到匹配的组件" : "暂无可用组件"}
               </div>
-            )}
+            ) : (
+              filteredCategories.map((category) => {
+                const isExpanded = expandedCategories.has(category.type);
+                const selectedCount = category.components.filter((c) =>
+                  selectedComponentIds.includes(c.id)
+                ).length;
+                const typeConfig = TYPE_CONFIG[category.type] || TYPE_CONFIG.OTHER;
 
-            {categories.map((category) => {
-              const isExpanded = expandedCategories.has(category.type);
-              const selectedCount = category.components.filter((c) =>
-                selectedComponentIds.includes(c.id)
-              ).length;
-              const allSelected = selectedCount === category.components.length;
-
-              return (
-                <div
-                  key={category.type}
-                  className="border border-gray-200 rounded-xl overflow-hidden"
-                >
-                  {/* 分类标题 */}
-                  <button
-                    type="button"
-                    onClick={() => toggleCategory(category.type)}
-                    className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-xl">{category.icon}</span>
-                      <div className="text-left">
-                        <p className="font-semibold text-gray-900 text-sm">{category.label}</p>
-                        <p className="text-xs text-gray-500">
-                          {category.components.length} 项可选
-                          {selectedCount > 0 && (
-                            <span className="text-sakura-600 font-medium">
-                              {" "}· 已选 {selectedCount}
-                            </span>
-                          )}
-                        </p>
+                return (
+                  <div key={category.type} className="border-b border-[#2a2a2a]">
+                    {/* 分类标题 */}
+                    <button
+                      type="button"
+                      onClick={() => toggleCategory(category.type)}
+                      className="w-full px-3 py-2.5 flex items-center justify-between hover:bg-[#252525] transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        {isExpanded ? (
+                          <ChevronDown className="w-4 h-4 text-gray-500" />
+                        ) : (
+                          <ChevronRight className="w-4 h-4 text-gray-500" />
+                        )}
+                        <span className="text-sm">{typeConfig.icon}</span>
+                        <span className="text-sm font-medium text-gray-300">{category.label}</span>
                       </div>
-                    </div>
-                    {isExpanded ? (
-                      <ChevronUp className="w-4 h-4 text-gray-400" />
-                    ) : (
-                      <ChevronDown className="w-4 h-4 text-gray-400" />
-                    )}
-                  </button>
+                      <div className="flex items-center gap-2">
+                        {selectedCount > 0 && (
+                          <span className="text-[10px] px-1.5 py-0.5 bg-sakura-500/20 text-sakura-400 rounded">
+                            {selectedCount}
+                          </span>
+                        )}
+                        <span className="text-[10px] text-gray-600">
+                          {category.components.length}
+                        </span>
+                      </div>
+                    </button>
 
-                  {/* 组件列表 */}
-                  {isExpanded && (
-                    <div className="p-3 bg-white space-y-2">
-                      {/* 全选按钮 */}
-                      <button
-                        type="button"
-                        onClick={() => selectAllInCategory(category.components)}
-                        className="text-xs text-sakura-600 hover:text-sakura-700 font-medium mb-1"
-                      >
-                        {allSelected ? "取消全选" : "全选此分类"}
-                      </button>
+                    {/* 组件列表 */}
+                    {isExpanded && (
+                      <div className="pb-2">
+                        {category.components.map((component) => {
+                          const isSelected = selectedComponentIds.includes(component.id);
+                          const isPlacing = placingComponentId === component.id;
+                          const isActive = selectedComponentId === component.id;
+                          const canPlace = HOTMAP_ELIGIBLE_TYPES.includes(component.type);
 
-                      {category.components.map((component) => {
-                        const isSelected = selectedComponentIds.includes(component.id);
-                        const config = getConfig(component.id);
-                        const isPlacing = placingComponentId === component.id;
-                        const componentUpgrades = upgradePaths[component.id] || [];
-                        const hasUpgrades = componentUpgrades.length > 0;
-                        const isUpgradeExpanded = expandedUpgrades.has(component.id);
-                        const enabledUpgradeCount = config?.enabledUpgrades.length || 0;
-
-                        return (
-                          <div key={component.id} className="space-y-2">
-                            {/* 组件行 */}
+                          return (
                             <div
+                              key={component.id}
+                              onClick={() => handleComponentClick(component.id)}
                               className={`
-                                flex items-center gap-3 p-3 rounded-xl border-2
-                                transition-all duration-200
-                                ${isPlacing
-                                  ? "border-blue-400 bg-blue-50 ring-2 ring-blue-200"
+                                mx-2 mb-1 px-3 py-2 rounded-lg cursor-pointer transition-all
+                                ${isActive
+                                  ? "bg-sakura-500/20 border border-sakura-500/50"
                                   : isSelected
-                                    ? "border-sakura-400 bg-sakura-50"
-                                    : "border-gray-100 hover:border-gray-200 bg-white hover:bg-gray-50"
+                                    ? "bg-[#2a2a2a] border border-[#3a3a3a]"
+                                    : "hover:bg-[#252525] border border-transparent"
                                 }
+                                ${isPlacing ? "ring-2 ring-sakura-400 animate-pulse" : ""}
                               `}
                             >
-                              {/* 选择框 */}
-                              <div
-                                onClick={() => handleComponentSelect(component.id)}
-                                className={`
-                                  flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-all cursor-pointer
-                                  ${isSelected
-                                    ? "bg-sakura-500 border-sakura-500"
-                                    : "border-gray-300 hover:border-sakura-400"
-                                  }
-                                `}
-                              >
-                                {isSelected && <Check className="w-3 h-3 text-white" />}
-                              </div>
-
-                              {/* 组件信息 */}
-                              <div
-                                className="flex-1 min-w-0 cursor-pointer"
-                                onClick={() => handleComponentSelect(component.id)}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <span className="text-base">{component.icon}</span>
-                                  <span className={`font-medium text-sm ${isSelected ? "text-sakura-700" : "text-gray-900"}`}>
-                                    {component.name}
-                                  </span>
-                                  {component.tierLabel && (
-                                    <span className="px-1.5 py-0.5 bg-gray-100 text-gray-500 text-[10px] rounded">
-                                      {component.tierLabel}
-                                    </span>
-                                  )}
-                                  {/* ADDON 类型标识 */}
-                                  {!isHotmapEligible(component.id) && (
-                                    <span className="px-1.5 py-0.5 bg-purple-100 text-purple-600 text-[10px] rounded">
-                                      增值
-                                    </span>
-                                  )}
-                                  {/* 放置中状态提示 */}
-                                  {isPlacing && (
-                                    <span className="px-1.5 py-0.5 bg-sakura-100 text-sakura-600 text-[10px] rounded animate-pulse">
-                                      点击右侧图片
-                                    </span>
-                                  )}
-                                </div>
-                                {component.description && (
-                                  <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">
-                                    {component.description}
-                                  </p>
-                                )}
-                              </div>
-
-                              {/* 升级按钮 */}
-                              {isSelected && hasUpgrades && (
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    toggleUpgradePanel(component.id);
-                                  }}
+                              <div className="flex items-center gap-2">
+                                {/* 选中状态 */}
+                                <div
                                   className={`
-                                    flex-shrink-0 px-2.5 py-1 rounded-lg text-xs font-medium transition-all
-                                    ${enabledUpgradeCount > 0
-                                      ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
-                                      : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                                    w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0
+                                    ${isSelected
+                                      ? "bg-sakura-500 border-sakura-500"
+                                      : "border-gray-600"
                                     }
                                   `}
                                 >
-                                  <Sparkles className="w-3 h-3 inline mr-1" />
-                                  升级{enabledUpgradeCount > 0 && ` (${enabledUpgradeCount})`}
-                                </button>
-                              )}
-                            </div>
+                                  {isSelected && <Check className="w-2.5 h-2.5 text-white" />}
+                                </div>
 
-                            {/* 升级选项面板 */}
-                            {isSelected && hasUpgrades && isUpgradeExpanded && (
-                              <div className="ml-8 p-3 bg-gradient-to-br from-amber-50 to-white rounded-xl border border-amber-200">
-                                <p className="text-xs font-medium text-gray-600 mb-2 flex items-center gap-1.5">
-                                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                                  可选升级（顾客付差价）
-                                </p>
-                                <div className="space-y-1.5">
-                                  {componentUpgrades.map((upgrade) => {
-                                    const isEnabled = config?.enabledUpgrades.includes(upgrade.id);
-                                    return (
-                                      <button
-                                        key={upgrade.id}
-                                        type="button"
-                                        onClick={() => toggleUpgrade(component.id, upgrade.id)}
-                                        className={`
-                                          w-full p-2.5 rounded-lg border text-left transition-all duration-200 text-sm
-                                          ${isEnabled
-                                            ? "border-amber-400 bg-white shadow-sm"
-                                            : "border-gray-200 bg-white hover:border-gray-300"
-                                          }
-                                        `}
-                                      >
-                                        <div className="flex items-center justify-between">
-                                          <div className="flex items-center gap-2">
-                                            <div
-                                              className={`
-                                                w-4 h-4 rounded border-2 flex items-center justify-center transition-all
-                                                ${isEnabled ? "bg-amber-500 border-amber-500" : "border-gray-300"}
-                                              `}
-                                            >
-                                              {isEnabled && <Check className="w-2.5 h-2.5 text-white" />}
-                                            </div>
-                                            <span className="text-gray-400 text-xs">{component.name}</span>
-                                            <ArrowRight className="w-3 h-3 text-gray-300" />
-                                            <span className={`font-medium ${isEnabled ? "text-amber-700" : "text-gray-700"}`}>
-                                              {upgrade.toComponent.icon} {upgrade.label || upgrade.toComponent.name}
-                                            </span>
-                                            {upgrade.isRecommended && (
-                                              <span className="px-1.5 py-0.5 bg-amber-200 text-amber-800 text-[10px] rounded">
-                                                推荐
-                                              </span>
-                                            )}
-                                          </div>
-                                          <span className={`font-semibold ${isEnabled ? "text-amber-600" : "text-gray-600"}`}>
-                                            +¥{(upgrade.priceDiff / 100).toLocaleString()}
-                                          </span>
-                                        </div>
-                                      </button>
-                                    );
-                                  })}
+                                {/* 图标 */}
+                                <span className="text-base flex-shrink-0">
+                                  {component.icon || "📦"}
+                                </span>
+
+                                {/* 名称 */}
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-1">
+                                    <span
+                                      className={`text-sm truncate ${isSelected ? "text-white" : "text-gray-300"}`}
+                                    >
+                                      {component.name}
+                                    </span>
+                                    {!canPlace && (
+                                      <span className="text-[9px] px-1 py-0.5 bg-amber-500/20 text-amber-400 rounded">
+                                        增值
+                                      </span>
+                                    )}
+                                  </div>
+                                  {component.tierLabel && (
+                                    <span className="text-[10px] text-gray-500">
+                                      {component.tierLabel}
+                                    </span>
+                                  )}
                                 </div>
                               </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
 
-        {/* 右侧：热点图预览（3:4 比例，与用户端一致） */}
-        {hasMapTemplate && (
-          <div className="flex-1 min-w-0 bg-gradient-to-br from-gray-50 to-white">
-            <div className="p-4 sticky top-0 max-h-[calc(100vh-120px)] overflow-y-auto">
-              {/* 操作提示 */}
-              <div className={`flex items-center gap-2 mb-3 px-3 py-2 rounded-lg ${
-                placingComponentId
-                  ? "bg-sakura-100 border border-sakura-300"
-                  : "bg-gray-50"
-              }`}>
-                <Info className={`w-4 h-4 flex-shrink-0 ${placingComponentId ? "text-sakura-600" : "text-gray-400"}`} />
-                <p className={`text-xs ${placingComponentId ? "text-sakura-700 font-medium" : "text-gray-600"}`}>
-                  {placingComponentId ? (
-                    <>
-                      <strong>点击图片</strong>放置「{getAllComponents().find(c => c.id === placingComponentId)?.name}」
-                      <button
-                        type="button"
-                        onClick={() => {
-                          // 取消放置 = 取消选中该组件
-                          onChange(selectedComponentIds.filter(id => id !== placingComponentId));
-                          setConfigs(configs.filter(c => c.componentId !== placingComponentId));
-                          setPlacingComponentId(null);
-                        }}
-                        className="ml-2 text-sakura-500 hover:text-sakura-700 underline"
-                      >
-                        取消
-                      </button>
-                    </>
-                  ) : (
-                    <>预览效果 · 拖拽调整位置 · 点击标记可移除</>
-                  )}
-                </p>
-              </div>
+        {/* ==================== 中间：画布区 ==================== */}
+        <div
+          ref={canvasContainerRef}
+          className="flex-1 min-w-0 bg-[#151515] flex items-center justify-center p-6 overflow-auto"
+        >
+          {hasMapTemplate ? (
+            <div className="relative">
+              {/* 放置提示 */}
+              {placingComponentId && (
+                <div className="absolute -top-12 left-1/2 -translate-x-1/2 px-4 py-2 bg-sakura-500 text-white text-sm rounded-lg shadow-lg z-20 whitespace-nowrap">
+                  点击画布放置「{getAllComponents().find((c) => c.id === placingComponentId)?.name}」
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPlacingComponentId(null);
+                      removeComponent(placingComponentId);
+                    }}
+                    className="ml-2 underline opacity-80 hover:opacity-100"
+                  >
+                    取消
+                  </button>
+                </div>
+              )}
 
-              {/* 图片容器 - 3:4 比例 */}
+              {/* 画布容器 */}
               <div
                 ref={imageContainerRef}
-                className={`relative rounded-xl overflow-hidden bg-white shadow-sm border-2 aspect-[3/4] ${
-                  placingComponentId
-                    ? "border-sakura-400 cursor-crosshair"
-                    : draggingComponentId
-                      ? "border-sakura-400 cursor-grabbing"
-                      : "border-gray-200"
-                }`}
-                onClick={placingComponentId ? handleImageClick : undefined}
+                onClick={placingComponentId ? handleCanvasClick : undefined}
+                className={`
+                  relative rounded-xl overflow-hidden shadow-2xl
+                  transition-all duration-300
+                  ${placingComponentId ? "cursor-crosshair ring-2 ring-sakura-400" : ""}
+                  ${draggingComponentId ? "cursor-grabbing" : ""}
+                `}
+                style={{
+                  width: `${300 * canvasZoom}px`,
+                  height: `${400 * canvasZoom}px`,
+                }}
               >
+                {/* 背景图片 */}
                 <Image
                   src={mapTemplate.imageUrl}
                   alt="套餐展示图"
@@ -759,20 +717,22 @@ export default function PlanComponentEditor({
                   draggable={false}
                 />
 
-                {/* 放置模式下的十字准星 */}
+                {/* 放置模式网格辅助线 */}
                 {placingComponentId && (
                   <div className="absolute inset-0 pointer-events-none">
-                    <div className="absolute top-1/2 left-0 right-0 h-px bg-sakura-300/50" />
-                    <div className="absolute left-1/2 top-0 bottom-0 w-px bg-sakura-300/50" />
+                    <div className="absolute inset-0 bg-sakura-500/5" />
+                    <div className="absolute top-1/2 left-0 right-0 h-px bg-sakura-400/30" />
+                    <div className="absolute left-1/2 top-0 bottom-0 w-px bg-sakura-400/30" />
                   </div>
                 )}
 
-                {/* 已放置的组件标记 */}
+                {/* 热点 */}
                 {placedComponents.map((config) => {
                   if (config.hotmapX == null || config.hotmapY == null) return null;
 
-                  const component = getAllComponents().find(c => c.id === config.componentId);
+                  const component = getAllComponents().find((c) => c.id === config.componentId);
                   const isDragging = draggingComponentId === config.componentId;
+                  const isActive = selectedComponentId === config.componentId;
 
                   return (
                     <EditorHotspot
@@ -781,30 +741,292 @@ export default function PlanComponentEditor({
                         id: config.componentId,
                         x: config.hotmapX,
                         y: config.hotmapY,
-                        labelPosition: (config.hotmapLabelPosition as "left" | "right" | "top" | "bottom") || "right",
+                        labelPosition:
+                          (config.hotmapLabelPosition as "left" | "right" | "top" | "bottom") ||
+                          "right",
                         name: component?.name ?? "加载中...",
                         icon: component?.icon ?? "📍",
                         isIncluded: config.isIncluded,
                       }}
                       isEditable
                       isDragging={isDragging}
+                      isSelected={isActive}
+                      onClick={() => handleCanvasComponentClick(config.componentId)}
                       onDragStart={(e) => handleDragStart(e, config.componentId)}
-                      onRemove={() => removeFromMap(config.componentId)}
+                      onRemove={() => removeComponent(config.componentId)}
                     />
                   );
                 })}
               </div>
 
-
-              {/* 图例说明 */}
-              <div className="mt-4 flex items-center justify-center gap-4 text-xs text-gray-500">
-                <span>拖拽调整位置</span>
-                <span>·</span>
-                <span>点击热点可移除</span>
+              {/* 画布底部提示 */}
+              <div className="mt-4 text-center text-xs text-gray-600">
+                拖拽调整位置 · 点击选中查看详情 · 点击 × 移除
               </div>
             </div>
-          </div>
-        )}
+          ) : (
+            /* 无热图模板时的空状态 */
+            <div className="text-center text-gray-500">
+              <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-[#252525] flex items-center justify-center">
+                <Package className="w-10 h-10 text-gray-600" />
+              </div>
+              <p className="text-sm mb-2">未配置热图模板</p>
+              <p className="text-xs text-gray-600">在左侧选择组件即可添加到套餐</p>
+            </div>
+          )}
+        </div>
+
+        {/* ==================== 右侧：属性面板 ==================== */}
+        <div className="w-72 flex-shrink-0 border-l border-[#333] bg-[#1f1f1f] flex flex-col">
+          {selectedComponent ? (
+            /* 选中组件时显示组件详情 */
+            <>
+              {/* 头部 */}
+              <div className="p-4 border-b border-[#333]">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-[#2a2a2a] flex items-center justify-center text-xl">
+                      {selectedComponent.icon || "📦"}
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-white">
+                        {selectedComponent.name}
+                      </h3>
+                      <p className="text-xs text-gray-500">
+                        {TYPE_CONFIG[selectedComponent.type]?.label || "组件"}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedComponentId(null)}
+                    className="p-1 text-gray-500 hover:text-white hover:bg-[#333] rounded"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* 内容 */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-5">
+                {/* 状态 */}
+                <div>
+                  <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+                    状态
+                  </h4>
+                  <div className="space-y-2">
+                    {selectedComponentIds.includes(selectedComponent.id) ? (
+                      <div className="flex items-center gap-2 text-sm text-emerald-400">
+                        <Check className="w-4 h-4" />
+                        已添加到套餐
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 text-sm text-gray-400">
+                        <Info className="w-4 h-4" />
+                        未添加到套餐
+                      </div>
+                    )}
+                    {selectedConfig?.hotmapX != null && (
+                      <div className="flex items-center gap-2 text-xs text-blue-400">
+                        <Layers className="w-3 h-3" />
+                        已放置到热图 ({Math.round((selectedConfig.hotmapX || 0) * 100)}%, {Math.round((selectedConfig.hotmapY || 0) * 100)}%)
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 描述 */}
+                {selectedComponent.description && (
+                  <div>
+                    <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+                      描述
+                    </h4>
+                    <p className="text-sm text-gray-400 leading-relaxed">
+                      {selectedComponent.description}
+                    </p>
+                  </div>
+                )}
+
+                {/* 亮点 */}
+                {selectedComponent.highlights && selectedComponent.highlights.length > 0 && (
+                  <div>
+                    <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+                      特点
+                    </h4>
+                    <div className="space-y-1.5">
+                      {selectedComponent.highlights.map((h, i) => (
+                        <div key={i} className="flex items-start gap-2 text-sm text-gray-400">
+                          <ChevronRight className="w-3 h-3 text-sakura-400 mt-0.5 flex-shrink-0" />
+                          {h}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 升级选项 */}
+                {selectedComponentIds.includes(selectedComponent.id) &&
+                  upgradePaths[selectedComponent.id]?.length > 0 && (
+                    <div>
+                      <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1">
+                        <Sparkles className="w-3 h-3 text-amber-400" />
+                        可选升级
+                      </h4>
+                      <div className="space-y-2">
+                        {upgradePaths[selectedComponent.id].map((upgrade) => {
+                          const isEnabled = selectedConfig?.enabledUpgrades.includes(upgrade.id);
+                          return (
+                            <button
+                              key={upgrade.id}
+                              type="button"
+                              onClick={() => toggleUpgrade(selectedComponent.id, upgrade.id)}
+                              className={`
+                                w-full p-3 rounded-lg border text-left transition-all
+                                ${isEnabled
+                                  ? "border-amber-500/50 bg-amber-500/10"
+                                  : "border-[#3a3a3a] bg-[#2a2a2a] hover:border-[#4a4a4a]"
+                                }
+                              `}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <div
+                                    className={`
+                                      w-4 h-4 rounded border-2 flex items-center justify-center
+                                      ${isEnabled ? "bg-amber-500 border-amber-500" : "border-gray-600"}
+                                    `}
+                                  >
+                                    {isEnabled && <Check className="w-2.5 h-2.5 text-white" />}
+                                  </div>
+                                  <span className="text-sm">
+                                    {upgrade.toComponent.icon} {upgrade.label || upgrade.toComponent.name}
+                                  </span>
+                                  {upgrade.isRecommended && (
+                                    <span className="text-[9px] px-1 py-0.5 bg-amber-500/30 text-amber-300 rounded">
+                                      推荐
+                                    </span>
+                                  )}
+                                </div>
+                                <span
+                                  className={`text-sm font-medium ${isEnabled ? "text-amber-400" : "text-gray-500"}`}
+                                >
+                                  +¥{(upgrade.priceDiff / 100).toLocaleString()}
+                                </span>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                {/* 操作按钮 */}
+                <div className="pt-4 border-t border-[#333]">
+                  {selectedComponentIds.includes(selectedComponent.id) ? (
+                    <button
+                      type="button"
+                      onClick={() => removeComponent(selectedComponent.id)}
+                      className="w-full py-2 px-4 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-colors text-sm"
+                    >
+                      从套餐中移除
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleComponentClick(selectedComponent.id)}
+                      className="w-full py-2 px-4 bg-sakura-500 text-white rounded-lg hover:bg-sakura-600 transition-colors text-sm"
+                    >
+                      添加到套餐
+                    </button>
+                  )}
+                </div>
+              </div>
+            </>
+          ) : (
+            /* 未选中组件时显示套餐概览 */
+            <>
+              <div className="p-4 border-b border-[#333]">
+                <div className="flex items-center gap-2">
+                  <Settings className="w-4 h-4 text-gray-500" />
+                  <h3 className="text-sm font-semibold text-white">套餐配置</h3>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-4 space-y-5">
+                {/* 统计 */}
+                <div>
+                  <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">
+                    当前配置
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-3 bg-[#2a2a2a] rounded-lg">
+                      <div className="text-2xl font-bold text-sakura-400">{stats.totalSelected}</div>
+                      <div className="text-xs text-gray-500">已选组件</div>
+                    </div>
+                    {hasMapTemplate && (
+                      <div className="p-3 bg-[#2a2a2a] rounded-lg">
+                        <div className="text-2xl font-bold text-blue-400">{stats.totalPlaced}</div>
+                        <div className="text-xs text-gray-500">已放置</div>
+                      </div>
+                    )}
+                    <div className="p-3 bg-[#2a2a2a] rounded-lg">
+                      <div className="text-2xl font-bold text-amber-400">{stats.totalUpgrades}</div>
+                      <div className="text-xs text-gray-500">升级选项</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 已选组件列表 */}
+                {selectedComponentIds.length > 0 && (
+                  <div>
+                    <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">
+                      已选组件
+                    </h4>
+                    <div className="space-y-1.5">
+                      {selectedComponentIds.map((id) => {
+                        const component = getAllComponents().find((c) => c.id === id);
+                        const config = getConfig(id);
+                        if (!component) return null;
+
+                        return (
+                          <div
+                            key={id}
+                            onClick={() => setSelectedComponentId(id)}
+                            className="flex items-center gap-2 p-2 rounded-lg bg-[#2a2a2a] hover:bg-[#333] cursor-pointer transition-colors"
+                          >
+                            <GripVertical className="w-3 h-3 text-gray-600" />
+                            <span className="text-sm">{component.icon}</span>
+                            <span className="text-sm text-gray-300 flex-1 truncate">
+                              {component.name}
+                            </span>
+                            {config?.hotmapX != null && (
+                              <Layers className="w-3 h-3 text-blue-400" />
+                            )}
+                            {(config?.enabledUpgrades?.length || 0) > 0 && (
+                              <Sparkles className="w-3 h-3 text-amber-400" />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* 使用提示 */}
+                <div className="p-3 bg-[#252525] rounded-lg border border-[#333]">
+                  <div className="flex items-start gap-2">
+                    <Info className="w-4 h-4 text-gray-500 flex-shrink-0 mt-0.5" />
+                    <div className="text-xs text-gray-500 space-y-1">
+                      <p>· 在左侧组件库点击添加组件</p>
+                      <p>· 点击画布上的组件查看详情</p>
+                      <p>· 拖拽调整组件在热图上的位置</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
