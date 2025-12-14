@@ -459,8 +459,8 @@ export default function PlanComponentEditor({
 
   if (isLoading) {
     return (
-      <div className={`bg-[#1a1a1a] rounded-2xl h-[700px] flex items-center justify-center ${className}`}>
-        <div className="text-center text-gray-400">
+      <div className={`bg-white rounded-2xl border border-gray-200 h-[700px] flex items-center justify-center ${className}`}>
+        <div className="text-center text-gray-500">
           <div className="w-10 h-10 border-2 border-sakura-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p>加载组件库...</p>
         </div>
@@ -471,26 +471,26 @@ export default function PlanComponentEditor({
   const hasMapTemplate = !!mapTemplate;
 
   return (
-    <div className={`bg-[#1a1a1a] rounded-2xl overflow-hidden ${className}`}>
+    <div className={`bg-white rounded-2xl border border-gray-200 overflow-hidden ${className}`}>
       {/* 工具栏 */}
-      <div className="h-12 px-4 bg-[#252525] border-b border-[#333] flex items-center justify-between">
+      <div className="h-12 px-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 text-gray-300">
+          <div className="flex items-center gap-2 text-gray-700">
             <Layers className="w-4 h-4" />
             <span className="text-sm font-medium">套餐组件编辑器</span>
           </div>
-          <div className="h-4 w-px bg-[#444]" />
-          <div className="flex items-center gap-2 text-xs text-gray-500">
-            <span className="px-2 py-0.5 bg-sakura-500/20 text-sakura-400 rounded">
+          <div className="h-4 w-px bg-gray-300" />
+          <div className="flex items-center gap-2 text-xs">
+            <span className="px-2 py-0.5 bg-sakura-100 text-sakura-600 rounded">
               {stats.totalSelected} 已选
             </span>
             {hasMapTemplate && (
-              <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded">
+              <span className="px-2 py-0.5 bg-blue-100 text-blue-600 rounded">
                 {stats.totalPlaced} 已放置
               </span>
             )}
             {stats.totalUpgrades > 0 && (
-              <span className="px-2 py-0.5 bg-amber-500/20 text-amber-400 rounded">
+              <span className="px-2 py-0.5 bg-amber-100 text-amber-600 rounded">
                 {stats.totalUpgrades} 升级
               </span>
             )}
@@ -503,7 +503,7 @@ export default function PlanComponentEditor({
             <button
               type="button"
               onClick={handleZoomOut}
-              className="p-1.5 text-gray-400 hover:text-white hover:bg-[#333] rounded transition-colors"
+              className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors"
               title="缩小"
             >
               <ZoomOut className="w-4 h-4" />
@@ -514,7 +514,7 @@ export default function PlanComponentEditor({
             <button
               type="button"
               onClick={handleZoomIn}
-              className="p-1.5 text-gray-400 hover:text-white hover:bg-[#333] rounded transition-colors"
+              className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors"
               title="放大"
             >
               <ZoomIn className="w-4 h-4" />
@@ -522,7 +522,7 @@ export default function PlanComponentEditor({
             <button
               type="button"
               onClick={handleZoomReset}
-              className="p-1.5 text-gray-400 hover:text-white hover:bg-[#333] rounded transition-colors"
+              className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors"
               title="重置"
             >
               <Maximize2 className="w-4 h-4" />
@@ -534,17 +534,17 @@ export default function PlanComponentEditor({
       {/* 三栏式主体 */}
       <div className="flex h-[650px]">
         {/* ==================== 左侧：组件库 ==================== */}
-        <div className="w-64 flex-shrink-0 border-r border-[#333] bg-[#1f1f1f] flex flex-col">
+        <div className="w-64 flex-shrink-0 border-r border-gray-200 bg-gray-50 flex flex-col">
           {/* 搜索框 */}
-          <div className="p-3 border-b border-[#333]">
+          <div className="p-3 border-b border-gray-200">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="搜索组件..."
-                className="w-full pl-9 pr-3 py-2 bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-sakura-500/50"
+                className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-sakura-400 focus:ring-1 focus:ring-sakura-400"
               />
             </div>
           </div>
@@ -564,29 +564,29 @@ export default function PlanComponentEditor({
                 const typeConfig = TYPE_CONFIG[category.type] || TYPE_CONFIG.OTHER;
 
                 return (
-                  <div key={category.type} className="border-b border-[#2a2a2a]">
+                  <div key={category.type} className="border-b border-gray-100">
                     {/* 分类标题 */}
                     <button
                       type="button"
                       onClick={() => toggleCategory(category.type)}
-                      className="w-full px-3 py-2.5 flex items-center justify-between hover:bg-[#252525] transition-colors"
+                      className="w-full px-3 py-2.5 flex items-center justify-between hover:bg-gray-100 transition-colors"
                     >
                       <div className="flex items-center gap-2">
                         {isExpanded ? (
-                          <ChevronDown className="w-4 h-4 text-gray-500" />
+                          <ChevronDown className="w-4 h-4 text-gray-400" />
                         ) : (
-                          <ChevronRight className="w-4 h-4 text-gray-500" />
+                          <ChevronRight className="w-4 h-4 text-gray-400" />
                         )}
                         <span className="text-sm">{typeConfig.icon}</span>
-                        <span className="text-sm font-medium text-gray-300">{category.label}</span>
+                        <span className="text-sm font-medium text-gray-700">{category.label}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         {selectedCount > 0 && (
-                          <span className="text-[10px] px-1.5 py-0.5 bg-sakura-500/20 text-sakura-400 rounded">
+                          <span className="text-[10px] px-1.5 py-0.5 bg-sakura-100 text-sakura-600 rounded">
                             {selectedCount}
                           </span>
                         )}
-                        <span className="text-[10px] text-gray-600">
+                        <span className="text-[10px] text-gray-400">
                           {category.components.length}
                         </span>
                       </div>
@@ -594,7 +594,7 @@ export default function PlanComponentEditor({
 
                     {/* 组件列表 */}
                     {isExpanded && (
-                      <div className="pb-2">
+                      <div className="pb-2 bg-white">
                         {category.components.map((component) => {
                           const isSelected = selectedComponentIds.includes(component.id);
                           const isPlacing = placingComponentId === component.id;
@@ -608,10 +608,10 @@ export default function PlanComponentEditor({
                               className={`
                                 mx-2 mb-1 px-3 py-2 rounded-lg cursor-pointer transition-all
                                 ${isActive
-                                  ? "bg-sakura-500/20 border border-sakura-500/50"
+                                  ? "bg-sakura-50 border border-sakura-300"
                                   : isSelected
-                                    ? "bg-[#2a2a2a] border border-[#3a3a3a]"
-                                    : "hover:bg-[#252525] border border-transparent"
+                                    ? "bg-gray-50 border border-gray-200"
+                                    : "hover:bg-gray-50 border border-transparent"
                                 }
                                 ${isPlacing ? "ring-2 ring-sakura-400 animate-pulse" : ""}
                               `}
@@ -623,7 +623,7 @@ export default function PlanComponentEditor({
                                     w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0
                                     ${isSelected
                                       ? "bg-sakura-500 border-sakura-500"
-                                      : "border-gray-600"
+                                      : "border-gray-300"
                                     }
                                   `}
                                 >
@@ -639,18 +639,18 @@ export default function PlanComponentEditor({
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-1">
                                     <span
-                                      className={`text-sm truncate ${isSelected ? "text-white" : "text-gray-300"}`}
+                                      className={`text-sm truncate ${isSelected ? "text-gray-900 font-medium" : "text-gray-700"}`}
                                     >
                                       {component.name}
                                     </span>
                                     {!canPlace && (
-                                      <span className="text-[9px] px-1 py-0.5 bg-amber-500/20 text-amber-400 rounded">
+                                      <span className="text-[9px] px-1 py-0.5 bg-amber-100 text-amber-600 rounded">
                                         增值
                                       </span>
                                     )}
                                   </div>
                                   {component.tierLabel && (
-                                    <span className="text-[10px] text-gray-500">
+                                    <span className="text-[10px] text-gray-400">
                                       {component.tierLabel}
                                     </span>
                                   )}
@@ -671,14 +671,14 @@ export default function PlanComponentEditor({
         {/* ==================== 中间：画布区 ==================== */}
         <div
           ref={canvasContainerRef}
-          className="flex-1 min-w-0 bg-[#151515] flex items-center justify-center p-6 overflow-auto"
+          className="flex-1 min-w-0 bg-gray-100 overflow-auto"
         >
           {hasMapTemplate ? (
-            <div className="relative">
+            <div className="p-6 min-h-full">
               {/* 放置提示 */}
               {placingComponentId && (
-                <div className="absolute -top-12 left-1/2 -translate-x-1/2 px-4 py-2 bg-sakura-500 text-white text-sm rounded-lg shadow-lg z-20 whitespace-nowrap">
-                  点击画布放置「{getAllComponents().find((c) => c.id === placingComponentId)?.name}」
+                <div className="mb-4 px-4 py-2 bg-sakura-500 text-white text-sm rounded-lg shadow-lg text-center">
+                  点击下方图片放置「{getAllComponents().find((c) => c.id === placingComponentId)?.name}」
                   <button
                     type="button"
                     onClick={() => {
@@ -692,19 +692,19 @@ export default function PlanComponentEditor({
                 </div>
               )}
 
-              {/* 画布容器 */}
+              {/* 画布容器 - 更大的尺寸 */}
               <div
                 ref={imageContainerRef}
                 onClick={placingComponentId ? handleCanvasClick : undefined}
                 className={`
-                  relative rounded-xl overflow-hidden shadow-2xl
+                  relative rounded-xl overflow-hidden shadow-lg border-2 mx-auto
                   transition-all duration-300
-                  ${placingComponentId ? "cursor-crosshair ring-2 ring-sakura-400" : ""}
+                  ${placingComponentId ? "cursor-crosshair border-sakura-400" : "border-gray-200"}
                   ${draggingComponentId ? "cursor-grabbing" : ""}
                 `}
                 style={{
-                  width: `${300 * canvasZoom}px`,
-                  height: `${400 * canvasZoom}px`,
+                  width: `${450 * canvasZoom}px`,
+                  height: `${600 * canvasZoom}px`,
                 }}
               >
                 {/* 背景图片 */}
@@ -760,36 +760,38 @@ export default function PlanComponentEditor({
               </div>
 
               {/* 画布底部提示 */}
-              <div className="mt-4 text-center text-xs text-gray-600">
+              <div className="mt-4 text-center text-xs text-gray-500">
                 拖拽调整位置 · 点击选中查看详情 · 点击 × 移除
               </div>
             </div>
           ) : (
             /* 无热图模板时的空状态 */
-            <div className="text-center text-gray-500">
-              <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-[#252525] flex items-center justify-center">
-                <Package className="w-10 h-10 text-gray-600" />
+            <div className="h-full flex items-center justify-center">
+              <div className="text-center text-gray-500">
+                <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gray-200 flex items-center justify-center">
+                  <Package className="w-10 h-10 text-gray-400" />
+                </div>
+                <p className="text-sm mb-2">未配置热图模板</p>
+                <p className="text-xs text-gray-400">在左侧选择组件即可添加到套餐</p>
               </div>
-              <p className="text-sm mb-2">未配置热图模板</p>
-              <p className="text-xs text-gray-600">在左侧选择组件即可添加到套餐</p>
             </div>
           )}
         </div>
 
         {/* ==================== 右侧：属性面板 ==================== */}
-        <div className="w-72 flex-shrink-0 border-l border-[#333] bg-[#1f1f1f] flex flex-col">
+        <div className="w-72 flex-shrink-0 border-l border-gray-200 bg-white flex flex-col">
           {selectedComponent ? (
             /* 选中组件时显示组件详情 */
             <>
               {/* 头部 */}
-              <div className="p-4 border-b border-[#333]">
+              <div className="p-4 border-b border-gray-100">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-[#2a2a2a] flex items-center justify-center text-xl">
+                    <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-xl">
                       {selectedComponent.icon || "📦"}
                     </div>
                     <div>
-                      <h3 className="text-sm font-semibold text-white">
+                      <h3 className="text-sm font-semibold text-gray-900">
                         {selectedComponent.name}
                       </h3>
                       <p className="text-xs text-gray-500">
@@ -800,7 +802,7 @@ export default function PlanComponentEditor({
                   <button
                     type="button"
                     onClick={() => setSelectedComponentId(null)}
-                    className="p-1 text-gray-500 hover:text-white hover:bg-[#333] rounded"
+                    className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -816,18 +818,18 @@ export default function PlanComponentEditor({
                   </h4>
                   <div className="space-y-2">
                     {selectedComponentIds.includes(selectedComponent.id) ? (
-                      <div className="flex items-center gap-2 text-sm text-emerald-400">
+                      <div className="flex items-center gap-2 text-sm text-emerald-600">
                         <Check className="w-4 h-4" />
                         已添加到套餐
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2 text-sm text-gray-400">
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
                         <Info className="w-4 h-4" />
                         未添加到套餐
                       </div>
                     )}
                     {selectedConfig?.hotmapX != null && (
-                      <div className="flex items-center gap-2 text-xs text-blue-400">
+                      <div className="flex items-center gap-2 text-xs text-blue-600">
                         <Layers className="w-3 h-3" />
                         已放置到热图 ({Math.round((selectedConfig.hotmapX || 0) * 100)}%, {Math.round((selectedConfig.hotmapY || 0) * 100)}%)
                       </div>
@@ -841,7 +843,7 @@ export default function PlanComponentEditor({
                     <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
                       描述
                     </h4>
-                    <p className="text-sm text-gray-400 leading-relaxed">
+                    <p className="text-sm text-gray-600 leading-relaxed">
                       {selectedComponent.description}
                     </p>
                   </div>
@@ -855,8 +857,8 @@ export default function PlanComponentEditor({
                     </h4>
                     <div className="space-y-1.5">
                       {selectedComponent.highlights.map((h, i) => (
-                        <div key={i} className="flex items-start gap-2 text-sm text-gray-400">
-                          <ChevronRight className="w-3 h-3 text-sakura-400 mt-0.5 flex-shrink-0" />
+                        <div key={i} className="flex items-start gap-2 text-sm text-gray-600">
+                          <ChevronRight className="w-3 h-3 text-sakura-500 mt-0.5 flex-shrink-0" />
                           {h}
                         </div>
                       ))}
@@ -869,7 +871,7 @@ export default function PlanComponentEditor({
                   upgradePaths[selectedComponent.id]?.length > 0 && (
                     <div>
                       <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1">
-                        <Sparkles className="w-3 h-3 text-amber-400" />
+                        <Sparkles className="w-3 h-3 text-amber-500" />
                         可选升级
                       </h4>
                       <div className="space-y-2">
@@ -883,8 +885,8 @@ export default function PlanComponentEditor({
                               className={`
                                 w-full p-3 rounded-lg border text-left transition-all
                                 ${isEnabled
-                                  ? "border-amber-500/50 bg-amber-500/10"
-                                  : "border-[#3a3a3a] bg-[#2a2a2a] hover:border-[#4a4a4a]"
+                                  ? "border-amber-300 bg-amber-50"
+                                  : "border-gray-200 bg-gray-50 hover:border-gray-300"
                                 }
                               `}
                             >
@@ -893,22 +895,22 @@ export default function PlanComponentEditor({
                                   <div
                                     className={`
                                       w-4 h-4 rounded border-2 flex items-center justify-center
-                                      ${isEnabled ? "bg-amber-500 border-amber-500" : "border-gray-600"}
+                                      ${isEnabled ? "bg-amber-500 border-amber-500" : "border-gray-300"}
                                     `}
                                   >
                                     {isEnabled && <Check className="w-2.5 h-2.5 text-white" />}
                                   </div>
-                                  <span className="text-sm">
+                                  <span className="text-sm text-gray-700">
                                     {upgrade.toComponent.icon} {upgrade.label || upgrade.toComponent.name}
                                   </span>
                                   {upgrade.isRecommended && (
-                                    <span className="text-[9px] px-1 py-0.5 bg-amber-500/30 text-amber-300 rounded">
+                                    <span className="text-[9px] px-1 py-0.5 bg-amber-200 text-amber-700 rounded">
                                       推荐
                                     </span>
                                   )}
                                 </div>
                                 <span
-                                  className={`text-sm font-medium ${isEnabled ? "text-amber-400" : "text-gray-500"}`}
+                                  className={`text-sm font-medium ${isEnabled ? "text-amber-600" : "text-gray-500"}`}
                                 >
                                   +¥{(upgrade.priceDiff / 100).toLocaleString()}
                                 </span>
@@ -921,12 +923,12 @@ export default function PlanComponentEditor({
                   )}
 
                 {/* 操作按钮 */}
-                <div className="pt-4 border-t border-[#333]">
+                <div className="pt-4 border-t border-gray-100">
                   {selectedComponentIds.includes(selectedComponent.id) ? (
                     <button
                       type="button"
                       onClick={() => removeComponent(selectedComponent.id)}
-                      className="w-full py-2 px-4 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-colors text-sm"
+                      className="w-full py-2 px-4 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm border border-red-200"
                     >
                       从套餐中移除
                     </button>
@@ -945,10 +947,10 @@ export default function PlanComponentEditor({
           ) : (
             /* 未选中组件时显示套餐概览 */
             <>
-              <div className="p-4 border-b border-[#333]">
+              <div className="p-4 border-b border-gray-100">
                 <div className="flex items-center gap-2">
-                  <Settings className="w-4 h-4 text-gray-500" />
-                  <h3 className="text-sm font-semibold text-white">套餐配置</h3>
+                  <Settings className="w-4 h-4 text-gray-400" />
+                  <h3 className="text-sm font-semibold text-gray-900">套餐配置</h3>
                 </div>
               </div>
 
@@ -959,18 +961,18 @@ export default function PlanComponentEditor({
                     当前配置
                   </h4>
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="p-3 bg-[#2a2a2a] rounded-lg">
-                      <div className="text-2xl font-bold text-sakura-400">{stats.totalSelected}</div>
+                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                      <div className="text-2xl font-bold text-sakura-500">{stats.totalSelected}</div>
                       <div className="text-xs text-gray-500">已选组件</div>
                     </div>
                     {hasMapTemplate && (
-                      <div className="p-3 bg-[#2a2a2a] rounded-lg">
-                        <div className="text-2xl font-bold text-blue-400">{stats.totalPlaced}</div>
+                      <div className="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                        <div className="text-2xl font-bold text-blue-500">{stats.totalPlaced}</div>
                         <div className="text-xs text-gray-500">已放置</div>
                       </div>
                     )}
-                    <div className="p-3 bg-[#2a2a2a] rounded-lg">
-                      <div className="text-2xl font-bold text-amber-400">{stats.totalUpgrades}</div>
+                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                      <div className="text-2xl font-bold text-amber-500">{stats.totalUpgrades}</div>
                       <div className="text-xs text-gray-500">升级选项</div>
                     </div>
                   </div>
@@ -992,18 +994,18 @@ export default function PlanComponentEditor({
                           <div
                             key={id}
                             onClick={() => setSelectedComponentId(id)}
-                            className="flex items-center gap-2 p-2 rounded-lg bg-[#2a2a2a] hover:bg-[#333] cursor-pointer transition-colors"
+                            className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors border border-gray-100"
                           >
-                            <GripVertical className="w-3 h-3 text-gray-600" />
+                            <GripVertical className="w-3 h-3 text-gray-300" />
                             <span className="text-sm">{component.icon}</span>
-                            <span className="text-sm text-gray-300 flex-1 truncate">
+                            <span className="text-sm text-gray-700 flex-1 truncate">
                               {component.name}
                             </span>
                             {config?.hotmapX != null && (
-                              <Layers className="w-3 h-3 text-blue-400" />
+                              <Layers className="w-3 h-3 text-blue-500" />
                             )}
                             {(config?.enabledUpgrades?.length || 0) > 0 && (
-                              <Sparkles className="w-3 h-3 text-amber-400" />
+                              <Sparkles className="w-3 h-3 text-amber-500" />
                             )}
                           </div>
                         );
@@ -1013,10 +1015,10 @@ export default function PlanComponentEditor({
                 )}
 
                 {/* 使用提示 */}
-                <div className="p-3 bg-[#252525] rounded-lg border border-[#333]">
+                <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
                   <div className="flex items-start gap-2">
-                    <Info className="w-4 h-4 text-gray-500 flex-shrink-0 mt-0.5" />
-                    <div className="text-xs text-gray-500 space-y-1">
+                    <Info className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+                    <div className="text-xs text-blue-700 space-y-1">
                       <p>· 在左侧组件库点击添加组件</p>
                       <p>· 点击画布上的组件查看详情</p>
                       <p>· 拖拽调整组件在热图上的位置</p>
