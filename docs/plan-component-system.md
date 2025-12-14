@@ -1,7 +1,7 @@
 # 套餐组件系统设计文档
 
-> **版本**: v9 (2024-12)
-> **状态**: 当前实现 + 设计规划
+> **版本**: v10 (2024-12)
+> **状态**: 设计规划
 
 ---
 
@@ -11,16 +11,17 @@
 
 1. **商户端**：创建和编辑套餐内容，配置服务组件和热点图
 2. **用户端**：展示套餐包含的服务，支持交互式和服热点图
-3. **平台端**：统一管理服务组件库，按主题组织推荐
+3. **平台端**：定义服务组件的种类（模板）
 
 ### 设计原则
 
 | 原则 | 说明 |
 |------|------|
-| **平台统一管理** | 组件由平台定义，商户只能选择和定价 |
-| **减少选择困难** | 按主题推荐组件，简化商户操作 |
+| **平台定义种类** | 组件种类由平台定义，保证一致性和可比性 |
+| **商户自定义内容** | 商户可自定义组件的图片、描述、价格（仅ADDON）|
+| **市场质量控制** | 商户内容质量靠市场自然筛选，平台不审核 |
+| **简化定价** | OUTFIT不定价（含在套餐内），ADDON商户定价 |
 | **视觉一致性** | 编辑器和用户端使用同一渲染组件（WYSIWYG）|
-| **灵活升级** | 三层优先级：商户 > 主题 > 全局 |
 
 ---
 
@@ -30,14 +31,24 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  OUTFIT (着装项)                    ADDON (增值服务)             │
+│  OUTFIT (套餐包含服务)              ADDON (增值服务)              │
 ├─────────────────────────────────────────────────────────────────┤
 │  👘 和服、配饰、造型等               📷 跟拍、寄存、接送等         │
 │  ✅ 需要热点图定位                   ❌ 不需要热点图定位           │
 │  ✅ 显示在和服图上                   ✅ 在服务列表中展示           │
-│  ✅ 支持升级路径                     ✅ 支持升级路径               │
+│  ❌ 不单独定价（含在套餐内）          ✅ 商户自定义价格（加购）      │
+│  ✅ 商户可自定义描述/图片            ✅ 商户可自定义描述/图片/价格  │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+### 核心区别
+
+| 维度 | OUTFIT | ADDON |
+|------|--------|-------|
+| 定价 | 不定价，价格含在套餐内 | 商户自定义价格，在套餐基础上加购 |
+| 热点图 | 可放置在热点图上 | 不放置在热点图上 |
+| 用户选择 | 套餐自带，用户不需要选择 | 用户可选加购 |
+| 示例 | 振袖、帯、草履、发型 | 摄影跟拍、行李寄存、接送服务 |
 
 ### 旧类型兼容
 
@@ -59,111 +70,85 @@
 │                              平台层                                      │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                         │
-│  ServiceComponent (平台组件库 - 统一管理)                                 │
+│  ServiceComponent (平台组件模板 - 定义组件种类)                            │
 │  ┌─────────────────────────────────────────────────────────────────┐   │
-│  │  id, code, name, type, icon, basePrice, tier, highlights...     │   │
-│  │  isSystemComponent: true (平台组件)                              │   │
-│  │  status: APPROVED (审核通过)                                     │   │
+│  │  id, code, name, type (OUTFIT | ADDON)                          │   │
+│  │  icon: 默认图标                                                  │   │
+│  │  description: 默认描述（商户未自定义时显示）                       │   │
+│  │  images: 默认图片（商户未自定义时显示）                            │   │
+│  │  basePrice: 建议价（仅 ADDON 类型有意义）                         │   │
 │  │                                                                  │   │
-│  │  💡 组件信息由平台统一管理，商户不能修改                           │   │
-│  └─────────────────────────────────────────────────────────────────┘   │
-│         │                                                               │
-│         │ ComponentUpgrade (升级路径)                                   │
-│         │ scope: PLATFORM | MERCHANT                                   │
-│         ▼                                                               │
-│  ┌─────────────────────────────────────────────────────────────────┐   │
-│  │  fromComponentId → toComponentId                                 │   │
-│  │  priceDiff: 升级差价                                             │   │
-│  │  label: "升级为振袖"                                             │   │
+│  │  💡 平台定义"种类"，商户自定义"内容"                               │   │
 │  └─────────────────────────────────────────────────────────────────┘   │
 │                                                                         │
 └─────────────────────────────────────────────────────────────────────────┘
                                     │
-                          商户设置价格（商户级别）
+                          商户自定义内容
                                     │
                                     ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                              商户层                                      │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                         │
-│  MerchantComponentOverride (商户定价 - 商户级别，所有套餐通用)               │
+│  MerchantComponentOverride (商户自定义内容 - 商户级别)                     │
 │  ┌─────────────────────────────────────────────────────────────────┐   │
 │  │  merchantId, componentId                                         │   │
-│  │  price: 商户定价（覆盖平台建议价）                                 │   │
+│  │                                                                  │   │
+│  │  // 商户自定义内容                                                │   │
+│  │  description: 商户说明（null = 使用平台默认）                      │   │
+│  │  images: 商户图片（空 = 使用平台默认）                             │   │
+│  │                                                                  │   │
+│  │  // 仅 ADDON 类型                                                 │   │
+│  │  price: 商户定价（null = 使用平台建议价）                          │   │
+│  │                                                                  │   │
 │  │  isEnabled: 是否启用此组件                                        │   │
 │  │                                                                  │   │
-│  │  💡 设一次，所有套餐通用                                          │   │
+│  │  💡 商户级别配置，所有套餐通用                                     │   │
 │  └─────────────────────────────────────────────────────────────────┘   │
 │                                                                         │
 │  RentalPlan (套餐)                                                       │
 │  ┌─────────────────────────────────────────────────────────────────┐   │
-│  │  id, name, price, themeId, hotmapImageUrl, hotmapTemplateId     │   │
+│  │  id, name, price, hotmapImageUrl                                 │   │
 │  │                                                                  │   │
-│  │  PlanComponent[] (套餐-组件关联 - 只存位置信息)                    │   │
+│  │  PlanComponent[] (套餐-组件关联)                                  │   │
 │  │  ┌────────────────────────────────────────────────────────────┐ │   │
-│  │  │  componentId, isIncluded, quantity                          │ │   │
-│  │  │  hotmapX, hotmapY, hotmapLabelPosition (热点位置)           │ │   │
+│  │  │  componentId                                                │ │   │
+│  │  │  hotmapX, hotmapY, hotmapLabelPosition (仅 OUTFIT)         │ │   │
 │  │  │                                                              │ │   │
-│  │  │  💡 不存储覆盖信息，组件名称/价格由平台+商户定价决定           │ │   │
-│  │  └────────────────────────────────────────────────────────────┘ │   │
-│  │                                                                  │   │
-│  │  PlanUpgradeBundle[] (一键升级包)                                │   │
-│  │  ┌────────────────────────────────────────────────────────────┐ │   │
-│  │  │  label: "豪华升级包"                                        │ │   │
-│  │  │  bundlePrice: 打包价                                        │ │   │
-│  │  │  upgradeItems: JSON (升级清单)                              │ │   │
+│  │  │  💡 只存储"套餐包含哪些组件"和"热点位置"                       │ │   │
 │  │  └────────────────────────────────────────────────────────────┘ │   │
 │  └─────────────────────────────────────────────────────────────────┘   │
 │                                                                         │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 设计简化要点
-
-| 之前 | 之后 |
-|------|------|
-| PlanComponent 存储 nameOverride, descriptionOverride 等 | 移除，组件信息由平台统一管理 |
-| 每个套餐可单独设置组件价格 | 商户级别定价（MerchantComponentOverride）|
-| 商户可修改组件展示信息 | 商户只能控制价格和启用/禁用 |
-
-**优势**：
-- 用户体验一致：同一组件在不同套餐中展示相同
-- 管理简单：商户设一次价格，所有套餐通用
-- 平台可控：组件质量和展示由平台保证
-
-### ServiceComponent
+### ServiceComponent（平台组件模板）
 
 ```prisma
 model ServiceComponent {
   id              String          @id @default(cuid())
   code            String          @unique  // 全局唯一编码
 
-  // 基本信息
-  name            String
+  // 基本信息（平台定义的"种类"）
+  name            String           // "振袖和服"、"摄影跟拍"
   nameJa          String?
   nameEn          String?
-  description     String?
 
   // 组件类型
-  type            ComponentType   // OUTFIT | ADDON
+  type            ComponentType    // OUTFIT | ADDON
 
-  // 展示信息
-  icon            String?         // Emoji 图标
-  imageUrl        String?         // 卡片图片
-  highlights      String[]        // 亮点列表
-  images          String[]        // 详情图集
+  // 默认展示信息（商户未自定义时使用）
+  icon            String?          // Emoji 图标
+  description     String?          // 默认描述
+  images          String[]         // 默认图片
+  highlights      String[]         // 亮点列表
 
-  // 升级层级
-  tier            Int             @default(0)  // 0=基础, 1=标准, 2=豪华, 3=顶级
-  tierLabel       String?                      // "豪华版"
-
-  // 定价
-  basePrice       Int             @default(0)  // 平台建议价（分）
+  // 建议价（仅 ADDON 类型有意义）
+  basePrice       Int             @default(0)
 
   // 所有权
-  isSystemComponent Boolean       @default(false)  // true=平台组件
-  merchantId      String?                          // 商户组件的所有者
-  status          ComponentStatus @default(PENDING) // 审核状态
+  isSystemComponent Boolean       @default(true)   // true=平台组件
+  status          ComponentStatus @default(APPROVED)
 
   // 元数据
   displayOrder    Int             @default(0)
@@ -171,131 +156,189 @@ model ServiceComponent {
 
   // 关联
   planComponents       PlanComponent[]
-  upgradesFrom         ComponentUpgrade[] @relation("UpgradeFrom")
-  upgradesTo           ComponentUpgrade[] @relation("UpgradeTo")
+  merchantOverrides    MerchantComponentOverride[]
 }
 
 enum ComponentType {
-  OUTFIT    // 着装项（需热点图定位）
-  ADDON     // 增值服务（不需要定位）
-  // 以下为兼容旧数据
-  KIMONO
-  STYLING
-  ACCESSORY
-  EXPERIENCE
+  OUTFIT    // 套餐包含服务（不定价，热图可显示）
+  ADDON     // 增值服务（商户定价，加购）
 }
 ```
 
-### PlanComponent
-
-```prisma
-model PlanComponent {
-  id              String   @id @default(cuid())
-
-  // 关联
-  planId          String
-  plan            RentalPlan @relation(...)
-  componentId     String
-  component       ServiceComponent @relation(...)
-
-  // 套餐配置
-  isIncluded      Boolean  @default(true)   // 是否包含在套餐基础价
-  quantity        Int      @default(1)
-
-  // 热点图配置（仅 OUTFIT 类型）
-  hotmapX              Float?   // 百分比坐标 0-1
-  hotmapY              Float?
-  hotmapLabelPosition  String   @default("right")  // left | right
-  hotmapOrder          Int      @default(0)
-
-  @@unique([planId, componentId])
-}
-```
-
-**设计说明**：
-- 移除了套餐级别的商户覆盖字段（nameOverride, descriptionOverride 等）
-- 组件信息由平台统一管理，商户不能修改
-- 价格在商户级别覆盖（见 MerchantComponentOverride）
-
-### MerchantComponentOverride（商户覆盖配置）
+### MerchantComponentOverride（商户自定义内容）
 
 ```prisma
 model MerchantComponentOverride {
   id            String   @id @default(cuid())
 
-  // 商户
+  // 关联
   merchantId    String
   merchant      Merchant @relation(...)
-
-  // 平台组件
   componentId   String
   component     ServiceComponent @relation(...)
 
-  // ========== 价格覆盖 ==========
-  price         Int?     // 商户定价（null = 使用平台建议价）
+  // ========== 商户自定义内容 ==========
+  // null/空 = 使用平台默认内容
+  description   String?          // 商户说明
+  images        String[]         // 商户图片
+
+  // ========== 仅 ADDON 类型 ==========
+  price         Int?             // 商户定价（null = 使用平台建议价）
 
   // ========== 启用状态 ==========
-  isEnabled     Boolean  @default(true)  // 是否启用此组件
+  isEnabled     Boolean  @default(true)
 
-  // ========== 预留扩展字段 ==========
-  // 未来可添加其他覆盖字段，如：
-  // customNote    String?  // 商户备注
-  // sortOrder     Int?     // 商户自定义排序
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@unique([merchantId, componentId])
 }
 ```
 
 **设计说明**：
+- 商户可自定义描述和图片，展示自己的服务特色
+- 如果商户未自定义，显示平台提供的默认内容
+- 价格字段仅对 ADDON 类型有意义（OUTFIT 不定价）
 - 商户级别配置，设一次后所有套餐通用
-- 商户可禁用不想提供的组件（isEnabled = false）
-- 价格覆盖：设置 price 覆盖平台建议价，null 表示使用平台建议价
-- 命名为 Override 而非 Price，为未来扩展预留空间
 
-### ComponentUpgrade
+### PlanComponent（套餐-组件关联）
 
 ```prisma
-model ComponentUpgrade {
-  id              String   @id @default(cuid())
+model PlanComponent {
+  id                   String           @id @default(cuid())
+  planId               String
+  componentId          String
 
-  // 升级链
-  fromComponentId String
-  fromComponent   ServiceComponent @relation("UpgradeFrom", ...)
-  toComponentId   String
-  toComponent     ServiceComponent @relation("UpgradeTo", ...)
+  plan                 RentalPlan       @relation(...)
+  component            ServiceComponent @relation(...)
 
-  // 差价
-  priceDiff       Int      // 升级差价（分）
+  // 热点图配置（仅 OUTFIT 类型）
+  hotmapX              Float?           // 百分比坐标 0-1
+  hotmapY              Float?
+  hotmapLabelPosition  String           @default("right")
+  hotmapOrder          Int              @default(0)
 
-  // 作用域
-  scope           UpgradeScope  // PLATFORM | MERCHANT
-  scopeId         String?       // themeId | merchantId | null
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
 
-  // 展示
-  label           String?       // "升级为振袖"
-  description     String?
-  isRecommended   Boolean  @default(false)
-  displayOrder    Int      @default(0)
-  isActive        Boolean  @default(true)
-
-  @@unique([fromComponentId, toComponentId, scope, scopeId])
-}
-
-enum UpgradeScope {
-  PLATFORM   // 平台预设（scopeId = themeId 或 null）
-  MERCHANT   // 商户自定义（scopeId = merchantId）
+  @@unique([planId, componentId])
 }
 ```
 
-### 升级优先级
+**设计说明**：
+- 只存储"套餐包含哪些组件"和"热点位置"
+- 移除了 `isIncluded`、`quantity` 等字段（简化）
+- 组件的描述、图片、价格从 MerchantComponentOverride 获取
+
+---
+
+## 内容展示逻辑
+
+### 两层信息模式
+
+用户看到的组件信息分为两层：
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  组件展示                                                                │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  [振袖和服]  ← 组件类型名称（平台定义，统一展示）                           │
+│                                                                         │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │  [商户上传的振袖图片]                                             │   │
+│  │                                                                  │   │
+│  │  我们提供多款传统古典风格的正绢振袖，                              │   │
+│  │  包括鹤、樱花、牡丹等吉祥图案。                                   │   │
+│  │  所有振袖均为日本进口，每日限量 3 套。                             │   │
+│  │                                                                  │   │
+│  │  ← 商户说明（商户自定义，展示特色）                                │   │
+│  │  ← 如果商户未自定义，显示平台默认描述                              │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### 内容获取优先级
 
 ```typescript
-// 查询优先级：MERCHANT > PLATFORM(themeId) > PLATFORM(null)
-function getUpgradePriority(scope: string, scopeId: string | null, merchantId: string, themeId: string | null): number {
-  if (scope === 'MERCHANT' && scopeId === merchantId) return 3;  // 最高
-  if (scope === 'PLATFORM' && scopeId === themeId && themeId !== null) return 2;
-  if (scope === 'PLATFORM' && scopeId === null) return 1;  // 最低
-  return 0;
+// 获取组件展示内容
+function getComponentDisplay(
+  component: ServiceComponent,
+  override: MerchantComponentOverride | null
+) {
+  return {
+    // 名称始终使用平台定义（保证一致性）
+    name: component.name,
+    icon: component.icon,
+
+    // 描述和图片优先使用商户自定义
+    description: override?.description || component.description,
+    images: override?.images?.length ? override.images : component.images,
+
+    // 价格仅 ADDON 类型有意义
+    price: component.type === 'ADDON'
+      ? (override?.price ?? component.basePrice)
+      : null,
+  };
+}
+```
+
+---
+
+## 价格体系
+
+### 简化设计
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  价格模型                                                                │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  OUTFIT (套餐包含服务)                                                   │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │  ❌ 不单独定价                                                   │   │
+│  │  价格已包含在套餐价格内                                           │   │
+│  │  用户只需要知道"套餐包含什么"，不需要知道每项值多少                 │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+│  ADDON (增值服务)                                                        │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │  ✅ 商户自定义价格                                               │   │
+│  │  平台提供建议价 (ServiceComponent.basePrice)                     │   │
+│  │  商户可覆盖 (MerchantComponentOverride.price)                    │   │
+│  │  用户可选加购，在套餐基础上增加订单金额                            │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### 套餐价格计算
+
+```typescript
+// 订单总价 = 套餐价 + Σ(用户选中的 ADDON 价格)
+function calculateOrderTotal(
+  plan: RentalPlan,
+  selectedAddonIds: string[],
+  merchantId: string
+): number {
+  let total = plan.price;  // 套餐基础价（已包含所有 OUTFIT）
+
+  // 加上用户选中的增值服务
+  for (const addonId of selectedAddonIds) {
+    const addonPrice = getAddonPrice(addonId, merchantId);
+    total += addonPrice;
+  }
+
+  return total;
+}
+
+// 获取 ADDON 价格
+function getAddonPrice(componentId: string, merchantId: string): number {
+  const override = getMerchantOverride(merchantId, componentId);
+  const component = getComponent(componentId);
+
+  return override?.price ?? component.basePrice ?? 0;
 }
 ```
 
@@ -303,54 +346,39 @@ function getUpgradePriority(scope: string, scopeId: string | null, merchantId: s
 
 ## 热点图系统
 
-### 图片来源
+### 仅 OUTFIT 显示在热点图
 
-```typescript
-async function getHotmapImage(plan: RentalPlan): Promise<string | null> {
-  // 1. 商户自定义图片（最高优先级）
-  if (plan.hotmapImageUrl) {
-    return plan.hotmapImageUrl;
-  }
-
-  // 2. 商户选择的平台模板
-  if (plan.hotmapTemplateId) {
-    const template = await prisma.mapTemplate.findUnique({
-      where: { id: plan.hotmapTemplateId }
-    });
-    return template?.imageUrl ?? null;
-  }
-
-  // 都为空 = 不显示热点图
-  return null;
-}
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  热点图展示                                                              │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  ┌─────────────────────────────────┐                                   │
+│  │                                 │                                   │
+│  │      ●─── 振袖和服              │  ← OUTFIT：显示在热点图上          │
+│  │                                 │                                   │
+│  │           ●─── 帯・帯締め       │  ← OUTFIT：显示在热点图上          │
+│  │                                 │                                   │
+│  │                 ●─── 草履       │  ← OUTFIT：显示在热点图上          │
+│  │                                 │                                   │
+│  └─────────────────────────────────┘                                   │
+│                                                                         │
+│  增值服务（可选加购）                                                     │
+│  ┌─────────────────────────────────┐                                   │
+│  │ 📷 摄影跟拍    +¥3,000  [添加]  │  ← ADDON：列表展示，用户可选      │
+│  │ 🧳 行李寄存    +¥500    [添加]  │                                   │
+│  │ 🚗 接送服务    +¥1,500  [添加]  │                                   │
+│  └─────────────────────────────────┘                                   │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### 热点坐标
 
 - **坐标系统**：百分比坐标 (0-1)
-- **存储位置**：`PlanComponent.hotmapX/Y`（每套餐独立）
+- **存储位置**：`PlanComponent.hotmapX/Y`
 - **标签方向**：`hotmapLabelPosition` (left | right)
 - **自动计算**：热点在图片左半边 → 标签右侧，反之亦然
-
-### 热点渲染（EditorHotspot）
-
-```
-┌─────────────────────────────────────────────┐
-│                                             │
-│      ●─────── 振袖和服                       │   ← 热点 + 连接线 + 标签
-│                                             │
-│              ●─────── 帯・帯締め             │
-│                                             │
-│                     ●─────── 草履           │
-│                                             │
-└─────────────────────────────────────────────┘
-
-热点样式：
-- 圆点：6px，sakura-500 背景
-- 脉冲动画：hover 时暂停
-- 连接线：32px，渐变透明
-- 标签：白色背景，阴影
-```
 
 ---
 
@@ -359,101 +387,102 @@ async function getHotmapImage(plan: RentalPlan): Promise<string | null> {
 ### 组件架构
 
 ```
-src/components/
-├── merchant/
-│   ├── PlanComponentEditor.tsx     # 主编辑器（热点 + 组件选择）
-│   ├── ServiceComponentSelector.tsx # 简化选择器（无热点）
-│   └── HotspotEditor.tsx           # 模板级热点编辑
-├── plan/
-│   └── InteractiveKimonoMap/
-│       ├── index.tsx               # 用户端交互地图
-│       ├── Hotspot.tsx             # 热点展示
-│       ├── ComponentDetailPanel.tsx # 组件详情面板
-│       └── types.ts                # 类型定义
-└── shared/
-    └── EditorHotspot.tsx           # 统一热点组件（编辑 + 展示）
+src/
+├── app/(main)/merchant/
+│   ├── components/
+│   │   ├── page.tsx                # 商户组件配置页面（服务端）
+│   │   └── ComponentsClient.tsx    # 商户组件配置（客户端交互）
+│   └── dashboard/
+│       └── page.tsx                # 商户控制台
+├── components/
+│   ├── merchant/
+│   │   ├── PlanComponentEditor.tsx     # 主编辑器（三栏式工作台）
+│   │   └── ServiceComponentSelector.tsx # 简化选择器
+│   ├── plan/
+│   │   └── InteractiveKimonoMap/
+│   │       ├── index.tsx               # 用户端交互地图
+│   │       ├── Hotspot.tsx             # 热点展示
+│   │       └── ComponentDetailPanel.tsx # 组件详情面板
+│   └── shared/
+│       └── EditorHotspot.tsx           # 统一热点组件
+└── app/api/merchant/
+    └── component-overrides/
+        └── route.ts                    # 商户组件配置 API
 ```
 
-### PlanComponentEditor
-
-**功能**：套餐内容的完整编辑器
+### 商户组件配置页面
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│  套餐内容编辑器                                            [保存] [预览] │
+│  我的服务组件配置                                                         │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                         │
-│  ┌── 组件选择 ─────────────────┐   ┌── 热点图预览 (3:4) ─────────────┐ │
-│  │                              │   │                                  │ │
-│  │  👘 着装项 (OUTFIT)          │   │      [商户上传的和服图片]         │ │
-│  │  ┌────────────────────────┐ │   │                                  │ │
-│  │  │ ☑ 振袖和服      [↓升级] │ │   │      ●─── 振袖和服               │ │
-│  │  │ ☑ 帯・帯締め    [↓升级] │ │   │                                  │ │
-│  │  │ ☐ 草履・足袋           │ │   │           ●─── 帯・帯締め        │ │
-│  │  └────────────────────────┘ │   │                                  │ │
-│  │                              │   │                                  │ │
-│  │  ✨ 增值服务 (ADDON)         │   │                                  │ │
-│  │  ┌────────────────────────┐ │   │                                  │ │
-│  │  │ ☑ 专业跟拍             │ │   │   点击热点可拖拽调整位置          │ │
-│  │  │ ☐ 行李寄存             │ │   │                                  │ │
-│  │  └────────────────────────┘ │   └──────────────────────────────────┘ │
-│  └──────────────────────────────┘                                       │
+│  💡 在此配置您提供的服务内容，适用于所有套餐                               │
+│  💡 如果不填写，将显示平台提供的默认内容                                   │
 │                                                                         │
-│  💡 勾选 OUTFIT 类型组件后，点击热图放置热点                             │
-│  💡 ADDON 类型无需放置位置                                              │
+│  ─────────────────────────────────────────────────────────────────────  │
+│  👘 套餐包含服务 (OUTFIT)                                                │
+│  ─────────────────────────────────────────────────────────────────────  │
+│                                                                         │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │ 振袖和服                                              [启用 ✓]  │   │
+│  │                                                                  │   │
+│  │ 我的说明：[                                                    ] │   │
+│  │ 我们提供多款传统古典风格振袖，鹤、樱花、牡丹图案...               │   │
+│  │                                                                  │   │
+│  │ 我的图片：[上传图片] [图1] [图2] [图3]                           │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+│  ─────────────────────────────────────────────────────────────────────  │
+│  ✨ 增值服务 (ADDON)                                                     │
+│  ─────────────────────────────────────────────────────────────────────  │
+│                                                                         │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │ 摄影跟拍                                              [启用 ✓]  │   │
+│  │                                                                  │   │
+│  │ 我的定价：[¥3,000    ] (平台建议价：¥2,500)                      │   │
+│  │                                                                  │   │
+│  │ 我的说明：[                                                    ] │   │
+│  │ 专业摄影师全程跟拍，包含 50 张精修照片...                         │   │
+│  │                                                                  │   │
+│  │ 我的图片：[上传图片] [作品1] [作品2]                             │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
 │                                                                         │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-**状态管理**：
+### PlanComponentEditor（三栏式工作台）
 
-```typescript
-interface ComponentConfig {
-  componentId: string;
-  isIncluded: boolean;
-  enabledUpgrades: string[];  // 启用的升级选项
-  hotmapX?: number | null;
-  hotmapY?: number | null;
-  hotmapLabelPosition?: string;
-}
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│  组件配置  •  已选 3 项  •  已放置 2 项                    [50%] [100%] [200%]  │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                 │
+│  ┌─ 组件库 ──────┐  ┌─ 画布区域 (可滚动) ──────────────┐  ┌─ 属性面板 ────────┐ │
+│  │               │  │                                  │  │                   │ │
+│  │  🔍 搜索...   │  │      [热点图 450×600]            │  │  📋 套餐概览       │ │
+│  │               │  │                                  │  │                   │ │
+│  │  ▼ 👘 套餐包含│  │      ●─── 振袖和服               │  │  包含组件: 3      │ │
+│  │  ┌──────────┐ │  │                                  │  │  已放置热点: 2    │ │
+│  │  │☑ 振袖和服│ │  │           ●─── 帯・帯締め        │  │                   │ │
+│  │  │☑ 帯     │ │  │                                  │  │  ─────────────    │ │
+│  │  │☐ 草履   │ │  │                                  │  │                   │ │
+│  │  └──────────┘ │  │                                  │  │  (选中组件后显示   │ │
+│  │               │  │  点击组件进入放置模式            │  │   组件详情面板)    │ │
+│  │  ▶ ✨ 增值服务│  │  点击画布放置热点                │  │                   │ │
+│  │               │  │  拖拽热点调整位置                │  │                   │ │
+│  └───────────────┘  └──────────────────────────────────┘  └───────────────────┘ │
+│                                                                                 │
+└─────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 **交互流程**：
 
-1. 勾选组件 → 如果是 OUTFIT 类型，进入「放置模式」
-2. 点击热图 → 放置热点，自动计算标签方向
-3. 拖拽热点 → 调整位置
-4. 展开升级面板 → 勾选启用的升级选项
+1. 在左侧组件库勾选组件
+2. OUTFIT 类型：点击画布放置热点，拖拽调整位置
+3. ADDON 类型：无需放置热点，在服务列表中展示
+4. 右侧显示组件详情（商户自定义的内容）
 5. 保存 → 调用 API 更新套餐
-
-### InteractiveKimonoMap
-
-**功能**：用户端的交互式和服展示
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                                                                         │
-│  ┌─────────────────────────────────────┐  ┌────────────────────────┐   │
-│  │                                     │  │                        │   │
-│  │    [热点图展示区域]                  │  │  组件详情面板           │   │
-│  │                                     │  │                        │   │
-│  │    ●─── 振袖和服 ←(点击)            │  │  👘 振袖和服            │   │
-│  │           ●─── 帯                   │  │  ✅ 已包含             │   │
-│  │                  ●─── 草履          │  │                        │   │
-│  │                                     │  │  华丽的正装振袖...      │   │
-│  │                                     │  │                        │   │
-│  │                                     │  │  可升级为：            │   │
-│  │                                     │  │  · 高级振袖 +¥5,000    │   │
-│  │                                     │  │  · 顶级振袖 +¥10,000   │   │
-│  └─────────────────────────────────────┘  └────────────────────────┘   │
-│                                                                         │
-└─────────────────────────────────────────────────────────────────────────┘
-```
-
-**两种布局**：
-
-- **horizontal**：热图左侧，详情右侧（桌面端）
-- **vertical**：热图上方，详情下方弹出（移动端）
 
 ---
 
@@ -461,52 +490,68 @@ interface ComponentConfig {
 
 ### GET /api/service-components
 
-获取平台组件库 + 升级路径
-
-**Query 参数**：
-
-| 参数 | 说明 |
-|------|------|
-| `themeId` | 主题 ID（获取主题特定升级） |
-| `merchantId` | 商户 ID（获取商户自定义组件） |
+获取平台组件模板
 
 **响应**：
 
 ```json
 {
-  "components": [...],
   "categories": [
     {
       "type": "OUTFIT",
-      "label": "着装项",
+      "label": "套餐包含服务",
       "icon": "👘",
-      "components": [...]
+      "components": [
+        {
+          "id": "comp-1",
+          "code": "KIMONO_FURISODE",
+          "name": "振袖和服",
+          "type": "OUTFIT",
+          "icon": "👘",
+          "description": "华丽的正装振袖...",
+          "images": ["default-furisode.jpg"]
+        }
+      ]
     },
     {
       "type": "ADDON",
       "label": "增值服务",
       "icon": "✨",
-      "components": [...]
+      "components": [
+        {
+          "id": "comp-5",
+          "code": "ADDON_PHOTO",
+          "name": "摄影跟拍",
+          "type": "ADDON",
+          "icon": "📷",
+          "description": "专业摄影师跟拍...",
+          "basePrice": 250000
+        }
+      ]
     }
-  ],
-  "upgradePaths": {
-    "component-id-1": [
-      {
-        "id": "upgrade-1",
-        "fromComponentId": "component-id-1",
-        "toComponentId": "component-id-2",
-        "priceDiff": 500000,
-        "label": "升级为振袖",
-        "isRecommended": true
-      }
-    ]
-  }
+  ]
+}
+```
+
+### PATCH /api/merchant/component-overrides
+
+更新商户组件配置
+
+**请求体**：
+
+```json
+{
+  "componentId": "comp-5",
+  "description": "我们的专业摄影师...",
+  "images": ["my-photo-1.jpg", "my-photo-2.jpg"],
+  "price": 300000,
+  "isEnabled": true
 }
 ```
 
 ### PATCH /api/merchant/plans/[id]
 
-更新套餐（含组件配置）
+更新套餐组件配置
 
 **请求体**：
 
@@ -517,139 +562,17 @@ interface ComponentConfig {
   "componentConfigs": [
     {
       "componentId": "comp-1",
-      "isIncluded": true,
-      "enabledUpgrades": ["upgrade-1", "upgrade-2"],
       "hotmapX": 0.3,
       "hotmapY": 0.4,
       "hotmapLabelPosition": "right"
     },
     {
-      "componentId": "comp-3",
-      "isIncluded": true,
-      "enabledUpgrades": [],
-      "hotmapX": null,
-      "hotmapY": null
+      "componentId": "comp-2",
+      "hotmapX": 0.5,
+      "hotmapY": 0.6,
+      "hotmapLabelPosition": "left"
     }
   ]
-}
-```
-
-**处理逻辑**：
-
-1. 更新 RentalPlan 基本信息
-2. 删除旧的 PlanComponent 记录
-3. 创建新的 PlanComponent 记录（含热点位置）
-4. 收集所有 enabledUpgrades
-5. 创建 PlanUpgradeBundle（如有升级选项）
-
----
-
-## 价格体系
-
-### 设计原则
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│  价格层级                                                                │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                         │
-│  平台建议价 (ServiceComponent.basePrice)                                 │
-│       ↓                                                                 │
-│  商户定价 (MerchantComponentOverride.price) ← 商户级别，所有套餐通用         │
-│       ↓                                                                 │
-│  最终价格 = 商户定价 ?? 平台建议价                                        │
-│                                                                         │
-│  💡 没有套餐级别的价格覆盖，简化管理                                      │
-│                                                                         │
-└─────────────────────────────────────────────────────────────────────────┘
-```
-
-### 价格解析
-
-```typescript
-// 获取组件的有效价格
-async function getComponentPrice(
-  componentId: string,
-  merchantId: string
-): Promise<number> {
-  // 1. 查找商户覆盖配置
-  const override = await prisma.merchantComponentOverride.findUnique({
-    where: { merchantId_componentId: { merchantId, componentId } }
-  });
-
-  // 2. 如果商户设置了价格，使用商户价格
-  if (override?.price != null) {
-    return override.price;
-  }
-
-  // 3. 否则使用平台建议价
-  const component = await prisma.serviceComponent.findUnique({
-    where: { id: componentId }
-  });
-
-  return component?.basePrice ?? 0;
-}
-
-// 检查组件是否对商户启用
-function isComponentEnabled(
-  override: MerchantComponentOverride | null
-): boolean {
-  // 默认启用，除非明确禁用
-  return override?.isEnabled ?? true;
-}
-```
-
-### 商户组件配置
-
-商户在 `/merchant/components` 页面统一配置组件（价格、启用状态），适用于所有套餐：
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│  组件配置管理                                                            │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                         │
-│  💡 在此设置的配置适用于您的所有套餐                                      │
-│                                                                         │
-│  ┌───────────────┬──────────────┬─────────────┬─────────┐               │
-│  │ 组件          │ 平台建议价    │ 我的定价    │ 状态    │               │
-│  ├───────────────┼──────────────┼─────────────┼─────────┤               │
-│  │ 👘 振袖和服   │ ¥5,000       │ [¥4,500   ] │ ☑ 启用  │               │
-│  │ 🎀 帯・帯締め │ ¥1,000       │ [         ] │ ☑ 启用  │  ← 留空=建议价 │
-│  │ 📷 专业跟拍   │ ¥2,000       │ [¥1,800   ] │ ☑ 启用  │               │
-│  │ 🚗 接送服务   │ ¥1,500       │ [         ] │ ☐ 禁用  │  ← 禁用=不提供 │
-│  └───────────────┴──────────────┴─────────────┴─────────┘               │
-│                                                                         │
-│  ⓘ 留空定价 = 使用平台建议价                                             │
-│  ⓘ 禁用的组件不会出现在您的套餐中                                        │
-│                                                                         │
-└─────────────────────────────────────────────────────────────────────────┘
-```
-
-### 套餐价格计算
-
-```typescript
-// 套餐总价 = 基础价 + Σ(顾客选中的可选组件价格) + Σ(升级差价)
-function calculateTotal(
-  plan: RentalPlan,
-  selectedOptionalIds: string[],
-  selectedUpgrades: { fromId: string; toId: string }[]
-): number {
-  let total = plan.price;  // 基础套餐价
-
-  // 加上可选组件
-  for (const pc of plan.planComponents) {
-    if (!pc.isIncluded && selectedOptionalIds.includes(pc.componentId)) {
-      total += getComponentPrice(pc.component);
-    }
-  }
-
-  // 加上升级差价
-  for (const upgrade of selectedUpgrades) {
-    const upgradeConfig = findUpgrade(upgrade.fromId, upgrade.toId);
-    total += upgradeConfig?.priceDiff ?? 0;
-  }
-
-  return total;
 }
 ```
 
@@ -657,144 +580,26 @@ function calculateTotal(
 
 ## 实现状态
 
-### 已完成
+### v9.1 已完成
 
-| 功能 | 状态 | 文件 |
+| 功能 | 状态 | 说明 |
 |------|------|------|
-| ServiceComponent 模型 | ✅ | `prisma/schema.prisma` |
-| PlanComponent 模型 | ✅ | `prisma/schema.prisma` |
-| ComponentUpgrade 模型 | ✅ | `prisma/schema.prisma` |
-| PlanUpgradeBundle 模型 | ✅ | `prisma/schema.prisma` |
-| PlanComponentEditor | ✅ | `src/components/merchant/` |
-| ServiceComponentSelector | ✅ | `src/components/merchant/` |
-| EditorHotspot | ✅ | `src/components/shared/` |
-| InteractiveKimonoMap | ✅ | `src/components/plan/` |
-| GET /api/service-components | ✅ | `src/app/api/` |
-| PATCH /api/merchant/plans/[id] | ✅ | `src/app/api/` |
+| ServiceComponent 模型 | ✅ | 平台组件模板 |
+| PlanComponent 模型 | ✅ | 套餐-组件关联 |
+| MerchantComponentOverride 模型 | ✅ | 商户覆盖配置（需扩展） |
+| PlanComponentEditor（三栏式）| ✅ | 套餐编辑器 UI |
+| /merchant/components 页面 | ✅ | 商户组件配置（需更新） |
 
-### v9 待实现
+### v10 待实现
 
 | 功能 | 优先级 | 说明 |
 |------|--------|------|
-| MerchantComponentOverride 模型 | P1 | 商户级别覆盖配置（价格、启用状态）|
-| /merchant/components 页面 | P1 | 商户组件配置界面 |
-| 移除 PlanComponent 覆盖字段 | P1 | 简化数据模型 |
-| ThemeComponent 模型 | P2 | 主题-组件关联 |
-| /admin/components 页面 | P2 | 平台组件管理 |
-| 主题推荐组件 | P2 | 选主题后显示推荐 |
-
-### 需要移除的字段
-
-从 `PlanComponent` 模型中移除以下字段（改为商户级别管理）：
-
-```diff
-model PlanComponent {
-  // 保留
-  id, planId, componentId
-  isIncluded, quantity
-  hotmapX, hotmapY, hotmapLabelPosition, hotmapOrder
-
-  // 移除（不再支持套餐级别覆盖）
-- nameOverride
-- descriptionOverride
-- highlightsOverride
-- upgradePriceOverride
-- customNote
-- isHighlighted
-- tier
-- tierLabel
-}
-```
-
----
-
-## 已知问题
-
-### Bug：组件数据延迟加载
-
-**问题**：组件数据未加载完成时，已放置的热点不渲染
-
-**修复方案**：
-
-```typescript
-// 使用占位符
-const renderedHotspots = placedComponents.map(config => {
-  const component = getAllComponents().find(c => c.id === config.componentId);
-
-  if (config.hotmapX == null || config.hotmapY == null) {
-    return null;
-  }
-
-  return {
-    id: config.componentId,
-    x: config.hotmapX,
-    y: config.hotmapY,
-    name: component?.name ?? '加载中...',  // 占位符
-    icon: component?.icon ?? '📍',          // 占位符
-  };
-}).filter(Boolean);
-```
-
----
-
-## 附录：类型定义
-
-```typescript
-// 热点数据（用户端展示）
-interface HotspotData {
-  id: string;
-  x: number;  // 0-1
-  y: number;  // 0-1
-  labelPosition: 'left' | 'right' | 'top' | 'bottom';
-  displayOrder: number;
-  component: ServiceComponentData;
-  isIncluded: boolean;
-}
-
-// 地图数据
-interface MapData {
-  imageUrl: string;
-  imageWidth?: number | null;
-  imageHeight?: number | null;
-  hotspots: HotspotData[];
-}
-
-// 组件配置（编辑器状态）
-interface ComponentConfig {
-  componentId: string;
-  isIncluded: boolean;           // 是否包含在套餐基础价
-  enabledUpgrades: string[];     // 启用的升级选项 ID
-  hotmapX?: number | null;       // 热点 X 坐标
-  hotmapY?: number | null;       // 热点 Y 坐标
-  hotmapLabelPosition?: string;  // 标签方向
-}
-
-// 服务组件（平台定义）
-interface ServiceComponentData {
-  id: string;
-  code: string;
-  name: string;
-  nameJa?: string | null;
-  nameEn?: string | null;
-  description?: string | null;
-  type: ComponentType;
-  icon?: string | null;
-  basePrice: number;       // 平台建议价
-  highlights: string[];
-  images: string[];
-  tier: number;
-  tierLabel?: string | null;
-}
-
-// 商户覆盖配置（商户级别）
-interface MerchantComponentOverride {
-  merchantId: string;
-  componentId: string;
-  price: number | null;    // 商户定价（null = 使用平台建议价）
-  isEnabled: boolean;      // 是否启用此组件
-  // 预留扩展...
-}
-```
+| MerchantComponentOverride 扩展 | P1 | 添加 description, images 字段 |
+| 商户组件配置页面更新 | P1 | 支持编辑描述和上传图片 |
+| PlanComponentEditor 简化 | P1 | 移除升级系统相关代码 |
+| 移除 ComponentUpgrade 模型 | P1 | 删除升级系统 |
+| 移除 PlanUpgradeBundle 模型 | P1 | 删除升级包系统 |
+| OUTFIT/ADDON 价格逻辑 | P1 | OUTFIT 不定价，ADDON 商户定价 |
 
 ---
 
@@ -802,28 +607,55 @@ interface MerchantComponentOverride {
 
 | 版本 | 日期 | 变更 |
 |------|------|------|
-| v9.1 | 2024-12 | 移除套餐级别覆盖，商户只能设置价格（商户级别）|
+| v10 | 2024-12 | 简化组件类型：OUTFIT（套餐包含，不定价）vs ADDON（增值服务，商户定价）；移除组件升级系统；商户可自定义内容（描述、图片） |
+| v9.1 | 2024-12 | MerchantComponentOverride 模型；PlanComponentEditor 三栏式布局 |
 | v9 | 2024-12 | 平台统一管理组件，商户定价规划 |
 | v8 | 2024-11 | 简化为 copy-on-use 模式（已废弃）|
-| v7 | 2024-11 | MerchantComponentConfig 方案（已废弃）|
 
 ---
 
 ## 设计决策记录
 
-### 为什么移除套餐级别覆盖？
+### 为什么 OUTFIT 不定价？
 
 **问题**：
-- 套餐级别覆盖（nameOverride, descriptionOverride）增加了复杂度
-- 同一组件在不同套餐中可能显示不同名称，用户体验不一致
-- 商户需要为每个套餐单独配置，工作量大
+- 套餐是一个整体产品，用户关心的是套餐总价
+- 拆分组件价格可能造成用户困惑
+- 用户可能会质疑："这个¥19,800的套餐里，和服¥10,000、造型¥5,000，那我不是多付了？"
 
 **解决方案**：
-- 组件信息由平台统一管理（名称、描述、图标等）
-- 商户只能控制价格（商户级别，所有套餐通用）
-- 商户可启用/禁用组件
+- OUTFIT 类型组件不单独定价
+- 套餐价格是一个整体，包含所有 OUTFIT
+- 用户只需要知道"套餐包含什么"，不需要知道每项值多少
 
-**好处**：
-- 简化数据模型（移除 7 个字段）
-- 简化商户操作（设一次价格，所有套餐通用）
-- 保证用户体验一致性
+### 为什么移除组件升级系统？
+
+**问题**：
+- 升级系统（ComponentUpgrade, PlanUpgradeBundle）增加了复杂度
+- 商户和用户都难以理解升级路径
+- 管理和展示逻辑复杂
+
+**解决方案**：
+- 移除升级系统
+- 商户可以创建不同档次的套餐（基础版、豪华版）
+- 用户直接选择不同套餐，而不是"升级"组件
+
+### 为什么让商户自定义内容？
+
+**问题**：
+- 不同商户的服务确实有差异（和服风格、摄影师水平等）
+- 用户可能想了解具体商户提供的服务细节
+- 平台统一的描述无法展示商户特色
+
+**解决方案**：
+- 组件"种类"由平台定义（名称、类型）
+- 组件"内容"由商户自定义（描述、图片、ADDON价格）
+- 如果商户未自定义，显示平台默认内容
+- 质量控制靠市场自然筛选，平台不审核
+
+### 两层信息的好处
+
+1. **用户比较方便**：组件类型名称统一（"都提供振袖和服"）
+2. **商户差异化**：商户可以展示自己的特色
+3. **默认值兜底**：商户懒得填也有内容显示
+4. **渐进式完善**：商户可以先启用，后续再完善描述和图片
