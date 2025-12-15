@@ -37,11 +37,13 @@ export async function GET() {
             description: true,
             defaultHighlights: true,
             defaultImages: true,
+            outfitCategory: true, // v10.2: OUTFIT 分类
           },
         },
       },
       orderBy: [
         { template: { type: 'asc' } },
+        { template: { outfitCategory: 'asc' } }, // v10.2: 按 OUTFIT 分类排序
         { template: { displayOrder: 'asc' } },
       ],
     });
@@ -58,6 +60,7 @@ export async function GET() {
       icon: mc.template.icon,
       basePrice: mc.template.basePrice,
       description: mc.template.description,
+      outfitCategory: mc.template.outfitCategory, // v10.2: OUTFIT 分类
       // 商户自定义内容
       images: mc.images.length > 0 ? mc.images : mc.template.defaultImages,
       highlights: mc.highlights.length > 0 ? mc.highlights : mc.template.defaultHighlights,

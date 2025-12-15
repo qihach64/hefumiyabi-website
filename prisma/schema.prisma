@@ -838,6 +838,16 @@ enum ComponentType {
   ADDON      // 增值服务：独立于热图，附加购买（跟拍、延时等）
 }
 
+// v10.2: OUTFIT 组件分类（基于和服着装结构）
+enum OutfitCategory {
+  MAIN_GARMENT   // 主体服装：和服、振袖、访问着
+  INNERWEAR      // 内搭层：襦袢、内衣
+  OBI_SET        // 腰带组：帯、帯揚、帯締、伊達衿
+  STYLING        // 造型服务：髮飾、发型、化妆
+  ACCESSORIES    // 随身配件：包包、巾袋
+  FOOTWEAR       // 足部穿着：草履、足袋
+}
+
 // 地图模板 - 每个主题一个模板，或作为默认模板
 model MapTemplate {
   id          String   @id @default(cuid())
@@ -912,6 +922,9 @@ model ServiceComponent {
   type            ComponentType
   icon            String?
 
+  // ========== v10.2: OUTFIT 分类（仅 OUTFIT 类型有值）==========
+  outfitCategory  OutfitCategory? @map("outfit_category")
+
   // ========== 默认内容（商户未自定义时使用）==========
   defaultHighlights String[]      @default([]) @map("default_highlights")
   defaultImages     String[]      @default([]) @map("default_images")
@@ -929,6 +942,7 @@ model ServiceComponent {
   merchantComponents MerchantComponent[]  // 商户组件实例
   mapHotspots        MapHotspot[]
 
+  @@index([type, outfitCategory, displayOrder])
   @@index([type, isActive, displayOrder])
   @@map("service_components")
 }

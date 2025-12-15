@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import EditorHotspot from "@/components/shared/EditorHotspot";
 
-// ==================== 类型定义 (v10.1) ====================
+// ==================== 类型定义 (v10.2) ====================
 
 // 商户组件实例（从 API 获取）
 interface MerchantComponentData {
@@ -33,6 +33,7 @@ interface MerchantComponentData {
   icon: string | null;
   basePrice: number;
   description: string | null;
+  outfitCategory: string | null; // v10.2: OUTFIT 分类
   // 商户自定义内容
   images: string[];
   highlights: string[];
@@ -43,7 +44,7 @@ interface MerchantComponentData {
 }
 
 interface ComponentCategory {
-  type: string;
+  key: string; // 分类 key (type 或 outfitCategory)
   label: string;
   icon: string;
   components: MerchantComponentData[];
@@ -81,10 +82,28 @@ interface PlanComponentEditorProps {
 
 // ==================== 类型分类配置 ====================
 
-const TYPE_CONFIG: Record<string, { label: string; icon: string; color: string }> = {
-  OUTFIT: { label: "着装项目", icon: "👘", color: "sakura" },
-  ADDON: { label: "增值服务", icon: "✨", color: "amber" },
+// v10.2: OUTFIT 分类配置
+const OUTFIT_CATEGORY_CONFIG: Record<string, { label: string; icon: string }> = {
+  MAIN_GARMENT: { label: "主体服装", icon: "👘" },
+  INNERWEAR: { label: "内搭层", icon: "👕" },
+  OBI_SET: { label: "腰带组", icon: "🎀" },
+  STYLING: { label: "造型服务", icon: "💇" },
+  ACCESSORIES: { label: "随身配件", icon: "👜" },
+  FOOTWEAR: { label: "足部穿着", icon: "👡" },
 };
+
+// OUTFIT 分类顺序
+const OUTFIT_CATEGORY_ORDER = [
+  "MAIN_GARMENT",
+  "OBI_SET",
+  "INNERWEAR",
+  "STYLING",
+  "ACCESSORIES",
+  "FOOTWEAR",
+];
+
+// ADDON 类型配置
+const ADDON_CONFIG = { label: "增值服务", icon: "✨" };
 
 // 可放置到热图的类型
 const HOTMAP_ELIGIBLE_TYPES = ["OUTFIT"];
@@ -133,36 +152,51 @@ export default function PlanComponentEditor({
         const response = await fetch("/api/merchant/component-overrides");
         if (response.ok) {
           const data = await response.json();
-
-          // 将组件按类型分组
           const components: MerchantComponentData[] = data.components || [];
-          const grouped = components.reduce((acc, comp) => {
-            const type = comp.type;
-            if (!acc[type]) {
-              acc[type] = [];
+
+          // v10.2: 按 outfitCategory 分组 OUTFIT，ADDON 单独一组
+          const outfitComponents = components.filter((c) => c.type === "OUTFIT");
+          const addonComponents = components.filter((c) => c.type === "ADDON");
+
+          // OUTFIT 按 outfitCategory 分组
+          const outfitGrouped = outfitComponents.reduce((acc, comp) => {
+            const category = comp.outfitCategory || "OTHER";
+            if (!acc[category]) {
+              acc[category] = [];
             }
-            acc[type].push(comp);
+            acc[category].push(comp);
             return acc;
           }, {} as Record<string, MerchantComponentData[]>);
 
-          // 转换为分类数组
-          const typeOrder = [
-            { type: "OUTFIT", label: "着装项目", icon: "👘" },
-            { type: "ADDON", label: "增值服务", icon: "✨" },
-          ];
+          // 构建分类数组
+          const cats: ComponentCategory[] = [];
 
-          const cats: ComponentCategory[] = typeOrder
-            .filter((t) => grouped[t.type]?.length > 0)
-            .map((t) => ({
-              type: t.type,
-              label: t.label,
-              icon: t.icon,
-              components: grouped[t.type] || [],
-            }));
+          // 按顺序添加 OUTFIT 分类
+          for (const categoryKey of OUTFIT_CATEGORY_ORDER) {
+            if (outfitGrouped[categoryKey]?.length > 0) {
+              const config = OUTFIT_CATEGORY_CONFIG[categoryKey];
+              cats.push({
+                key: categoryKey,
+                label: config?.label || categoryKey,
+                icon: config?.icon || "📦",
+                components: outfitGrouped[categoryKey],
+              });
+            }
+          }
+
+          // 添加 ADDON 分类
+          if (addonComponents.length > 0) {
+            cats.push({
+              key: "ADDON",
+              label: ADDON_CONFIG.label,
+              icon: ADDON_CONFIG.icon,
+              components: addonComponents,
+            });
+          }
 
           setCategories(cats);
           // 默认展开所有分类
-          setExpandedCategories(new Set(cats.map((c) => c.type)));
+          setExpandedCategories(new Set(cats.map((c) => c.key)));
         }
       } catch (error) {
         console.error("Failed to fetch merchant components:", error);
@@ -522,18 +556,17 @@ export default function PlanComponentEditor({
               </div>
             ) : (
               filteredCategories.map((category) => {
-                const isExpanded = expandedCategories.has(category.type);
+                const isExpanded = expandedCategories.has(category.key);
                 const selectedCount = category.components.filter((c) =>
                   selectedMerchantComponentIds.includes(c.id)
                 ).length;
-                const typeConfig = TYPE_CONFIG[category.type] || { label: "其他", icon: "📦", color: "gray" };
 
                 return (
-                  <div key={category.type} className="border-b border-gray-100">
+                  <div key={category.key} className="border-b border-gray-100">
                     {/* 分类标题 */}
                     <button
                       type="button"
-                      onClick={() => toggleCategory(category.type)}
+                      onClick={() => toggleCategory(category.key)}
                       className="w-full px-3 py-2.5 flex items-center justify-between hover:bg-gray-100 transition-colors"
                     >
                       <div className="flex items-center gap-2">
@@ -542,7 +575,7 @@ export default function PlanComponentEditor({
                         ) : (
                           <ChevronRight className="w-4 h-4 text-gray-400" />
                         )}
-                        <span className="text-sm">{typeConfig.icon}</span>
+                        <span className="text-sm">{category.icon}</span>
                         <span className="text-sm font-medium text-gray-700">{category.label}</span>
                       </div>
                       <div className="flex items-center gap-2">
