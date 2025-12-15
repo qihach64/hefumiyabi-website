@@ -52,6 +52,175 @@
 
 ---
 
+## OUTFIT 分类体系
+
+> 基于实际和服着装结构，将 OUTFIT 组件分为 6 个逻辑分类，用于套餐编辑器和详情页的组件归类展示。
+
+### 分类定义
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  OUTFIT 分类 (OutfitCategory)                                            │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  1. MAIN_GARMENT (主体服装)                                              │
+│     └─ 和服本体：和服、振袖、访问着、蕾丝和服                               │
+│                                                                         │
+│  2. INNERWEAR (内搭层)                                                   │
+│     └─ 内层衣物：襦袢、肌着/内衣                                          │
+│                                                                         │
+│  3. OBI_SET (腰带组)                                                     │
+│     └─ 腰带及配件：帯、帯揚、帯締、伊達衿、角帯（男士）                     │
+│                                                                         │
+│  4. STYLING (造型服务)                                                   │
+│     └─ 头部造型：女性髮飾、专业发型、专业化妆                              │
+│                                                                         │
+│  5. ACCESSORIES (随身配件)                                               │
+│     └─ 手持物品：包包、巾袋                                               │
+│                                                                         │
+│  6. FOOTWEAR (足部穿着)                                                  │
+│     └─ 鞋袜：草履、足袋                                                   │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### 组件归类映射
+
+| 分类 | code | name | nameJa | icon |
+|------|------|------|--------|------|
+| **MAIN_GARMENT** | | | | |
+| | KIMONO | 和服 | 着物 | 👘 |
+| | KIMONO_FURISODE | 振袖 | 振袖 | 👘 |
+| | KIMONO_HOUMON | 访问着 | 訪問着 | 👘 |
+| | KIMONO_LACE | 蕾丝和服 | レース着物 | 👘 |
+| **INNERWEAR** | | | | |
+| | JUBAN | 襦袢 | 襦袢 | 👘 |
+| | HADAGI | 内衣 | 肌着 | 👕 |
+| **OBI_SET** | | | | |
+| | OBI | 腰带 | 帯 | 🎀 |
+| | OBI_TAIKO | 太鼓结腰带 | 太鼓帯 | 🎀 |
+| | OBI_AGE | 帯揚 | 帯揚げ | 🎀 |
+| | OBI_JIME | 帯締 | 帯締め | 🎀 |
+| | DATE_ERI | 伊達衿 | 伊達衿 | 🎀 |
+| | KAKU_OBI | 角帯（男士） | 角帯 | 🎀 |
+| **STYLING** | | | | |
+| | HAIR_ACCESSORY | 女性髮飾 | 髪飾り | 💮 |
+| | HAIR_STYLING | 专业发型 | ヘアセット | 💇 |
+| | MAKEUP | 专业化妆 | メイク | 💄 |
+| **ACCESSORIES** | | | | |
+| | BAG | 包包 | バッグ | 👜 |
+| | KINCHAKU | 巾袋（男士） | 巾着袋 | 👜 |
+| **FOOTWEAR** | | | | |
+| | ZORI | 草履 | 草履 | 👡 |
+| | TABI | 足袋 | 足袋 | 🧦 |
+
+### 套餐类型与组件关系
+
+| 套餐类型 | MAIN | INNER | OBI | STYLING | ACC | FOOT |
+|---------|------|-------|-----|---------|-----|------|
+| 女士标准 | 和服 | 襦袢、内衣 | 帯 | 髮飾 | 包包 | 草履、足袋 |
+| 振袖 | 振袖 | 襦袢、内衣 | 帯、帯揚、帯締、伊達衿 | 髮飾 | 包包 | 草履、足袋 |
+| 访问着 | 访问着 | 襦袢、内衣 | 帯、帯揚、帯締、伊達衿 | 髮飾 | 包包 | 草履、足袋 |
+| 男士标准 | 和服 | 襦袢 | 角帯 | - | 巾袋 | 草履、足袋 |
+
+### UI 展示效果
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  套餐编辑器 - 选择组件                                                    │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  👘 主体服装                                                             │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐                   │
+│  │ 👘 和服   │ │ 👘 振袖   │ │ 👘 访问着 │ │ 👘 蕾丝   │                   │
+│  │    ✓     │ │          │ │          │ │          │                   │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘                   │
+│                                                                         │
+│  🎀 腰带组                                                               │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐                   │
+│  │ 🎀 腰带   │ │ 🎀 帯揚   │ │ 🎀 帯締   │ │ 🎀 伊達衿 │                   │
+│  │    ✓     │ │    ✓     │ │    ✓     │ │    ✓     │                   │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘                   │
+│                                                                         │
+│  👕 内搭层                                                               │
+│  ┌──────────┐ ┌──────────┐                                             │
+│  │ 👘 襦袢   │ │ 👕 内衣   │                                             │
+│  │    ✓     │ │    ✓     │                                             │
+│  └──────────┘ └──────────┘                                             │
+│                                                                         │
+│  💇 造型服务                                                             │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐                                │
+│  │ 💮 女性髮飾│ │ 💇 专业发型│ │ 💄 专业化妆│                                │
+│  │    ✓     │ │    ✓     │ │          │                                │
+│  └──────────┘ └──────────┘ └──────────┘                                │
+│                                                                         │
+│  👜 随身配件                     👡 足部穿着                              │
+│  ┌──────────┐                  ┌──────────┐ ┌──────────┐               │
+│  │ 👜 包包   │                  │ 👡 草履   │ │ 🧦 足袋   │               │
+│  │    ✓     │                  │    ✓     │ │    ✓     │               │
+│  └──────────┘                  └──────────┘ └──────────┘               │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### 实现方案
+
+**方案 A：在 ServiceComponent 添加 outfitCategory 字段**
+
+```prisma
+model ServiceComponent {
+  // ... existing fields
+  outfitCategory  OutfitCategory?  // 仅 OUTFIT 类型有值
+
+  @@index([type, outfitCategory, displayOrder])
+}
+
+enum OutfitCategory {
+  MAIN_GARMENT   // 主体服装
+  INNERWEAR      // 内搭层
+  OBI_SET        // 腰带组
+  STYLING        // 造型服务
+  ACCESSORIES    // 随身配件
+  FOOTWEAR       // 足部穿着
+}
+```
+
+**方案 B：使用 code 前缀约定（无需改 Schema）**
+
+```typescript
+const OUTFIT_CATEGORY_MAP: Record<string, string> = {
+  // MAIN_GARMENT
+  'KIMONO': 'MAIN_GARMENT',
+  'KIMONO_FURISODE': 'MAIN_GARMENT',
+  'KIMONO_HOUMON': 'MAIN_GARMENT',
+  'KIMONO_LACE': 'MAIN_GARMENT',
+  // INNERWEAR
+  'JUBAN': 'INNERWEAR',
+  'HADAGI': 'INNERWEAR',
+  // OBI_SET
+  'OBI': 'OBI_SET',
+  'OBI_TAIKO': 'OBI_SET',
+  'OBI_AGE': 'OBI_SET',
+  'OBI_JIME': 'OBI_SET',
+  'DATE_ERI': 'OBI_SET',
+  'KAKU_OBI': 'OBI_SET',
+  // STYLING
+  'HAIR_ACCESSORY': 'STYLING',
+  'HAIR_STYLING': 'STYLING',
+  'MAKEUP': 'STYLING',
+  // ACCESSORIES
+  'BAG': 'ACCESSORIES',
+  'KINCHAKU': 'ACCESSORIES',
+  // FOOTWEAR
+  'ZORI': 'FOOTWEAR',
+  'TABI': 'FOOTWEAR',
+};
+```
+
+**推荐方案 A**：在数据库中存储分类，便于后续扩展和查询优化。
+
+---
+
 ## 数据模型
 
 ### 核心模型关系
@@ -666,29 +835,62 @@ src/
 
 ## 实现状态
 
-### v9.1 已完成
+### v10.1 已完成 ✅
 
 | 功能 | 状态 | 说明 |
 |------|------|------|
-| ServiceComponent 模型 | ✅ | 平台组件模板（需调整字段）|
-| PlanComponent 模型 | ✅ | 套餐-组件关联（需改关联）|
-| MerchantComponentOverride 模型 | ✅ | 需重命名为 MerchantComponent |
-| PlanComponentEditor（三栏式）| ✅ | 套餐编辑器 UI |
-| /merchant/components 页面 | ✅ | 商户组件配置（需更新）|
+| MerchantComponent 模型 | ✅ | 从 MerchantComponentOverride 重命名 |
+| PlanComponent 关联调整 | ✅ | 改为关联 MerchantComponent |
+| 移除升级系统 | ✅ | 删除 ComponentUpgrade、upgradesTo |
+| API 路由更新 | ✅ | component-overrides, plans/[id] |
+| PlanComponentEditor 适配 | ✅ | 使用 merchantComponentId |
+| kimono-map.ts 更新 | ✅ | 使用 merchantComponent.template |
 
-### v10.1 待实现
+### v10.2 待实现
 
 | 功能 | 优先级 | 说明 |
 |------|--------|------|
-| 重命名 MerchantComponentOverride → MerchantComponent | P1 | 模型重构 |
-| ServiceComponent 添加 defaultImages/defaultHighlights | P1 | 默认内容字段 |
-| PlanComponent 改为关联 MerchantComponent | P1 | 关联调整 |
-| 商户注册时自动创建组件实例 | P1 | 初始化逻辑 |
-| 平台新增模板时自动创建实例 | P1 | 同步逻辑 |
-| 商户组件配置页面更新 | P1 | 支持编辑图片和特色 |
-| PlanComponentEditor 适配新模型 | P1 | 组件选择器更新 |
-| 移除 ComponentUpgrade 模型 | P1 | 删除升级系统 |
-| 移除 PlanUpgradeBundle 模型 | P1 | 删除升级包系统 |
+| **OUTFIT 分类体系** | P1 | |
+| 添加 OutfitCategory 枚举 | P1 | MAIN_GARMENT, INNERWEAR, OBI_SET, STYLING, ACCESSORIES, FOOTWEAR |
+| ServiceComponent 添加 outfitCategory 字段 | P1 | 用于 OUTFIT 组件分类 |
+| 更新现有 OUTFIT 组件分类 | P1 | 设置 outfitCategory 值 |
+| PlanComponentEditor 按分类展示 | P1 | 替换当前平铺列表 |
+| **新增组件** | P2 | |
+| OBI_AGE (帯揚) | P2 | 振袖/访问着必备 |
+| OBI_JIME (帯締) | P2 | 振袖/访问着必备 |
+| DATE_ERI (伊達衿) | P2 | 振袖/访问着装饰衿 |
+| KAKU_OBI (角帯) | P2 | 男士腰带 |
+| KINCHAKU (巾袋) | P2 | 男士包 |
+| HAORI (羽織) | P2 | 外套（冬季）|
+| **商户组件管理** | P3 | |
+| 商户注册时自动创建组件实例 | P3 | 初始化逻辑 |
+| 平台新增模板时自动创建实例 | P3 | 同步逻辑 |
+| 商户组件配置页面增强 | P3 | 支持编辑图片和特色 |
+
+### 当前 OUTFIT 组件清单
+
+| code | name | outfitCategory | 状态 |
+|------|------|----------------|------|
+| KIMONO | 和服 | MAIN_GARMENT | ✅ 已有 |
+| KIMONO_FURISODE | 振袖 | MAIN_GARMENT | ✅ 已有 |
+| KIMONO_HOUMON | 访问着 | MAIN_GARMENT | ✅ 已有 |
+| KIMONO_LACE | 蕾丝和服 | MAIN_GARMENT | ✅ 已有 |
+| JUBAN | 襦袢 | INNERWEAR | ✅ 已有 |
+| HADAGI | 内衣 | INNERWEAR | ✅ 已有 |
+| OBI | 腰带 | OBI_SET | ✅ 已有 |
+| OBI_TAIKO | 太鼓结腰带 | OBI_SET | ✅ 已有 |
+| OBI_AGE | 帯揚 | OBI_SET | ❌ 待新增 |
+| OBI_JIME | 帯締 | OBI_SET | ❌ 待新增 |
+| DATE_ERI | 伊達衿 | OBI_SET | ❌ 待新增 |
+| KAKU_OBI | 角帯（男士） | OBI_SET | ❌ 待新增 |
+| HAIR_ACCESSORY | 女性髮飾 | STYLING | ✅ 已有 |
+| HAIR_STYLING | 专业发型 | STYLING | ✅ 已有 |
+| MAKEUP | 专业化妆 | STYLING | ✅ 已有 |
+| BAG | 包包 | ACCESSORIES | ✅ 已有 |
+| KINCHAKU | 巾袋（男士） | ACCESSORIES | ❌ 待新增 |
+| ZORI | 草履 | FOOTWEAR | ✅ 已有 |
+| TABI | 足袋 | FOOTWEAR | ✅ 已有 |
+| HAORI | 羽織 | OUTERWEAR | ❌ 待新增 |
 
 ---
 
@@ -696,6 +898,7 @@ src/
 
 | 版本 | 日期 | 变更 |
 |------|------|------|
+| v10.2 | 2024-12 | OUTFIT 分类体系设计：6 类（主体/内搭/腰带/造型/配件/足部）；新增组件规划（帯揚、帯締等）|
 | v10.1 | 2024-12 | 采用实例模式：MerchantComponent 作为独立实体；PlanComponent 关联商户组件；查询效率优化（单次 JOIN）|
 | v10 | 2024-12 | 简化组件类型：OUTFIT（不定价）vs ADDON（商户定价）；移除升级系统 |
 | v9.1 | 2024-12 | MerchantComponentOverride 模型；PlanComponentEditor 三栏式布局 |
