@@ -1,6 +1,6 @@
 # 套餐组件系统设计文档
 
-> **版本**: v10 (2024-12)
+> **版本**: v10.1 (2024-12)
 > **状态**: 设计规划
 
 ---
@@ -17,11 +17,11 @@
 
 | 原则 | 说明 |
 |------|------|
-| **平台定义种类** | 组件种类由平台定义，保证一致性和可比性 |
-| **商户自定义内容** | 商户可自定义组件的图片、描述、价格（仅ADDON）|
+| **平台定义种类** | 组件种类由平台定义（名称、描述），保证一致性和可比性 |
+| **商户自定义特色** | 商户可自定义组件的图片、特色亮点、价格（仅ADDON）|
+| **实例化模型** | 商户注册时复制平台模板为商户实例，查询效率高 |
 | **市场质量控制** | 商户内容质量靠市场自然筛选，平台不审核 |
 | **简化定价** | OUTFIT不定价（含在套餐内），ADDON商户定价 |
-| **视觉一致性** | 编辑器和用户端使用同一渲染组件（WYSIWYG）|
 
 ---
 
@@ -37,7 +37,7 @@
 │  ✅ 需要热点图定位                   ❌ 不需要热点图定位           │
 │  ✅ 显示在和服图上                   ✅ 在服务列表中展示           │
 │  ❌ 不单独定价（含在套餐内）          ✅ 商户自定义价格（加购）      │
-│  ✅ 商户可自定义描述/图片            ✅ 商户可自定义描述/图片/价格  │
+│  ✅ 商户可自定义图片/特色            ✅ 商户可自定义图片/特色/价格  │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -50,15 +50,6 @@
 | 用户选择 | 套餐自带，用户不需要选择 | 用户可选加购 |
 | 示例 | 振袖、帯、草履、发型 | 摄影跟拍、行李寄存、接送服务 |
 
-### 旧类型兼容
-
-| 旧类型 | 映射到 |
-|--------|--------|
-| KIMONO | OUTFIT |
-| STYLING | OUTFIT |
-| ACCESSORY | OUTFIT |
-| EXPERIENCE | ADDON |
-
 ---
 
 ## 数据模型
@@ -70,57 +61,74 @@
 │                              平台层                                      │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                         │
-│  ServiceComponent (平台组件模板 - 定义组件种类)                            │
+│  ServiceComponent (平台组件模板)                                         │
 │  ┌─────────────────────────────────────────────────────────────────┐   │
-│  │  id, code, name, type (OUTFIT | ADDON)                          │   │
-│  │  icon: 默认图标                                                  │   │
-│  │  description: 默认描述（商户未自定义时显示）                       │   │
-│  │  images: 默认图片（商户未自定义时显示）                            │   │
-│  │  basePrice: 建议价（仅 ADDON 类型有意义）                         │   │
+│  │  🔒 平台定义（商户不能修改）                                      │   │
+│  │  · id, code (唯一编码)                                           │   │
+│  │  · name: "振袖和服"                                              │   │
+│  │  · description: "华丽的正装振袖..."                               │   │
+│  │  · type: OUTFIT | ADDON                                          │   │
+│  │  · icon: "👘"                                                    │   │
+│  │  · basePrice: 建议价（仅 ADDON）                                 │   │
 │  │                                                                  │   │
-│  │  💡 平台定义"种类"，商户自定义"内容"                               │   │
+│  │  📋 默认内容（商户未自定义时使用）                                 │   │
+│  │  · defaultImages: [...]                                          │   │
+│  │  · defaultHighlights: [...]                                      │   │
 │  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+│  💡 平台创建新模板时，自动为所有商户创建实例                              │
 │                                                                         │
 └─────────────────────────────────────────────────────────────────────────┘
                                     │
-                          商户自定义内容
-                                    │
+                     商户注册时 / 平台新增模板时
+                     自动创建商户组件实例
                                     ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                              商户层                                      │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                         │
-│  MerchantComponentOverride (商户自定义内容 - 商户级别)                     │
+│  MerchantComponent (商户组件实例)                                        │
 │  ┌─────────────────────────────────────────────────────────────────┐   │
-│  │  merchantId, componentId                                         │   │
+│  │  templateId → ServiceComponent                                   │   │
+│  │  merchantId → Merchant                                           │   │
 │  │                                                                  │   │
-│  │  // 商户自定义内容                                                │   │
-│  │  description: 商户说明（null = 使用平台默认）                      │   │
-│  │  images: 商户图片（空 = 使用平台默认）                             │   │
+│  │  ✏️ 商户自定义区域                                               │   │
+│  │  · images: 商户图片（空 = 使用模板默认）                          │   │
+│  │  · highlights: 商户特色（空 = 使用模板默认）                       │   │
+│  │  · price: 商户定价（仅 ADDON，null = 使用建议价）                  │   │
+│  │  · isEnabled: 是否启用                                           │   │
 │  │                                                                  │   │
-│  │  // 仅 ADDON 类型                                                 │   │
-│  │  price: 商户定价（null = 使用平台建议价）                          │   │
-│  │                                                                  │   │
-│  │  isEnabled: 是否启用此组件                                        │   │
-│  │                                                                  │   │
-│  │  💡 商户级别配置，所有套餐通用                                     │   │
+│  │  💡 查询时 JOIN template 获取 name/description（平台定义）         │   │
 │  └─────────────────────────────────────────────────────────────────┘   │
 │                                                                         │
 │  RentalPlan (套餐)                                                       │
 │  ┌─────────────────────────────────────────────────────────────────┐   │
-│  │  id, name, price, hotmapImageUrl                                 │   │
+│  │  id, name, price, merchantId, hotmapImageUrl                     │   │
 │  │                                                                  │   │
 │  │  PlanComponent[] (套餐-组件关联)                                  │   │
 │  │  ┌────────────────────────────────────────────────────────────┐ │   │
-│  │  │  componentId                                                │ │   │
+│  │  │  merchantComponentId → MerchantComponent                    │ │   │
 │  │  │  hotmapX, hotmapY, hotmapLabelPosition (仅 OUTFIT)         │ │   │
 │  │  │                                                              │ │   │
-│  │  │  💡 只存储"套餐包含哪些组件"和"热点位置"                       │ │   │
+│  │  │  💡 直接关联商户组件实例，单次 JOIN 获取完整数据               │ │   │
 │  │  └────────────────────────────────────────────────────────────┘ │   │
 │  └─────────────────────────────────────────────────────────────────┘   │
 │                                                                         │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
+
+### 字段控制
+
+| 字段 | 来源 | 商户可修改 |
+|------|------|-----------|
+| name | 平台模板 | ❌ |
+| description | 平台模板 | ❌ |
+| type | 平台模板 | ❌ |
+| icon | 平台模板 | ❌ |
+| images | 商户实例 | ✅ |
+| highlights | 商户实例 | ✅ |
+| price (ADDON) | 商户实例 | ✅ |
+| isEnabled | 商户实例 | ✅ |
 
 ### ServiceComponent（平台组件模板）
 
@@ -129,34 +137,30 @@ model ServiceComponent {
   id              String          @id @default(cuid())
   code            String          @unique  // 全局唯一编码
 
-  // 基本信息（平台定义的"种类"）
+  // ========== 平台定义（商户不能修改）==========
   name            String           // "振袖和服"、"摄影跟拍"
   nameJa          String?
   nameEn          String?
-
-  // 组件类型
+  description     String?          // 平台定义的描述
   type            ComponentType    // OUTFIT | ADDON
-
-  // 默认展示信息（商户未自定义时使用）
   icon            String?          // Emoji 图标
-  description     String?          // 默认描述
-  images          String[]         // 默认图片
-  highlights      String[]         // 亮点列表
 
-  // 建议价（仅 ADDON 类型有意义）
+  // ========== 默认内容（商户未自定义时使用）==========
+  defaultImages     String[]       // 默认图片
+  defaultHighlights String[]       // 默认亮点
+
+  // ========== 建议价（仅 ADDON 类型有意义）==========
   basePrice       Int             @default(0)
 
-  // 所有权
-  isSystemComponent Boolean       @default(true)   // true=平台组件
-  status          ComponentStatus @default(APPROVED)
-
-  // 元数据
+  // ========== 元数据 ==========
   displayOrder    Int             @default(0)
   isActive        Boolean         @default(true)
 
-  // 关联
-  planComponents       PlanComponent[]
-  merchantOverrides    MerchantComponentOverride[]
+  // ========== 关联 ==========
+  merchantComponents MerchantComponent[]
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 }
 
 enum ComponentType {
@@ -165,70 +169,210 @@ enum ComponentType {
 }
 ```
 
-### MerchantComponentOverride（商户自定义内容）
+### MerchantComponent（商户组件实例）
 
 ```prisma
-model MerchantComponentOverride {
-  id            String   @id @default(cuid())
+model MerchantComponent {
+  id              String   @id @default(cuid())
 
-  // 关联
-  merchantId    String
-  merchant      Merchant @relation(...)
-  componentId   String
-  component     ServiceComponent @relation(...)
+  // ========== 关联 ==========
+  merchantId      String
+  merchant        Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
 
-  // ========== 商户自定义内容 ==========
-  // null/空 = 使用平台默认内容
-  description   String?          // 商户说明
-  images        String[]         // 商户图片
+  templateId      String
+  template        ServiceComponent @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  // ========== 商户自定义区域 ==========
+  // 空数组/null = 使用模板默认内容
+  images          String[]         // 商户图片
+  highlights      String[]         // 商户特色亮点
 
   // ========== 仅 ADDON 类型 ==========
-  price         Int?             // 商户定价（null = 使用平台建议价）
+  price           Int?             // 商户定价（null = 使用模板建议价）
 
   // ========== 启用状态 ==========
-  isEnabled     Boolean  @default(true)
+  isEnabled       Boolean  @default(true)
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  // ========== 关联 ==========
+  planComponents  PlanComponent[]
 
-  @@unique([merchantId, componentId])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([merchantId, templateId])  // 每个商户每个模板只有一个实例
+  @@index([merchantId])
+  @@index([templateId])
 }
 ```
 
 **设计说明**：
-- 商户可自定义描述和图片，展示自己的服务特色
-- 如果商户未自定义，显示平台提供的默认内容
-- 价格字段仅对 ADDON 类型有意义（OUTFIT 不定价）
-- 商户级别配置，设一次后所有套餐通用
+- 商户注册时，自动为每个平台模板创建一个实例
+- 平台新增模板时，自动为所有商户创建实例
+- 商户只能修改 images、highlights、price（ADDON）、isEnabled
+- name、description 始终从 template 获取
 
 ### PlanComponent（套餐-组件关联）
 
 ```prisma
 model PlanComponent {
-  id                   String           @id @default(cuid())
-  planId               String
-  componentId          String
+  id                    String            @id @default(cuid())
+  planId                String
+  merchantComponentId   String            // 改为关联商户组件实例
 
-  plan                 RentalPlan       @relation(...)
-  component            ServiceComponent @relation(...)
+  plan                  RentalPlan        @relation(fields: [planId], references: [id], onDelete: Cascade)
+  merchantComponent     MerchantComponent @relation(fields: [merchantComponentId], references: [id], onDelete: Cascade)
 
-  // 热点图配置（仅 OUTFIT 类型）
-  hotmapX              Float?           // 百分比坐标 0-1
+  // ========== 热点图配置（仅 OUTFIT 类型）==========
+  hotmapX              Float?             // 百分比坐标 0-1
   hotmapY              Float?
-  hotmapLabelPosition  String           @default("right")
-  hotmapOrder          Int              @default(0)
+  hotmapLabelPosition  String             @default("right")
+  hotmapOrder          Int                @default(0)
 
-  createdAt            DateTime         @default(now())
-  updatedAt            DateTime         @updatedAt
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
 
-  @@unique([planId, componentId])
+  @@unique([planId, merchantComponentId])
+  @@index([planId])
+  @@index([merchantComponentId])
 }
 ```
 
 **设计说明**：
-- 只存储"套餐包含哪些组件"和"热点位置"
-- 移除了 `isIncluded`、`quantity` 等字段（简化）
-- 组件的描述、图片、价格从 MerchantComponentOverride 获取
+- 关联 MerchantComponent 而不是 ServiceComponent
+- 查询时只需要一次 JOIN 即可获取完整数据
+- 热点位置存储在 PlanComponent（每个套餐可以不同）
+
+---
+
+## 生命周期管理
+
+### 商户注册时
+
+```typescript
+async function initializeMerchantComponents(merchantId: string) {
+  const templates = await prisma.serviceComponent.findMany({
+    where: { isActive: true }
+  });
+
+  await prisma.merchantComponent.createMany({
+    data: templates.map(t => ({
+      merchantId,
+      templateId: t.id,
+      images: [],        // 初始为空，使用模板默认
+      highlights: [],    // 初始为空，使用模板默认
+      price: null,       // 初始为空，使用模板建议价
+      isEnabled: true,
+    })),
+    skipDuplicates: true,
+  });
+}
+```
+
+### 平台新增组件模板时
+
+```typescript
+async function onServiceComponentCreated(templateId: string) {
+  // 为所有商户创建实例
+  const merchants = await prisma.merchant.findMany({
+    where: { status: 'APPROVED' },
+    select: { id: true }
+  });
+
+  await prisma.merchantComponent.createMany({
+    data: merchants.map(m => ({
+      merchantId: m.id,
+      templateId,
+      images: [],
+      highlights: [],
+      price: null,
+      isEnabled: true,
+    })),
+    skipDuplicates: true,
+  });
+}
+```
+
+### 平台停用组件模板时
+
+```typescript
+async function onServiceComponentDeactivated(templateId: string) {
+  // 商户实例保持不变，不级联停用
+  // 只是新套餐不能再选择这个组件
+  await prisma.serviceComponent.update({
+    where: { id: templateId },
+    data: { isActive: false }
+  });
+
+  // 可选：记录日志或通知相关商户
+}
+```
+
+---
+
+## 查询效率
+
+### 获取套餐详情（单次 JOIN）
+
+```typescript
+const plan = await prisma.rentalPlan.findUnique({
+  where: { id: planId },
+  include: {
+    planComponents: {
+      include: {
+        merchantComponent: {
+          include: {
+            template: true  // ServiceComponent
+          }
+        }
+      },
+      orderBy: { hotmapOrder: 'asc' }
+    }
+  }
+});
+
+// 直接使用，无需额外查询
+const components = plan.planComponents.map(pc => ({
+  id: pc.merchantComponent.id,
+  // 平台定义（不可修改）
+  name: pc.merchantComponent.template.name,
+  description: pc.merchantComponent.template.description,
+  type: pc.merchantComponent.template.type,
+  icon: pc.merchantComponent.template.icon,
+  // 商户自定义（优先使用，否则用默认）
+  images: pc.merchantComponent.images.length
+    ? pc.merchantComponent.images
+    : pc.merchantComponent.template.defaultImages,
+  highlights: pc.merchantComponent.highlights.length
+    ? pc.merchantComponent.highlights
+    : pc.merchantComponent.template.defaultHighlights,
+  // 价格（仅 ADDON）
+  price: pc.merchantComponent.template.type === 'ADDON'
+    ? (pc.merchantComponent.price ?? pc.merchantComponent.template.basePrice)
+    : null,
+  // 热点位置
+  hotmapX: pc.hotmapX,
+  hotmapY: pc.hotmapY,
+  hotmapLabelPosition: pc.hotmapLabelPosition,
+}));
+```
+
+### 获取商户的组件列表
+
+```typescript
+const merchantComponents = await prisma.merchantComponent.findMany({
+  where: { merchantId, isEnabled: true },
+  include: { template: true },
+  orderBy: { template: { displayOrder: 'asc' } }
+});
+```
+
+### 性能对比
+
+| 操作 | 旧方案（覆盖模式）| 新方案（实例模式）|
+|------|-----------------|-----------------|
+| 套餐详情查询 | 2次查询 + 应用层合并 | 1次查询（JOIN）|
+| 商户组件列表 | 2次查询 + 应用层合并 | 1次查询（JOIN）|
+| 按组件属性筛选 | 困难 | 可直接 WHERE |
 
 ---
 
@@ -236,24 +380,22 @@ model PlanComponent {
 
 ### 两层信息模式
 
-用户看到的组件信息分为两层：
-
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
 │  组件展示                                                                │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                         │
-│  [振袖和服]  ← 组件类型名称（平台定义，统一展示）                           │
+│  [振袖和服]  ← 组件名称（平台定义，所有商户统一）                          │
+│  华丽的正装振袖... ← 组件描述（平台定义，所有商户统一）                    │
 │                                                                         │
 │  ┌─────────────────────────────────────────────────────────────────┐   │
-│  │  [商户上传的振袖图片]                                             │   │
+│  │  [商户上传的振袖图片]  ← 商户自定义图片                           │   │
 │  │                                                                  │   │
-│  │  我们提供多款传统古典风格的正绢振袖，                              │   │
-│  │  包括鹤、樱花、牡丹等吉祥图案。                                   │   │
-│  │  所有振袖均为日本进口，每日限量 3 套。                             │   │
-│  │                                                                  │   │
-│  │  ← 商户说明（商户自定义，展示特色）                                │   │
-│  │  ← 如果商户未自定义，显示平台默认描述                              │   │
+│  │  ✨ 我们的特色：                                                  │   │
+│  │  · 多款传统古典风格正绢振袖                                       │   │
+│  │  · 鹤、樱花、牡丹等吉祥图案                                       │   │
+│  │  · 日本进口，每日限量 3 套                                        │   │
+│  │  ← 商户自定义特色亮点                                             │   │
 │  └─────────────────────────────────────────────────────────────────┘   │
 │                                                                         │
 └─────────────────────────────────────────────────────────────────────────┘
@@ -262,23 +404,21 @@ model PlanComponent {
 ### 内容获取优先级
 
 ```typescript
-// 获取组件展示内容
-function getComponentDisplay(
-  component: ServiceComponent,
-  override: MerchantComponentOverride | null
-) {
+function getComponentDisplay(mc: MerchantComponentWithTemplate) {
   return {
-    // 名称始终使用平台定义（保证一致性）
-    name: component.name,
-    icon: component.icon,
+    // 平台定义（商户不能修改）
+    name: mc.template.name,
+    description: mc.template.description,
+    type: mc.template.type,
+    icon: mc.template.icon,
 
-    // 描述和图片优先使用商户自定义
-    description: override?.description || component.description,
-    images: override?.images?.length ? override.images : component.images,
+    // 商户自定义（空则使用默认）
+    images: mc.images.length ? mc.images : mc.template.defaultImages,
+    highlights: mc.highlights.length ? mc.highlights : mc.template.defaultHighlights,
 
-    // 价格仅 ADDON 类型有意义
-    price: component.type === 'ADDON'
-      ? (override?.price ?? component.basePrice)
+    // 价格（仅 ADDON）
+    price: mc.template.type === 'ADDON'
+      ? (mc.price ?? mc.template.basePrice)
       : null,
   };
 }
@@ -306,7 +446,7 @@ function getComponentDisplay(
 │  ┌─────────────────────────────────────────────────────────────────┐   │
 │  │  ✅ 商户自定义价格                                               │   │
 │  │  平台提供建议价 (ServiceComponent.basePrice)                     │   │
-│  │  商户可覆盖 (MerchantComponentOverride.price)                    │   │
+│  │  商户可覆盖 (MerchantComponent.price)                            │   │
 │  │  用户可选加购，在套餐基础上增加订单金额                            │   │
 │  └─────────────────────────────────────────────────────────────────┘   │
 │                                                                         │
@@ -319,26 +459,22 @@ function getComponentDisplay(
 // 订单总价 = 套餐价 + Σ(用户选中的 ADDON 价格)
 function calculateOrderTotal(
   plan: RentalPlan,
-  selectedAddonIds: string[],
-  merchantId: string
+  selectedAddonIds: string[]  // MerchantComponent IDs
 ): number {
   let total = plan.price;  // 套餐基础价（已包含所有 OUTFIT）
 
   // 加上用户选中的增值服务
-  for (const addonId of selectedAddonIds) {
-    const addonPrice = getAddonPrice(addonId, merchantId);
-    total += addonPrice;
+  for (const mc of plan.planComponents) {
+    if (
+      mc.merchantComponent.template.type === 'ADDON' &&
+      selectedAddonIds.includes(mc.merchantComponentId)
+    ) {
+      const price = mc.merchantComponent.price ?? mc.merchantComponent.template.basePrice;
+      total += price;
+    }
   }
 
   return total;
-}
-
-// 获取 ADDON 价格
-function getAddonPrice(componentId: string, merchantId: string): number {
-  const override = getMerchantOverride(merchantId, componentId);
-  const component = getComponent(componentId);
-
-  return override?.price ?? component.basePrice ?? 0;
 }
 ```
 
@@ -373,13 +509,6 @@ function getAddonPrice(componentId: string, merchantId: string): number {
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 热点坐标
-
-- **坐标系统**：百分比坐标 (0-1)
-- **存储位置**：`PlanComponent.hotmapX/Y`
-- **标签方向**：`hotmapLabelPosition` (left | right)
-- **自动计算**：热点在图片左半边 → 标签右侧，反之亦然
-
 ---
 
 ## 前端组件
@@ -406,8 +535,10 @@ src/
 │   └── shared/
 │       └── EditorHotspot.tsx           # 统一热点组件
 └── app/api/merchant/
-    └── component-overrides/
-        └── route.ts                    # 商户组件配置 API
+    ├── components/
+    │   └── route.ts                    # 商户组件配置 API
+    └── plans/
+        └── [id]/route.ts               # 套餐更新 API
 ```
 
 ### 商户组件配置页面
@@ -418,7 +549,7 @@ src/
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                         │
 │  💡 在此配置您提供的服务内容，适用于所有套餐                               │
-│  💡 如果不填写，将显示平台提供的默认内容                                   │
+│  💡 组件名称和描述由平台定义，您可以自定义图片和特色                        │
 │                                                                         │
 │  ─────────────────────────────────────────────────────────────────────  │
 │  👘 套餐包含服务 (OUTFIT)                                                │
@@ -426,11 +557,12 @@ src/
 │                                                                         │
 │  ┌─────────────────────────────────────────────────────────────────┐   │
 │  │ 振袖和服                                              [启用 ✓]  │   │
-│  │                                                                  │   │
-│  │ 我的说明：[                                                    ] │   │
-│  │ 我们提供多款传统古典风格振袖，鹤、樱花、牡丹图案...               │   │
+│  │ 华丽的正装振袖，适合成人式、婚礼等正式场合  ← 平台定义，不可修改    │   │
 │  │                                                                  │   │
 │  │ 我的图片：[上传图片] [图1] [图2] [图3]                           │   │
+│  │                                                                  │   │
+│  │ 我的特色：                                                       │   │
+│  │ [+ 添加特色] 传统古典风格 | 日本进口面料 | 每日限量3套            │   │
 │  └─────────────────────────────────────────────────────────────────┘   │
 │                                                                         │
 │  ─────────────────────────────────────────────────────────────────────  │
@@ -439,101 +571,56 @@ src/
 │                                                                         │
 │  ┌─────────────────────────────────────────────────────────────────┐   │
 │  │ 摄影跟拍                                              [启用 ✓]  │   │
+│  │ 专业摄影师全程跟拍服务  ← 平台定义，不可修改                       │   │
 │  │                                                                  │   │
 │  │ 我的定价：[¥3,000    ] (平台建议价：¥2,500)                      │   │
 │  │                                                                  │   │
-│  │ 我的说明：[                                                    ] │   │
-│  │ 专业摄影师全程跟拍，包含 50 张精修照片...                         │   │
-│  │                                                                  │   │
 │  │ 我的图片：[上传图片] [作品1] [作品2]                             │   │
+│  │                                                                  │   │
+│  │ 我的特色：                                                       │   │
+│  │ [+ 添加特色] 50张精修照片 | 当日交付 | 可选外景                   │   │
 │  └─────────────────────────────────────────────────────────────────┘   │
 │                                                                         │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-### PlanComponentEditor（三栏式工作台）
-
-```
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│  组件配置  •  已选 3 项  •  已放置 2 项                    [50%] [100%] [200%]  │
-├─────────────────────────────────────────────────────────────────────────────────┤
-│                                                                                 │
-│  ┌─ 组件库 ──────┐  ┌─ 画布区域 (可滚动) ──────────────┐  ┌─ 属性面板 ────────┐ │
-│  │               │  │                                  │  │                   │ │
-│  │  🔍 搜索...   │  │      [热点图 450×600]            │  │  📋 套餐概览       │ │
-│  │               │  │                                  │  │                   │ │
-│  │  ▼ 👘 套餐包含│  │      ●─── 振袖和服               │  │  包含组件: 3      │ │
-│  │  ┌──────────┐ │  │                                  │  │  已放置热点: 2    │ │
-│  │  │☑ 振袖和服│ │  │           ●─── 帯・帯締め        │  │                   │ │
-│  │  │☑ 帯     │ │  │                                  │  │  ─────────────    │ │
-│  │  │☐ 草履   │ │  │                                  │  │                   │ │
-│  │  └──────────┘ │  │                                  │  │  (选中组件后显示   │ │
-│  │               │  │  点击组件进入放置模式            │  │   组件详情面板)    │ │
-│  │  ▶ ✨ 增值服务│  │  点击画布放置热点                │  │                   │ │
-│  │               │  │  拖拽热点调整位置                │  │                   │ │
-│  └───────────────┘  └──────────────────────────────────┘  └───────────────────┘ │
-│                                                                                 │
-└─────────────────────────────────────────────────────────────────────────────────┘
-```
-
-**交互流程**：
-
-1. 在左侧组件库勾选组件
-2. OUTFIT 类型：点击画布放置热点，拖拽调整位置
-3. ADDON 类型：无需放置热点，在服务列表中展示
-4. 右侧显示组件详情（商户自定义的内容）
-5. 保存 → 调用 API 更新套餐
-
 ---
 
 ## API 接口
 
-### GET /api/service-components
+### GET /api/merchant/components
 
-获取平台组件模板
+获取商户的组件列表
 
 **响应**：
 
 ```json
 {
-  "categories": [
+  "components": [
     {
-      "type": "OUTFIT",
-      "label": "套餐包含服务",
-      "icon": "👘",
-      "components": [
-        {
-          "id": "comp-1",
-          "code": "KIMONO_FURISODE",
-          "name": "振袖和服",
-          "type": "OUTFIT",
-          "icon": "👘",
-          "description": "华丽的正装振袖...",
-          "images": ["default-furisode.jpg"]
-        }
-      ]
-    },
-    {
-      "type": "ADDON",
-      "label": "增值服务",
-      "icon": "✨",
-      "components": [
-        {
-          "id": "comp-5",
-          "code": "ADDON_PHOTO",
-          "name": "摄影跟拍",
-          "type": "ADDON",
-          "icon": "📷",
-          "description": "专业摄影师跟拍...",
-          "basePrice": 250000
-        }
-      ]
+      "id": "mc-1",
+      "templateId": "sc-1",
+      "isEnabled": true,
+      "images": ["my-furisode-1.jpg"],
+      "highlights": ["传统古典风格", "日本进口"],
+      "price": null,
+      "template": {
+        "id": "sc-1",
+        "code": "KIMONO_FURISODE",
+        "name": "振袖和服",
+        "description": "华丽的正装振袖...",
+        "type": "OUTFIT",
+        "icon": "👘",
+        "defaultImages": ["default-furisode.jpg"],
+        "defaultHighlights": ["正式场合首选"],
+        "basePrice": 0
+      }
     }
   ]
 }
 ```
 
-### PATCH /api/merchant/component-overrides
+### PATCH /api/merchant/components/[id]
 
 更新商户组件配置
 
@@ -541,9 +628,8 @@ src/
 
 ```json
 {
-  "componentId": "comp-5",
-  "description": "我们的专业摄影师...",
   "images": ["my-photo-1.jpg", "my-photo-2.jpg"],
+  "highlights": ["50张精修照片", "当日交付"],
   "price": 300000,
   "isEnabled": true
 }
@@ -561,13 +647,13 @@ src/
   "price": 1980000,
   "componentConfigs": [
     {
-      "componentId": "comp-1",
+      "merchantComponentId": "mc-1",
       "hotmapX": 0.3,
       "hotmapY": 0.4,
       "hotmapLabelPosition": "right"
     },
     {
-      "componentId": "comp-2",
+      "merchantComponentId": "mc-2",
       "hotmapX": 0.5,
       "hotmapY": 0.6,
       "hotmapLabelPosition": "left"
@@ -584,22 +670,25 @@ src/
 
 | 功能 | 状态 | 说明 |
 |------|------|------|
-| ServiceComponent 模型 | ✅ | 平台组件模板 |
-| PlanComponent 模型 | ✅ | 套餐-组件关联 |
-| MerchantComponentOverride 模型 | ✅ | 商户覆盖配置（需扩展） |
+| ServiceComponent 模型 | ✅ | 平台组件模板（需调整字段）|
+| PlanComponent 模型 | ✅ | 套餐-组件关联（需改关联）|
+| MerchantComponentOverride 模型 | ✅ | 需重命名为 MerchantComponent |
 | PlanComponentEditor（三栏式）| ✅ | 套餐编辑器 UI |
-| /merchant/components 页面 | ✅ | 商户组件配置（需更新） |
+| /merchant/components 页面 | ✅ | 商户组件配置（需更新）|
 
-### v10 待实现
+### v10.1 待实现
 
 | 功能 | 优先级 | 说明 |
 |------|--------|------|
-| MerchantComponentOverride 扩展 | P1 | 添加 description, images 字段 |
-| 商户组件配置页面更新 | P1 | 支持编辑描述和上传图片 |
-| PlanComponentEditor 简化 | P1 | 移除升级系统相关代码 |
+| 重命名 MerchantComponentOverride → MerchantComponent | P1 | 模型重构 |
+| ServiceComponent 添加 defaultImages/defaultHighlights | P1 | 默认内容字段 |
+| PlanComponent 改为关联 MerchantComponent | P1 | 关联调整 |
+| 商户注册时自动创建组件实例 | P1 | 初始化逻辑 |
+| 平台新增模板时自动创建实例 | P1 | 同步逻辑 |
+| 商户组件配置页面更新 | P1 | 支持编辑图片和特色 |
+| PlanComponentEditor 适配新模型 | P1 | 组件选择器更新 |
 | 移除 ComponentUpgrade 模型 | P1 | 删除升级系统 |
 | 移除 PlanUpgradeBundle 模型 | P1 | 删除升级包系统 |
-| OUTFIT/ADDON 价格逻辑 | P1 | OUTFIT 不定价，ADDON 商户定价 |
 
 ---
 
@@ -607,55 +696,59 @@ src/
 
 | 版本 | 日期 | 变更 |
 |------|------|------|
-| v10 | 2024-12 | 简化组件类型：OUTFIT（套餐包含，不定价）vs ADDON（增值服务，商户定价）；移除组件升级系统；商户可自定义内容（描述、图片） |
+| v10.1 | 2024-12 | 采用实例模式：MerchantComponent 作为独立实体；PlanComponent 关联商户组件；查询效率优化（单次 JOIN）|
+| v10 | 2024-12 | 简化组件类型：OUTFIT（不定价）vs ADDON（商户定价）；移除升级系统 |
 | v9.1 | 2024-12 | MerchantComponentOverride 模型；PlanComponentEditor 三栏式布局 |
 | v9 | 2024-12 | 平台统一管理组件，商户定价规划 |
-| v8 | 2024-11 | 简化为 copy-on-use 模式（已废弃）|
 
 ---
 
 ## 设计决策记录
 
-### 为什么 OUTFIT 不定价？
+### 为什么采用实例模式？
 
-**问题**：
-- 套餐是一个整体产品，用户关心的是套餐总价
-- 拆分组件价格可能造成用户困惑
-- 用户可能会质疑："这个¥19,800的套餐里，和服¥10,000、造型¥5,000，那我不是多付了？"
+**问题**：覆盖模式（MerchantComponentOverride）需要多次查询和应用层合并
+- 获取套餐详情需要 2 次查询
+- 应用层需要遍历合并数据
+- 无法利用数据库索引过滤/排序合并后的字段
 
-**解决方案**：
-- OUTFIT 类型组件不单独定价
-- 套餐价格是一个整体，包含所有 OUTFIT
-- 用户只需要知道"套餐包含什么"，不需要知道每项值多少
+**解决方案**：商户组件作为独立实例（MerchantComponent）
+- 商户注册时复制所有平台模板为实例
+- PlanComponent 直接关联 MerchantComponent
+- 查询时单次 JOIN 获取完整数据
 
-### 为什么移除组件升级系统？
+**好处**：
+- 查询效率高（单次 JOIN）
+- 数据模型清晰
+- 可以直接对商户字段进行 WHERE/ORDER BY
 
-**问题**：
-- 升级系统（ComponentUpgrade, PlanUpgradeBundle）增加了复杂度
-- 商户和用户都难以理解升级路径
-- 管理和展示逻辑复杂
+### 为什么平台定义名称和描述不可修改？
 
-**解决方案**：
-- 移除升级系统
-- 商户可以创建不同档次的套餐（基础版、豪华版）
-- 用户直接选择不同套餐，而不是"升级"组件
-
-### 为什么让商户自定义内容？
-
-**问题**：
-- 不同商户的服务确实有差异（和服风格、摄影师水平等）
-- 用户可能想了解具体商户提供的服务细节
-- 平台统一的描述无法展示商户特色
+**问题**：如果商户可以修改名称，会导致：
+- 用户比较不同商户时困惑（"振袖套餐" vs "华丽和服"）
+- 失去平台级别的一致性
+- SEO 和搜索困难
 
 **解决方案**：
-- 组件"种类"由平台定义（名称、类型）
-- 组件"内容"由商户自定义（描述、图片、ADDON价格）
-- 如果商户未自定义，显示平台默认内容
-- 质量控制靠市场自然筛选，平台不审核
+- 名称和描述由平台定义，商户不能修改
+- 商户通过图片和特色亮点展示差异化
+- 保证用户在比较时看到统一的组件类型名称
 
-### 两层信息的好处
+### 为什么平台新增模板时自动创建实例？
 
-1. **用户比较方便**：组件类型名称统一（"都提供振袖和服"）
-2. **商户差异化**：商户可以展示自己的特色
-3. **默认值兜底**：商户懒得填也有内容显示
-4. **渐进式完善**：商户可以先启用，后续再完善描述和图片
+**问题**：如果不自动创建，商户需要手动"激活"新组件
+
+**解决方案**：
+- 平台创建新模板时，自动为所有商户创建实例
+- 默认 isEnabled = true，商户可以选择禁用
+- 商户无需额外操作即可使用新组件
+
+### 平台停用模板时为什么不级联禁用？
+
+**问题**：如果级联禁用，已使用该组件的套餐会受影响
+
+**解决方案**：
+- 平台停用模板（isActive = false）
+- 商户实例保持不变
+- 已有套餐继续正常显示
+- 新套餐不能再选择该组件（组件选择器过滤 isActive）
