@@ -3,37 +3,24 @@ import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-// PlanComponent 配置 schema（v9.1 简化版 - 移除了商户覆盖字段）
+// PlanComponent 配置 schema（v10.1 - 使用 merchantComponentId）
 const planComponentSchema = z.object({
-  componentId: z.string(),
-  isIncluded: z.boolean().default(true),
-  quantity: z.number().int().positive().default(1),
+  merchantComponentId: z.string(),
   hotmapX: z.number().min(0).max(1).optional().nullable(),
   hotmapY: z.number().min(0).max(1).optional().nullable(),
   hotmapLabelPosition: z.enum(["left", "right"]).optional().default("right"),
   hotmapOrder: z.number().int().optional().default(0),
 });
 
-// 组件配置 schema（简化版，包含升级选项和位置信息）
-const componentConfigSchema = z.object({
-  componentId: z.string(),
-  isIncluded: z.boolean().default(true),
-  enabledUpgrades: z.array(z.string()).default([]), // 启用的升级选项 ID
-  hotmapX: z.number().min(0).max(1).optional().nullable(), // 热点图 X 坐标 (0-1)
-  hotmapY: z.number().min(0).max(1).optional().nullable(), // 热点图 Y 坐标 (0-1)
-  hotmapLabelPosition: z.enum(["left", "right"]).optional().default("right"), // 标签位置
-});
-
-// 验证 schema - 简化版
+// 验证 schema - v10.1 简化版
 const updatePlanSchema = z.object({
   name: z.string().min(1, "套餐名称不能为空"),
   description: z.string().min(10, "描述至少需要10个字符"),
   highlights: z.string().optional().nullable(),
   price: z.number().int().positive("价格必须大于0"),
   originalPrice: z.number().int().positive().optional().nullable(),
-  componentIds: z.array(z.string()).optional(), // 简化版：只传组件 ID 数组
+  merchantComponentIds: z.array(z.string()).optional(), // 简化版：只传商户组件 ID 数组
   planComponents: z.array(planComponentSchema).optional(), // 完整版：传组件配置
-  componentConfigs: z.array(componentConfigSchema).optional(), // 简化版：组件配置（含升级）
   imageUrl: z.union([z.string().url(), z.literal("")]).optional().nullable().transform(val => val || null),
   storeName: z.string().optional().nullable(),
   region: z.string().optional().nullable(),
@@ -42,7 +29,7 @@ const updatePlanSchema = z.object({
   isActive: z.boolean(),
 });
 
-// GET - 获取单个套餐详情
+// GET - 获取单个套餐详情（v10.1）
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -55,12 +42,6 @@ export async function GET(
     if (!session?.user?.id) {
       return NextResponse.json({ message: "请先登录" }, { status: 401 });
     }
-
-    // 获取商户信息以查询价格覆盖
-    const merchant = await prisma.merchant.findUnique({
-      where: { ownerId: session.user.id },
-      select: { id: true },
-    });
 
     const plan = await prisma.rentalPlan.findUnique({
       where: { id },
@@ -87,27 +68,27 @@ export async function GET(
         },
         planComponents: {
           include: {
-            component: {
-              select: {
-                id: true,
-                code: true,
-                name: true,
-                nameJa: true,
-                nameEn: true,
-                description: true,
-                type: true,
-                icon: true,
-                highlights: true,
-                basePrice: true,
-                tier: true,
-                tierLabel: true,
+            merchantComponent: {
+              include: {
+                template: {
+                  select: {
+                    id: true,
+                    code: true,
+                    name: true,
+                    nameJa: true,
+                    nameEn: true,
+                    description: true,
+                    type: true,
+                    icon: true,
+                    defaultHighlights: true,
+                    defaultImages: true,
+                    basePrice: true,
+                  },
+                },
               },
             },
           },
-          orderBy: [
-            { hotmapOrder: 'asc' },
-            { component: { displayOrder: 'asc' } },
-          ],
+          orderBy: { hotmapOrder: 'asc' },
         },
       },
     });
@@ -116,28 +97,41 @@ export async function GET(
       return NextResponse.json({ message: "套餐不存在" }, { status: 404 });
     }
 
-    // 获取商户的组件价格覆盖
-    let componentOverrides: Record<string, { price: number | null; isEnabled: boolean }> = {};
-    if (merchant) {
-      const overrides = await prisma.merchantComponentOverride.findMany({
-        where: { merchantId: merchant.id },
-      });
-      componentOverrides = Object.fromEntries(
-        overrides.map(o => [o.componentId, { price: o.price, isEnabled: o.isEnabled }])
-      );
-    }
-
-    // 增强 planComponents 数据，添加有效价格
+    // 转换 planComponents 数据格式以便前端使用
     const enhancedPlanComponents = plan.planComponents.map(pc => {
-      const override = componentOverrides[pc.componentId];
+      const mc = pc.merchantComponent;
+      const template = mc.template;
       return {
-        ...pc,
-        // 有效价格 = 商户覆盖价格 ?? 平台建议价
-        effectivePrice: override?.price ?? pc.component.basePrice,
-        // 是否启用（商户配置）
-        isEnabled: override?.isEnabled ?? true,
-        // 商户是否有自定义价格
-        hasCustomPrice: override?.price != null,
+        id: pc.id,
+        planId: pc.planId,
+        merchantComponentId: pc.merchantComponentId,
+        hotmapX: pc.hotmapX,
+        hotmapY: pc.hotmapY,
+        hotmapLabelPosition: pc.hotmapLabelPosition,
+        hotmapOrder: pc.hotmapOrder,
+        // 商户组件信息
+        merchantComponent: {
+          id: mc.id,
+          isEnabled: mc.isEnabled,
+          price: mc.price,
+          // 使用商户自定义内容，如果为空则使用模板默认
+          images: mc.images.length > 0 ? mc.images : template.defaultImages,
+          highlights: mc.highlights.length > 0 ? mc.highlights : template.defaultHighlights,
+        },
+        // 模板信息（平台定义）
+        template: {
+          id: template.id,
+          code: template.code,
+          name: template.name,
+          nameJa: template.nameJa,
+          nameEn: template.nameEn,
+          description: template.description,
+          type: template.type,
+          icon: template.icon,
+          basePrice: template.basePrice,
+        },
+        // 有效价格 = 商户价格 ?? 平台建议价
+        effectivePrice: mc.price ?? template.basePrice,
       };
     });
 
@@ -151,7 +145,7 @@ export async function GET(
   }
 }
 
-// PATCH - 更新套餐
+// PATCH - 更新套餐（v10.1）
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -199,7 +193,7 @@ export async function PATCH(
 
     // 使用事务更新套餐、标签和组件
     const result = await prisma.$transaction(async (tx) => {
-      // 更新套餐 - 简化字段
+      // 更新套餐基本信息
       const updatedPlan = await tx.rentalPlan.update({
         where: { id },
         data: {
@@ -242,112 +236,37 @@ export async function PATCH(
         }
       }
 
-      // 处理 PlanComponent（服务组件）
-      // 支持三种方式：
-      // 1. componentConfigs - 简化版，包含升级选项
-      // 2. planComponents - 完整版配置
-      // 3. componentIds - 最简版，只有 ID
-      const componentIds = validatedData.componentIds;
+      // 处理 PlanComponent（v10.1 - 使用 merchantComponentId）
+      const merchantComponentIds = validatedData.merchantComponentIds;
       const planComponents = validatedData.planComponents;
-      const componentConfigs = validatedData.componentConfigs;
 
-      if (componentIds !== undefined || planComponents !== undefined || componentConfigs !== undefined) {
+      if (merchantComponentIds !== undefined || planComponents !== undefined) {
         // 删除所有旧组件关联
         await tx.planComponent.deleteMany({
           where: { planId: id },
         });
 
-        // 收集所有启用的升级选项
-        const allEnabledUpgrades: string[] = [];
-
         // 创建新组件关联
         if (planComponents && planComponents.length > 0) {
-          // 完整版：使用详细配置（v9.1 简化版）
+          // 完整版：使用详细配置
           await tx.planComponent.createMany({
             data: planComponents.map((pc) => ({
               planId: id,
-              componentId: pc.componentId,
-              isIncluded: pc.isIncluded ?? true,
-              quantity: pc.quantity ?? 1,
+              merchantComponentId: pc.merchantComponentId,
               hotmapX: pc.hotmapX ?? null,
               hotmapY: pc.hotmapY ?? null,
               hotmapLabelPosition: pc.hotmapLabelPosition ?? "right",
               hotmapOrder: pc.hotmapOrder ?? 0,
             })),
           });
-        } else if (componentConfigs && componentConfigs.length > 0) {
-          // 简化版：组件配置 + 升级选项 + 位置信息
+        } else if (merchantComponentIds && merchantComponentIds.length > 0) {
+          // 简化版：只有商户组件 ID，使用默认配置
           await tx.planComponent.createMany({
-            data: componentConfigs.map((cc, index) => ({
+            data: merchantComponentIds.map((mcId, index) => ({
               planId: id,
-              componentId: cc.componentId,
-              isIncluded: cc.isIncluded ?? true,
-              quantity: 1,
-              hotmapX: cc.hotmapX ?? null,
-              hotmapY: cc.hotmapY ?? null,
-              hotmapLabelPosition: cc.hotmapLabelPosition ?? "right",
+              merchantComponentId: mcId,
               hotmapOrder: index,
             })),
-          });
-
-          // 收集所有启用的升级选项
-          componentConfigs.forEach((cc) => {
-            allEnabledUpgrades.push(...cc.enabledUpgrades);
-          });
-        } else if (componentIds && componentIds.length > 0) {
-          // 最简版：只有组件 ID，使用默认配置
-          await tx.planComponent.createMany({
-            data: componentIds.map((componentId, index) => ({
-              planId: id,
-              componentId,
-              isIncluded: true,
-              quantity: 1,
-              hotmapOrder: index,
-            })),
-          });
-        }
-
-        // 处理升级选项：将启用的升级保存到 PlanUpgradeBundle
-        // 先删除旧的升级包
-        await tx.planUpgradeBundle.deleteMany({
-          where: { planId: id },
-        });
-
-        // 如果有启用的升级选项，创建一个「自定义升级」包
-        if (allEnabledUpgrades.length > 0) {
-          // 获取升级选项的详情
-          const upgradeDetails = await tx.componentUpgrade.findMany({
-            where: { id: { in: allEnabledUpgrades } },
-            select: {
-              id: true,
-              fromComponentId: true,
-              toComponentId: true,
-              priceDiff: true,
-              label: true,
-            },
-          });
-
-          // 计算总价
-          const totalOriginalPrice = upgradeDetails.reduce((sum, u) => sum + u.priceDiff, 0);
-
-          // 创建升级包（单个升级不打折，只是记录启用状态）
-          await tx.planUpgradeBundle.create({
-            data: {
-              planId: id,
-              label: "可选升级",
-              description: `${upgradeDetails.length} 个升级选项`,
-              upgradeItems: upgradeDetails.map((u) => ({
-                upgradeId: u.id,
-                fromComponentId: u.fromComponentId,
-                toComponentId: u.toComponentId,
-                priceDiff: u.priceDiff,
-              })),
-              bundlePrice: totalOriginalPrice, // 不打折
-              originalPrice: totalOriginalPrice,
-              isRecommended: false,
-              displayOrder: 0,
-              isActive: true,
-            },
           });
         }
       }

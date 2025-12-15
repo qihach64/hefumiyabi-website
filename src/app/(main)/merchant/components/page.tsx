@@ -23,48 +23,51 @@ export default async function MerchantComponentsPage() {
     redirect("/merchant/pending");
   }
 
-  // 获取所有平台组件
-  const allComponents = await prisma.serviceComponent.findMany({
-    where: {
-      isActive: true,
-      isSystemComponent: true,
-      status: "APPROVED",
+  // v10.1: 获取商户的组件实例（包含模板信息）
+  const merchantComponents = await prisma.merchantComponent.findMany({
+    where: { merchantId: merchant.id },
+    include: {
+      template: {
+        select: {
+          id: true,
+          code: true,
+          name: true,
+          nameJa: true,
+          type: true,
+          icon: true,
+          basePrice: true,
+          description: true,
+          defaultHighlights: true,
+          defaultImages: true,
+        },
+      },
     },
     orderBy: [
-      { type: "asc" },
-      { displayOrder: "asc" },
+      { template: { type: "asc" } },
+      { template: { displayOrder: "asc" } },
     ],
-    select: {
-      id: true,
-      code: true,
-      name: true,
-      nameJa: true,
-      type: true,
-      icon: true,
-      basePrice: true,
-      tier: true,
-      tierLabel: true,
-      description: true,
-    },
   });
 
-  // 获取商户的覆盖配置
-  const overrides = await prisma.merchantComponentOverride.findMany({
-    where: { merchantId: merchant.id },
-  });
-
-  // 构建响应：组件 + 覆盖配置
-  const overrideMap = new Map(
-    overrides.map(o => [o.componentId, o])
-  );
-
-  const components = allComponents.map(component => ({
-    ...component,
-    override: overrideMap.get(component.id) || null,
-    // 有效价格 = 覆盖价格 ?? 平台建议价
-    effectivePrice: overrideMap.get(component.id)?.price ?? component.basePrice,
-    // 是否启用（默认启用）
-    isEnabled: overrideMap.get(component.id)?.isEnabled ?? true,
+  // 转换为客户端组件需要的格式
+  const components = merchantComponents.map(mc => ({
+    id: mc.id,
+    templateId: mc.templateId,
+    // 模板信息
+    code: mc.template.code,
+    name: mc.template.name,
+    nameJa: mc.template.nameJa,
+    type: mc.template.type,
+    icon: mc.template.icon,
+    basePrice: mc.template.basePrice,
+    description: mc.template.description,
+    // 商户自定义内容
+    images: mc.images.length > 0 ? mc.images : mc.template.defaultImages,
+    highlights: mc.highlights.length > 0 ? mc.highlights : mc.template.defaultHighlights,
+    // 商户配置
+    price: mc.price,
+    isEnabled: mc.isEnabled,
+    // 有效价格 = 商户价格 ?? 平台建议价
+    effectivePrice: mc.price ?? mc.template.basePrice,
   }));
 
   return (

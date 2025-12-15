@@ -1,5 +1,6 @@
 import { ComponentType } from "@prisma/client";
 
+// v10.1: 简化的组件数据（移除了升级系统）
 export interface ServiceComponentData {
   id: string;
   code: string;
@@ -12,8 +13,6 @@ export interface ServiceComponentData {
   highlights: string[];
   images: string[];
   isBaseComponent: boolean;
-  upgradeCost?: number | null;
-  upgradesTo?: ServiceComponentData[];
 }
 
 export interface HotspotData {

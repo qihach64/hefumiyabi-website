@@ -3,7 +3,7 @@ import { auth } from '@/auth';
 import prisma from '@/lib/prisma';
 
 // GET /api/merchant/component-overrides
-// 获取商户的组件覆盖配置
+// 获取商户的组件配置（v10.1 - 使用 MerchantComponent）
 export async function GET() {
   try {
     const session = await auth();
@@ -21,48 +21,51 @@ export async function GET() {
       return NextResponse.json({ error: 'Merchant not found' }, { status: 404 });
     }
 
-    // 获取所有平台组件
-    const allComponents = await prisma.serviceComponent.findMany({
-      where: {
-        isActive: true,
-        isSystemComponent: true,
-        status: 'APPROVED',
+    // 获取商户的所有组件实例（包含模板信息）
+    const merchantComponents = await prisma.merchantComponent.findMany({
+      where: { merchantId: merchant.id },
+      include: {
+        template: {
+          select: {
+            id: true,
+            code: true,
+            name: true,
+            nameJa: true,
+            type: true,
+            icon: true,
+            basePrice: true,
+            description: true,
+            defaultHighlights: true,
+            defaultImages: true,
+          },
+        },
       },
       orderBy: [
-        { type: 'asc' },
-        { displayOrder: 'asc' },
+        { template: { type: 'asc' } },
+        { template: { displayOrder: 'asc' } },
       ],
-      select: {
-        id: true,
-        code: true,
-        name: true,
-        nameJa: true,
-        type: true,
-        icon: true,
-        basePrice: true,
-        tier: true,
-        tierLabel: true,
-        description: true,
-      },
     });
 
-    // 获取商户的覆盖配置
-    const overrides = await prisma.merchantComponentOverride.findMany({
-      where: { merchantId: merchant.id },
-    });
-
-    // 构建响应：组件 + 覆盖配置
-    const overrideMap = new Map(
-      overrides.map(o => [o.componentId, o])
-    );
-
-    const components = allComponents.map(component => ({
-      ...component,
-      override: overrideMap.get(component.id) || null,
-      // 有效价格 = 覆盖价格 ?? 平台建议价
-      effectivePrice: overrideMap.get(component.id)?.price ?? component.basePrice,
-      // 是否启用（默认启用）
-      isEnabled: overrideMap.get(component.id)?.isEnabled ?? true,
+    // 构建响应：组件实例 + 模板信息
+    const components = merchantComponents.map(mc => ({
+      id: mc.id,
+      templateId: mc.templateId,
+      // 模板信息（平台定义）
+      code: mc.template.code,
+      name: mc.template.name,
+      nameJa: mc.template.nameJa,
+      type: mc.template.type,
+      icon: mc.template.icon,
+      basePrice: mc.template.basePrice,
+      description: mc.template.description,
+      // 商户自定义内容
+      images: mc.images.length > 0 ? mc.images : mc.template.defaultImages,
+      highlights: mc.highlights.length > 0 ? mc.highlights : mc.template.defaultHighlights,
+      // 商户配置
+      price: mc.price,
+      isEnabled: mc.isEnabled,
+      // 有效价格 = 商户价格 ?? 平台建议价
+      effectivePrice: mc.price ?? mc.template.basePrice,
     }));
 
     // 按类型分组
@@ -81,16 +84,16 @@ export async function GET() {
       merchantId: merchant.id,
     });
   } catch (error) {
-    console.error('Failed to fetch component overrides:', error);
+    console.error('Failed to fetch merchant components:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch component overrides' },
+      { error: 'Failed to fetch merchant components' },
       { status: 500 }
     );
   }
 }
 
 // PUT /api/merchant/component-overrides
-// 批量更新商户的组件覆盖配置
+// 批量更新商户的组件配置
 export async function PUT(request: Request) {
   try {
     const session = await auth();
@@ -109,40 +112,36 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json();
-    const { overrides } = body as {
-      overrides: {
-        componentId: string;
-        price: number | null;
-        isEnabled: boolean;
+    const { components } = body as {
+      components: {
+        id: string; // MerchantComponent ID
+        price?: number | null;
+        isEnabled?: boolean;
+        images?: string[];
+        highlights?: string[];
       }[];
     };
 
-    if (!Array.isArray(overrides)) {
+    if (!Array.isArray(components)) {
       return NextResponse.json(
-        { error: 'Invalid request body: overrides must be an array' },
+        { error: 'Invalid request body: components must be an array' },
         { status: 400 }
       );
     }
 
-    // 批量 upsert 覆盖配置
+    // 批量更新
     const results = await Promise.all(
-      overrides.map(override =>
-        prisma.merchantComponentOverride.upsert({
+      components.map(component =>
+        prisma.merchantComponent.update({
           where: {
-            merchantId_componentId: {
-              merchantId: merchant.id,
-              componentId: override.componentId,
-            },
+            id: component.id,
+            merchantId: merchant.id, // 确保只能更新自己的组件
           },
-          create: {
-            merchantId: merchant.id,
-            componentId: override.componentId,
-            price: override.price,
-            isEnabled: override.isEnabled,
-          },
-          update: {
-            price: override.price,
-            isEnabled: override.isEnabled,
+          data: {
+            ...(component.price !== undefined && { price: component.price }),
+            ...(component.isEnabled !== undefined && { isEnabled: component.isEnabled }),
+            ...(component.images !== undefined && { images: component.images }),
+            ...(component.highlights !== undefined && { highlights: component.highlights }),
           },
         })
       )
@@ -153,16 +152,16 @@ export async function PUT(request: Request) {
       updated: results.length,
     });
   } catch (error) {
-    console.error('Failed to update component overrides:', error);
+    console.error('Failed to update merchant components:', error);
     return NextResponse.json(
-      { error: 'Failed to update component overrides' },
+      { error: 'Failed to update merchant components' },
       { status: 500 }
     );
   }
 }
 
 // PATCH /api/merchant/component-overrides
-// 更新单个组件的覆盖配置
+// 更新单个组件的配置
 export async function PATCH(request: Request) {
   try {
     const session = await auth();
@@ -181,59 +180,43 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json();
-    const { componentId, price, isEnabled } = body as {
-      componentId: string;
+    const { id, price, isEnabled, images, highlights } = body as {
+      id: string; // MerchantComponent ID
       price?: number | null;
       isEnabled?: boolean;
+      images?: string[];
+      highlights?: string[];
     };
 
-    if (!componentId) {
+    if (!id) {
       return NextResponse.json(
-        { error: 'componentId is required' },
+        { error: 'id is required' },
         { status: 400 }
       );
     }
 
-    // 验证组件存在
-    const component = await prisma.serviceComponent.findUnique({
-      where: { id: componentId },
-    });
-
-    if (!component) {
-      return NextResponse.json(
-        { error: 'Component not found' },
-        { status: 404 }
-      );
-    }
-
-    // Upsert 覆盖配置
-    const override = await prisma.merchantComponentOverride.upsert({
+    // 更新组件配置
+    const updated = await prisma.merchantComponent.update({
       where: {
-        merchantId_componentId: {
-          merchantId: merchant.id,
-          componentId,
-        },
+        id,
+        merchantId: merchant.id, // 确保只能更新自己的组件
       },
-      create: {
-        merchantId: merchant.id,
-        componentId,
-        price: price ?? null,
-        isEnabled: isEnabled ?? true,
-      },
-      update: {
+      data: {
         ...(price !== undefined && { price }),
         ...(isEnabled !== undefined && { isEnabled }),
+        ...(images !== undefined && { images }),
+        ...(highlights !== undefined && { highlights }),
       },
     });
 
     return NextResponse.json({
       success: true,
-      override,
+      component: updated,
     });
   } catch (error) {
-    console.error('Failed to update component override:', error);
+    console.error('Failed to update merchant component:', error);
     return NextResponse.json(
-      { error: 'Failed to update component override' },
+      { error: 'Failed to update merchant component' },
       { status: 500 }
     );
   }

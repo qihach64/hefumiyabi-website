@@ -57,23 +57,27 @@ export default async function EditListingPage({ params }: EditListingPageProps) 
           },
         },
       },
+      // v10.1: PlanComponent -> MerchantComponent -> ServiceComponent
       planComponents: {
         select: {
           id: true,
-          componentId: true,
-          isIncluded: true,
-          quantity: true,
+          merchantComponentId: true,
           hotmapX: true,
           hotmapY: true,
           hotmapLabelPosition: true,
           hotmapOrder: true,
-          component: {
+          merchantComponent: {
             select: {
               id: true,
-              code: true,
-              name: true,
-              type: true,
-              icon: true,
+              template: {
+                select: {
+                  id: true,
+                  code: true,
+                  name: true,
+                  type: true,
+                  icon: true,
+                },
+              },
             },
           },
         },

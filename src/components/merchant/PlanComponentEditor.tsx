@@ -7,8 +7,6 @@ import {
   ChevronDown,
   ChevronRight,
   Search,
-  Sparkles,
-  ArrowRight,
   Info,
   Layers,
   ZoomIn,
@@ -21,59 +19,43 @@ import {
 } from "lucide-react";
 import EditorHotspot from "@/components/shared/EditorHotspot";
 
-// ==================== 类型定义 ====================
+// ==================== 类型定义 (v10.1) ====================
 
-interface ServiceComponent {
+// 商户组件实例（从 API 获取）
+interface MerchantComponentData {
   id: string;
+  templateId: string;
+  // 模板信息
   code: string;
   name: string;
   nameJa: string | null;
-  nameEn: string | null;
-  description: string | null;
   type: string;
   icon: string | null;
-  tier: number;
-  tierLabel: string | null;
-  isBaseComponent: boolean;
   basePrice: number;
+  description: string | null;
+  // 商户自定义内容
+  images: string[];
   highlights: string[];
-  isSystemComponent: boolean;
+  // 商户配置
+  price: number | null;
+  isEnabled: boolean;
+  effectivePrice: number;
 }
 
 interface ComponentCategory {
   type: string;
   label: string;
   icon: string;
-  components: ServiceComponent[];
+  components: MerchantComponentData[];
 }
 
-interface UpgradeOption {
-  id: string;
-  fromComponentId: string;
-  toComponentId: string;
-  priceDiff: number;
-  scope: string;
-  scopeId: string | null;
-  label: string | null;
-  description: string | null;
-  isRecommended: boolean;
-  displayOrder: number;
-  toComponent: {
-    id: string;
-    name: string;
-    icon: string | null;
-    tier: number;
-    tierLabel: string | null;
-  };
-}
-
+// PlanComponent 配置（v10.1 - 使用 merchantComponentId）
 export interface ComponentConfig {
-  componentId: string;
-  isIncluded: boolean;
-  enabledUpgrades: string[];
+  merchantComponentId: string;
   hotmapX?: number | null;
   hotmapY?: number | null;
   hotmapLabelPosition?: string;
+  hotmapOrder?: number;
 }
 
 interface MapTemplateData {
@@ -88,8 +70,8 @@ interface MapTemplateData {
 }
 
 interface PlanComponentEditorProps {
-  selectedComponentIds: string[];
-  onChange: (componentIds: string[]) => void;
+  selectedMerchantComponentIds: string[];
+  onChange: (merchantComponentIds: string[]) => void;
   componentConfigs?: ComponentConfig[];
   onConfigChange?: (configs: ComponentConfig[]) => void;
   themeId?: string | null;
@@ -101,21 +83,16 @@ interface PlanComponentEditorProps {
 
 const TYPE_CONFIG: Record<string, { label: string; icon: string; color: string }> = {
   OUTFIT: { label: "着装项目", icon: "👘", color: "sakura" },
-  KIMONO: { label: "和服本体", icon: "👘", color: "sakura" },
-  STYLING: { label: "造型服务", icon: "💇", color: "purple" },
-  ACCESSORY: { label: "配饰", icon: "🎀", color: "blue" },
   ADDON: { label: "增值服务", icon: "✨", color: "amber" },
-  EXPERIENCE: { label: "增值体验", icon: "📸", color: "amber" },
-  OTHER: { label: "其他", icon: "📦", color: "gray" },
 };
 
 // 可放置到热图的类型
-const HOTMAP_ELIGIBLE_TYPES = ["OUTFIT", "KIMONO", "STYLING", "ACCESSORY"];
+const HOTMAP_ELIGIBLE_TYPES = ["OUTFIT"];
 
 // ==================== 主组件 ====================
 
 export default function PlanComponentEditor({
-  selectedComponentIds,
+  selectedMerchantComponentIds,
   onChange,
   componentConfigs,
   onConfigChange,
@@ -125,7 +102,6 @@ export default function PlanComponentEditor({
 }: PlanComponentEditorProps) {
   // 数据状态
   const [categories, setCategories] = useState<ComponentCategory[]>([]);
-  const [upgradePaths, setUpgradePaths] = useState<Record<string, UpgradeOption[]>>({});
   const [isLoading, setIsLoading] = useState(true);
 
   // UI 状态
@@ -153,31 +129,53 @@ export default function PlanComponentEditor({
   useEffect(() => {
     async function fetchComponents() {
       try {
-        const url = new URL("/api/service-components", window.location.origin);
-        if (themeId) {
-          url.searchParams.set("themeId", themeId);
-        }
-        const response = await fetch(url.toString());
+        // 获取商户的组件实例
+        const response = await fetch("/api/merchant/component-overrides");
         if (response.ok) {
           const data = await response.json();
-          setCategories(data.categories || []);
-          setUpgradePaths(data.upgradePaths || {});
+
+          // 将组件按类型分组
+          const components: MerchantComponentData[] = data.components || [];
+          const grouped = components.reduce((acc, comp) => {
+            const type = comp.type;
+            if (!acc[type]) {
+              acc[type] = [];
+            }
+            acc[type].push(comp);
+            return acc;
+          }, {} as Record<string, MerchantComponentData[]>);
+
+          // 转换为分类数组
+          const typeOrder = [
+            { type: "OUTFIT", label: "着装项目", icon: "👘" },
+            { type: "ADDON", label: "增值服务", icon: "✨" },
+          ];
+
+          const cats: ComponentCategory[] = typeOrder
+            .filter((t) => grouped[t.type]?.length > 0)
+            .map((t) => ({
+              type: t.type,
+              label: t.label,
+              icon: t.icon,
+              components: grouped[t.type] || [],
+            }));
+
+          setCategories(cats);
           // 默认展开所有分类
-          const allTypes = (data.categories || []).map((c: ComponentCategory) => c.type);
-          setExpandedCategories(new Set(allTypes));
+          setExpandedCategories(new Set(cats.map((c) => c.type)));
         }
       } catch (error) {
-        console.error("Failed to fetch service components:", error);
+        console.error("Failed to fetch merchant components:", error);
       } finally {
         setIsLoading(false);
       }
     }
     fetchComponents();
-  }, [themeId]);
+  }, []);
 
   // ==================== 计算属性 ====================
 
-  const getAllComponents = useCallback((): ServiceComponent[] => {
+  const getAllComponents = useCallback((): MerchantComponentData[] => {
     return categories.flatMap((cat) => cat.components);
   }, [categories]);
 
@@ -206,17 +204,16 @@ export default function PlanComponentEditor({
       (c) =>
         c.hotmapX != null &&
         c.hotmapY != null &&
-        selectedComponentIds.includes(c.componentId)
+        selectedMerchantComponentIds.includes(c.merchantComponentId)
     );
-  }, [configs, selectedComponentIds]);
+  }, [configs, selectedMerchantComponentIds]);
 
   // 统计
   const stats = useMemo(() => {
-    const totalSelected = selectedComponentIds.length;
+    const totalSelected = selectedMerchantComponentIds.length;
     const totalPlaced = placedComponents.length;
-    const totalUpgrades = configs.reduce((sum, c) => sum + c.enabledUpgrades.length, 0);
-    return { totalSelected, totalPlaced, totalUpgrades };
-  }, [selectedComponentIds, placedComponents, configs]);
+    return { totalSelected, totalPlaced };
+  }, [selectedMerchantComponentIds, placedComponents]);
 
   // 当前选中的组件详情
   const selectedComponent = useMemo(() => {
@@ -226,19 +223,10 @@ export default function PlanComponentEditor({
 
   const selectedConfig = useMemo(() => {
     if (!selectedComponentId) return null;
-    return configs.find((c) => c.componentId === selectedComponentId) || null;
+    return configs.find((c) => c.merchantComponentId === selectedComponentId) || null;
   }, [selectedComponentId, configs]);
 
   // ==================== 辅助函数 ====================
-
-  const isHotmapEligible = useCallback(
-    (componentId: string): boolean => {
-      const component = getAllComponents().find((c) => c.id === componentId);
-      if (!component) return true;
-      return HOTMAP_ELIGIBLE_TYPES.includes(component.type);
-    },
-    [getAllComponents]
-  );
 
   const calculateLabelPosition = (x: number): string => {
     return x > 0.5 ? "left" : "right";
@@ -256,8 +244,8 @@ export default function PlanComponentEditor({
   );
 
   const getConfig = useCallback(
-    (componentId: string): ComponentConfig | undefined => {
-      return configs.find((c) => c.componentId === componentId);
+    (merchantComponentId: string): ComponentConfig | undefined => {
+      return configs.find((c) => c.merchantComponentId === merchantComponentId);
     },
     [configs]
   );
@@ -277,47 +265,46 @@ export default function PlanComponentEditor({
   }, []);
 
   const handleComponentClick = useCallback(
-    (componentId: string) => {
-      const isSelected = selectedComponentIds.includes(componentId);
-      const component = getAllComponents().find((c) => c.id === componentId);
+    (merchantComponentId: string) => {
+      const isSelected = selectedMerchantComponentIds.includes(merchantComponentId);
+      const component = getAllComponents().find((c) => c.id === merchantComponentId);
       const canPlaceOnHotmap = component && HOTMAP_ELIGIBLE_TYPES.includes(component.type);
       const hasMap = !!mapTemplate;
 
       if (isSelected) {
         // 取消选择
-        onChange(selectedComponentIds.filter((id) => id !== componentId));
-        setConfigs(configs.filter((c) => c.componentId !== componentId));
-        if (placingComponentId === componentId) {
+        onChange(selectedMerchantComponentIds.filter((id) => id !== merchantComponentId));
+        setConfigs(configs.filter((c) => c.merchantComponentId !== merchantComponentId));
+        if (placingComponentId === merchantComponentId) {
           setPlacingComponentId(null);
         }
-        if (selectedComponentId === componentId) {
+        if (selectedComponentId === merchantComponentId) {
           setSelectedComponentId(null);
         }
       } else {
         // 选择组件
-        onChange([...selectedComponentIds, componentId]);
+        onChange([...selectedMerchantComponentIds, merchantComponentId]);
 
         const newConfig: ComponentConfig = {
-          componentId,
-          isIncluded: true,
-          enabledUpgrades: [],
+          merchantComponentId,
           hotmapX: null,
           hotmapY: null,
           hotmapLabelPosition: "right",
+          hotmapOrder: configs.length,
         };
         setConfigs([...configs, newConfig]);
 
         // 如果有热图且组件可放置，进入放置模式
         if (hasMap && canPlaceOnHotmap) {
-          setPlacingComponentId(componentId);
+          setPlacingComponentId(merchantComponentId);
         }
       }
 
       // 选中以显示属性面板
-      setSelectedComponentId(componentId);
+      setSelectedComponentId(merchantComponentId);
     },
     [
-      selectedComponentIds,
+      selectedMerchantComponentIds,
       onChange,
       configs,
       setConfigs,
@@ -329,8 +316,8 @@ export default function PlanComponentEditor({
   );
 
   // 从画布选中组件
-  const handleCanvasComponentClick = useCallback((componentId: string) => {
-    setSelectedComponentId(componentId);
+  const handleCanvasComponentClick = useCallback((merchantComponentId: string) => {
+    setSelectedComponentId(merchantComponentId);
   }, []);
 
   // ==================== 放置逻辑 ====================
@@ -346,35 +333,35 @@ export default function PlanComponentEditor({
 
       setConfigs(
         configs.map((c) =>
-          c.componentId === placingComponentId
+          c.merchantComponentId === placingComponentId
             ? { ...c, hotmapX: pos.x, hotmapY: pos.y, hotmapLabelPosition: labelPosition }
             : c
         )
       );
 
-      if (!selectedComponentIds.includes(placingComponentId)) {
-        onChange([...selectedComponentIds, placingComponentId]);
+      if (!selectedMerchantComponentIds.includes(placingComponentId)) {
+        onChange([...selectedMerchantComponentIds, placingComponentId]);
       }
 
       setPlacingComponentId(null);
     },
-    [placingComponentId, getRelativePosition, configs, setConfigs, selectedComponentIds, onChange]
+    [placingComponentId, getRelativePosition, configs, setConfigs, selectedMerchantComponentIds, onChange]
   );
 
   // ==================== 拖拽逻辑 ====================
 
   const handleDragStart = useCallback(
-    (e: React.MouseEvent, componentId: string) => {
+    (e: React.MouseEvent, merchantComponentId: string) => {
       e.preventDefault();
       e.stopPropagation();
 
-      const config = configs.find((c) => c.componentId === componentId);
+      const config = configs.find((c) => c.merchantComponentId === merchantComponentId);
       if (!config?.hotmapX || !config?.hotmapY) return;
 
       const pos = getRelativePosition(e);
       if (!pos) return;
 
-      setDraggingComponentId(componentId);
+      setDraggingComponentId(merchantComponentId);
       setDragOffset({
         x: pos.x - config.hotmapX,
         y: pos.y - config.hotmapY,
@@ -396,7 +383,7 @@ export default function PlanComponentEditor({
 
       setConfigs(
         configs.map((c) =>
-          c.componentId === draggingComponentId
+          c.merchantComponentId === draggingComponentId
             ? { ...c, hotmapX: newX, hotmapY: newY, hotmapLabelPosition: labelPosition }
             : c
         )
@@ -420,33 +407,16 @@ export default function PlanComponentEditor({
     }
   }, [draggingComponentId, handleDragMove, handleDragEnd]);
 
-  // ==================== 升级选项 ====================
-
-  const toggleUpgrade = useCallback(
-    (componentId: string, upgradeId: string) => {
-      setConfigs(
-        configs.map((config) => {
-          if (config.componentId !== componentId) return config;
-          const enabledUpgrades = config.enabledUpgrades.includes(upgradeId)
-            ? config.enabledUpgrades.filter((id) => id !== upgradeId)
-            : [...config.enabledUpgrades, upgradeId];
-          return { ...config, enabledUpgrades };
-        })
-      );
-    },
-    [configs, setConfigs]
-  );
-
   // 移除组件
   const removeComponent = useCallback(
-    (componentId: string) => {
-      onChange(selectedComponentIds.filter((id) => id !== componentId));
-      setConfigs(configs.filter((c) => c.componentId !== componentId));
-      if (selectedComponentId === componentId) {
+    (merchantComponentId: string) => {
+      onChange(selectedMerchantComponentIds.filter((id) => id !== merchantComponentId));
+      setConfigs(configs.filter((c) => c.merchantComponentId !== merchantComponentId));
+      if (selectedComponentId === merchantComponentId) {
         setSelectedComponentId(null);
       }
     },
-    [selectedComponentIds, onChange, configs, setConfigs, selectedComponentId]
+    [selectedMerchantComponentIds, onChange, configs, setConfigs, selectedComponentId]
   );
 
   // ==================== 缩放控制 ====================
@@ -487,11 +457,6 @@ export default function PlanComponentEditor({
             {hasMapTemplate && (
               <span className="px-2 py-0.5 bg-blue-100 text-blue-600 rounded">
                 {stats.totalPlaced} 已放置
-              </span>
-            )}
-            {stats.totalUpgrades > 0 && (
-              <span className="px-2 py-0.5 bg-amber-100 text-amber-600 rounded">
-                {stats.totalUpgrades} 升级
               </span>
             )}
           </div>
@@ -559,9 +524,9 @@ export default function PlanComponentEditor({
               filteredCategories.map((category) => {
                 const isExpanded = expandedCategories.has(category.type);
                 const selectedCount = category.components.filter((c) =>
-                  selectedComponentIds.includes(c.id)
+                  selectedMerchantComponentIds.includes(c.id)
                 ).length;
-                const typeConfig = TYPE_CONFIG[category.type] || TYPE_CONFIG.OTHER;
+                const typeConfig = TYPE_CONFIG[category.type] || { label: "其他", icon: "📦", color: "gray" };
 
                 return (
                   <div key={category.type} className="border-b border-gray-100">
@@ -596,7 +561,7 @@ export default function PlanComponentEditor({
                     {isExpanded && (
                       <div className="pb-2 bg-white">
                         {category.components.map((component) => {
-                          const isSelected = selectedComponentIds.includes(component.id);
+                          const isSelected = selectedMerchantComponentIds.includes(component.id);
                           const isPlacing = placingComponentId === component.id;
                           const isActive = selectedComponentId === component.id;
                           const canPlace = HOTMAP_ELIGIBLE_TYPES.includes(component.type);
@@ -614,6 +579,7 @@ export default function PlanComponentEditor({
                                     : "hover:bg-gray-50 border border-transparent"
                                 }
                                 ${isPlacing ? "ring-2 ring-sakura-400 animate-pulse" : ""}
+                                ${!component.isEnabled ? "opacity-50" : ""}
                               `}
                             >
                               <div className="flex items-center gap-2">
@@ -649,11 +615,6 @@ export default function PlanComponentEditor({
                                       </span>
                                     )}
                                   </div>
-                                  {component.tierLabel && (
-                                    <span className="text-[10px] text-gray-400">
-                                      {component.tierLabel}
-                                    </span>
-                                  )}
                                 </div>
                               </div>
                             </div>
@@ -692,7 +653,7 @@ export default function PlanComponentEditor({
                 </div>
               )}
 
-              {/* 画布容器 - 更大的尺寸 */}
+              {/* 画布容器 */}
               <div
                 ref={imageContainerRef}
                 onClick={placingComponentId ? handleCanvasClick : undefined}
@@ -730,15 +691,15 @@ export default function PlanComponentEditor({
                 {placedComponents.map((config) => {
                   if (config.hotmapX == null || config.hotmapY == null) return null;
 
-                  const component = getAllComponents().find((c) => c.id === config.componentId);
-                  const isDragging = draggingComponentId === config.componentId;
-                  const isActive = selectedComponentId === config.componentId;
+                  const component = getAllComponents().find((c) => c.id === config.merchantComponentId);
+                  const isDragging = draggingComponentId === config.merchantComponentId;
+                  const isActive = selectedComponentId === config.merchantComponentId;
 
                   return (
                     <EditorHotspot
-                      key={config.componentId}
+                      key={config.merchantComponentId}
                       hotspot={{
-                        id: config.componentId,
+                        id: config.merchantComponentId,
                         x: config.hotmapX,
                         y: config.hotmapY,
                         labelPosition:
@@ -746,14 +707,14 @@ export default function PlanComponentEditor({
                           "right",
                         name: component?.name ?? "加载中...",
                         icon: component?.icon ?? "📍",
-                        isIncluded: config.isIncluded,
+                        isIncluded: true,
                       }}
                       isEditable
                       isDragging={isDragging}
                       isSelected={isActive}
-                      onClick={() => handleCanvasComponentClick(config.componentId)}
-                      onDragStart={(e) => handleDragStart(e, config.componentId)}
-                      onRemove={() => removeComponent(config.componentId)}
+                      onClick={() => handleCanvasComponentClick(config.merchantComponentId)}
+                      onDragStart={(e) => handleDragStart(e, config.merchantComponentId)}
+                      onRemove={() => removeComponent(config.merchantComponentId)}
                     />
                   );
                 })}
@@ -817,7 +778,7 @@ export default function PlanComponentEditor({
                     状态
                   </h4>
                   <div className="space-y-2">
-                    {selectedComponentIds.includes(selectedComponent.id) ? (
+                    {selectedMerchantComponentIds.includes(selectedComponent.id) ? (
                       <div className="flex items-center gap-2 text-sm text-emerald-600">
                         <Check className="w-4 h-4" />
                         已添加到套餐
@@ -866,65 +827,9 @@ export default function PlanComponentEditor({
                   </div>
                 )}
 
-                {/* 升级选项 */}
-                {selectedComponentIds.includes(selectedComponent.id) &&
-                  upgradePaths[selectedComponent.id]?.length > 0 && (
-                    <div>
-                      <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1">
-                        <Sparkles className="w-3 h-3 text-amber-500" />
-                        可选升级
-                      </h4>
-                      <div className="space-y-2">
-                        {upgradePaths[selectedComponent.id].map((upgrade) => {
-                          const isEnabled = selectedConfig?.enabledUpgrades.includes(upgrade.id);
-                          return (
-                            <button
-                              key={upgrade.id}
-                              type="button"
-                              onClick={() => toggleUpgrade(selectedComponent.id, upgrade.id)}
-                              className={`
-                                w-full p-3 rounded-lg border text-left transition-all
-                                ${isEnabled
-                                  ? "border-amber-300 bg-amber-50"
-                                  : "border-gray-200 bg-gray-50 hover:border-gray-300"
-                                }
-                              `}
-                            >
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <div
-                                    className={`
-                                      w-4 h-4 rounded border-2 flex items-center justify-center
-                                      ${isEnabled ? "bg-amber-500 border-amber-500" : "border-gray-300"}
-                                    `}
-                                  >
-                                    {isEnabled && <Check className="w-2.5 h-2.5 text-white" />}
-                                  </div>
-                                  <span className="text-sm text-gray-700">
-                                    {upgrade.toComponent.icon} {upgrade.label || upgrade.toComponent.name}
-                                  </span>
-                                  {upgrade.isRecommended && (
-                                    <span className="text-[9px] px-1 py-0.5 bg-amber-200 text-amber-700 rounded">
-                                      推荐
-                                    </span>
-                                  )}
-                                </div>
-                                <span
-                                  className={`text-sm font-medium ${isEnabled ? "text-amber-600" : "text-gray-500"}`}
-                                >
-                                  +¥{(upgrade.priceDiff / 100).toLocaleString()}
-                                </span>
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
                 {/* 操作按钮 */}
                 <div className="pt-4 border-t border-gray-100">
-                  {selectedComponentIds.includes(selectedComponent.id) ? (
+                  {selectedMerchantComponentIds.includes(selectedComponent.id) ? (
                     <button
                       type="button"
                       onClick={() => removeComponent(selectedComponent.id)}
@@ -971,21 +876,17 @@ export default function PlanComponentEditor({
                         <div className="text-xs text-gray-500">已放置</div>
                       </div>
                     )}
-                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-100">
-                      <div className="text-2xl font-bold text-amber-500">{stats.totalUpgrades}</div>
-                      <div className="text-xs text-gray-500">升级选项</div>
-                    </div>
                   </div>
                 </div>
 
                 {/* 已选组件列表 */}
-                {selectedComponentIds.length > 0 && (
+                {selectedMerchantComponentIds.length > 0 && (
                   <div>
                     <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">
                       已选组件
                     </h4>
                     <div className="space-y-1.5">
-                      {selectedComponentIds.map((id) => {
+                      {selectedMerchantComponentIds.map((id) => {
                         const component = getAllComponents().find((c) => c.id === id);
                         const config = getConfig(id);
                         if (!component) return null;
@@ -1003,9 +904,6 @@ export default function PlanComponentEditor({
                             </span>
                             {config?.hotmapX != null && (
                               <Layers className="w-3 h-3 text-blue-500" />
-                            )}
-                            {(config?.enabledUpgrades?.length || 0) > 0 && (
-                              <Sparkles className="w-3 h-3 text-amber-500" />
                             )}
                           </div>
                         );

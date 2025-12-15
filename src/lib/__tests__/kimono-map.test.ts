@@ -1,6 +1,7 @@
 /**
  * 测试 kimono-map 热点数据一致性
  *
+ * v10.1: PlanComponent -> MerchantComponent -> ServiceComponent
  * 确保用户端只显示商户明确设置过位置的热点
  */
 
@@ -17,16 +18,20 @@ describe("getPlanMapData - 热点位置一致性", () => {
   });
 
   it("只返回商户设置过位置的热点", async () => {
-    // 1. 获取套餐的 planComponents 数据
+    // 1. 获取套餐的 planComponents 数据 (v10.1)
     const plan = await prisma.rentalPlan.findUnique({
       where: { id: TEST_PLAN_ID },
       include: {
         planComponents: {
           include: {
-            component: {
-              select: {
-                id: true,
-                name: true,
+            merchantComponent: {
+              include: {
+                template: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
               },
             },
           },
@@ -61,17 +66,17 @@ describe("getPlanMapData - 热点位置一致性", () => {
       expect(hotspot.y).toBeLessThanOrEqual(1);
     });
 
-    // 6. 验证热点的组件 ID 与数据库中有位置的组件一致
-    const dbComponentIds = new Set(
-      componentsWithPosition.map((pc) => pc.componentId)
+    // 6. 验证热点的模板 ID 与数据库中有位置的组件一致
+    const dbTemplateIds = new Set(
+      componentsWithPosition.map((pc) => pc.merchantComponent.template.id)
     );
-    const mapComponentIds = new Set(
+    const mapTemplateIds = new Set(
       mapData!.hotspots.map((h) => h.component.id)
     );
 
-    expect(mapComponentIds.size).toBe(dbComponentIds.size);
-    mapComponentIds.forEach((id) => {
-      expect(dbComponentIds.has(id)).toBe(true);
+    expect(mapTemplateIds.size).toBe(dbTemplateIds.size);
+    mapTemplateIds.forEach((id) => {
+      expect(dbTemplateIds.has(id)).toBe(true);
     });
   });
 
@@ -81,10 +86,14 @@ describe("getPlanMapData - 热点位置一致性", () => {
       include: {
         planComponents: {
           include: {
-            component: {
-              select: {
-                id: true,
-                name: true,
+            merchantComponent: {
+              include: {
+                template: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
               },
             },
           },
@@ -100,12 +109,12 @@ describe("getPlanMapData - 热点位置一致性", () => {
     const mapData = await getPlanMapData(TEST_PLAN_ID);
 
     // 验证没有位置的组件不在返回结果中
-    const mapComponentIds = new Set(
+    const mapTemplateIds = new Set(
       mapData!.hotspots.map((h) => h.component.id)
     );
 
     componentsWithoutPosition.forEach((pc) => {
-      expect(mapComponentIds.has(pc.componentId)).toBe(false);
+      expect(mapTemplateIds.has(pc.merchantComponent.template.id)).toBe(false);
     });
   });
 
@@ -127,15 +136,22 @@ describe("getPlanMapData - 热点位置一致性", () => {
             hotmapX: { not: null },
             hotmapY: { not: null },
           },
+          include: {
+            merchantComponent: {
+              include: {
+                template: true,
+              },
+            },
+          },
         },
       },
     });
 
     const mapData = await getPlanMapData(TEST_PLAN_ID);
 
-    // 创建 componentId -> planComponent 映射
+    // 创建 templateId -> planComponent 映射
     const planComponentMap = new Map(
-      plan!.planComponents.map((pc) => [pc.componentId, pc])
+      plan!.planComponents.map((pc) => [pc.merchantComponent.template.id, pc])
     );
 
     // 验证每个热点的位置与数据库一致
@@ -157,7 +173,7 @@ describe("商户端与用户端一致性", () => {
   });
 
   it("商户编辑器保存的位置 === 用户端显示的位置", async () => {
-    // 模拟商户端：获取 planComponents 数据
+    // 模拟商户端：获取 planComponents 数据 (v10.1)
     const merchantView = await prisma.rentalPlan.findUnique({
       where: { id: TEST_PLAN_ID },
       include: {
@@ -167,11 +183,15 @@ describe("商户端与用户端一致性", () => {
             hotmapY: { not: null },
           },
           include: {
-            component: {
-              select: {
-                id: true,
-                name: true,
-                icon: true,
+            merchantComponent: {
+              include: {
+                template: {
+                  select: {
+                    id: true,
+                    name: true,
+                    icon: true,
+                  },
+                },
               },
             },
           },
@@ -187,17 +207,19 @@ describe("商户端与用户端一致性", () => {
 
     // 验证每个热点的详细信息一致
     merchantView!.planComponents.forEach((pc) => {
+      const tpl = pc.merchantComponent.template;
       const userHotspot = userView!.hotspots.find(
-        (h) => h.component.id === pc.componentId
+        (h) => h.component.id === tpl.id
       );
 
       expect(userHotspot).toBeDefined();
       expect(userHotspot!.x).toBe(pc.hotmapX);
       expect(userHotspot!.y).toBe(pc.hotmapY);
       expect(userHotspot!.labelPosition).toBe(pc.hotmapLabelPosition || "right");
-      expect(userHotspot!.component.name).toBe(pc.component.name);
-      expect(userHotspot!.component.icon).toBe(pc.component.icon);
-      expect(userHotspot!.isIncluded).toBe(pc.isIncluded);
+      expect(userHotspot!.component.name).toBe(tpl.name);
+      expect(userHotspot!.component.icon).toBe(tpl.icon);
+      // v10.1: 在 planComponents 中的组件都是已包含的
+      expect(userHotspot!.isIncluded).toBe(true);
     });
   });
 });

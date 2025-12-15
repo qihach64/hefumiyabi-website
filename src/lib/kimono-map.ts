@@ -18,11 +18,7 @@ export async function getDefaultMapData(): Promise<MapData | null> {
       include: {
         hotspots: {
           include: {
-            component: {
-              include: {
-                upgradesTo: true,
-              },
-            },
+            component: true, // ServiceComponent
           },
           orderBy: { displayOrder: "asc" },
         },
@@ -31,6 +27,7 @@ export async function getDefaultMapData(): Promise<MapData | null> {
 
     if (!template) return null;
 
+  // v10.1: 移除了 upgradesTo 引用
   const hotspots: HotspotData[] = template.hotspots.map((hotspot) => ({
     id: hotspot.id,
     x: hotspot.x,
@@ -46,24 +43,9 @@ export async function getDefaultMapData(): Promise<MapData | null> {
       description: hotspot.component.description,
       type: hotspot.component.type,
       icon: hotspot.component.icon,
-      highlights: hotspot.component.highlights,
-      images: hotspot.component.images,
-      isBaseComponent: hotspot.component.isBaseComponent,
-      upgradeCost: hotspot.component.upgradeCost,
-      upgradesTo: hotspot.component.upgradesTo.map((u) => ({
-        id: u.id,
-        code: u.code,
-        name: u.name,
-        nameJa: u.nameJa,
-        nameEn: u.nameEn,
-        description: u.description,
-        type: u.type,
-        icon: u.icon,
-        highlights: u.highlights,
-        images: u.images,
-        isBaseComponent: u.isBaseComponent,
-        upgradeCost: u.upgradeCost,
-      })),
+      highlights: hotspot.component.defaultHighlights,
+      images: hotspot.component.defaultImages,
+      isBaseComponent: true,
     },
     // 默认所有组件都已包含
     isIncluded: true,
@@ -84,12 +66,12 @@ export async function getDefaultMapData(): Promise<MapData | null> {
 /**
  * 获取套餐的地图数据（只显示商户明确设置过位置的热点）
  *
- * 重要：模板热点位置只是给商户编辑时的参考，
- * 用户端只显示商户明确保存过位置的热点（hotmapX/hotmapY 不为 null）
+ * v10.1: PlanComponent -> MerchantComponent -> ServiceComponent (template)
+ * 重要：只显示商户明确保存过位置的热点（hotmapX/hotmapY 不为 null）
  */
 export async function getPlanMapData(planId: string): Promise<MapData | null> {
   try {
-    // 获取套餐及其组件（包含组件详情用于升级信息）
+    // v10.1: 获取套餐及其组件
     const plan = await prisma.rentalPlan.findUnique({
       where: { id: planId },
       include: {
@@ -100,12 +82,13 @@ export async function getPlanMapData(planId: string): Promise<MapData | null> {
         },
         planComponents: {
           include: {
-            component: {
+            merchantComponent: {
               include: {
-                upgradesTo: true,
+                template: true, // ServiceComponent
               },
             },
           },
+          orderBy: { hotmapOrder: "asc" },
         },
       },
     });
@@ -125,44 +108,34 @@ export async function getPlanMapData(planId: string): Promise<MapData | null> {
     // 只显示商户明确设置过位置的组件（hotmapX 和 hotmapY 都不为 null）
     const hotspots: HotspotData[] = plan.planComponents
       .filter((pc) => pc.hotmapX != null && pc.hotmapY != null)
-      .map((pc, index) => ({
-        id: pc.id,
-        x: pc.hotmapX!,
-        y: pc.hotmapY!,
-        labelPosition: (pc.hotmapLabelPosition || "right") as "left" | "right" | "top" | "bottom",
-        displayOrder: index,
-        component: {
-          id: pc.component.id,
-          code: pc.component.code,
-          name: pc.component.name,
-          nameJa: pc.component.nameJa,
-          nameEn: pc.component.nameEn,
-          description: pc.component.description,
-          type: pc.component.type,
-          icon: pc.component.icon,
-          highlights: pc.component.highlights,
-          images: pc.component.images,
-          isBaseComponent: pc.component.isBaseComponent,
-          upgradeCost: pc.component.upgradeCost,
-          upgradesTo: pc.component.upgradesTo.map((u) => ({
-            id: u.id,
-            code: u.code,
-            name: u.name,
-            nameJa: u.nameJa,
-            nameEn: u.nameEn,
-            description: u.description,
-            type: u.type,
-            icon: u.icon,
-            highlights: u.highlights,
-            images: u.images,
-            isBaseComponent: u.isBaseComponent,
-            upgradeCost: u.upgradeCost,
-          })),
-        },
-        // 套餐特定配置 (v9.1 simplified)
-        isIncluded: pc.isIncluded,
-        quantity: pc.quantity,
-      }));
+      .map((pc, index) => {
+        const mc = pc.merchantComponent;
+        const tpl = mc.template;
+
+        return {
+          id: pc.id,
+          x: pc.hotmapX!,
+          y: pc.hotmapY!,
+          labelPosition: (pc.hotmapLabelPosition || "right") as "left" | "right" | "top" | "bottom",
+          displayOrder: pc.hotmapOrder ?? index,
+          component: {
+            id: tpl.id,
+            code: tpl.code,
+            name: tpl.name,
+            nameJa: tpl.nameJa,
+            nameEn: tpl.nameEn,
+            description: tpl.description,
+            type: tpl.type,
+            icon: tpl.icon,
+            // v10.1: 商户自定义内容优先，否则使用平台默认
+            highlights: mc.highlights.length > 0 ? mc.highlights : tpl.defaultHighlights,
+            images: mc.images.length > 0 ? mc.images : tpl.defaultImages,
+            isBaseComponent: true,
+          },
+          // v10.1: 在 planComponents 中的组件都是已包含的
+          isIncluded: true,
+        };
+      });
 
     return {
       imageUrl: template.imageUrl,

@@ -35,22 +35,23 @@ interface Theme {
   color: string | null;
 }
 
-// v9.1: 简化版 PlanComponent（移除了商户覆盖字段）
+// v10.1: PlanComponent links to MerchantComponent
 interface PlanComponent {
   id: string;
-  componentId: string;
-  isIncluded: boolean;
-  quantity: number;
+  merchantComponentId: string;
   hotmapX?: number | null;
   hotmapY?: number | null;
   hotmapLabelPosition?: string;
   hotmapOrder?: number;
-  component: {
+  merchantComponent: {
     id: string;
-    code: string;
-    name: string;
-    type: string;
-    icon: string | null;
+    template: {
+      id: string;
+      code: string;
+      name: string;
+      type: string;
+      icon: string | null;
+    };
   };
 }
 
@@ -111,17 +112,15 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
   const [themes, setThemes] = useState<Theme[]>([]);
   const [selectedThemeId, setSelectedThemeId] = useState<string | null>(plan.themeId || null);
 
-  // 服务组件系统
-  const [selectedComponentIds, setSelectedComponentIds] = useState<string[]>(
-    plan.planComponents?.map(pc => pc.componentId) || []
+  // 服务组件系统 (v10.1: 使用 merchantComponentId)
+  const [selectedMerchantComponentIds, setSelectedMerchantComponentIds] = useState<string[]>(
+    plan.planComponents?.map(pc => pc.merchantComponentId) || []
   );
 
-  // 组件配置（包含升级选项和位置信息）
+  // 组件配置（包含位置信息）
   const [componentConfigs, setComponentConfigs] = useState<ComponentConfig[]>(
     plan.planComponents?.map(pc => ({
-      componentId: pc.componentId,
-      isIncluded: pc.isIncluded,
-      enabledUpgrades: [], // TODO: 从后端加载已启用的升级
+      merchantComponentId: pc.merchantComponentId,
       hotmapX: pc.hotmapX ?? null,
       hotmapY: pc.hotmapY ?? null,
       hotmapLabelPosition: pc.hotmapLabelPosition ?? "right",
@@ -216,12 +215,9 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
           originalPrice: formData.originalPrice
             ? Math.round(Number(formData.originalPrice) * 100)
             : null,
-          componentIds: selectedComponentIds,
-          // 组件配置（包含升级选项和位置信息）
-          componentConfigs: componentConfigs.map(config => ({
-            componentId: config.componentId,
-            isIncluded: config.isIncluded,
-            enabledUpgrades: config.enabledUpgrades,
+          // v10.1: 组件配置（包含位置信息）
+          planComponents: componentConfigs.map(config => ({
+            merchantComponentId: config.merchantComponentId,
             hotmapX: config.hotmapX,
             hotmapY: config.hotmapY,
             hotmapLabelPosition: config.hotmapLabelPosition,
@@ -512,10 +508,10 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
           </div>
         </div>
 
-        {/* 套餐内容配置 - 统一的组件选择、升级配置和热点编辑 */}
+        {/* 套餐内容配置 - v10.1 组件选择和热点编辑 */}
         <PlanComponentEditor
-          selectedComponentIds={selectedComponentIds}
-          onChange={setSelectedComponentIds}
+          selectedMerchantComponentIds={selectedMerchantComponentIds}
+          onChange={setSelectedMerchantComponentIds}
           componentConfigs={componentConfigs}
           onConfigChange={setComponentConfigs}
           themeId={selectedThemeId}

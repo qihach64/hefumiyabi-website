@@ -61,30 +61,7 @@ function InlineDetail({ hotspot, onClose }: { hotspot: HotspotData; onClose: () 
         </div>
       )}
 
-      {/* 升级选项 */}
-      {component.upgradesTo && component.upgradesTo.length > 0 && (
-        <div className="pt-3 mt-3 border-t border-gray-100">
-          <p className="text-[11px] uppercase tracking-widest text-gray-400 font-medium mb-2">
-            升级选项
-          </p>
-          <div className="space-y-1">
-            {component.upgradesTo.map((upgrade) => (
-              <div
-                key={upgrade.id}
-                className="flex items-center justify-between py-1.5 text-[12px]"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-base">{upgrade.icon || "✦"}</span>
-                  <span className="text-gray-600">{upgrade.name}</span>
-                </div>
-                <span className="text-sakura-600 font-medium tabular-nums">
-                  +¥{upgrade.upgradeCost?.toLocaleString()}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* v10.1: 升级系统已移除 */}
     </div>
   );
 }

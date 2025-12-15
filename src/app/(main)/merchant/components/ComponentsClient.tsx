@@ -7,52 +7,43 @@ import {
   Settings,
   Check,
   X,
-  DollarSign,
   ToggleLeft,
   ToggleRight,
-  Save,
-  RefreshCw,
   AlertCircle,
   Info,
 } from "lucide-react";
-import { Button, Badge } from "@/components/ui";
+import { Badge } from "@/components/ui";
 
-interface ComponentOverride {
+// v10.1 商户组件数据结构
+interface MerchantComponentData {
   id: string;
-  componentId: string;
-  merchantId: string;
-  price: number | null;
-  isEnabled: boolean;
-}
-
-interface ServiceComponentWithOverride {
-  id: string;
+  templateId: string;
+  // 模板信息
   code: string;
   name: string;
   nameJa: string | null;
   type: string;
   icon: string | null;
-  basePrice: number | null;
-  tier: number | null;
-  tierLabel: string | null;
+  basePrice: number;
   description: string | null;
-  override: ComponentOverride | null;
-  effectivePrice: number | null;
+  // 商户自定义内容
+  images: string[];
+  highlights: string[];
+  // 商户配置
+  price: number | null;
   isEnabled: boolean;
+  effectivePrice: number;
 }
 
 interface ComponentsClientProps {
-  components: ServiceComponentWithOverride[];
+  components: MerchantComponentData[];
   merchantId: string;
 }
 
-// 组件类型标签映射
+// v10.1 组件类型标签映射
 const TYPE_LABELS: Record<string, { label: string; color: string }> = {
-  KIMONO: { label: "和服本体", color: "bg-sakura-100 text-sakura-700" },
-  ACCESSORY: { label: "配件", color: "bg-blue-100 text-blue-700" },
-  STYLING: { label: "造型服务", color: "bg-purple-100 text-purple-700" },
-  EXPERIENCE: { label: "增值体验", color: "bg-amber-100 text-amber-700" },
-  OTHER: { label: "其他", color: "bg-gray-100 text-gray-700" },
+  OUTFIT: { label: "着装项目", color: "bg-sakura-100 text-sakura-700" },
+  ADDON: { label: "增值服务", color: "bg-amber-100 text-amber-700" },
 };
 
 // 单个组件行
@@ -67,7 +58,7 @@ function ComponentRow({
   onToggle,
   isSaving,
 }: {
-  component: ServiceComponentWithOverride;
+  component: MerchantComponentData;
   editingId: string | null;
   editPrice: string;
   onEditStart: (id: string, currentPrice: number | null) => void;
@@ -78,8 +69,8 @@ function ComponentRow({
   isSaving: boolean;
 }) {
   const isEditing = editingId === component.id;
-  const typeInfo = TYPE_LABELS[component.type] || TYPE_LABELS.OTHER;
-  const hasCustomPrice = component.override?.price !== null && component.override?.price !== undefined;
+  const typeInfo = TYPE_LABELS[component.type] || { label: "其他", color: "bg-gray-100 text-gray-700" };
+  const hasCustomPrice = component.price !== null;
 
   return (
     <div
@@ -118,11 +109,6 @@ function ComponentRow({
             <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${typeInfo.color}`}>
               {typeInfo.label}
             </span>
-            {component.tier && (
-              <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-[10px]">
-                {component.tierLabel || `Tier ${component.tier}`}
-              </span>
-            )}
           </div>
           {component.nameJa && (
             <span className="text-xs text-gray-500">{component.nameJa}</span>
@@ -136,10 +122,7 @@ function ComponentRow({
         <div className="text-right">
           <div className="text-[10px] text-gray-400 mb-0.5">平台建议价</div>
           <div className="text-sm text-gray-600">
-            {component.basePrice !== null
-              ? `¥${(component.basePrice / 100).toLocaleString()}`
-              : "-"
-            }
+            ¥{(component.basePrice / 100).toLocaleString()}
           </div>
         </div>
 
@@ -178,24 +161,21 @@ function ComponentRow({
             </div>
           ) : (
             <button
-              onClick={() => onEditStart(component.id, component.override?.price ?? null)}
+              onClick={() => onEditStart(component.id, component.price)}
               className="flex items-center gap-1 text-sm font-medium hover:text-sakura-600 transition-colors"
               disabled={!component.isEnabled}
             >
               {hasCustomPrice ? (
                 <>
                   <span className="text-sakura-600">
-                    ¥{(component.override!.price! / 100).toLocaleString()}
+                    ¥{(component.price! / 100).toLocaleString()}
                   </span>
                   <span className="text-[10px] text-sakura-400">(自定义)</span>
                 </>
               ) : (
                 <>
                   <span className="text-gray-600">
-                    {component.basePrice !== null
-                      ? `¥${(component.basePrice / 100).toLocaleString()}`
-                      : "-"
-                    }
+                    ¥{(component.basePrice / 100).toLocaleString()}
                   </span>
                   <span className="text-[10px] text-gray-400">(使用建议价)</span>
                 </>
@@ -226,7 +206,7 @@ export default function ComponentsClient({
     }
     acc[type].push(component);
     return acc;
-  }, {} as Record<string, ServiceComponentWithOverride[]>);
+  }, {} as Record<string, MerchantComponentData[]>);
 
   // 开始编辑
   const handleEditStart = useCallback((id: string, currentPrice: number | null) => {
@@ -240,8 +220,8 @@ export default function ComponentsClient({
     setEditPrice("");
   }, []);
 
-  // 保存价格
-  const handleEditSave = useCallback(async (componentId: string) => {
+  // 保存价格 (v10.1 - 使用 MerchantComponent ID)
+  const handleEditSave = useCallback(async (mcId: string) => {
     setIsSaving(true);
     setSaveMessage(null);
 
@@ -252,7 +232,7 @@ export default function ComponentsClient({
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          componentId,
+          id: mcId, // v10.1: 使用 MerchantComponent ID
           price: priceInCents,
         }),
       });
@@ -264,16 +244,10 @@ export default function ComponentsClient({
       // 更新本地状态
       setComponents(prev =>
         prev.map(c =>
-          c.id === componentId
+          c.id === mcId
             ? {
                 ...c,
-                override: {
-                  id: c.override?.id || "",
-                  componentId,
-                  merchantId,
-                  price: priceInCents,
-                  isEnabled: c.isEnabled,
-                },
+                price: priceInCents,
                 effectivePrice: priceInCents ?? c.basePrice,
               }
             : c
@@ -289,10 +263,10 @@ export default function ComponentsClient({
       setIsSaving(false);
       setTimeout(() => setSaveMessage(null), 3000);
     }
-  }, [editPrice, merchantId]);
+  }, [editPrice]);
 
-  // 切换启用状态
-  const handleToggle = useCallback(async (componentId: string, newEnabled: boolean) => {
+  // 切换启用状态 (v10.1 - 使用 MerchantComponent ID)
+  const handleToggle = useCallback(async (mcId: string, newEnabled: boolean) => {
     setIsSaving(true);
     setSaveMessage(null);
 
@@ -301,7 +275,7 @@ export default function ComponentsClient({
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          componentId,
+          id: mcId, // v10.1: 使用 MerchantComponent ID
           isEnabled: newEnabled,
         }),
       });
@@ -313,18 +287,8 @@ export default function ComponentsClient({
       // 更新本地状态
       setComponents(prev =>
         prev.map(c =>
-          c.id === componentId
-            ? {
-                ...c,
-                isEnabled: newEnabled,
-                override: {
-                  id: c.override?.id || "",
-                  componentId,
-                  merchantId,
-                  price: c.override?.price ?? null,
-                  isEnabled: newEnabled,
-                },
-              }
+          c.id === mcId
+            ? { ...c, isEnabled: newEnabled }
             : c
         )
       );
@@ -339,11 +303,11 @@ export default function ComponentsClient({
       setIsSaving(false);
       setTimeout(() => setSaveMessage(null), 3000);
     }
-  }, [merchantId]);
+  }, []);
 
   // 统计
   const enabledCount = components.filter(c => c.isEnabled).length;
-  const customPriceCount = components.filter(c => c.override?.price !== null && c.override?.price !== undefined).length;
+  const customPriceCount = components.filter(c => c.price !== null).length;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -418,7 +382,7 @@ export default function ComponentsClient({
         {/* 组件列表（按类型分组） */}
         <div className="space-y-8">
           {Object.entries(groupedComponents).map(([type, typeComponents]) => {
-            const typeInfo = TYPE_LABELS[type] || TYPE_LABELS.OTHER;
+            const typeInfo = TYPE_LABELS[type] || { label: "其他", color: "bg-gray-100 text-gray-700" };
 
             return (
               <div key={type}>

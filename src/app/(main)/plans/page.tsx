@@ -130,21 +130,23 @@ export default async function PlansPage({
         },
       },
       planComponents: {
-        where: { isIncluded: true },
         include: {
-          component: {
-            select: {
-              id: true,
-              code: true,
-              name: true,
-              type: true,
-              icon: true,
+          merchantComponent: {
+            include: {
+              template: {
+                select: {
+                  id: true,
+                  code: true,
+                  name: true,
+                  type: true,
+                  icon: true,
+                  displayOrder: true,
+                },
+              },
             },
           },
         },
-        orderBy: {
-          component: { displayOrder: 'asc' },
-        },
+        orderBy: { hotmapOrder: 'asc' },
       },
     },
     orderBy,
@@ -171,8 +173,7 @@ export default async function PlansPage({
     duration: plan.duration,
     isCampaign: !!plan.originalPrice && plan.originalPrice > plan.price,
     includes: plan.planComponents
-      .filter(pc => pc.isIncluded)
-      .map(pc => pc.component.name),
+      .map(pc => pc.merchantComponent.template.name),
     planTags: plan.planTags.map(pt => ({ tag: pt.tag })),
     themeId: plan.themeId || undefined,
     themeName: plan.theme?.name || undefined,
