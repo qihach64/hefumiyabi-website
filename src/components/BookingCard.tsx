@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { Calendar, Users, Clock, Shield, X, Sparkles } from "lucide-react";
+import { Calendar, Users, Clock, Shield, X, Sparkles, Plus, Check } from "lucide-react";
 import { Badge } from "@/components/ui";
 import TryOnModal from "@/components/TryOnModal";
 import GuestsDropdown, { GuestsDetail } from "@/components/GuestsDropdown";
+import type { SelectedUpgrade } from "@/components/PlanDetailClient";
 
 interface BookingCardProps {
   plan: {
@@ -18,9 +19,11 @@ interface BookingCardProps {
     isCampaign?: boolean;
     imageUrl?: string;
   };
+  selectedUpgrades?: SelectedUpgrade[];
+  onRemoveUpgrade?: (upgradeId: string) => void;
 }
 
-export default function BookingCard({ plan }: BookingCardProps) {
+export default function BookingCard({ plan, selectedUpgrades = [], onRemoveUpgrade }: BookingCardProps) {
   // 读取URL搜索参数
   const searchParams = useSearchParams();
   const searchDate = searchParams.get('date');
@@ -77,8 +80,13 @@ export default function BookingCard({ plan }: BookingCardProps) {
     ? Math.round(((plan.originalPrice - plan.price) / plan.originalPrice) * 100)
     : 0;
 
-  // 计算总价
-  const subtotal = plan.price * guests;
+  // 计算增值服务总价
+  const upgradesTotal = selectedUpgrades.reduce((sum, u) => sum + u.price, 0);
+
+  // 计算总价（含增值服务）
+  const basePricePerPerson = plan.price;
+  const totalPricePerPerson = basePricePerPerson + upgradesTotal;
+  const subtotal = totalPricePerPerson * guests;
   const deposit = plan.depositAmount * guests;
   const balance = subtotal - deposit;
 
@@ -102,28 +110,53 @@ export default function BookingCard({ plan }: BookingCardProps) {
     <>
       {/* 价格区域 */}
       <div className="mb-6">
-        <div className="flex items-baseline gap-2 mb-2">
-          <span className="text-2xl font-bold text-gray-900">
-            ¥{(plan.price / 100).toLocaleString()}
-          </span>
-          <span className="text-gray-600">/ 人</span>
-
-          {plan.originalPrice && plan.originalPrice > plan.price && (
-            <>
-              <span className="text-lg text-gray-400 line-through ml-2">
-                ¥{(plan.originalPrice / 100).toLocaleString()}
+        {/* 有增值服务时显示含增值价格 */}
+        {selectedUpgrades.length > 0 ? (
+          <>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[11px] px-2 py-0.5 bg-sakura-100 text-sakura-700 rounded-full font-medium">
+                💫 含增值服务
               </span>
-              {plan.isCampaign && (
-                <Badge variant="error" size="sm">
-                  -{discountPercent}%
-                </Badge>
+            </div>
+            <div className="flex items-baseline gap-2 mb-2">
+              <span className="text-2xl font-bold text-sakura-600">
+                ¥{(totalPricePerPerson / 100).toLocaleString()}
+              </span>
+              <span className="text-gray-600">/ 人</span>
+              <span className="text-sm text-gray-400 line-through ml-1">
+                ¥{(basePricePerPerson / 100).toLocaleString()}
+              </span>
+            </div>
+            <div className="text-[12px] text-gray-500">
+              基础 ¥{(basePricePerPerson / 100).toLocaleString()} + 增值 ¥{(upgradesTotal / 100).toLocaleString()}
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="flex items-baseline gap-2 mb-2">
+              <span className="text-2xl font-bold text-gray-900">
+                ¥{(plan.price / 100).toLocaleString()}
+              </span>
+              <span className="text-gray-600">/ 人</span>
+
+              {plan.originalPrice && plan.originalPrice > plan.price && (
+                <>
+                  <span className="text-lg text-gray-400 line-through ml-2">
+                    ¥{(plan.originalPrice / 100).toLocaleString()}
+                  </span>
+                  {plan.isCampaign && (
+                    <Badge variant="error" size="sm">
+                      -{discountPercent}%
+                    </Badge>
+                  )}
+                </>
               )}
-            </>
-          )}
-        </div>
+            </div>
+          </>
+        )}
 
         {plan.isCampaign && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 mt-2">
             <Badge variant="warning" size="sm">
               限时优惠
             </Badge>
@@ -133,6 +166,37 @@ export default function BookingCard({ plan }: BookingCardProps) {
           </div>
         )}
       </div>
+
+      {/* 已选增值服务列表 */}
+      {selectedUpgrades.length > 0 && (
+        <div className="mb-6 p-3 bg-sakura-50 rounded-xl border border-sakura-200">
+          <div className="flex items-center gap-2 mb-2">
+            <Check className="w-4 h-4 text-sakura-600" />
+            <span className="text-[12px] font-semibold text-sakura-800">已选增值服务</span>
+          </div>
+          <div className="space-y-1.5">
+            {selectedUpgrades.map((upgrade) => (
+              <div key={upgrade.id} className="flex items-center justify-between text-[12px]">
+                <div className="flex items-center gap-1.5">
+                  <span>{upgrade.icon}</span>
+                  <span className="text-gray-700">{upgrade.name}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sakura-600 font-medium">
+                    +¥{(upgrade.price / 100).toLocaleString()}
+                  </span>
+                  <button
+                    onClick={() => onRemoveUpgrade?.(upgrade.id)}
+                    className="w-4 h-4 rounded-full bg-gray-200 hover:bg-red-200 flex items-center justify-center transition-colors"
+                  >
+                    <X className="w-2.5 h-2.5 text-gray-500 hover:text-red-500" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 预订表单 */}
       <div className="space-y-4 mb-6">
@@ -265,16 +329,39 @@ export default function BookingCard({ plan }: BookingCardProps) {
       </div>
 
       {/* 价格明细 */}
-      {guests > 1 && (
+      {(guests > 1 || selectedUpgrades.length > 0) && (
         <div className="space-y-3 pt-6 border-t border-gray-200">
+          {/* 套餐基础价 */}
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">
-              ¥{(plan.price / 100).toLocaleString()} × {guests} 人
+              套餐价格 ¥{(basePricePerPerson / 100).toLocaleString()} × {guests} 人
             </span>
             <span className="text-gray-900">
-              ¥{(subtotal / 100).toLocaleString()}
+              ¥{((basePricePerPerson * guests) / 100).toLocaleString()}
             </span>
           </div>
+
+          {/* 增值服务明细 */}
+          {selectedUpgrades.length > 0 && (
+            <>
+              {selectedUpgrades.map((upgrade) => (
+                <div key={upgrade.id} className="flex justify-between text-sm">
+                  <span className="text-gray-600">
+                    {upgrade.icon} {upgrade.name} × {guests} 人
+                  </span>
+                  <span className="text-sakura-600">
+                    +¥{((upgrade.price * guests) / 100).toLocaleString()}
+                  </span>
+                </div>
+              ))}
+              <div className="flex justify-between text-sm pt-2 border-t border-dashed border-gray-200">
+                <span className="text-gray-700 font-medium">小计</span>
+                <span className="text-gray-900 font-medium">
+                  ¥{(subtotal / 100).toLocaleString()}
+                </span>
+              </div>
+            </>
+          )}
 
           {deposit > 0 && (
             <>
@@ -332,16 +419,33 @@ export default function BookingCard({ plan }: BookingCardProps) {
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-2xl z-40 safe-area-bottom">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-xl font-bold text-gray-900">
-                  ¥{(plan.price / 100).toLocaleString()}
-                </span>
-                <span className="text-sm text-gray-600">/ 人</span>
-              </div>
-              {plan.isCampaign && (
-                <Badge variant="warning" size="sm" className="mt-1">
-                  限时优惠
-                </Badge>
+              {selectedUpgrades.length > 0 ? (
+                <>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-xl font-bold text-sakura-600">
+                      ¥{(totalPricePerPerson / 100).toLocaleString()}
+                    </span>
+                    <span className="text-sm text-gray-600">/ 人</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-[11px] text-gray-500">
+                    <span>含 {selectedUpgrades.length} 项增值</span>
+                    <span className="text-sakura-500">+¥{(upgradesTotal / 100).toLocaleString()}</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-xl font-bold text-gray-900">
+                      ¥{(plan.price / 100).toLocaleString()}
+                    </span>
+                    <span className="text-sm text-gray-600">/ 人</span>
+                  </div>
+                  {plan.isCampaign && (
+                    <Badge variant="warning" size="sm" className="mt-1">
+                      限时优惠
+                    </Badge>
+                  )}
+                </>
               )}
             </div>
             <button

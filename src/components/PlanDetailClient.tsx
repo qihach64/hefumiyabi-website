@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { Star, ChevronRight, Clock, MapPin } from "lucide-react";
 import BookingCard from "@/components/BookingCard";
@@ -11,6 +11,14 @@ import SocialProof from "@/components/plan/SocialProof";
 import JourneyTimeline from "@/components/plan/JourneyTimeline";
 import { useSearchBar } from "@/contexts/SearchBarContext";
 import type { MapData } from "@/components/plan/InteractiveKimonoMap/types";
+
+// 升级服务类型
+export interface SelectedUpgrade {
+  id: string;
+  name: string;
+  price: number;
+  icon: string;
+}
 
 interface Campaign {
   id: string;
@@ -51,9 +59,37 @@ interface PlanDetailClientProps {
 export default function PlanDetailClient({ plan, mapData }: PlanDetailClientProps) {
   const [mounted, setMounted] = useState(false);
   const [isInFullWidthSection, setIsInFullWidthSection] = useState(true);
+  const [selectedUpgrades, setSelectedUpgrades] = useState<SelectedUpgrade[]>([]);
   const { setHideSearchBar } = useSearchBar();
 
   const bookingCardRef = useRef<HTMLDivElement>(null);
+
+  // 升级服务操作回调
+  const handleAddUpgrade = useCallback((upgrade: SelectedUpgrade) => {
+    setSelectedUpgrades(prev => {
+      if (prev.some(u => u.id === upgrade.id)) return prev;
+      return [...prev, upgrade];
+    });
+  }, []);
+
+  const handleRemoveUpgrade = useCallback((upgradeId: string) => {
+    setSelectedUpgrades(prev => prev.filter(u => u.id !== upgradeId));
+  }, []);
+
+  // 滚动到预订卡片（带高亮动画）
+  const scrollToBookingWithHighlight = useCallback(() => {
+    if (bookingCardRef.current) {
+      bookingCardRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+      // 添加高亮动画类
+      bookingCardRef.current.classList.add("ring-2", "ring-sakura-400", "ring-offset-2");
+      setTimeout(() => {
+        bookingCardRef.current?.classList.remove("ring-2", "ring-sakura-400", "ring-offset-2");
+      }, 2000);
+    }
+  }, []);
 
   // 隐藏 Header 搜索栏
   useEffect(() => {
@@ -289,6 +325,10 @@ export default function PlanDetailClient({ plan, mapData }: PlanDetailClientProp
           <ServiceMap
             includes={plan.includes}
             mapData={mapData}
+            selectedUpgrades={selectedUpgrades}
+            onAddUpgrade={handleAddUpgrade}
+            onRemoveUpgrade={handleRemoveUpgrade}
+            onViewPricing={scrollToBookingWithHighlight}
           />
 
           {/* 活动信息 - 更精致的设计 */}
@@ -348,7 +388,7 @@ export default function PlanDetailClient({ plan, mapData }: PlanDetailClientProp
           </div>
 
           {/* 右侧预订卡片 */}
-          <div ref={bookingCardRef} className="lg:col-span-1">
+          <div ref={bookingCardRef} className="lg:col-span-1 transition-all duration-300 rounded-2xl">
             <div className="lg:sticky lg:top-24">
               <BookingCard
                 plan={{
@@ -361,6 +401,8 @@ export default function PlanDetailClient({ plan, mapData }: PlanDetailClientProp
                   isCampaign: plan.isCampaign,
                   imageUrl: plan.imageUrl ?? undefined,
                 }}
+                selectedUpgrades={selectedUpgrades}
+                onRemoveUpgrade={handleRemoveUpgrade}
               />
             </div>
           </div>
