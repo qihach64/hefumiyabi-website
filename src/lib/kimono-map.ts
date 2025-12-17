@@ -27,7 +27,7 @@ export async function getDefaultMapData(): Promise<MapData | null> {
 
     if (!template) return null;
 
-  // v10.1: 移除了 upgradesTo 引用
+  // v10.2: 添加 outfitCategory 支持
   const hotspots: HotspotData[] = template.hotspots.map((hotspot) => ({
     id: hotspot.id,
     x: hotspot.x,
@@ -46,6 +46,7 @@ export async function getDefaultMapData(): Promise<MapData | null> {
       highlights: hotspot.component.defaultHighlights,
       images: hotspot.component.defaultImages,
       isBaseComponent: true,
+      outfitCategory: hotspot.component.outfitCategory, // v10.2
     },
     // 默认所有组件都已包含
     isIncluded: true,
@@ -131,6 +132,7 @@ export async function getPlanMapData(planId: string): Promise<MapData | null> {
             highlights: mc.highlights.length > 0 ? mc.highlights : tpl.defaultHighlights,
             images: mc.images.length > 0 ? mc.images : tpl.defaultImages,
             isBaseComponent: true,
+            outfitCategory: tpl.outfitCategory, // v10.2
           },
           // v10.1: 在 planComponents 中的组件都是已包含的
           isIncluded: true,

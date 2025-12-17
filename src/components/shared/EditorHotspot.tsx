@@ -21,6 +21,8 @@ interface EditorHotspotProps {
   onRemove?: () => void;
   onClick?: () => void;
   isSelected?: boolean;
+  externalHovered?: boolean; // 外部控制的 hover 状态（用于列表联动）
+  showGuide?: boolean; // 显示引导动画
 }
 
 /**
@@ -38,8 +40,13 @@ export default function EditorHotspot({
   onRemove,
   onClick,
   isSelected = false,
+  externalHovered = false,
+  showGuide = false,
 }: EditorHotspotProps) {
-  const [isHovered, setIsHovered] = useState(false);
+  const [isHoveredInternal, setIsHoveredInternal] = useState(false);
+
+  // 合并内部和外部的 hover 状态
+  const isHovered = isHoveredInternal || externalHovered;
 
   const { x, y, labelPosition, name, icon, isIncluded = true } = hotspot;
 
@@ -117,8 +124,8 @@ export default function EditorHotspot({
       <button
         type="button"
         onClick={onClick}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
+        onMouseEnter={() => setIsHoveredInternal(true)}
+        onMouseLeave={() => setIsHoveredInternal(false)}
         onMouseDown={isEditable ? onDragStart : undefined}
         className={`
           relative z-10 w-6 h-6 rounded-full
@@ -127,13 +134,14 @@ export default function EditorHotspot({
           ${isDragging
             ? "bg-sakura-600 scale-150 shadow-lg ring-4 ring-sakura-300 cursor-grabbing"
             : isSelected
-              ? "bg-sakura-600 scale-125 shadow-lg"
-              : isIncluded
-                ? "bg-sakura-500 hover:bg-sakura-600 hover:scale-110"
-                : "bg-gray-400 hover:bg-gray-500 hover:scale-110"
+              ? "bg-sakura-600 scale-125 shadow-lg ring-2 ring-sakura-300"
+              : isHovered
+                ? "bg-sakura-600 scale-110 shadow-lg"
+                : isIncluded
+                  ? "bg-sakura-500 hover:bg-sakura-600 hover:scale-110"
+                  : "bg-gray-400 hover:bg-gray-500 hover:scale-110"
           }
           ${isEditable && !isDragging ? "cursor-grab" : "cursor-pointer"}
-          ${!isSelected && !isDragging && isIncluded && "animate-pulse"}
         `}
         aria-label={isEditable ? `拖拽调整 ${name} 位置` : `查看 ${name} 详情`}
       >
@@ -146,11 +154,11 @@ export default function EditorHotspot({
         )}
       </button>
 
-      {/* 脉冲动画圈 */}
-      {!isSelected && !isDragging && isIncluded && !isEditable && (
+      {/* 脉冲动画圈 - 引导模式或默认脉冲 */}
+      {!isSelected && !isDragging && isIncluded && !isEditable && (showGuide || !isHovered) && (
         <div
-          className="absolute inset-0 rounded-full bg-sakura-400 opacity-50 animate-ping"
-          style={{ animationDuration: "2s" }}
+          className={`absolute inset-0 rounded-full bg-sakura-400 ${showGuide ? 'opacity-70 animate-ping' : 'opacity-40 animate-pulse'}`}
+          style={{ animationDuration: showGuide ? "1s" : "2s" }}
         />
       )}
 

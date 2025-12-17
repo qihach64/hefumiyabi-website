@@ -789,7 +789,9 @@ export default function PlanComponentEditor({
                         {selectedComponent.name}
                       </h3>
                       <p className="text-xs text-gray-500">
-                        {TYPE_CONFIG[selectedComponent.type]?.label || "组件"}
+                        {selectedComponent.type === "ADDON"
+                          ? ADDON_CONFIG.label
+                          : (selectedComponent.outfitCategory && OUTFIT_CATEGORY_CONFIG[selectedComponent.outfitCategory]?.label) || "组件"}
                       </p>
                     </div>
                   </div>

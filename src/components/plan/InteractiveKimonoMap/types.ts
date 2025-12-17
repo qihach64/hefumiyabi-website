@@ -1,6 +1,6 @@
-import { ComponentType } from "@prisma/client";
+import { ComponentType, OutfitCategory } from "@prisma/client";
 
-// v10.1: 简化的组件数据（移除了升级系统）
+// v10.2: 组件数据（含 OUTFIT 分类）
 export interface ServiceComponentData {
   id: string;
   code: string;
@@ -13,6 +13,7 @@ export interface ServiceComponentData {
   highlights: string[];
   images: string[];
   isBaseComponent: boolean;
+  outfitCategory?: OutfitCategory | null; // v10.2: OUTFIT 分类
 }
 
 export interface HotspotData {
