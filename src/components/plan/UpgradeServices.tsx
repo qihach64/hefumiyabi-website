@@ -14,21 +14,11 @@ interface UpgradeOption {
   detailedDescription: string;
   price: number;
   icon: string;
-  category: UpgradeCategory;
   popular?: boolean;
   highlights?: string[];
   images: string[];
 }
 
-// 升级分类
-type UpgradeCategory = "PHOTOGRAPHY" | "STYLING" | "TIME";
-
-// 分类配置（类似 ServiceMap 的 OUTFIT_CATEGORY_CONFIG）
-const UPGRADE_CATEGORY_CONFIG: Record<UpgradeCategory, { label: string; icon: string; order: number }> = {
-  PHOTOGRAPHY: { label: "摄影服务", icon: "📸", order: 1 },
-  STYLING: { label: "造型服务", icon: "💄", order: 2 },
-  TIME: { label: "时间延长", icon: "⏰", order: 3 },
-};
 
 interface UpgradeServicesProps {
   selectedUpgrades: SelectedUpgrade[];
@@ -46,7 +36,6 @@ const UPGRADE_OPTIONS: UpgradeOption[] = [
     detailedDescription: "由资深摄影师全程跟拍，在清水寺、祇園、花见小路等京都最具代表性的景点为您留下珍贵回忆。我们的摄影师深谙和服之美与京都风情的完美融合，善于捕捉最自然、最动人的瞬间。",
     price: 300000,
     icon: "📷",
-    category: "PHOTOGRAPHY",
     popular: true,
     highlights: ["专业摄影师全程跟拍", "30分钟外景拍摄", "20张精修照片", "3个工作日内交付"],
     images: [
@@ -63,7 +52,6 @@ const UPGRADE_OPTIONS: UpgradeOption[] = [
     detailedDescription: "由经验丰富的化妆师为您打造与和服完美搭配的精致妆容。根据您选择的和服色系和个人特点，设计最适合的妆面，让您在镜头前更加自信动人。服务包含卸妆，方便您结束体验后的行程。",
     price: 250000,
     icon: "💄",
-    category: "STYLING",
     highlights: ["资深化妆师打造", "根据和服配色设计", "全脸精致妆容", "含专业卸妆服务"],
     images: [
       "https://images.unsplash.com/photo-1596704017254-9b121068fb31?w=400&h=500&fit=crop",
@@ -79,7 +67,6 @@ const UPGRADE_OPTIONS: UpgradeOption[] = [
     detailedDescription: "专业造型师为您设计复杂精美的传统盘发造型，搭配精选发饰，完美呈现日式典雅之美。使用专业定型产品，确保发型在整个体验过程中保持完美状态，让您尽情享受和服时光。",
     price: 200000,
     icon: "✂️",
-    category: "STYLING",
     highlights: ["专业造型师设计", "复杂传统盘发", "精选发饰搭配", "持久定型效果"],
     images: [
       "https://images.unsplash.com/photo-1595476108010-b4d1f102b1b1?w=400&h=500&fit=crop",
@@ -95,7 +82,6 @@ const UPGRADE_OPTIONS: UpgradeOption[] = [
     detailedDescription: "为您的和服体验增加额外 2 小时的美好时光。无需匆忙赶回，可以更从容地游览景点、拍摄照片，充分享受穿着和服漫步京都的独特体验。适合想要深度体验或前往较远景点的客人。",
     price: 100000,
     icon: "⏰",
-    category: "TIME",
     highlights: ["额外2小时体验时间", "更灵活的行程安排", "更多景点拍照时间", "无需匆忙归还"],
     images: [
       "https://images.unsplash.com/photo-1493780474015-ba834fd0ce2f?w=400&h=500&fit=crop",
@@ -104,14 +90,6 @@ const UPGRADE_OPTIONS: UpgradeOption[] = [
     ],
   },
 ];
-
-// 分类分组
-interface CategoryGroup {
-  key: UpgradeCategory;
-  label: string;
-  icon: string;
-  items: UpgradeOption[];
-}
 
 export default function UpgradeServices({
   selectedUpgrades,
@@ -155,17 +133,6 @@ export default function UpgradeServices({
     setActiveTab("detail");
     setShowMobileDetail(true);
   }, []);
-
-  // 按分类分组
-  const categoryGroups: CategoryGroup[] = Object.entries(UPGRADE_CATEGORY_CONFIG)
-    .map(([key, config]) => ({
-      key: key as UpgradeCategory,
-      label: config.label,
-      icon: config.icon,
-      items: UPGRADE_OPTIONS.filter(item => item.category === key),
-    }))
-    .filter(group => group.items.length > 0)
-    .sort((a, b) => UPGRADE_CATEGORY_CONFIG[a.key].order - UPGRADE_CATEGORY_CONFIG[b.key].order);
 
   // 当前选中的选项
   const selectedItem = UPGRADE_OPTIONS.find(item => item.id === selectedItemId);
@@ -250,66 +217,53 @@ export default function UpgradeServices({
               {/* Tab 1: 升级选项列表 */}
               <div className={`h-full overflow-y-auto ${activeTab === "list" ? "block" : "hidden"}`}>
                 <div className="p-4">
-                  <div className="space-y-4">
-                    {categoryGroups.map((group) => (
-                      <div key={group.key}>
-                        {/* 分类小标题 */}
-                        <div className="flex items-center gap-2 mb-2 px-1">
-                          <span className="text-[14px]">{group.icon}</span>
-                          <span className="text-[12px] text-gray-500 font-medium">{group.label}</span>
-                          <span className="text-[11px] text-gray-400">({group.items.length})</span>
-                        </div>
+                  {/* 选项按钮 - 网格布局，无分类 */}
+                  <div className="grid grid-cols-2 gap-2">
+                    {UPGRADE_OPTIONS.map((item) => {
+                      const added = isSelected(item.id);
+                      return (
+                        <button
+                          key={item.id}
+                          ref={(el) => {
+                            if (el) itemRefs.current.set(item.id, el);
+                          }}
+                          onClick={() => handleItemClick(item)}
+                          onMouseEnter={() => setHoveredItemId(item.id)}
+                          onMouseLeave={() => setHoveredItemId(null)}
+                          className={`
+                            relative flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left transition-all duration-150
+                            ${selectedItemId === item.id
+                              ? "bg-sakura-100 ring-1 ring-sakura-400"
+                              : hoveredItemId === item.id
+                                ? "bg-sakura-50"
+                                : "bg-gray-50 hover:bg-gray-100"
+                            }
+                          `}
+                        >
+                          {/* 人气标签 */}
+                          {item.popular && (
+                            <span className="absolute -top-1.5 -right-1 px-1.5 py-0.5 bg-sakura-500 text-white text-[9px] font-medium rounded-full">
+                              人気
+                            </span>
+                          )}
 
-                        {/* 选项按钮 - 网格布局 */}
-                        <div className="grid grid-cols-2 gap-2">
-                          {group.items.map((item) => {
-                            const added = isSelected(item.id);
-                            return (
-                              <button
-                                key={item.id}
-                                ref={(el) => {
-                                  if (el) itemRefs.current.set(item.id, el);
-                                }}
-                                onClick={() => handleItemClick(item)}
-                                onMouseEnter={() => setHoveredItemId(item.id)}
-                                onMouseLeave={() => setHoveredItemId(null)}
-                                className={`
-                                  relative flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left transition-all duration-150
-                                  ${selectedItemId === item.id
-                                    ? "bg-sakura-100 ring-1 ring-sakura-400"
-                                    : hoveredItemId === item.id
-                                      ? "bg-sakura-50"
-                                      : "bg-gray-50 hover:bg-gray-100"
-                                  }
-                                `}
-                              >
-                                {/* 人气标签 */}
-                                {item.popular && (
-                                  <span className="absolute -top-1.5 -right-1 px-1.5 py-0.5 bg-sakura-500 text-white text-[9px] font-medium rounded-full">
-                                    人気
-                                  </span>
-                                )}
-
-                                <span className="text-[16px]">{item.icon}</span>
-                                <div className="flex-1 min-w-0">
-                                  <span className="text-[12px] font-medium text-gray-700 block truncate">
-                                    {item.name}
-                                  </span>
-                                  <span className="text-[11px] text-sakura-600 font-medium">
-                                    +¥{(item.price / 100).toLocaleString()}
-                                  </span>
-                                </div>
-                                {added && (
-                                  <div className="w-5 h-5 rounded-full bg-sakura-500 flex items-center justify-center flex-shrink-0">
-                                    <Check className="w-3 h-3 text-white" />
-                                  </div>
-                                )}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ))}
+                          <span className="text-[16px]">{item.icon}</span>
+                          <div className="flex-1 min-w-0">
+                            <span className="text-[12px] font-medium text-gray-700 block truncate">
+                              {item.name}
+                            </span>
+                            <span className="text-[11px] text-sakura-600 font-medium">
+                              +¥{(item.price / 100).toLocaleString()}
+                            </span>
+                          </div>
+                          {added && (
+                            <div className="w-5 h-5 rounded-full bg-sakura-500 flex items-center justify-center flex-shrink-0">
+                              <Check className="w-3 h-3 text-white" />
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -444,53 +398,43 @@ export default function UpgradeServices({
 
         {/* ==================== 移动端布局 ==================== */}
         <div className="lg:hidden">
-          {/* 选项列表 */}
+          {/* 选项列表 - 无分类 */}
           <div className="p-4">
-            <div className="space-y-3">
-              {categoryGroups.map((group) => (
-                <div key={group.key}>
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <span className="text-[14px]">{group.icon}</span>
-                    <span className="text-[11px] text-gray-500">{group.label}</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    {group.items.map((item) => {
-                      const added = isSelected(item.id);
-                      return (
-                        <button
-                          key={item.id}
-                          onClick={() => handleItemClick(item)}
-                          className={`
-                            relative flex flex-col items-center p-3 rounded-xl transition-all duration-200
-                            ${selectedItemId === item.id
-                              ? "bg-sakura-50 ring-2 ring-sakura-400"
-                              : "bg-gray-50 hover:bg-gray-100"
-                            }
-                          `}
-                        >
-                          {item.popular && (
-                            <span className="absolute -top-1 -right-1 px-1.5 py-0.5 bg-sakura-500 text-white text-[9px] font-medium rounded-full">
-                              人気
-                            </span>
-                          )}
-                          <span className="text-xl mb-1">{item.icon}</span>
-                          <span className="text-[11px] font-medium text-gray-700 text-center line-clamp-1">
-                            {item.name}
-                          </span>
-                          <span className="text-[11px] text-sakura-600 font-medium mt-0.5">
-                            +¥{(item.price / 100).toLocaleString()}
-                          </span>
-                          {added && (
-                            <div className="absolute -top-1 -left-1 w-5 h-5 bg-sakura-500 rounded-full flex items-center justify-center">
-                              <Check className="w-3 h-3 text-white" />
-                            </div>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
+            <div className="grid grid-cols-2 gap-2">
+              {UPGRADE_OPTIONS.map((item) => {
+                const added = isSelected(item.id);
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleItemClick(item)}
+                    className={`
+                      relative flex flex-col items-center p-3 rounded-xl transition-all duration-200
+                      ${selectedItemId === item.id
+                        ? "bg-sakura-50 ring-2 ring-sakura-400"
+                        : "bg-gray-50 hover:bg-gray-100"
+                      }
+                    `}
+                  >
+                    {item.popular && (
+                      <span className="absolute -top-1 -right-1 px-1.5 py-0.5 bg-sakura-500 text-white text-[9px] font-medium rounded-full">
+                        人気
+                      </span>
+                    )}
+                    <span className="text-xl mb-1">{item.icon}</span>
+                    <span className="text-[11px] font-medium text-gray-700 text-center line-clamp-1">
+                      {item.name}
+                    </span>
+                    <span className="text-[11px] text-sakura-600 font-medium mt-0.5">
+                      +¥{(item.price / 100).toLocaleString()}
+                    </span>
+                    {added && (
+                      <div className="absolute -top-1 -left-1 w-5 h-5 bg-sakura-500 rounded-full flex items-center justify-center">
+                        <Check className="w-3 h-3 text-white" />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
