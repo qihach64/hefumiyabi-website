@@ -274,7 +274,7 @@ export default function PlanDetailClient({ plan, mapData }: PlanDetailClientProp
           </div>
 
           {/* 渐变分割线 */}
-          <div className="mt-8 h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
+          <div className="mt-8 h-px bg-gradient-to-r from-transparent via-wabi-200 to-transparent" />
         </header>
 
         {/* ========================================
@@ -315,22 +315,22 @@ export default function PlanDetailClient({ plan, mapData }: PlanDetailClientProp
             mapData={mapData}
           />
 
-          {/* 活动信息 - 更精致的设计 */}
+          {/* 活动信息 - Sakura 风格设计 */}
           {plan.campaign && (
-            <section className="rounded-xl p-6 md:p-8 bg-gradient-to-br from-yellow-50 to-amber-50/60 border border-amber-200/30">
+            <section className="rounded-xl p-6 md:p-8 bg-gradient-to-br from-sakura-50 to-wabi-50 border border-sakura-200/30">
               <div className="flex items-start gap-4">
-                <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-amber-400 to-amber-600 shadow-lg shadow-amber-500/25">
+                <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-sakura-400 to-sakura-600 shadow-lg shadow-sakura-500/25">
                   <span className="text-[26px]">🎊</span>
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-[18px] font-serif tracking-wide mb-2 text-amber-900">
+                  <h3 className="text-[18px] font-serif tracking-wide mb-2 text-sakura-900">
                     {plan.campaign.title}
                   </h3>
-                  <p className="text-[15px] leading-relaxed text-amber-800">
+                  <p className="text-[15px] leading-relaxed text-sakura-800">
                     {plan.campaign.description}
                   </p>
                   {plan.availableUntil && (
-                    <p className="text-[14px] mt-3 font-medium text-amber-700">
+                    <p className="text-[14px] mt-3 font-medium text-sakura-700">
                       活动截止：{new Date(plan.availableUntil).toLocaleDateString('zh-CN')}
                     </p>
                   )}

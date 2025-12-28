@@ -327,7 +327,7 @@ export default function PlanCard({
           <div className={`mt-3 space-y-1 ${variant !== 'default' && variant !== 'interactive' ? 'pb-2' : ''}`}>
             {/* 商家名称 + 地区 */}
             {(showMerchant && plan.merchantName) || plan.region ? (
-              <div className="flex items-center gap-1.5 text-[11px] text-gray-400 truncate">
+              <div className="flex items-center gap-1.5 text-[12px] text-gray-400 truncate">
                 {showMerchant && plan.merchantName && (
                   <span className="font-medium tracking-wide">{plan.merchantName}</span>
                 )}
@@ -363,7 +363,7 @@ export default function PlanCard({
                 ¥{(plan.price / 100).toLocaleString()}/人
               </span>
               {plan.originalPrice && plan.originalPrice > 0 && plan.originalPrice > plan.price && (
-                <span className="text-[11px] text-gray-400 line-through">
+                <span className="text-[12px] text-gray-400 line-through">
                   ¥{(plan.originalPrice / 100).toLocaleString()}
                 </span>
               )}
@@ -371,7 +371,7 @@ export default function PlanCard({
 
             {/* 包含物 */}
             {plan.includes && plan.includes.length > 0 && (
-              <p className="text-[11px] text-gray-500 line-clamp-1">
+              <p className="text-[12px] text-gray-500 line-clamp-1">
                 含 {plan.includes.slice(0, 2).join(' · ')}
                 {plan.includes.length > 2 && ` 等${plan.includes.length}项`}
               </p>
@@ -383,7 +383,7 @@ export default function PlanCard({
                 {plan.planTags.slice(0, 3).map(({ tag }) => (
                   <span
                     key={tag.id}
-                    className="text-[10px] tracking-wide px-2 py-0.5 text-gray-500 bg-white transition-all duration-300 hover:text-gray-700"
+                    className="text-[12px] tracking-wide px-2 py-0.5 text-gray-500 bg-white transition-all duration-300 hover:text-gray-700"
                     style={{
                       border: `1px solid ${accentColor}40`,
                     }}
@@ -393,7 +393,7 @@ export default function PlanCard({
                   </span>
                 ))}
                 {plan.planTags.length > 3 && (
-                  <span className="text-[10px] tracking-wide px-2 py-0.5 text-gray-400 bg-white border border-gray-200">
+                  <span className="text-[12px] tracking-wide px-2 py-0.5 text-gray-400 bg-white border border-gray-200">
                     +{plan.planTags.length - 3}
                   </span>
                 )}

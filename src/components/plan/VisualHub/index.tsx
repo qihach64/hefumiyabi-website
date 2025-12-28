@@ -214,7 +214,7 @@ export default function VisualHub({
       {/* 主容器 */}
       <div className="relative">
         {/* Tab 导航 */}
-        <div className="flex items-center gap-1 mb-4 bg-gray-100 rounded-xl p-1 w-fit">
+        <div className="flex items-center gap-1 mb-4 bg-wabi-100 rounded-xl p-1 w-fit">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -244,7 +244,7 @@ export default function VisualHub({
         </div>
 
         {/* Tab 内容区 */}
-        <div className="relative rounded-xl overflow-hidden bg-gray-50">
+        <div className="relative rounded-xl overflow-hidden bg-wabi-50">
           {renderTabContent()}
         </div>
 

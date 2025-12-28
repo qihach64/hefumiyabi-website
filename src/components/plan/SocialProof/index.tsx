@@ -117,8 +117,8 @@ export default function SocialProof({
     <div className="space-y-6">
       {/* 区块标题 */}
       <div className="flex items-center gap-3">
-        <div className="w-8 h-px bg-sakura-300" />
-        <span className="text-[11px] uppercase tracking-[0.2em] text-sakura-500 font-medium">
+        <div className="w-10 h-px bg-gradient-to-r from-sakura-400 to-transparent" />
+        <span className="text-[12px] uppercase tracking-[0.25em] text-sakura-500 font-medium">
           Reviews
         </span>
       </div>
@@ -153,7 +153,7 @@ export default function SocialProof({
         </div>
 
         {/* 标签筛选 */}
-        <div className="mt-5 pt-5 border-t border-gray-100">
+        <div className="mt-5 pt-5 border-t border-wabi-200">
           <div className="flex flex-wrap gap-2">
             {ALL_TAGS.map((tag) => {
               const count = getTagCount(tag);

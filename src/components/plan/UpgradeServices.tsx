@@ -132,7 +132,7 @@ export default function UpgradeServices({
       {/* 区块标题 */}
       <div className="flex items-center gap-3">
         <div className="w-10 h-px bg-gradient-to-r from-sakura-400 to-transparent" />
-        <span className="text-[11px] uppercase tracking-[0.25em] text-sakura-500 font-medium">
+        <span className="text-[12px] uppercase tracking-[0.25em] text-sakura-500 font-medium">
           Optional Upgrades
         </span>
       </div>
@@ -229,7 +229,7 @@ export default function UpgradeServices({
 
               {/* 展开内容 */}
               {expanded && (
-                <div className="px-4 pb-4 pt-2 border-t border-gray-100 space-y-3">
+                <div className="px-4 pb-4 pt-2 border-t border-wabi-200 space-y-3">
                   {/* 图片 */}
                   {option.images.length > 0 && (
                     <div className="flex gap-2 overflow-x-auto pb-1">

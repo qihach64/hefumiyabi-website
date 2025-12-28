@@ -155,8 +155,8 @@ export default function JourneyTimeline({
     <div className="space-y-8">
       {/* 区块标题 */}
       <div className="flex items-center gap-3">
-        <div className="w-8 h-px bg-sakura-300" />
-        <span className="text-[11px] uppercase tracking-[0.2em] text-sakura-500 font-medium">
+        <div className="w-10 h-px bg-gradient-to-r from-sakura-400 to-transparent" />
+        <span className="text-[12px] uppercase tracking-[0.25em] text-sakura-500 font-medium">
           Experience Journey
         </span>
       </div>
@@ -186,7 +186,7 @@ export default function JourneyTimeline({
               <div key={step.id} className="relative">
                 {/* 连接线 */}
                 {!isLast && (
-                  <div className="absolute left-[39px] top-[60px] bottom-0 w-0.5 bg-gray-100" />
+                  <div className="absolute left-[39px] top-[60px] bottom-0 w-0.5 bg-wabi-200" />
                 )}
 
                 {/* 步骤内容 */}
@@ -263,7 +263,7 @@ export default function JourneyTimeline({
 
                 {/* 展开的 FAQ */}
                 {isExpanded && step.faqs && step.faqs.length > 0 && (
-                  <div className="px-5 pb-4 bg-gray-50 animate-in fade-in slide-in-from-top-1 duration-200">
+                  <div className="px-5 pb-4 bg-wabi-50 animate-in fade-in slide-in-from-top-1 duration-200">
                     <div className="ml-14 pl-4 border-l-2 border-sakura-200 space-y-2">
                       {step.faqs.map((faq, faqIdx) => {
                         const faqKey = `${step.id}-${faqIdx}`;

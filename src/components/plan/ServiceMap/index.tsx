@@ -205,11 +205,11 @@ export default function ServiceMap({
 
           {/* ==================== 左侧：热图区域 (70%) ==================== */}
           {mapData && (
-            <div className="w-[70%] flex-shrink-0 py-3 px-2 bg-gradient-to-b from-gray-50/30 to-white border-r border-gray-100 flex flex-col">
+            <div className="w-[70%] flex-shrink-0 py-3 px-2 bg-gradient-to-b from-wabi-50/30 to-white border-r border-gray-100 flex flex-col">
               {/* 图片容器 - 高度优先填满 */}
               <div className="flex-1 flex items-center justify-center min-h-0">
                 <div className="relative h-full aspect-[3/4]">
-                  <div className="relative w-full h-full rounded-2xl overflow-hidden bg-gradient-to-b from-gray-100 to-gray-50 shadow-lg ring-1 ring-gray-200">
+                  <div className="relative w-full h-full rounded-2xl overflow-hidden bg-gradient-to-b from-wabi-100 to-wabi-50 shadow-lg ring-1 ring-wabi-200">
                     <Image
                       src={mapData.imageUrl}
                       alt="和服套餐配件示意图"
@@ -320,10 +320,10 @@ export default function ServiceMap({
                                 className={`
                                   flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-all duration-150
                                   ${selectedItemId === item.id
-                                    ? "bg-emerald-100 ring-1 ring-emerald-400"
+                                    ? "bg-sakura-100 ring-1 ring-sakura-400"
                                     : hoveredItemId === item.id
-                                      ? "bg-emerald-50"
-                                      : "bg-gray-50 hover:bg-gray-100"
+                                      ? "bg-sakura-50"
+                                      : "bg-wabi-50 hover:bg-wabi-100"
                                   }
                                 `}
                               >
@@ -331,7 +331,7 @@ export default function ServiceMap({
                                 <span className="text-[12px] font-medium text-gray-700 truncate flex-1">
                                   {item.name}
                                 </span>
-                                <Check className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+                                <Check className="w-3.5 h-3.5 text-sakura-500 flex-shrink-0" />
                               </button>
                             ))}
                           </div>
@@ -358,10 +358,10 @@ export default function ServiceMap({
                                 className={`
                                   flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-all duration-150
                                   ${selectedItemId === item.id
-                                    ? "bg-emerald-100 ring-1 ring-emerald-400"
+                                    ? "bg-sakura-100 ring-1 ring-sakura-400"
                                     : hoveredItemId === item.id
-                                      ? "bg-emerald-50"
-                                      : "bg-gray-50 hover:bg-gray-100"
+                                      ? "bg-sakura-50"
+                                      : "bg-wabi-50 hover:bg-wabi-100"
                                   }
                                 `}
                               >
@@ -369,7 +369,7 @@ export default function ServiceMap({
                                 <span className="text-[12px] font-medium text-gray-700 truncate flex-1">
                                   {item.name}
                                 </span>
-                                <Check className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+                                <Check className="w-3.5 h-3.5 text-sakura-500 flex-shrink-0" />
                               </button>
                             ))}
                           </div>
@@ -388,14 +388,14 @@ export default function ServiceMap({
                     {/* 详情头部 */}
                     <div className="p-5 border-b border-gray-100 bg-white">
                       <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-xl flex items-center justify-center text-2xl bg-emerald-100">
+                        <div className="w-14 h-14 rounded-xl flex items-center justify-center text-2xl bg-sakura-100">
                           {selectedItem.icon}
                         </div>
                         <div className="flex-1 min-w-0">
                           <h3 className="text-[16px] font-semibold text-gray-900 mb-1">
                             {selectedItem.name}
                           </h3>
-                          <span className="inline-flex items-center gap-1.5 text-[12px] text-emerald-600 font-medium">
+                          <span className="inline-flex items-center gap-1.5 text-[12px] text-sakura-600 font-medium">
                             <Check className="w-4 h-4" />
                             套餐已包含
                           </span>
@@ -408,7 +408,7 @@ export default function ServiceMap({
                       {/* 图片画廊 */}
                       {selectedItem.images && selectedItem.images.length > 0 && (
                         <div>
-                          <h4 className="text-[12px] font-semibold text-gray-400 uppercase tracking-wide mb-3">
+                          <h4 className="text-[12px] font-semibold text-gray-400 uppercase tracking-[0.25em] mb-3">
                             实物展示
                           </h4>
                           <div className="grid grid-cols-2 gap-2">
@@ -445,7 +445,7 @@ export default function ServiceMap({
                       {/* 描述 */}
                       {selectedItem.description && (
                         <div>
-                          <h4 className="text-[12px] font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                          <h4 className="text-[12px] font-semibold text-gray-400 uppercase tracking-[0.25em] mb-2">
                             简介
                           </h4>
                           <p className="text-[14px] text-gray-600 leading-relaxed">
@@ -457,7 +457,7 @@ export default function ServiceMap({
                       {/* 亮点 */}
                       {selectedItem.highlights && selectedItem.highlights.length > 0 && (
                         <div>
-                          <h4 className="text-[12px] font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                          <h4 className="text-[12px] font-semibold text-gray-400 uppercase tracking-[0.25em] mb-2">
                             特点
                           </h4>
                           <div className="space-y-2">
@@ -497,10 +497,10 @@ export default function ServiceMap({
         <div className="lg:hidden">
           {/* 热图区域 */}
           {mapData && (
-            <div className="p-4 bg-gradient-to-b from-gray-50/50 to-white border-b border-gray-100">
+            <div className="p-4 bg-gradient-to-b from-wabi-50/50 to-white border-b border-wabi-100">
               <div className="flex justify-center">
                 <div className="relative w-full max-w-xs">
-                  <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-gradient-to-b from-gray-100 to-gray-50 shadow-lg ring-1 ring-gray-200">
+                  <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-gradient-to-b from-wabi-100 to-wabi-50 shadow-lg ring-1 ring-wabi-200">
                     <Image
                       src={mapData.imageUrl}
                       alt="和服套餐配件示意图"
@@ -534,7 +534,7 @@ export default function ServiceMap({
             {categoryGroups.length > 0 && (
               <div className="mb-4">
                 <div className="flex items-center gap-2 mb-3">
-                  <Check className="w-4 h-4 text-emerald-500" />
+                  <Check className="w-4 h-4 text-sakura-500" />
                   <span className="text-[14px] font-semibold text-gray-900">套餐包含</span>
                   <span className="text-[12px] text-gray-400">{includedItems.length} 项</span>
                 </div>
@@ -554,7 +554,7 @@ export default function ServiceMap({
                             className={`
                               relative flex flex-col items-center p-2.5 rounded-xl transition-all duration-200
                               ${selectedItemId === item.id
-                                ? "bg-emerald-50 ring-2 ring-emerald-400"
+                                ? "bg-sakura-50 ring-2 ring-emerald-400"
                                 : "bg-gray-50 hover:bg-gray-100"
                               }
                             `}
@@ -563,7 +563,7 @@ export default function ServiceMap({
                             <span className="text-[12px] font-medium text-gray-700 text-center line-clamp-1">
                               {item.name}
                             </span>
-                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center">
+                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-sakura-500 rounded-full flex items-center justify-center">
                               <Check className="w-2.5 h-2.5 text-white" />
                             </div>
                           </button>
@@ -597,14 +597,14 @@ export default function ServiceMap({
               {/* 头部 */}
               <div className="flex items-start justify-between px-5 pb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl bg-emerald-100">
+                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl bg-sakura-100">
                     {selectedItem.icon}
                   </div>
                   <div>
                     <h3 className="text-[17px] font-semibold text-gray-900">
                       {selectedItem.name}
                     </h3>
-                    <span className="inline-flex items-center gap-1 text-[13px] text-emerald-600 font-medium">
+                    <span className="inline-flex items-center gap-1 text-[13px] text-sakura-600 font-medium">
                       <Check className="w-4 h-4" />
                       套餐已包含
                     </span>
