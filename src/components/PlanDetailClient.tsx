@@ -155,8 +155,8 @@ export default function PlanDetailClient({ plan, mapData }: PlanDetailClientProp
   const categoryInfo = getCategoryLabel(plan.category);
 
   return (
-    // 米白色纸张质感背景
-    <div className="min-h-screen" style={{ backgroundColor: "#FDFCFB" }}>
+    // 米白色纸张质感背景 (和风设计系统标准)
+    <div className="min-h-screen bg-[#FDFBF7]">
       {/* 主容器 - 增加顶部留白 */}
       <div className="max-w-[1280px] mx-auto px-4 sm:px-6 md:px-10 lg:px-16 pt-8 md:pt-12 pb-16">
 
@@ -165,39 +165,39 @@ export default function PlanDetailClient({ plan, mapData }: PlanDetailClientProp
             结构：首页 / 全部套餐 / 主题名称 / 套餐名称
         ======================================== */}
         <nav className="mb-8 md:mb-10">
-          <ol className="flex items-center gap-2 text-[13px]">
+          <ol className="flex items-center gap-2 text-[14px]">
             <li>
               <Link
                 href="/"
-                className="text-[#8B7355] hover:text-sakura-600 transition-colors"
+                className="text-gray-500 hover:text-sakura-600 transition-colors"
               >
                 首页
               </Link>
             </li>
-            <li className="text-[#C4B5A5]">/</li>
+            <li className="text-gray-400">/</li>
             <li>
               <Link
                 href="/plans"
-                className="text-[#8B7355] hover:text-sakura-600 transition-colors"
+                className="text-gray-500 hover:text-sakura-600 transition-colors"
               >
                 全部套餐
               </Link>
             </li>
             {plan.theme && (
               <>
-                <li className="text-[#C4B5A5]">/</li>
+                <li className="text-gray-400">/</li>
                 <li>
                   <Link
                     href={`/plans?theme=${plan.theme.slug}`}
-                    className="text-[#8B7355] hover:text-sakura-600 transition-colors"
+                    className="text-gray-500 hover:text-sakura-600 transition-colors"
                   >
                     {plan.theme.name}
                   </Link>
                 </li>
               </>
             )}
-            <li className="text-[#C4B5A5]">/</li>
-            <li className="text-[#3D3A38] font-medium truncate max-w-[200px]">
+            <li className="text-gray-400">/</li>
+            <li className="text-gray-900 font-medium truncate max-w-[200px]">
               {plan.name}
             </li>
           </ol>
@@ -208,23 +208,20 @@ export default function PlanDetailClient({ plan, mapData }: PlanDetailClientProp
         ======================================== */}
         <header className="mb-10 md:mb-12">
           {/* 装饰线 + 分类标签 */}
-          <div className="flex items-center gap-3 mb-5">
+          <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-px bg-gradient-to-r from-sakura-400 to-transparent" />
-            <span className="text-[11px] uppercase tracking-[0.25em] text-sakura-500 font-medium">
+            <span className="text-[12px] uppercase tracking-[0.25em] text-sakura-500 font-medium">
               {categoryInfo.en} Plan
             </span>
           </div>
 
           {/* 主标题 - 衬线体 + 深炭灰 */}
-          <h1
-            className="text-[28px] md:text-[36px] lg:text-[42px] font-serif tracking-tight leading-tight mb-6"
-            style={{ color: "#3D3A38" }}
-          >
+          <h1 className="text-[28px] md:text-[36px] lg:text-[42px] font-serif tracking-tight leading-tight mb-6 text-gray-900">
             {plan.name}
           </h1>
 
           {/* 元信息行 */}
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
             {/* 评分 - 樱花色星星 */}
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-0.5">
@@ -241,42 +238,35 @@ export default function PlanDetailClient({ plan, mapData }: PlanDetailClientProp
                   />
                 ))}
               </div>
-              <span className="text-[15px] font-semibold text-[#3D3A38]">4.8</span>
-              <span className="text-[14px] text-[#8B7355]">(128 条评价)</span>
+              <span className="text-[15px] font-semibold text-gray-900">4.8</span>
+              <span className="text-[14px] text-gray-500">(128 条评价)</span>
             </div>
 
             {/* 分隔点 */}
-            <span className="w-1 h-1 rounded-full bg-[#C4B5A5]" />
+            <span className="w-1 h-1 rounded-full bg-gray-300" />
 
             {/* 时长 */}
-            <div className="flex items-center gap-1.5 text-[14px] text-[#5C5854]">
-              <Clock className="w-4 h-4 text-[#8B7355]" />
+            <div className="flex items-center gap-1.5 text-[14px] text-gray-600">
+              <Clock className="w-4 h-4 text-sakura-500" />
               <span>{plan.duration} 小时体验</span>
             </div>
 
             {/* 地区 */}
             {plan.region && (
               <>
-                <span className="w-1 h-1 rounded-full bg-[#C4B5A5]" />
-                <div className="flex items-center gap-1.5 text-[14px] text-[#5C5854]">
-                  <MapPin className="w-4 h-4 text-[#8B7355]" />
+                <span className="w-1 h-1 rounded-full bg-gray-300" />
+                <div className="flex items-center gap-1.5 text-[14px] text-gray-600">
+                  <MapPin className="w-4 h-4 text-sakura-500" />
                   <span>{plan.region}</span>
                 </div>
               </>
             )}
 
-            {/* 限时优惠标签 - Glass 风格 */}
+            {/* 限时优惠标签 - Sakura 风格 */}
             {plan.isCampaign && (
               <>
-                <span className="w-1 h-1 rounded-full bg-[#C4B5A5]" />
-                <span
-                  className="inline-flex items-center px-3 py-1 rounded-full text-[12px] font-medium backdrop-blur-sm"
-                  style={{
-                    background: "rgba(139, 22, 52, 0.08)",
-                    color: "#8B1634",
-                    border: "1px solid rgba(139, 22, 52, 0.15)",
-                  }}
-                >
+                <span className="w-1 h-1 rounded-full bg-gray-300" />
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-[12px] font-medium bg-sakura-50 text-sakura-700 border border-sakura-200">
                   限时优惠
                 </span>
               </>
@@ -284,7 +274,7 @@ export default function PlanDetailClient({ plan, mapData }: PlanDetailClientProp
           </div>
 
           {/* 渐变分割线 */}
-          <div className="mt-8 h-px bg-gradient-to-r from-transparent via-[#E8E2DC] to-transparent" />
+          <div className="mt-8 h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
         </header>
 
         {/* ========================================
@@ -309,14 +299,11 @@ export default function PlanDetailClient({ plan, mapData }: PlanDetailClientProp
             <section className="py-2">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-px bg-gradient-to-r from-sakura-400 to-transparent" />
-                <span className="text-[11px] uppercase tracking-[0.25em] text-sakura-500 font-medium">
+                <span className="text-[12px] uppercase tracking-[0.25em] text-sakura-500 font-medium">
                   About This Plan
                 </span>
               </div>
-              <p
-                className="text-[16px] leading-[1.9] whitespace-pre-line max-w-3xl"
-                style={{ color: "#5C5854" }}
-              >
+              <p className="text-[16px] leading-[1.9] whitespace-pre-line max-w-3xl text-gray-700">
                 {plan.description}
               </p>
             </section>
@@ -330,41 +317,20 @@ export default function PlanDetailClient({ plan, mapData }: PlanDetailClientProp
 
           {/* 活动信息 - 更精致的设计 */}
           {plan.campaign && (
-            <section
-              className="rounded-2xl p-6 md:p-8"
-              style={{
-                background: "linear-gradient(135deg, rgba(255, 251, 235, 0.8) 0%, rgba(254, 243, 199, 0.6) 100%)",
-                border: "1px solid rgba(217, 119, 6, 0.15)",
-              }}
-            >
-              <div className="flex items-start gap-5">
-                <div
-                  className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
-                  style={{
-                    background: "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)",
-                    boxShadow: "0 4px 12px rgba(217, 119, 6, 0.25)",
-                  }}
-                >
-                  <span className="text-2xl">🎊</span>
+            <section className="rounded-xl p-6 md:p-8 bg-gradient-to-br from-yellow-50 to-amber-50/60 border border-amber-200/30">
+              <div className="flex items-start gap-4">
+                <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-amber-400 to-amber-600 shadow-lg shadow-amber-500/25">
+                  <span className="text-[26px]">🎊</span>
                 </div>
                 <div className="flex-1">
-                  <h3
-                    className="text-[18px] font-serif tracking-wide mb-2"
-                    style={{ color: "#78350F" }}
-                  >
+                  <h3 className="text-[18px] font-serif tracking-wide mb-2 text-amber-900">
                     {plan.campaign.title}
                   </h3>
-                  <p
-                    className="text-[15px] leading-relaxed"
-                    style={{ color: "#92400E" }}
-                  >
+                  <p className="text-[15px] leading-relaxed text-amber-800">
                     {plan.campaign.description}
                   </p>
                   {plan.availableUntil && (
-                    <p
-                      className="text-[13px] mt-3 font-medium"
-                      style={{ color: "#B45309" }}
-                    >
+                    <p className="text-[14px] mt-3 font-medium text-amber-700">
                       活动截止：{new Date(plan.availableUntil).toLocaleDateString('zh-CN')}
                     </p>
                   )}
@@ -392,7 +358,7 @@ export default function PlanDetailClient({ plan, mapData }: PlanDetailClientProp
           </div>
 
           {/* 右侧预订卡片 */}
-          <div ref={bookingCardRef} className="lg:col-span-1 transition-all duration-300 rounded-2xl">
+          <div ref={bookingCardRef} className="lg:col-span-1 transition-all duration-300 rounded-xl">
             <div className="lg:sticky lg:top-24">
               <BookingCard
                 plan={{

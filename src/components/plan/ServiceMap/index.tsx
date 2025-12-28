@@ -192,7 +192,7 @@ export default function ServiceMap({
       {/* 区块标题 */}
       <div className="flex items-center gap-3">
         <div className="w-10 h-px bg-gradient-to-r from-sakura-400 to-transparent" />
-        <span className="text-[11px] uppercase tracking-[0.25em] text-sakura-500 font-medium">
+        <span className="text-[12px] uppercase tracking-[0.25em] text-sakura-500 font-medium">
           Package Contents
         </span>
       </div>
@@ -240,7 +240,7 @@ export default function ServiceMap({
               </div>
 
               {/* 图例 */}
-              <div className="mt-2 flex items-center justify-center gap-2 text-[11px] text-gray-500">
+              <div className="mt-2 flex items-center justify-center gap-2 text-[12px] text-gray-500">
                 <div className={`w-2 h-2 rounded-full bg-sakura-500 ${showGuideAnimation ? 'animate-ping' : ''}`} />
                 <span>点击热点查看详情</span>
               </div>
@@ -303,7 +303,7 @@ export default function ServiceMap({
                           <div className="flex items-center gap-2 mb-2 px-1">
                             <span className="text-[14px]">{group.icon}</span>
                             <span className="text-[12px] text-gray-500 font-medium">{group.label}</span>
-                            <span className="text-[11px] text-gray-400">({group.items.length})</span>
+                            <span className="text-[12px] text-gray-400">({group.items.length})</span>
                           </div>
 
                           {/* 组件按钮 - 双列网格 */}
@@ -408,7 +408,7 @@ export default function ServiceMap({
                       {/* 图片画廊 */}
                       {selectedItem.images && selectedItem.images.length > 0 && (
                         <div>
-                          <h4 className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-3">
+                          <h4 className="text-[12px] font-semibold text-gray-400 uppercase tracking-wide mb-3">
                             实物展示
                           </h4>
                           <div className="grid grid-cols-2 gap-2">
@@ -435,7 +435,7 @@ export default function ServiceMap({
                             ))}
                           </div>
                           {selectedItem.images.length > 4 && (
-                            <p className="text-[10px] text-gray-400 mt-2 text-center">
+                            <p className="text-[12px] text-gray-400 mt-2 text-center">
                               +{selectedItem.images.length - 4} 更多图片
                             </p>
                           )}
@@ -445,7 +445,7 @@ export default function ServiceMap({
                       {/* 描述 */}
                       {selectedItem.description && (
                         <div>
-                          <h4 className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                          <h4 className="text-[12px] font-semibold text-gray-400 uppercase tracking-wide mb-2">
                             简介
                           </h4>
                           <p className="text-[14px] text-gray-600 leading-relaxed">
@@ -457,7 +457,7 @@ export default function ServiceMap({
                       {/* 亮点 */}
                       {selectedItem.highlights && selectedItem.highlights.length > 0 && (
                         <div>
-                          <h4 className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                          <h4 className="text-[12px] font-semibold text-gray-400 uppercase tracking-wide mb-2">
                             特点
                           </h4>
                           <div className="space-y-2">
@@ -535,8 +535,8 @@ export default function ServiceMap({
               <div className="mb-4">
                 <div className="flex items-center gap-2 mb-3">
                   <Check className="w-4 h-4 text-emerald-500" />
-                  <span className="text-[13px] font-semibold text-gray-900">套餐包含</span>
-                  <span className="text-[11px] text-gray-400">{includedItems.length} 项</span>
+                  <span className="text-[14px] font-semibold text-gray-900">套餐包含</span>
+                  <span className="text-[12px] text-gray-400">{includedItems.length} 项</span>
                 </div>
 
                 <div className="space-y-3">
@@ -544,7 +544,7 @@ export default function ServiceMap({
                     <div key={group.key}>
                       <div className="flex items-center gap-1.5 mb-2">
                         <span className="text-[14px]">{group.icon}</span>
-                        <span className="text-[11px] text-gray-500">{group.label}</span>
+                        <span className="text-[12px] text-gray-500">{group.label}</span>
                       </div>
                       <div className="grid grid-cols-3 gap-2">
                         {group.items.map((item) => (
@@ -560,7 +560,7 @@ export default function ServiceMap({
                             `}
                           >
                             <span className="text-xl mb-1">{item.icon}</span>
-                            <span className="text-[11px] font-medium text-gray-700 text-center line-clamp-1">
+                            <span className="text-[12px] font-medium text-gray-700 text-center line-clamp-1">
                               {item.name}
                             </span>
                             <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center">
@@ -588,7 +588,7 @@ export default function ServiceMap({
             />
 
             {/* 抽屉内容 */}
-            <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl max-h-[70vh] overflow-hidden animate-in slide-in-from-bottom duration-300">
+            <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-2xl max-h-[70vh] overflow-hidden animate-in slide-in-from-bottom duration-300">
               {/* 拖拽指示 */}
               <div className="flex justify-center py-3">
                 <div className="w-10 h-1 bg-gray-200 rounded-full" />

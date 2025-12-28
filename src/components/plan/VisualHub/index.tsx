@@ -372,8 +372,8 @@ function CustomerPhotos({
             />
             {/* 底部信息 */}
             <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-3">
-              <p className="text-white text-[13px] font-medium">{photo.author}</p>
-              <p className="text-white/70 text-[11px]">{photo.date}</p>
+              <p className="text-white text-[14px] font-medium">{photo.author}</p>
+              <p className="text-white/70 text-[12px]">{photo.date}</p>
             </div>
           </div>
         ))}

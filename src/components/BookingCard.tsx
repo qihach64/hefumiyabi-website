@@ -114,7 +114,7 @@ export default function BookingCard({ plan, selectedUpgrades = [], onRemoveUpgra
         {selectedUpgrades.length > 0 ? (
           <>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-[11px] px-2 py-0.5 bg-sakura-100 text-sakura-700 rounded-full font-medium">
+              <span className="text-[12px] px-2 py-0.5 bg-sakura-100 text-sakura-700 rounded-full font-medium">
                 💫 含增值服务
               </span>
             </div>
@@ -408,7 +408,7 @@ export default function BookingCard({ plan, selectedUpgrades = [], onRemoveUpgra
 
       {/* 桌面端：侧边栏 */}
       <div className="hidden lg:block">
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-shadow duration-300">
           <BookingFormContent />
         </div>
       </div>
@@ -427,7 +427,7 @@ export default function BookingCard({ plan, selectedUpgrades = [], onRemoveUpgra
                     </span>
                     <span className="text-sm text-gray-600">/ 人</span>
                   </div>
-                  <div className="flex items-center gap-1 text-[11px] text-gray-500">
+                  <div className="flex items-center gap-1 text-[12px] text-gray-500">
                     <span>含 {selectedUpgrades.length} 项增值</span>
                     <span className="text-sakura-500">+¥{(upgradesTotal / 100).toLocaleString()}</span>
                   </div>
@@ -467,7 +467,7 @@ export default function BookingCard({ plan, selectedUpgrades = [], onRemoveUpgra
             />
 
             {/* 底部抽屉 */}
-            <div className="fixed inset-x-0 bottom-0 bg-white rounded-t-3xl z-50 max-h-[90vh] overflow-y-auto safe-area-bottom">
+            <div className="fixed inset-x-0 bottom-0 bg-white rounded-t-2xl z-50 max-h-[90vh] overflow-y-auto safe-area-bottom">
               {/* 拖动指示器 */}
               <div className="flex justify-center py-3 border-b border-gray-200">
                 <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
