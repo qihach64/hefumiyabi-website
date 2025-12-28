@@ -76,6 +76,18 @@
   --kimono-red: #DC2626;
   --kimono-green: #059669;
 
+  /* === 侘寂色系 (Wabi-Sabi) - 日式 Zen 中性色 === */
+  --wabi-50: #FDFBF7;   /* 宣纸米白 - 沉浸页面背景 */
+  --wabi-100: #F5F0E8;  /* 绢白 - 卡片背景 */
+  --wabi-200: #E8E2DC;  /* 枯草 - 分割线 */
+  --wabi-300: #D4CCC2;  /* 灰梅 - 边框 */
+  --wabi-400: #B8A89A;  /* 墨淡 - 装饰文字 */
+  --wabi-500: #8B7355;  /* 路考茶 - 次要图标 */
+  --wabi-600: #5C5854;  /* 鼠灰 - 次要正文 */
+  --wabi-700: #3D3A38;  /* 墨鼠 - 正文 */
+  --wabi-800: #2D2A26;  /* 漆黑 - 标题 */
+  --wabi-900: #1A1816;  /* 玄黑 - 最深色 */
+
   /* === 圆角系统 === */
   --radius-sm: 0.25rem;   /* 4px */
   --radius-md: 0.5rem;    /* 8px */
@@ -142,6 +154,18 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-info: var(--info);
+
+  /* 侘寂色系 (Wabi-Sabi) */
+  --color-wabi-50: var(--wabi-50);
+  --color-wabi-100: var(--wabi-100);
+  --color-wabi-200: var(--wabi-200);
+  --color-wabi-300: var(--wabi-300);
+  --color-wabi-400: var(--wabi-400);
+  --color-wabi-500: var(--wabi-500);
+  --color-wabi-600: var(--wabi-600);
+  --color-wabi-700: var(--wabi-700);
+  --color-wabi-800: var(--wabi-800);
+  --color-wabi-900: var(--wabi-900);
 
   /* 圆角 */
   --radius-sm: var(--radius-sm);

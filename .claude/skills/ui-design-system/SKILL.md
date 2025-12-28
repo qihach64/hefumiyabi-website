@@ -1,6 +1,6 @@
 ---
 name: ui-design-system
-description: 当编写、修改或审查前端 UI 代码时使用此 skill。确保所有 React 组件、Tailwind CSS 类名和设计决策严格遵循项目的 Airbnb + 樱花美学设计系统。
+description: 当编写、修改或审查前端 UI 代码时使用此 skill。确保所有 React 组件、Tailwind CSS 类名和设计决策严格遵循项目的日式 Zen + 樱花美学设计系统。
 allowed-tools: Read, Edit, Write, Grep, Glob
 ---
 
@@ -8,7 +8,265 @@ allowed-tools: Read, Edit, Write, Grep, Glob
 
 **使命**：确保每一行前端代码都符合项目的设计系统，保持视觉一致性和用户体验的连贯性。
 
-> 🎨 **设计理念**：Airbnb 极简风格 + 和服樱花美学 = 简洁优雅的用户体验
+> 🎨 **设计理念**：日式 Zen 美学 + 樱花配色 = 宁静优雅的和服体验
+
+---
+
+## 🎎 和服美学核心哲学
+
+### 设计精神：「雅」(Miyabi)
+
+> 追求优雅与含蓄，避免过度装饰。如同和服本身——看似简单，细节考究。
+
+**三大原则**：
+
+1. **侘寂 (Wabi-Sabi)**：不完美中的美，温暖的米白背景而非冷酷的纯白
+2. **間 (Ma)**：留白的艺术，让内容呼吸，避免信息过载
+3. **雅 (Miyabi)**：含蓄的优雅，装饰点到为止，功能优先
+
+---
+
+## 🔤 字体系统（Typography）
+
+### 字体家族
+
+| 用途 | 字体类名 | 字体栈 | 示例文本 |
+|------|----------|--------|----------|
+| 日文标题 | `font-mincho` | Shippori Mincho | 「一の着物」「京都・和服体験」 |
+| 中文标题 | `font-serif` | Noto Serif SC (思源宋体) | 套餐详情、限时优惠 |
+| 正文内容 | `font-sans` | Noto Sans SC | 描述文字、按钮文案 |
+
+### 使用规范
+
+```tsx
+// ✅ 日文标题 - 用明朝体
+<h1 className="font-mincho text-[42px]">一の着物</h1>
+<span className="font-mincho text-sm">伝統と現代の融合</span>
+
+// ✅ 中文标题 - 用思源宋体
+<h2 className="font-serif text-[26px]">套餐详情</h2>
+<h3 className="font-serif text-[22px]">包含内容</h3>
+
+// ✅ 正文内容 - 用黑体（默认）
+<p className="text-[16px]">描述正文...</p>
+<button className="font-medium">立即预订</button>
+
+// ❌ 禁止混用
+<h1 className="font-sans">一の着物</h1>  // ❌ 日文不要用黑体
+<p className="font-serif">正文内容</p>    // ❌ 正文不要用宋体
+```
+
+### 字体使用场景速查
+
+| 场景 | 字体 | 示例 |
+|------|------|------|
+| Hero 主标题 | `font-mincho` | 一の着物 |
+| 竖排装饰文字 | `font-mincho` | 京都・和服体験 |
+| 区块标题 | `font-serif` | 套餐详情 |
+| 卡片标题 | `font-sans` + `font-semibold` | 经典女士套餐 |
+| 正文描述 | `font-sans` | 包含专业着装服务... |
+| 按钮/标签 | `font-sans` + `font-medium` | 立即预订 |
+
+---
+
+## 🏠 页面氛围系统（Page Atmosphere）
+
+### 背景色规范
+
+| 页面类型 | 背景色 | CSS 类 | 氛围描述 |
+|----------|--------|--------|----------|
+| 高能量页 | 纯白 | `bg-white` | 首页、搜索结果 - 明亮开放，激发探索欲 |
+| 沉浸体验页 | 米白 | `bg-[#FDFBF7]` | 详情页、预览页 - 温暖宁静，如宣纸质感 |
+| 功能操作页 | 浅灰 | `bg-gray-50` | 结账、表单、后台 - 中性专业，减少干扰 |
+
+```tsx
+// ✅ 首页 - 明亮白色
+<div className="min-h-screen bg-white">
+
+// ✅ 详情页 - 温暖米白（Zen 纸张质感）
+<div className="min-h-screen bg-[#FDFBF7]">
+
+// ✅ 结账页 - 中性灰
+<div className="min-h-screen bg-gray-50">
+
+// ❌ 禁止
+<div className="min-h-screen bg-gray-100">  // ❌ 太冷
+<div className="min-h-screen bg-sakura-50"> // ❌ 大面积粉色太刺眼
+```
+
+---
+
+## ✨ 装饰元素系统（Decorative Elements）
+
+### 1. 水平装饰线（全站统一使用）
+
+用于区块标题前的装饰，增加日式仪式感：
+
+```tsx
+// ✅ 标准装饰线 + 英文小标题
+<div className="flex items-center gap-3 mb-4">
+  <div className="w-10 h-px bg-gradient-to-r from-sakura-400 to-transparent" />
+  <span className="text-[12px] uppercase tracking-[0.25em] text-sakura-500 font-medium">
+    Package Contents
+  </span>
+</div>
+
+// ✅ 主题色装饰线（动态）
+<div
+  className="w-10 h-px"
+  style={{ background: `linear-gradient(to right, ${themeColor}, transparent)` }}
+/>
+```
+
+### 2. 竖排日文装饰（仅首页 Hero）
+
+```tsx
+// ✅ 仅在首页 Hero 使用
+<div
+  className="writing-vertical text-[#B8A89A]/50 text-sm tracking-[0.5em] font-mincho"
+  style={{ writingMode: "vertical-rl" }}
+>
+  京都・和服体験
+</div>
+
+// ❌ 禁止在内容区域使用（可读性差）
+```
+
+### 3. 渐变分割线
+
+```tsx
+// ✅ 区块之间的柔和分割
+<div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
+
+// ✅ 主题色分割线
+<div
+  className="h-px"
+  style={{ background: `linear-gradient(to right, transparent, ${themeColor}30, transparent)` }}
+/>
+```
+
+---
+
+## 🎬 动效哲学（Animation Philosophy）
+
+### 核心原则
+
+> **「静中有动」**：动效应该像和服上的暗纹，不喧宾夺主，但细看有惊喜。
+
+### Framer Motion 使用范围
+
+| 场景 | 是否使用 | 原因 |
+|------|----------|------|
+| 首页 Hero | ✅ 使用 | 品牌展示，需要仪式感 |
+| 页面入场 | ❌ 不使用 | 避免拖慢感知速度 |
+| 详情页内容 | ❌ 不使用 | 用户需要快速浏览信息 |
+| Modal/Drawer | ✅ 使用 | 状态转换需要平滑过渡 |
+| 卡片 Hover | ❌ 不使用 | 用 CSS transition 即可 |
+
+### CSS Transition 规范
+
+```tsx
+// ✅ 标准过渡（最常用）
+className="transition-all duration-300"
+
+// ✅ 缓慢优雅过渡（Zen 感）
+className="transition-all duration-500"
+
+// ✅ 卡片 hover
+className="hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
+
+// ✅ 图片 hover
+className="group-hover:scale-105 transition-transform duration-700 ease-out"
+
+// ❌ 禁止
+className="duration-100"  // ❌ 太快，感觉廉价
+className="duration-1000" // ❌ 太慢，感觉拖沓
+className="animate-bounce" // ❌ 太活泼，不符合 Zen
+```
+
+---
+
+## 🌏 文化语境规范（Cultural Context）
+
+### 多语言使用场景
+
+| 场景 | 日文 | 中文 | 英文 |
+|------|------|------|------|
+| Hero 主标题 | ✅ 首选 | — | — |
+| Hero 副标题 | ✅ 可选 | — | — |
+| 区块小标题标签 | — | — | ✅ 大写 |
+| 区块主标题 | — | ✅ 首选 | — |
+| 正文内容 | — | ✅ 首选 | — |
+| 按钮文案 | — | ✅ 首选 | — |
+| 状态标签 | — | ✅ 首选 | — |
+| 占位符提示 | — | ✅ 首选 | — |
+
+```tsx
+// ✅ 正确的多语言组合
+<header>
+  <span className="text-[12px] uppercase tracking-[0.25em] text-sakura-500">
+    Package Contents  {/* 英文小标签 */}
+  </span>
+  <h2 className="font-serif text-[26px] text-gray-900">
+    套餐包含  {/* 中文主标题 */}
+  </h2>
+</header>
+
+// ✅ Hero 日文标题
+<h1 className="font-mincho text-[42px]">一の着物</h1>
+<p className="font-mincho text-sm">伝統と現代の融合</p>
+```
+
+---
+
+## 🍂 侘寂色系（Wabi-Sabi Colors）
+
+### 日式 Zen 中性色
+
+区别于冷灰色系，侘寂色系带有温暖的褐调，如同老宣纸、茶室木材的自然色泽。
+
+| Token | 色值 | 日文名 | 用途 |
+|-------|------|--------|------|
+| `wabi-50` | `#FDFBF7` | 宣纸 | 沉浸页面背景 |
+| `wabi-100` | `#F5F0E8` | 绢白 | 卡片背景、hover |
+| `wabi-200` | `#E8E2DC` | 枯草 | 分割线、边框 |
+| `wabi-300` | `#D4CCC2` | 灰梅 | 深边框 |
+| `wabi-400` | `#B8A89A` | 墨淡 | 装饰文字、图标 |
+| `wabi-500` | `#8B7355` | 路考茶 | 次要图标 |
+| `wabi-600` | `#5C5854` | 鼠灰 | 次要正文 |
+| `wabi-700` | `#3D3A38` | 墨鼠 | 正文 |
+| `wabi-800` | `#2D2A26` | 漆黑 | 标题 |
+| `wabi-900` | `#1A1816` | 玄黑 | 最深色 |
+
+### 使用场景
+
+```tsx
+// ✅ 页面背景
+<div className="bg-wabi-50">  // 详情页
+
+// ✅ 装饰元素
+<span className="text-wabi-400 font-mincho">京都・和服体験</span>
+
+// ✅ 分割线
+<div className="h-px bg-wabi-200" />
+
+// ✅ Hero 标题
+<h1 className="text-wabi-800 font-mincho">一の着物</h1>
+
+// ❌ 禁止混用
+<h1 className="text-gray-900">一の着物</h1>  // ❌ Hero 标题用 wabi-800
+<div className="bg-gray-50">详情页</div>     // ❌ 详情页用 wabi-50
+```
+
+### 与 Gray 色系的区别
+
+| 场景 | 使用 Wabi | 使用 Gray |
+|------|-----------|-----------|
+| 详情页背景 | ✅ `wabi-50` | ❌ |
+| 结账页背景 | ❌ | ✅ `gray-50` |
+| 日式装饰 | ✅ `wabi-400` | ❌ |
+| 正文文本 | ❌ | ✅ `gray-700` |
+| 分割线 | ✅ `wabi-200` (详情页) | ✅ `gray-200` (其他页) |
 
 ---
 
