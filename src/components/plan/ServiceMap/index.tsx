@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import Image from "next/image";
-import { Check, Sparkles, ChevronRight, Package, Info, Plus } from "lucide-react";
+import { Check, Sparkles, ChevronRight, Package, Info, Plus, X } from "lucide-react";
 import ImageGalleryModal from "@/components/ImageGalleryModal";
 import Hotspot from "../InteractiveKimonoMap/Hotspot";
 import type { MapData, HotspotData } from "../InteractiveKimonoMap/types";
