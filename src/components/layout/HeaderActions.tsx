@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Store, ArrowRight } from "lucide-react";
 import CartIcon from "../CartIcon";
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 
 interface HeaderActionsProps {
   isLoggedIn: boolean;
@@ -15,7 +15,7 @@ interface HeaderActionsProps {
   } | null;
 }
 
-export default function HeaderActions({ isLoggedIn, merchant }: HeaderActionsProps) {
+const HeaderActions = memo(function HeaderActions({ isLoggedIn, merchant }: HeaderActionsProps) {
   const pathname = usePathname();
   const [isMounted, setIsMounted] = useState(false);
   const isMerchantPage = pathname?.startsWith("/merchant");
@@ -128,4 +128,6 @@ export default function HeaderActions({ isLoggedIn, merchant }: HeaderActionsPro
       {!isMerchantPage && <CartIcon />}
     </div>
   );
-}
+});
+
+export default HeaderActions;

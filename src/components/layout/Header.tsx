@@ -11,7 +11,23 @@ import HeaderSearchBar from "./HeaderSearchBar";
 import NavMenuButton from "./NavMenuButton";
 import { useSearchBar } from "@/contexts/SearchBarContext";
 
+// 渲染计数器（调试用）
+let headerRenderCount = 0;
+
+// 预计算装饰点位置（避免每次渲染计算三角函数）
+const DECORATION_DOTS = [0, 72, 144, 216, 288].map((angle) => {
+  const radius = 17;
+  const rad = (angle - 90) * (Math.PI / 180);
+  return {
+    x: Math.cos(rad) * radius,
+    y: Math.sin(rad) * radius,
+  };
+});
+
 export default function Header() {
+  headerRenderCount++;
+  const renderStartTime = performance.now();
+
   const pathname = usePathname();
   const { data: session } = useSession();
   const { isSearchBarExpanded, isHeroVisible, hideSearchBar } = useSearchBar();
@@ -23,10 +39,37 @@ export default function Header() {
   const [merchant, setMerchant] = useState<any>(null);
   const [isScrolled, setIsScrolled] = useState(false);
 
+  // 每次渲染时记录（调试用）
+  useEffect(() => {
+    const renderTime = performance.now() - renderStartTime;
+    console.log(`[Header] 🎨 Render #${headerRenderCount} (${renderTime.toFixed(1)}ms) | isHeroVisible=${isHeroVisible}, isScrolled=${isScrolled}, isSearchBarExpanded=${isSearchBarExpanded}`);
+  });
+
   // 监听滚动，控制 Header 透明度
   useEffect(() => {
+    let lastScrollY = window.scrollY;
+    let ticking = false;
+    let scrollCount = 0;
+
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
+      const currentScrollY = window.scrollY;
+
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          scrollCount++;
+          const newIsScrolled = currentScrollY > 50;
+
+          // 只在状态真正改变时更新
+          if (newIsScrolled !== (lastScrollY > 50)) {
+            console.log(`[Header] 🔄 setIsScrolled: ${newIsScrolled} (scroll #${scrollCount}, y=${currentScrollY.toFixed(0)})`);
+            setIsScrolled(newIsScrolled);
+          }
+
+          lastScrollY = currentScrollY;
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
 
     // 初始检查
@@ -147,27 +190,21 @@ export default function Header() {
                   </span>
                 </div>
                 {/* Decorative dots - 桜 petals hint (5 points like cherry blossom) */}
-                {[0, 72, 144, 216, 288].map((angle, i) => {
-                  const radius = 17; // pixels from center
-                  const rad = (angle - 90) * (Math.PI / 180);
-                  const x = Math.cos(rad) * radius;
-                  const y = Math.sin(rad) * radius;
-                  return (
-                    <div
-                      key={i}
-                      className={`absolute w-1 h-1 rounded-full transition-all duration-300 ${
-                        isTransparent
-                          ? 'bg-sakura-500/70'
-                          : 'bg-sakura-400/60 group-hover:bg-sakura-500/70'
-                      }`}
-                      style={{
-                        top: `calc(50% + ${y}px)`,
-                        left: `calc(50% + ${x}px)`,
-                        transform: 'translate(-50%, -50%)',
-                      }}
-                    />
-                  );
-                })}
+                {DECORATION_DOTS.map((dot, i) => (
+                  <div
+                    key={i}
+                    className={`absolute w-1 h-1 rounded-full transition-all duration-300 ${
+                      isTransparent
+                        ? 'bg-sakura-500/70'
+                        : 'bg-sakura-400/60 group-hover:bg-sakura-500/70'
+                    }`}
+                    style={{
+                      top: `calc(50% + ${dot.y}px)`,
+                      left: `calc(50% + ${dot.x}px)`,
+                      transform: 'translate(-50%, -50%)',
+                    }}
+                  />
+                ))}
               </div>
 
               {/* Typography - 和モダン Style - Sakura Theme */}

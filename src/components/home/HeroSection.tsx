@@ -1,8 +1,8 @@
 "use client";
 
-import { useRef, useEffect, useState, useCallback } from "react";
+import { useRef, useEffect, useState } from "react";
 import Image from "next/image";
-import { motion, useScroll, useTransform, useMotionValue } from "framer-motion";
+import { motion } from "framer-motion";
 import HeroSearchPanel from "./HeroSearchPanel";
 
 // Hero 背景图片
@@ -26,56 +26,39 @@ interface HeroSectionProps {
 export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSectionProps) {
   const heroRef = useRef<HTMLDivElement>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false); // 下拉菜单是否打开
-
-  // 滚动动画
-  const { scrollY } = useScroll();
-
-  // 背景缩放效果 - 初始略大，滚动时继续放大
-  const bgScale = useTransform(scrollY, [0, 500], [1.05, 1.15]);
-
-  // 视差效果 - 内容向上移动（下拉菜单打开时锁定）
-  const contentYBase = useTransform(scrollY, [0, 500], [0, 150]);
-  // 透明度渐变 - 滚动时淡出（下拉菜单打开时锁定）
-  const contentOpacityBase = useTransform(scrollY, [0, 400], [1, 0]);
-
-  // 使用 motion value 来手动控制，以便响应 isDropdownOpen 状态
-  const contentY = useMotionValue(0);
-  const contentOpacity = useMotionValue(1);
-
-  // 订阅 base 值变化，根据 isDropdownOpen 状态决定是否更新
-  useEffect(() => {
-    // 当下拉菜单打开时，不订阅滚动变化（保持当前位置不变）
-    if (isDropdownOpen) {
-      return;
-    }
-
-    // 下拉菜单关闭时，订阅滚动变化并立即同步当前值
-    contentY.set(contentYBase.get());
-    contentOpacity.set(contentOpacityBase.get());
-
-    const unsubY = contentYBase.on("change", (v) => {
-      contentY.set(v);
-    });
-    const unsubOpacity = contentOpacityBase.on("change", (v) => {
-      contentOpacity.set(v);
-    });
-
-    return () => {
-      unsubY();
-      unsubOpacity();
-    };
-  }, [isDropdownOpen, contentYBase, contentOpacityBase, contentY, contentOpacity]);
 
   // 监听 Hero 是否在视口内
+  // 使用 hysteresis（迟滞）防止边界抖动：进入需要 20%，离开需要 5%
   useEffect(() => {
     if (!heroRef.current || !onHeroVisibilityChange) return;
 
+    let lastVisible: boolean | null = null;
+
     const observer = new IntersectionObserver(
       ([entry]) => {
-        onHeroVisibilityChange(entry.isIntersecting);
+        const ratio = entry.intersectionRatio;
+
+        // Hysteresis: 不同的阈值用于进入和离开
+        // 从不可见变为可见：需要 ratio > 0.2
+        // 从可见变为不可见：需要 ratio < 0.05
+        let isVisible: boolean;
+        if (lastVisible === null) {
+          isVisible = ratio > 0.1;
+        } else if (lastVisible) {
+          // 当前可见，只有 ratio < 0.05 才变为不可见
+          isVisible = ratio >= 0.05;
+        } else {
+          // 当前不可见，只有 ratio > 0.2 才变为可见
+          isVisible = ratio > 0.2;
+        }
+
+        if (isVisible !== lastVisible) {
+          console.log(`[HeroSection] 👁️ visibility changed: ${isVisible} (ratio=${ratio.toFixed(2)}, hysteresis applied)`);
+          lastVisible = isVisible;
+          onHeroVisibilityChange(isVisible);
+        }
       },
-      { threshold: 0.1 }
+      { threshold: [0, 0.05, 0.1, 0.2, 0.5] }
     );
 
     observer.observe(heroRef.current);
@@ -88,10 +71,7 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
       className="relative h-screen w-full overflow-hidden bg-white"
     >
       {/* Layer 1: 背景图片 */}
-      <motion.div
-        className="absolute inset-0 z-0"
-        style={{ scale: bgScale }}
-      >
+      <div className="absolute inset-0 z-0">
         <Image
           src={HERO_IMAGES[0]}
           alt="和服体验"
@@ -107,7 +87,7 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
         {!imageLoaded && (
           <div className="absolute inset-0 bg-gradient-to-br from-sakura-50 to-sakura-100 animate-pulse" />
         )}
-      </motion.div>
+      </div>
 
       {/* Layer 2: Airy Gradient - 空气感渐变 */}
       {/* 顶部：极淡黑色渐变，保证导航栏可读性 */}
@@ -124,11 +104,8 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
         }}
       />
 
-      {/* Layer 3: 主内容区 (视差滚动) - 整体上移以给日历下拉菜单留出空间 */}
-      <motion.div
-        className="relative z-10 h-full flex flex-col items-center justify-center px-4 -mt-16 md:-mt-24"
-        style={{ y: contentY, opacity: contentOpacity }}
-      >
+      {/* Layer 3: 主内容区 */}
+      <div className="relative z-10 h-full flex flex-col items-center justify-center px-4 -mt-16 md:-mt-24">
         {/* 竖排装饰文字 - 左侧 */}
         <motion.div
           className="hidden lg:block absolute left-8 xl:left-16 top-1/2 -translate-y-1/2"
@@ -213,9 +190,9 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.8, delay: 1.1 }}
         >
-          <HeroSearchPanel themes={themes} variant="light" onDropdownOpenChange={setIsDropdownOpen} />
+          <HeroSearchPanel themes={themes} variant="light" />
         </motion.div>
-      </motion.div>
+      </div>
 
     </section>
   );

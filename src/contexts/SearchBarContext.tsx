@@ -28,28 +28,37 @@ export function SearchBarProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const threshold = 100; // 滚动阈值
     const scrollDelta = 50; // 手动展开后需要滚动的距离才能自动收起
+    let ticking = false;
+    let lastExpanded = isSearchBarExpanded;
 
     const handleScroll = () => {
-      const currentScrollY = window.scrollY;
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const currentScrollY = window.scrollY;
 
-      // 如果是手动展开的，检查是否滚动超过一定距离
-      if (manuallyExpandedRef.current) {
-        const scrolledDistance = Math.abs(currentScrollY - expandedScrollYRef.current);
-        if (scrolledDistance > scrollDelta) {
-          // 用户滚动超过阈值，解除手动展开锁定
-          manuallyExpandedRef.current = false;
-        } else {
-          // 仍在锁定期间，保持展开状态
-          return;
-        }
-      }
+          // 如果是手动展开的，检查是否滚动超过一定距离
+          if (manuallyExpandedRef.current) {
+            const scrolledDistance = Math.abs(currentScrollY - expandedScrollYRef.current);
+            if (scrolledDistance > scrollDelta) {
+              manuallyExpandedRef.current = false;
+            } else {
+              ticking = false;
+              return;
+            }
+          }
 
-      if (currentScrollY > threshold) {
-        // 向下滚动超过阈值：收起搜索栏（小搜索栏）
-        setIsSearchBarExpanded(false);
-      } else {
-        // 回到顶部：展开搜索栏（大搜索栏）
-        setIsSearchBarExpanded(true);
+          const shouldExpand = currentScrollY <= threshold;
+
+          // 只在状态真正改变时更新
+          if (shouldExpand !== lastExpanded) {
+            console.log(`[SearchBarContext] 🔄 setIsSearchBarExpanded: ${shouldExpand} (y=${currentScrollY.toFixed(0)})`);
+            setIsSearchBarExpanded(shouldExpand);
+            lastExpanded = shouldExpand;
+          }
+
+          ticking = false;
+        });
+        ticking = true;
       }
     };
 
@@ -58,7 +67,7 @@ export function SearchBarProvider({ children }: { children: ReactNode }) {
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
-  }, []);
+  }, [isSearchBarExpanded]);
 
   // 手动展开方法
   const expandManually = () => {

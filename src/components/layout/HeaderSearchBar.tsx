@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useTransition, useCallback, useMemo, Suspense } from "react";
+import { useState, useEffect, useRef, useTransition, useCallback, useMemo, Suspense, memo } from "react";
 import { Search, MapPin, X, Calendar, Palette, ChevronDown, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSearchState } from "@/contexts/SearchStateContext";
@@ -9,7 +9,9 @@ import { getThemeIcon } from "@/lib/themeIcons";
 import type { Theme } from "@/types";
 
 // 内部组件，使用 useSearchParams
-function HeaderSearchBarInner() {
+// 使用 memo 防止父组件重渲染导致的不必要更新
+const HeaderSearchBarInner = memo(function HeaderSearchBarInner() {
+  console.log('[HeaderSearchBar] 🔧 Render');
   const router = useRouter();
   const searchParams = useSearchParams();
   const { searchState, setLocation, setDate, setTheme, startSearch, isSearching } = useSearchState();
@@ -792,7 +794,7 @@ function HeaderSearchBarInner() {
       </div>
     </>
   );
-}
+});
 
 // 外部组件，包裹 Suspense 以支持静态页面预渲染
 export default function HeaderSearchBar() {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, memo } from "react";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
 
@@ -12,7 +12,7 @@ interface NavMenuButtonProps {
   }>;
 }
 
-export default function NavMenuButton({ navLinks }: NavMenuButtonProps) {
+const NavMenuButton = memo(function NavMenuButton({ navLinks }: NavMenuButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -55,4 +55,6 @@ export default function NavMenuButton({ navLinks }: NavMenuButtonProps) {
       )}
     </>
   );
-}
+});
+
+export default NavMenuButton;
