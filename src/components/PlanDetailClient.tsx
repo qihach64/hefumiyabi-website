@@ -7,6 +7,7 @@ import BookingCard from "@/components/BookingCard";
 import MiniBookingBar from "@/components/MiniBookingBar";
 import VisualHub from "@/components/plan/VisualHub";
 import ServiceMap from "@/components/plan/ServiceMap";
+import UpgradeServices from "@/components/plan/UpgradeServices";
 import SocialProof from "@/components/plan/SocialProof";
 import JourneyTimeline from "@/components/plan/JourneyTimeline";
 import { useSearchBar } from "@/contexts/SearchBarContext";
@@ -321,14 +322,10 @@ export default function PlanDetailClient({ plan, mapData }: PlanDetailClientProp
             </section>
           )}
 
-          {/* SERVICE MAP */}
+          {/* SERVICE MAP - 只展示包含项 */}
           <ServiceMap
             includes={plan.includes}
             mapData={mapData}
-            selectedUpgrades={selectedUpgrades}
-            onAddUpgrade={handleAddUpgrade}
-            onRemoveUpgrade={handleRemoveUpgrade}
-            onViewPricing={scrollToBookingWithHighlight}
           />
 
           {/* 活动信息 - 更精致的设计 */}
@@ -378,11 +375,18 @@ export default function PlanDetailClient({ plan, mapData }: PlanDetailClientProp
         </div>
 
         {/* ========================================
-            两栏区域：Journey + Reviews + BookingCard
+            两栏区域：Upgrades + Journey + Reviews | BookingCard
         ======================================== */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-10">
           {/* 左侧主内容区 */}
           <div className="lg:col-span-2 space-y-12">
+            {/* 升级服务 - 独立区块，与 BookingCard 同视野 */}
+            <UpgradeServices
+              selectedUpgrades={selectedUpgrades}
+              onAddUpgrade={handleAddUpgrade}
+              onRemoveUpgrade={handleRemoveUpgrade}
+            />
+
             <JourneyTimeline duration={plan.duration} />
             <SocialProof />
           </div>

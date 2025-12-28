@@ -2,11 +2,10 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import Image from "next/image";
-import { Check, Plus, Sparkles, ChevronRight, Star, X, Package, Info, ChevronDown, ArrowRight } from "lucide-react";
+import { Check, Sparkles, ChevronRight, X, Package, Info, Plus } from "lucide-react";
 import Hotspot from "../InteractiveKimonoMap/Hotspot";
 import type { MapData, HotspotData } from "../InteractiveKimonoMap/types";
 import type { OutfitCategory } from "@prisma/client";
-import type { SelectedUpgrade } from "@/components/PlanDetailClient";
 
 // v10.2: OUTFIT 分类配置
 const OUTFIT_CATEGORY_CONFIG: Record<OutfitCategory, { label: string; icon: string; order: number }> = {
@@ -18,25 +17,9 @@ const OUTFIT_CATEGORY_CONFIG: Record<OutfitCategory, { label: string; icon: stri
   FOOTWEAR: { label: "足部穿着", icon: "👡", order: 6 },
 };
 
-interface UpgradeOption {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  icon: string;
-  popular?: boolean;
-  highlights?: string[];
-}
-
 interface ServiceMapProps {
   includes: string[];
   mapData?: MapData | null;
-  upgradeOptions?: UpgradeOption[];
-  // 升级服务联动 props
-  selectedUpgrades?: SelectedUpgrade[];
-  onAddUpgrade?: (upgrade: SelectedUpgrade) => void;
-  onRemoveUpgrade?: (upgradeId: string) => void;
-  onViewPricing?: () => void;
 }
 
 // Demo 图片（展示用）
@@ -65,55 +48,14 @@ const DEMO_IMAGES: Record<string, string[]> = {
   ],
 };
 
-// 默认升级选项
-const DEFAULT_UPGRADES: UpgradeOption[] = [
-  {
-    id: "photo",
-    name: "专业摄影",
-    description: "专业摄影师跟拍 30 分钟，含 20 张精修照片",
-    price: 300000,
-    icon: "📷",
-    popular: true,
-    highlights: ["专业摄影师", "30分钟跟拍", "20张精修"],
-  },
-  {
-    id: "makeup",
-    name: "专业化妆",
-    description: "资深化妆师全脸妆容，含卸妆",
-    price: 250000,
-    icon: "💄",
-    highlights: ["资深化妆师", "全脸妆容", "含卸妆"],
-  },
-  {
-    id: "premium-hairstyle",
-    name: "高级发型",
-    description: "复杂盘发造型，含发饰",
-    price: 200000,
-    icon: "💇",
-    highlights: ["复杂盘发", "精选发饰", "持久定型"],
-  },
-  {
-    id: "extension",
-    name: "延长归还",
-    description: "延长 2 小时归还时间",
-    price: 100000,
-    icon: "⏰",
-    highlights: ["额外2小时", "灵活安排", "更多拍照时间"],
-  },
-];
-
-// 统一的项目类型
-type ItemType = "included" | "upgrade";
-interface UnifiedItem {
+// 项目类型
+interface IncludedItem {
   id: string;
   name: string;
   icon: string;
-  type: ItemType;
   description?: string;
   highlights?: string[];
-  images?: string[]; // 组件图片
-  price?: number;
-  popular?: boolean;
+  images?: string[];
   hotspot?: HotspotData;
   outfitCategory?: OutfitCategory | null;
 }
@@ -142,17 +84,12 @@ interface CategoryGroup {
   key: OutfitCategory;
   label: string;
   icon: string;
-  items: UnifiedItem[];
+  items: IncludedItem[];
 }
 
 export default function ServiceMap({
   includes,
   mapData,
-  upgradeOptions = DEFAULT_UPGRADES,
-  selectedUpgrades = [],
-  onAddUpgrade,
-  onRemoveUpgrade,
-  onViewPricing,
 }: ServiceMapProps) {
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
@@ -180,15 +117,14 @@ export default function ServiceMap({
     }
   }, [mapData, selectedItemId]);
 
-  // 构建统一的项目列表
-  const includedItems: UnifiedItem[] = mapData?.hotspots
+  // 构建包含项目列表
+  const includedItems: IncludedItem[] = mapData?.hotspots
     .filter(h => h.isIncluded !== false)
     .sort((a, b) => a.displayOrder - b.displayOrder)
     .map(h => ({
       id: h.id,
       name: h.component.name,
       icon: h.component.icon || "◇",
-      type: "included" as ItemType,
       description: h.component.description || undefined,
       highlights: h.component.highlights,
       // 使用组件的实际图片，如果没有则使用 demo 图片
@@ -213,20 +149,8 @@ export default function ServiceMap({
   // 未分类的项目
   const uncategorizedItems = includedItems.filter(item => !item.outfitCategory);
 
-  const upgradeItems: UnifiedItem[] = upgradeOptions.map(opt => ({
-    id: opt.id,
-    name: opt.name,
-    icon: opt.icon,
-    type: "upgrade" as ItemType,
-    description: opt.description,
-    highlights: opt.highlights,
-    price: opt.price,
-    popular: opt.popular,
-  }));
-
   // 获取当前选中的项目
-  const allItems = [...includedItems, ...upgradeItems];
-  const selectedItem = allItems.find(item => item.id === selectedItemId);
+  const selectedItem = includedItems.find(item => item.id === selectedItemId);
 
   // 点击热点
   const handleHotspotClick = useCallback((hotspot: HotspotData) => {
@@ -241,14 +165,14 @@ export default function ServiceMap({
   }, []);
 
   // 点击组件
-  const handleItemClick = useCallback((item: UnifiedItem) => {
+  const handleItemClick = useCallback((item: IncludedItem) => {
     setSelectedItemId(item.id);
     setActiveTab("detail"); // 自动切换到详情 Tab
     setShowMobileDetail(true);
   }, []);
 
-  // 如果没有数据，不渲染
-  if (!mapData && upgradeOptions.length === 0) {
+  // 如果没有热图数据，不渲染
+  if (!mapData) {
     return null;
   }
 
@@ -285,32 +209,6 @@ export default function ServiceMap({
               </div>
             ))}
           </div>
-          {upgradeItems.length > 0 && (
-            <>
-              <div className="w-px h-4 bg-gray-200" />
-              <div className="flex items-center gap-2">
-                <Plus className="w-3.5 h-3.5 text-amber-500" />
-                <span className="text-[12px] text-amber-700">
-                  {upgradeItems.length} 项可升级
-                </span>
-              </div>
-            </>
-          )}
-          {/* 已选增值服务指示器 */}
-          {selectedUpgrades.length > 0 && (
-            <>
-              <div className="w-px h-4 bg-gray-200" />
-              <div className="flex items-center gap-2 px-3 py-1 bg-sakura-100 rounded-full animate-in zoom-in duration-200">
-                <Check className="w-3.5 h-3.5 text-sakura-600" />
-                <span className="text-[12px] font-medium text-sakura-700">
-                  已选 {selectedUpgrades.length} 项增值
-                </span>
-                <span className="text-[12px] font-bold text-sakura-600">
-                  +¥{(selectedUpgrades.reduce((sum, u) => sum + u.price, 0) / 100).toLocaleString()}
-                </span>
-              </div>
-            </>
-          )}
         </div>
 
         {/* 桌面端：双栏布局 + Tab 切换（热图 70% | Tab 30%） */}
@@ -492,179 +390,6 @@ export default function ServiceMap({
                   </div>
                 )}
 
-                {/* 增值服务 */}
-                {upgradeItems.length > 0 && (
-                  <div className="p-4 border-t border-gray-100 bg-gradient-to-b from-amber-50/50 to-white">
-                    {/* 分类标题 */}
-                    <div className="flex items-center gap-2 mb-3 px-1">
-                      <div className="w-5 h-5 rounded-md bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
-                        <Plus className="w-3 h-3 text-white" />
-                      </div>
-                      <span className="text-[13px] font-semibold text-amber-800">升级推荐</span>
-                      <span className="text-[10px] px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full font-medium">
-                        可选
-                      </span>
-                    </div>
-
-                    {/* 增值服务列表 */}
-                    <div className="grid grid-cols-2 gap-2">
-                      {upgradeItems.map((item) => {
-                        const isUpgradeSelected = selectedUpgrades.some(u => u.id === item.id);
-                        return (
-                          <div
-                            key={item.id}
-                            ref={(el) => {
-                              if (el) itemRefs.current.set(item.id, el as unknown as HTMLButtonElement);
-                            }}
-                            onMouseEnter={() => setHoveredItemId(item.id)}
-                            onMouseLeave={() => setHoveredItemId(null)}
-                            className={`
-                              relative flex flex-col items-start p-3 rounded-xl text-left transition-all duration-200
-                              ${isUpgradeSelected
-                                ? "bg-sakura-100 ring-2 ring-sakura-500 border-transparent scale-[1.02]"
-                                : selectedItemId === item.id
-                                  ? "bg-amber-100 ring-1 ring-amber-400"
-                                  : hoveredItemId === item.id
-                                    ? "bg-amber-50 border-amber-300"
-                                    : "bg-white border border-gray-200 hover:border-amber-300"
-                              }
-                            `}
-                          >
-                            {/* 已选中标记（带动画） */}
-                            <div className={`
-                              absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center shadow-sm
-                              transition-all duration-300 transform
-                              ${isUpgradeSelected
-                                ? "bg-sakura-600 scale-100 opacity-100"
-                                : "bg-sakura-600 scale-0 opacity-0"
-                              }
-                            `}>
-                              <Check className="w-3 h-3 text-white" />
-                            </div>
-                            {/* 人气标签（未选中时显示） */}
-                            {item.popular && !isUpgradeSelected && (
-                              <div className="absolute -top-1.5 -right-1.5 px-1.5 py-0.5 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[9px] font-semibold rounded-full">
-                                人气
-                              </div>
-                            )}
-
-                            {/* 顶部：图标 + 详情按钮 */}
-                            <div className="w-full flex items-start justify-between mb-1">
-                              <span className="text-xl">{item.icon}</span>
-                              {/* 详情按钮 - 独立入口 */}
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedItemId(item.id);
-                                  setActiveTab("detail");
-                                }}
-                                className="w-5 h-5 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors opacity-60 hover:opacity-100"
-                                title="查看详情"
-                              >
-                                <Info className="w-3 h-3 text-gray-500" />
-                              </button>
-                            </div>
-
-                            <span className={`text-[12px] font-medium ${isUpgradeSelected ? "text-sakura-700" : "text-gray-800"}`}>
-                              {item.name}
-                            </span>
-                            <span className="text-[13px] font-bold text-sakura-600">
-                              +¥{((item.price || 0) / 100).toLocaleString()}
-                            </span>
-
-                            {/* 操作按钮 - 明确的添加/移除 */}
-                            <button
-                              onClick={() => {
-                                if (isUpgradeSelected) {
-                                  onRemoveUpgrade?.(item.id);
-                                } else {
-                                  onAddUpgrade?.({
-                                    id: item.id,
-                                    name: item.name,
-                                    price: item.price || 0,
-                                    icon: item.icon,
-                                  });
-                                }
-                                // 不再切换 Tab，保持在列表视图
-                              }}
-                              className={`
-                                w-full mt-2 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-200
-                                ${isUpgradeSelected
-                                  ? "bg-sakura-200 text-sakura-700 hover:bg-sakura-300"
-                                  : "bg-amber-100 text-amber-800 hover:bg-amber-200"
-                                }
-                              `}
-                            >
-                              {isUpgradeSelected ? "✓ 已添加 (点击移除)" : "+ 添加到套餐"}
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* ==================== 已选增值服务摘要 ==================== */}
-                {selectedUpgrades.length > 0 && (
-                  <div className="p-4 border-t-2 border-sakura-200 bg-gradient-to-b from-sakura-50 to-white animate-in slide-in-from-bottom-2 duration-300">
-                    {/* 标题 */}
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-5 h-5 rounded-md bg-sakura-600 flex items-center justify-center animate-in zoom-in duration-300">
-                          <Check className="w-3 h-3 text-white" />
-                        </div>
-                        <span className="text-[13px] font-semibold text-sakura-800">已选增值服务</span>
-                        <span className="text-[10px] px-2 py-0.5 bg-sakura-100 text-sakura-700 rounded-full font-medium animate-in zoom-in duration-200">
-                          {selectedUpgrades.length} 项
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* 已选列表 */}
-                    <div className="space-y-2 mb-4">
-                      {selectedUpgrades.map((upgrade, index) => (
-                        <div
-                          key={upgrade.id}
-                          className="flex items-center justify-between px-3 py-2 bg-white rounded-lg border border-sakura-200 animate-in slide-in-from-left duration-300"
-                          style={{ animationDelay: `${index * 50}ms` }}
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="text-[15px]">{upgrade.icon}</span>
-                            <span className="text-[13px] font-medium text-gray-800">{upgrade.name}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-[13px] font-semibold text-sakura-600">
-                              +¥{(upgrade.price / 100).toLocaleString()}
-                            </span>
-                            <button
-                              onClick={() => onRemoveUpgrade?.(upgrade.id)}
-                              className="w-5 h-5 rounded-full bg-gray-100 hover:bg-red-100 flex items-center justify-center transition-colors"
-                            >
-                              <X className="w-3 h-3 text-gray-500 hover:text-red-500" />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* 小计 + 查看报价按钮 */}
-                    <div className="flex items-center justify-between pt-3 border-t border-sakura-200">
-                      <div>
-                        <span className="text-[12px] text-gray-500">增值小计</span>
-                        <span className="text-[16px] font-bold text-sakura-600 ml-2">
-                          +¥{(selectedUpgrades.reduce((sum, u) => sum + u.price, 0) / 100).toLocaleString()}
-                        </span>
-                      </div>
-                      <button
-                        onClick={onViewPricing}
-                        className="flex items-center gap-1.5 px-4 py-2 bg-sakura-600 hover:bg-sakura-700 text-white text-[13px] font-semibold rounded-lg transition-colors shadow-sm hover:shadow-md"
-                      >
-                        查看完整报价
-                        <ArrowRight className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* Tab 2: 详情面板 */}
@@ -674,26 +399,17 @@ export default function ServiceMap({
                     {/* 详情头部 */}
                     <div className="p-5 border-b border-gray-100 bg-white">
                       <div className="flex items-center gap-4">
-                        <div className={`
-                          w-14 h-14 rounded-xl flex items-center justify-center text-2xl
-                          ${selectedItem.type === "included" ? "bg-emerald-100" : "bg-amber-100"}
-                        `}>
+                        <div className="w-14 h-14 rounded-xl flex items-center justify-center text-2xl bg-emerald-100">
                           {selectedItem.icon}
                         </div>
                         <div className="flex-1 min-w-0">
                           <h3 className="text-[16px] font-semibold text-gray-900 mb-1">
                             {selectedItem.name}
                           </h3>
-                          {selectedItem.type === "included" ? (
-                            <span className="inline-flex items-center gap-1.5 text-[12px] text-emerald-600 font-medium">
-                              <Check className="w-4 h-4" />
-                              套餐已包含
-                            </span>
-                          ) : (
-                            <span className="text-[15px] font-bold text-sakura-600">
-                              +¥{((selectedItem.price || 0) / 100).toLocaleString()}
-                            </span>
-                          )}
+                          <span className="inline-flex items-center gap-1.5 text-[12px] text-emerald-600 font-medium">
+                            <Check className="w-4 h-4" />
+                            套餐已包含
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -769,48 +485,7 @@ export default function ServiceMap({
                         </div>
                       )}
 
-                      {/* 人气标签 */}
-                      {selectedItem.popular && (
-                        <div className="flex items-center gap-2 px-4 py-3 bg-amber-50 rounded-xl border border-amber-200">
-                          <Star className="w-5 h-5 fill-amber-400 text-amber-400" />
-                          <span className="text-[13px] font-medium text-amber-700">人气推荐服务</span>
-                        </div>
-                      )}
                     </div>
-
-                    {/* 增值服务操作按钮 */}
-                    {selectedItem.type === "upgrade" && (
-                      <div className="p-4 border-t border-gray-100 bg-white">
-                        {selectedUpgrades.some(u => u.id === selectedItem.id) ? (
-                          <button
-                            onClick={() => onRemoveUpgrade?.(selectedItem.id)}
-                            className="w-full py-3 bg-gray-100 hover:bg-red-50 text-gray-700 hover:text-red-600 text-[14px] font-semibold rounded-xl transition-colors border border-gray-200"
-                          >
-                            <span className="flex items-center justify-center gap-2">
-                              <X className="w-4 h-4" />
-                              移除此服务
-                            </span>
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => {
-                              onAddUpgrade?.({
-                                id: selectedItem.id,
-                                name: selectedItem.name,
-                                price: selectedItem.price || 0,
-                                icon: selectedItem.icon,
-                              });
-                            }}
-                            className="w-full py-3 bg-sakura-600 hover:bg-sakura-700 text-white text-[14px] font-semibold rounded-xl transition-colors shadow-sm"
-                          >
-                            <span className="flex items-center justify-center gap-2">
-                              <Plus className="w-4 h-4" />
-                              添加到预订
-                            </span>
-                          </button>
-                        )}
-                      </div>
-                    )}
                   </>
                 ) : (
                   /* 未选中状态 */
@@ -911,134 +586,6 @@ export default function ServiceMap({
               </div>
             )}
 
-            {/* 增值服务 */}
-            {upgradeItems.length > 0 && (
-              <div className="pt-4 border-t border-gray-100">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-5 h-5 rounded-md bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
-                    <Plus className="w-3 h-3 text-white" />
-                  </div>
-                  <span className="text-[13px] font-semibold text-gray-900">增值服务</span>
-                  <span className="text-[10px] px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full font-medium">
-                    预订时可选
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  {upgradeItems.map((item) => {
-                    const isUpgradeSelected = selectedUpgrades.some(u => u.id === item.id);
-                    return (
-                      <div
-                        key={item.id}
-                        className={`
-                          relative p-3 rounded-xl text-left transition-all duration-200
-                          ${isUpgradeSelected
-                            ? "bg-sakura-100 ring-2 ring-sakura-500 scale-[1.02]"
-                            : "bg-white border border-gray-200"
-                          }
-                        `}
-                      >
-                        {/* 已选中标记（带动画） */}
-                        <div className={`
-                          absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center shadow-sm
-                          transition-all duration-300 transform
-                          ${isUpgradeSelected
-                            ? "bg-sakura-600 scale-100 opacity-100"
-                            : "bg-sakura-600 scale-0 opacity-0"
-                          }
-                        `}>
-                          <Check className="w-3 h-3 text-white" />
-                        </div>
-                        {item.popular && !isUpgradeSelected && (
-                          <div className="absolute -top-1.5 -right-1.5 px-1.5 py-0.5 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[9px] font-semibold rounded-full">
-                            人气
-                          </div>
-                        )}
-
-                        {/* 顶部：图标 + 详情按钮 */}
-                        <div className="flex items-start justify-between mb-1">
-                          <div className="text-xl">{item.icon}</div>
-                          <button
-                            onClick={() => {
-                              setSelectedItemId(item.id);
-                              setShowMobileDetail(true);
-                            }}
-                            className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center"
-                          >
-                            <Info className="w-3 h-3 text-gray-500" />
-                          </button>
-                        </div>
-
-                        <div className={`text-[12px] font-medium mb-0.5 ${isUpgradeSelected ? "text-sakura-700" : "text-gray-800"}`}>
-                          {item.name}
-                        </div>
-                        <div className="text-[13px] font-bold text-sakura-600">
-                          +¥{((item.price || 0) / 100).toLocaleString()}
-                        </div>
-
-                        {/* 操作按钮 */}
-                        <button
-                          onClick={() => {
-                            if (isUpgradeSelected) {
-                              onRemoveUpgrade?.(item.id);
-                            } else {
-                              onAddUpgrade?.({
-                                id: item.id,
-                                name: item.name,
-                                price: item.price || 0,
-                                icon: item.icon,
-                              });
-                            }
-                          }}
-                          className={`
-                            w-full mt-2 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-200
-                            ${isUpgradeSelected
-                              ? "bg-sakura-200 text-sakura-700"
-                              : "bg-amber-100 text-amber-800"
-                            }
-                          `}
-                        >
-                          {isUpgradeSelected ? "✓ 已添加" : "+ 添加"}
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* 移动端已选摘要 */}
-                {selectedUpgrades.length > 0 && (
-                  <div className="mt-4 p-3 bg-sakura-50 rounded-xl border border-sakura-200 animate-in slide-in-from-bottom duration-300">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 rounded bg-sakura-600 flex items-center justify-center">
-                          <Check className="w-2.5 h-2.5 text-white" />
-                        </div>
-                        <span className="text-[12px] font-semibold text-sakura-800">
-                          已选 {selectedUpgrades.length} 项
-                        </span>
-                      </div>
-                      <span className="text-[14px] font-bold text-sakura-600">
-                        +¥{(selectedUpgrades.reduce((sum, u) => sum + u.price, 0) / 100).toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {selectedUpgrades.map((u) => (
-                        <div key={u.id} className="inline-flex items-center gap-1 px-2 py-1 bg-white rounded-full text-[11px] text-gray-700 border border-sakura-200">
-                          <span>{u.icon}</span>
-                          <span>{u.name}</span>
-                          <button
-                            onClick={() => onRemoveUpgrade?.(u.id)}
-                            className="w-3.5 h-3.5 rounded-full bg-gray-100 flex items-center justify-center ml-0.5"
-                          >
-                            <X className="w-2 h-2 text-gray-500" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         </div>
 
@@ -1061,26 +608,17 @@ export default function ServiceMap({
               {/* 头部 */}
               <div className="flex items-start justify-between px-5 pb-4">
                 <div className="flex items-center gap-3">
-                  <div className={`
-                    w-14 h-14 rounded-2xl flex items-center justify-center text-3xl
-                    ${selectedItem.type === "included" ? "bg-emerald-100" : "bg-sakura-100"}
-                  `}>
+                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl bg-emerald-100">
                     {selectedItem.icon}
                   </div>
                   <div>
                     <h3 className="text-[17px] font-semibold text-gray-900">
                       {selectedItem.name}
                     </h3>
-                    {selectedItem.type === "included" ? (
-                      <span className="inline-flex items-center gap-1 text-[13px] text-emerald-600 font-medium">
-                        <Check className="w-4 h-4" />
-                        套餐已包含
-                      </span>
-                    ) : (
-                      <span className="text-[16px] font-bold text-sakura-600">
-                        +¥{((selectedItem.price || 0) / 100).toLocaleString()}
-                      </span>
-                    )}
+                    <span className="inline-flex items-center gap-1 text-[13px] text-emerald-600 font-medium">
+                      <Check className="w-4 h-4" />
+                      套餐已包含
+                    </span>
                   </div>
                 </div>
                 <button
@@ -1139,43 +677,6 @@ export default function ServiceMap({
                 )}
               </div>
 
-              {/* 底部操作 */}
-              {selectedItem.type === "upgrade" && (
-                <div className="px-5 pb-5 pt-3 border-t border-gray-100">
-                  {selectedUpgrades.some(u => u.id === selectedItem.id) ? (
-                    <button
-                      onClick={() => {
-                        onRemoveUpgrade?.(selectedItem.id);
-                        setShowMobileDetail(false);
-                      }}
-                      className="w-full py-3 bg-gray-100 hover:bg-red-50 text-gray-700 hover:text-red-600 text-[15px] font-semibold rounded-xl transition-colors border border-gray-200"
-                    >
-                      <span className="flex items-center justify-center gap-2">
-                        <X className="w-4 h-4" />
-                        移除此服务
-                      </span>
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        onAddUpgrade?.({
-                          id: selectedItem.id,
-                          name: selectedItem.name,
-                          price: selectedItem.price || 0,
-                          icon: selectedItem.icon,
-                        });
-                        setShowMobileDetail(false);
-                      }}
-                      className="w-full py-3 bg-sakura-600 hover:bg-sakura-700 text-white text-[15px] font-semibold rounded-xl transition-colors"
-                    >
-                      <span className="flex items-center justify-center gap-2">
-                        <Plus className="w-4 h-4" />
-                        添加到预订
-                      </span>
-                    </button>
-                  )}
-                </div>
-              )}
             </div>
           </div>
         )}
