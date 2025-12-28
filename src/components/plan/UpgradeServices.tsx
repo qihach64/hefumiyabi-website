@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Plus, Check, ChevronDown, X } from "lucide-react";
+import { Plus, Check, ChevronDown } from "lucide-react";
+import ImageGalleryModal from "@/components/ImageGalleryModal";
 import type { SelectedUpgrade } from "@/components/PlanDetailClient";
 
 // 升级选项类型
@@ -92,7 +93,9 @@ export default function UpgradeServices({
   onRemoveUpgrade,
 }: UpgradeServicesProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [showGallery, setShowGallery] = useState(false);
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [galleryIndex, setGalleryIndex] = useState(0);
 
   const isSelected = (id: string) => selectedUpgrades.some((u) => u.id === id);
 
@@ -112,6 +115,12 @@ export default function UpgradeServices({
 
   const toggleExpand = (id: string) => {
     setExpandedId(expandedId === id ? null : id);
+  };
+
+  const openGallery = (images: string[], index: number) => {
+    setGalleryImages(images);
+    setGalleryIndex(index);
+    setShowGallery(true);
   };
 
   // 已选中的升级服务数量和总价
@@ -227,7 +236,7 @@ export default function UpgradeServices({
                       {option.images.map((img, i) => (
                         <button
                           key={i}
-                          onClick={() => setLightboxImage(img)}
+                          onClick={() => openGallery(option.images, i)}
                           className="relative flex-shrink-0 w-28 h-20 rounded-lg overflow-hidden bg-gray-100 hover:ring-2 hover:ring-sakura-400 transition-all"
                         >
                           <Image
@@ -277,31 +286,14 @@ export default function UpgradeServices({
         增值服务将在预订确认时一并结算
       </p>
 
-      {/* Lightbox */}
-      {lightboxImage && (
-        <div
-          className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"
-          onClick={() => setLightboxImage(null)}
-        >
-          <button
-            onClick={() => setLightboxImage(null)}
-            className="absolute top-4 right-4 p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
-          >
-            <X className="w-6 h-6 text-white" />
-          </button>
-          <div className="relative max-w-3xl max-h-[80vh] w-full aspect-[4/3]">
-            <Image
-              src={lightboxImage}
-              alt="查看大图"
-              fill
-              className="object-contain"
-              sizes="(max-width: 1024px) 100vw, 768px"
-              priority
-              unoptimized
-            />
-          </div>
-        </div>
-      )}
+      {/* 图片画廊 */}
+      <ImageGalleryModal
+        images={galleryImages}
+        initialIndex={galleryIndex}
+        isOpen={showGallery}
+        onClose={() => setShowGallery(false)}
+        planName="升级服务"
+      />
     </div>
   );
 }

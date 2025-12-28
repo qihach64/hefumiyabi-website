@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Star, ThumbsUp, Camera, ChevronDown, X } from "lucide-react";
+import { Star, ThumbsUp, Camera, ChevronDown } from "lucide-react";
+import ImageGalleryModal from "@/components/ImageGalleryModal";
 
 interface Review {
   id: string;
@@ -82,7 +83,15 @@ export default function SocialProof({
 }: SocialProofProps) {
   const [activeTag, setActiveTag] = useState("全部");
   const [showAllReviews, setShowAllReviews] = useState(false);
-  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+  const [showGallery, setShowGallery] = useState(false);
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [galleryIndex, setGalleryIndex] = useState(0);
+
+  const openGallery = (photos: string[], index: number) => {
+    setGalleryImages(photos);
+    setGalleryIndex(index);
+    setShowGallery(true);
+  };
 
   // 根据标签筛选评价
   const filteredReviews = reviews.filter((review) => {
@@ -228,10 +237,10 @@ export default function SocialProof({
             {review.photos && review.photos.length > 0 && (
               <div className="flex gap-2 mb-3">
                 {review.photos.slice(0, 4).map((photo, idx) => (
-                  <div
+                  <button
                     key={idx}
                     className="relative w-20 h-20 rounded-lg overflow-hidden cursor-pointer group bg-gray-100"
-                    onClick={() => setSelectedPhoto(photo)}
+                    onClick={() => openGallery(review.photos!, idx)}
                   >
                     {/* 实际使用时替换为真实图片 */}
                     <div className="absolute inset-0 flex items-center justify-center">
@@ -246,7 +255,7 @@ export default function SocialProof({
                         </span>
                       </div>
                     )}
-                  </div>
+                  </button>
                 ))}
               </div>
             )}
@@ -296,27 +305,14 @@ export default function SocialProof({
         </button>
       )}
 
-      {/* 图片预览弹窗 */}
-      {selectedPhoto && (
-        <div
-          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
-          onClick={() => setSelectedPhoto(null)}
-        >
-          <button
-            onClick={() => setSelectedPhoto(null)}
-            className="absolute top-4 right-4 p-2 text-white/80 hover:text-white transition-colors"
-          >
-            <X className="w-6 h-6" />
-          </button>
-          <div className="relative max-w-3xl max-h-[80vh] w-full aspect-[3/4] bg-gray-900 rounded-xl overflow-hidden">
-            {/* 实际使用时替换为真实图片 */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Camera className="w-16 h-16 text-gray-600" />
-              <p className="absolute bottom-8 text-gray-500 text-[14px]">买家秀图片预览</p>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* 图片画廊 */}
+      <ImageGalleryModal
+        images={galleryImages}
+        initialIndex={galleryIndex}
+        isOpen={showGallery}
+        onClose={() => setShowGallery(false)}
+        planName="买家秀"
+      />
     </div>
   );
 }

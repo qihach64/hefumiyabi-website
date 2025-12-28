@@ -2,7 +2,8 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import Image from "next/image";
-import { Check, Sparkles, ChevronRight, X, Package, Info, Plus } from "lucide-react";
+import { Check, Sparkles, ChevronRight, Package, Info, Plus } from "lucide-react";
+import ImageGalleryModal from "@/components/ImageGalleryModal";
 import Hotspot from "../InteractiveKimonoMap/Hotspot";
 import type { MapData, HotspotData } from "../InteractiveKimonoMap/types";
 import type { OutfitCategory } from "@prisma/client";
@@ -95,8 +96,11 @@ export default function ServiceMap({
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
   const [showMobileDetail, setShowMobileDetail] = useState(false);
   const [showGuideAnimation, setShowGuideAnimation] = useState(true);
-  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"list" | "detail">("list");
+  // 图片画廊状态
+  const [showGallery, setShowGallery] = useState(false);
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [galleryIndex, setGalleryIndex] = useState(0);
 
   // Refs for scroll-into-view
   const itemRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
@@ -169,6 +173,13 @@ export default function ServiceMap({
     setSelectedItemId(item.id);
     setActiveTab("detail"); // 自动切换到详情 Tab
     setShowMobileDetail(true);
+  }, []);
+
+  // 打开图片画廊
+  const openGallery = useCallback((images: string[], index: number) => {
+    setGalleryImages(images);
+    setGalleryIndex(index);
+    setShowGallery(true);
   }, []);
 
   // 如果没有热图数据，不渲染
@@ -404,7 +415,7 @@ export default function ServiceMap({
                             {selectedItem.images.slice(0, 4).map((img, i) => (
                               <button
                                 key={i}
-                                onClick={() => setLightboxImage(img)}
+                                onClick={() => openGallery(selectedItem.images!, i)}
                                 className="relative aspect-[4/3] rounded-lg overflow-hidden bg-gray-100 hover:ring-2 hover:ring-sakura-400 transition-all group"
                               >
                                 <Image
@@ -617,7 +628,7 @@ export default function ServiceMap({
                         key={i}
                         onClick={() => {
                           setShowMobileDetail(false);
-                          setLightboxImage(img);
+                          openGallery(selectedItem.images!, i);
                         }}
                         className="relative flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden bg-gray-100"
                       >
@@ -660,51 +671,14 @@ export default function ServiceMap({
         )}
       </div>
 
-      {/* ==================== Lightbox 图片查看器 ==================== */}
-      {lightboxImage && (
-        <div
-          className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"
-          onClick={() => setLightboxImage(null)}
-        >
-          {/* 关闭按钮 */}
-          <button
-            onClick={() => setLightboxImage(null)}
-            className="absolute top-4 right-4 p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
-          >
-            <X className="w-6 h-6 text-white" />
-          </button>
-
-          {/* 图片 */}
-          <div
-            className="relative max-w-4xl max-h-[85vh] w-full h-full"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Image
-              src={lightboxImage}
-              alt="放大查看"
-              fill
-              className="object-contain"
-              sizes="(max-width: 1024px) 100vw, 80vw"
-              priority
-              unoptimized
-            />
-          </div>
-
-          {/* 图片信息 */}
-          {selectedItem && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-black/60 rounded-full">
-              <p className="text-white text-sm font-medium">
-                {selectedItem.icon} {selectedItem.name}
-              </p>
-            </div>
-          )}
-
-          {/* 提示 */}
-          <p className="absolute bottom-4 right-4 text-white/50 text-xs">
-            点击任意处关闭
-          </p>
-        </div>
-      )}
+      {/* 图片画廊 - 复用 ImageGalleryModal */}
+      <ImageGalleryModal
+        images={galleryImages}
+        initialIndex={galleryIndex}
+        isOpen={showGallery}
+        onClose={() => setShowGallery(false)}
+        planName={selectedItem?.name || "服务详情"}
+      />
     </div>
   );
 }
