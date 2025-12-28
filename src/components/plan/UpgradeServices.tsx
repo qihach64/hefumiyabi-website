@@ -187,29 +187,7 @@ export default function UpgradeServices({
       {/* 主容器 - 与 ServiceMap 布局一致 */}
       <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
 
-        {/* ==================== 快速概览条 ==================== */}
-        <div className="flex items-center justify-between gap-4 px-6 py-3 bg-gradient-to-r from-sakura-50 to-white border-b border-gray-100">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-sakura-500" />
-            <span className="text-[13px] font-medium text-gray-700">
-              可选增值服务 <span className="text-sakura-600 font-semibold">{UPGRADE_OPTIONS.length}</span> 项
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            {categoryGroups.map((group) => (
-              <div
-                key={group.key}
-                className="flex items-center gap-1 px-2 py-1 bg-white rounded-full border border-gray-200 text-[12px]"
-                title={group.label}
-              >
-                <span>{group.icon}</span>
-                <span className="text-gray-500">{group.items.length}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* 已选摘要 */}
+        {/* 已选摘要 - 只在有选择时显示 */}
         {selectedCount > 0 && (
           <div className="px-6 py-2.5 bg-sakura-50 border-b border-sakura-100 flex items-center gap-2">
             <div className="w-5 h-5 rounded-full bg-sakura-500 flex items-center justify-center">

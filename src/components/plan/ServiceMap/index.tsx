@@ -189,28 +189,6 @@ export default function ServiceMap({
       {/* 主容器 */}
       <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
 
-        {/* ==================== 快速概览条 ==================== */}
-        <div className="hidden lg:flex items-center gap-4 px-6 py-3 bg-gradient-to-r from-emerald-50 to-white border-b border-gray-100">
-          <div className="flex items-center gap-2">
-            <Check className="w-4 h-4 text-emerald-500" />
-            <span className="text-[13px] font-medium text-gray-700">
-              本套餐包含 <span className="text-emerald-600 font-semibold">{includedItems.length}</span> 项服务
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            {categoryGroups.map((group) => (
-              <div
-                key={group.key}
-                className="flex items-center gap-1 px-2 py-1 bg-white rounded-full border border-gray-200 text-[12px]"
-                title={group.label}
-              >
-                <span>{group.icon}</span>
-                <span className="text-gray-500">{group.items.length}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
         {/* 桌面端：双栏布局 + Tab 切换（热图 70% | Tab 30%） */}
         <div className="hidden lg:flex h-[780px]">
 
