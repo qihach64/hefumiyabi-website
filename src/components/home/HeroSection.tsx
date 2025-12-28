@@ -137,7 +137,7 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
           transition={{ duration: 1, delay: 1.2 }}
         >
           <div
-            className="writing-vertical text-[#B8A89A]/40 text-sm tracking-[0.5em] font-light select-none"
+            className="writing-vertical text-[#B8A89A]/50 text-sm tracking-[0.5em] font-mincho select-none"
             style={{ writingMode: "vertical-rl" }}
           >
             京都・和服体験
@@ -152,7 +152,7 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
           transition={{ duration: 1, delay: 1.2 }}
         >
           <div
-            className="writing-vertical text-[#B8A89A]/40 text-sm tracking-[0.5em] font-light select-none"
+            className="writing-vertical text-[#B8A89A]/50 text-sm tracking-[0.5em] font-mincho select-none"
             style={{ writingMode: "vertical-rl" }}
           >
             伝統と現代の融合
@@ -171,7 +171,7 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
             {/* 主标题 - 优雅的深色 + 樱花色点缀 */}
             <h1 className="relative">
               <span
-                className="block text-5xl md:text-7xl lg:text-8xl font-serif tracking-[0.12em]"
+                className="block text-5xl md:text-7xl lg:text-8xl font-mincho font-medium tracking-[0.15em]"
                 style={{
                   color: "#2D2A26",
                   textShadow: "0 2px 12px rgba(255, 122, 154, 0.2)"
@@ -197,7 +197,7 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
               }}
             >
               <p
-                className="text-sm md:text-base font-light tracking-[0.2em]"
+                className="text-sm md:text-base font-mincho tracking-[0.25em]"
                 style={{ color: "#4A4542" }}
               >
                 伝統の美、現代の心

@@ -153,6 +153,7 @@
   /* 字体 */
   --font-sans: var(--font-noto-sans-sc), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   --font-serif: var(--font-noto-serif-sc), 'Noto Serif SC', 'Songti SC', Georgia, serif;
+  --font-mincho: var(--font-shippori), 'Shippori Mincho', 'Hiragino Mincho ProN', 'Yu Mincho', serif;
   --font-mono: 'SF Mono', Monaco, 'Cascadia Code', Consolas, monospace;
 }
 
