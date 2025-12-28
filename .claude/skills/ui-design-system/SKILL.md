@@ -1,14 +1,45 @@
 ---
 name: ui-design-system
-description: 当编写、修改或审查前端 UI 代码时使用此 skill。确保所有 React 组件、Tailwind CSS 类名和设计决策严格遵循项目的日式 Zen + 樱花美学设计系统。
+description: |
+  创建和优化符合日式 Zen + 樱花美学的前端界面。
+
+  **触发场景** - 当用户说：
+  - 写/做/加/改 界面、页面、组件、卡片、按钮
+  - 优化/美化/调整 UI、样式、布局、颜色、间距
+  - 好看一点、漂亮一点、更日式、更优雅
+  - 改颜色、改字体、改间距、改圆角
+  - 新建组件、重构页面、设计xxx
+  - React/Tailwind/CSS 相关的前端代码
 allowed-tools: Read, Edit, Write, Grep, Glob
 ---
 
-# UI Design System - 前端设计规范 Skill
+# UI Design System - 日式 Zen + 樱花美学前端设计 Skill
 
-**使命**：确保每一行前端代码都符合项目的设计系统，保持视觉一致性和用户体验的连贯性。
+> 🎨 **设计精神**：如同和服本身——看似简单，细节考究。追求优雅与含蓄，让每一个界面都散发宁静之美。
 
-> 🎨 **设计理念**：日式 Zen 美学 + 樱花配色 = 宁静优雅的和服体验
+---
+
+## 🎯 触发条件 (Trigger Conditions)
+
+当用户提出以下类型的请求时，**主动使用此 skill**：
+
+### 明确触发
+- 写一个 xxx 组件 / 页面 / 卡片
+- 优化 / 美化 / 调整 UI
+- 改 xxx 的样式 / 颜色 / 布局
+- 让 xxx 更好看 / 更日式 / 更优雅
+- 新建 / 重构 React 组件
+
+### 隐式触发
+- 涉及 Tailwind CSS 类名修改
+- 涉及颜色、字体、间距、圆角等视觉属性
+- 创建或修改 `.tsx` 文件中的 JSX 结构
+- 讨论页面布局或用户体验
+
+### 不触发
+- 纯后端 API 逻辑
+- 数据库操作
+- 非视觉相关的 TypeScript 类型定义
 
 ---
 
@@ -23,6 +54,56 @@ allowed-tools: Read, Edit, Write, Grep, Glob
 1. **侘寂 (Wabi-Sabi)**：不完美中的美，温暖的米白背景而非冷酷的纯白
 2. **間 (Ma)**：留白的艺术，让内容呼吸，避免信息过载
 3. **雅 (Miyabi)**：含蓄的优雅，装饰点到为止，功能优先
+
+---
+
+## 🚫 快速查阅：绝对禁止 (Anti-patterns)
+
+**在写任何前端代码前，先检查这些常见错误：**
+
+### 颜色禁区
+```tsx
+// ❌ 绝对禁止的颜色
+bg-purple-*    // 土气！用 sakura-*
+bg-violet-*    // 土气！用 sakura-*
+bg-indigo-*    // 不协调
+bg-pink-*      // 用 sakura-* 代替
+from-purple-* to-pink-*  // AI slop 渐变
+```
+
+### 间距禁区
+```tsx
+// ❌ 禁止非 4 倍数
+gap-5  gap-7  gap-9  p-5  p-7  mb-5  mb-9
+// ✅ 只用 4 的倍数
+gap-4  gap-6  gap-8  p-4  p-6  mb-4  mb-8
+```
+
+### 字号禁区
+```tsx
+// ❌ 禁止 Tailwind 默认字号
+text-sm  text-base  text-lg  text-xl  text-2xl
+// ✅ 使用固定像素值
+text-[12px]  text-[14px]  text-[15px]  text-[16px]  text-[22px]  text-[26px]
+```
+
+### 圆角禁区
+```tsx
+// ❌ 禁止
+rounded-md  rounded-sm  rounded-3xl
+// ✅ 只用
+rounded-lg (按钮)  rounded-xl (卡片)  rounded-2xl (Hero)  rounded-full (头像)
+```
+
+### 动画禁区
+```tsx
+// ❌ 禁止
+duration-100  duration-150  duration-700  duration-1000
+animate-bounce  animate-ping  hover:rotate-*  hover:scale-110
+// ✅ 只用
+duration-200  duration-300  duration-500
+hover:scale-105  hover:-translate-y-1
+```
 
 ---
 
@@ -962,6 +1043,18 @@ font-light       // ❌ 太轻，使用 font-normal
 1. **视觉一致性**：所有页面看起来像一个产品
 2. **开发效率**：减少重复代码，快速复用组件
 3. **维护性**：设计系统集中管理，易于更新
-4. **品牌形象**：Airbnb 极简 + 樱花美学的独特定位
+4. **品牌形象**：日式 Zen + 樱花美学的独特定位
 
-**记住**：设计系统不是限制创造力，而是让我们在统一的框架内高效创作！🎨
+---
+
+## 🌸 Final Directive - 最终指引
+
+> **记住**：你正在创造的不仅仅是一个网站，而是一个让用户沉浸在和服文化中的数字空间。
+>
+> 每一个组件都应该像和服上的一针一线——精确、优雅、有意义。
+>
+> 设计系统不是限制创造力的枷锁，而是让你在统一的美学框架内自由创作的画布。
+>
+> **追求「雅」(Miyabi)**：让简洁成为力量，让留白成为语言，让樱花色成为情感的触点。
+>
+> 现在，去创造令人难忘的和服体验吧！🌸
