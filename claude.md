@@ -99,24 +99,38 @@ The Prisma schema has 24+ models. Critical relationships:
 
 1. **Unified Plan System**: Migration from separate `Campaign`/`CampaignPlan` to a single `RentalPlan` model with `isCampaign` flag. Both systems currently coexist during transition.
 
-2. **Shopping Cart Pattern**: E-commerce style cart using Zustand with localStorage persistence
+2. **Plan-Store Binding (1:N)**: One plan can be available at multiple stores
+   - Uses junction table `PlanStore` for many-to-many relationship
+   - Search by location filters plans → selected store carried through booking
+   - No separate store selection step needed (implicit from search context)
+   - Same plan can have different availability per store
+
+3. **Flexible Pricing Units**: Plans support per-person OR per-group pricing
+   - `pricingUnit`: "person" | "group"
+   - `unitLabel`: Display text ("人" | "組" | "套")
+   - `unitDescription`: Optional detail ("2人" | "2大人+1小孩")
+   - Supports couple plans, family plans, group packages
+
+4. **Shopping Cart Pattern**: E-commerce style cart using Zustand with localStorage persistence
    - Location: `src/store/cart.ts`
-   - Same plan added multiple times increases quantity
-   - Each item can have different store assignments
-   - Quick booking feature clears cart and adds single item ("Buy Now" pattern)
+   - Each item saves independent date/time (not shared across items)
+   - Auto-suggest date/time based on existing cart items
+   - Store is determined by search context (e.g., `/plans?location=京都` → 京都店铺)
+   - Quick booking ("立即预约") uses modal confirmation, not page redirect
 
-3. **Simplified Booking Flow**: Evolved from 4-step wizard to single-page checkout
-   - Old: Select Store → Personal Info → Add-ons → Confirm
-   - New: Unified checkout page with all fields visible
-   - Only requires: visit date + time (no rental/return dates complexity)
-   - Supports both guest and authenticated bookings
+5. **极简单页 Booking Flow**: Minimalist single-page checkout
+   - All booking info collected in BookingCard on plan detail page
+   - "立即预约": Modal confirmation → direct API submission
+   - "加入购物车": Save to cart → /cart → /booking for multi-item checkout
+   - Only 4 required fields: date, time, phone, name
+   - Multi-store orders automatically split into separate Booking records
 
-4. **Multi-Store Architecture**:
-   - Each `BookingItem` has its own `storeId` (not at Booking level)
-   - Supports different stores per item in same booking
-   - Store filtering available on plans/campaigns pages
+6. **Upgrade Services**: Add-on services priced per-group/booking
+   - Photography, makeup, hairstyling, etc.
+   - Price is flat (not multiplied by quantity)
+   - Selected in BookingCard alongside main plan
 
-5. **Marketplace Model**: Two operating modes
+7. **Marketplace Model**: Two operating modes
    - Platform: Admin-managed stores and plans
    - Merchant: Merchants create listings requiring approval
    - Commission-based revenue split (15% default)
@@ -144,9 +158,17 @@ model RentalPlan {
   name         String    // Clear, descriptive plan name (e.g., "经典女士套餐")
   category     Category  // LADIES | MENS | COUPLE | FAMILY | GROUP | SPECIAL
 
-  // Fixed pricing
-  price        Int       // Single price point (in cents)
-  originalPrice Int?     // Optional for discount display
+  // Store binding (1:N relationship via junction table)
+  planStores   PlanStore[]  // One plan available at multiple stores
+
+  // Pricing with flexible units
+  price         Int       // Single price point (in cents)
+  originalPrice Int?      // Optional for discount display
+  pricingUnit   String    // "person" | "group" (default: "person")
+  unitLabel     String    // Display: "人" | "組" | "套" (default: "人")
+  unitDescription String? // Detail: "2人" | "2大人+1小孩" | null
+  minQuantity   Int       // Minimum purchasable (default: 1)
+  maxQuantity   Int       // Maximum purchasable (default: 10)
 
   // Fixed duration
   duration     Int       // Hours included (e.g., 4, 6, 8 hours)
@@ -164,7 +186,26 @@ model RentalPlan {
   isCampaign   Boolean   // Campaign pricing
   isFeatured   Boolean   // Homepage prominence
 }
+
+// Junction table for Plan-Store relationship
+model PlanStore {
+  planId    String
+  storeId   String
+  plan      RentalPlan  @relation(...)
+  store     Store       @relation(...)
+  isActive  Boolean     @default(true)  // Can disable per-store
+
+  @@id([planId, storeId])
+}
 ```
+
+**Pricing Unit Examples:**
+| Plan Type | pricingUnit | unitLabel | unitDescription | Display |
+|-----------|-------------|-----------|-----------------|---------|
+| 女士套餐 | person | 人 | null | ¥8,800/人 |
+| 情侣套餐 | group | 組 | 2人 | ¥15,000/組 (2人) |
+| 家庭套餐 | group | 組 | 2大人+1小孩 | ¥25,000/組 |
+| 团体套餐 | group | 組 | 5人起 | ¥50,000/組 |
 
 ### How This Reduces Decision Burden
 
@@ -303,6 +344,349 @@ model RentalPlan {
 4. **Performance Metrics**: Track which plans convert best
    - `currentBookings` field already exists
    - Use data to recommend merchants simplify underperforming plans
+
+---
+
+## Booking Flow Design
+
+### Plan-Store Binding (1:N)
+
+One RentalPlan can be available at multiple stores. Store selection is implicit through search context:
+
+```typescript
+model PlanStore {
+  planId    String
+  storeId   String
+  plan      RentalPlan  @relation(...)
+  store     Store       @relation(...)
+  isActive  Boolean     @default(true)
+
+  @@id([planId, storeId])
+}
+```
+
+**How Store Is Determined:**
+
+```
+用户搜索 "京都"
+    ↓
+/plans?location=京都  (URL 携带 location 参数)
+    ↓
+套餐列表只显示在京都有售的套餐
+    ↓
+用户点击套餐进入详情页
+    ↓
+/plans/[id]?location=京都  (location 参数传递)
+    ↓
+BookingCard 显示: 📍 京都祇园本店 (从 location 匹配的店铺)
+    ↓
+用户预约时，storeId 自动填充 (无需手动选择)
+```
+
+**Benefits:**
+- Same plan can be sold at Tokyo, Kyoto, Osaka stores
+- User's search context determines which store
+- No separate store selection step in booking flow
+- Merchants manage one plan, enable/disable per store
+
+**Edge Cases:**
+
+1. **Direct link to plan (no location context)**:
+   ```
+   用户直接访问 /plans/[id] (无 location 参数)
+       ↓
+   套餐有多个可用店铺时:
+       ↓
+   显示店铺选择下拉框 (或默认选第一个)
+   ```
+
+2. **Plan only available at one store**:
+   ```
+   自动选择唯一店铺，无需用户操作
+   ```
+
+3. **User switches location after adding to cart**:
+   ```
+   购物车中已有京都店的套餐
+       ↓
+   用户切换到东京搜索
+       ↓
+   新添加的套餐使用东京店铺
+       ↓
+   结账时按店铺拆分为多个预约
+   ```
+
+### Pricing Unit Model
+
+Plans can be priced per-person OR per-group:
+
+```typescript
+model RentalPlan {
+  // Pricing unit configuration
+  pricingUnit       String    @default("person")  // "person" | "group"
+  unitLabel         String    @default("人")       // Display: "人" | "組" | "套"
+  unitDescription   String?                        // "2人" | "2大人+1小孩" | null
+  minQuantity       Int       @default(1)
+  maxQuantity       Int       @default(10)
+}
+```
+
+**Examples:**
+
+| Plan Type | pricingUnit | unitLabel | unitDescription | Price Display |
+|-----------|-------------|-----------|-----------------|---------------|
+| 女士套餐 | person | 人 | null | ¥8,800/人 |
+| 情侣套餐 | group | 組 | 2人 | ¥15,000/組 (2人) |
+| 家庭套餐 | group | 組 | 2大人+1小孩 | ¥25,000/組 |
+| 闺蜜套餐 | group | 組 | 2-3人 | ¥18,000/組 |
+
+**Price Calculation:**
+```typescript
+// Simple: price × quantity (works for both person and group)
+const itemTotal = plan.price * quantity;
+```
+
+### Upgrade Services Pricing
+
+Upgrade services (专业摄影, 专业化妆, etc.) are priced **per group/booking**, NOT per person:
+
+```typescript
+// Example: User books 2 couples (2 × 情侣套餐)
+// Adds professional photography upgrade
+const basePrice = 15000 * 2;        // ¥30,000 (2 couple plans)
+const upgradePrice = 30000 * 1;     // ¥30,000 (photography once, not × 2)
+const total = basePrice + upgradePrice; // ¥60,000
+```
+
+### Complete Booking Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STAGE 1: Discovery                                                          │
+│                                                                              │
+│  首页 / 搜索栏                                                                │
+│  ├── 输入: 地点 (optional), 日期 (optional), 主题 (optional)                  │
+│  └── 搜索 → /plans?location=京都&date=2025-01-15                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STAGE 2: Browse & Filter                                                    │
+│                                                                              │
+│  套餐列表 /plans                                                              │
+│  ├── 显示: 套餐名, 价格, 店铺位置, 评分, 标签                                   │
+│  ├── 筛选: 主题, 标签, 价格区间, 排序                                          │
+│  └── 日期参数保留在 URL，传递到详情页                                           │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STAGE 3: Plan Detail (极简单页模式)                                          │
+│                                                                              │
+│  套餐详情页 /plans/[id]                                                       │
+│                                                                              │
+│  ┌────────────────────────┐    ┌──────────────────────────────────────────┐ │
+│  │  左侧内容区              │    │  BookingCard (扩展版)                     │ │
+│  │  ├── VisualHub          │    │                                          │ │
+│  │  ├── ServiceMap         │    │  ¥15,000 / 組 (2人)                      │ │
+│  │  ├── UpgradeServices    │    │                                          │ │
+│  │  ├── JourneyTimeline    │    │  📅 到店日期  [____] (auto-fill from URL) │ │
+│  │  └── SocialProof        │    │  🕐 到店时间  [____]                      │ │
+│  │                         │    │  📦 数量      [- 1 +] 組                  │ │
+│  │                         │    │                                          │ │
+│  │                         │    │  📍 店铺: 京都祇园本店 (从搜索上下文)       │ │
+│  │                         │    │                                          │ │
+│  │                         │    │  ─────── 已选增值服务 ───────             │ │
+│  │                         │    │  📷 专业摄影  +¥30,000           [×]     │ │
+│  │                         │    │                                          │ │
+│  │                         │    │  ─────── 联系信息 [▼ 展开] ───────        │ │
+│  │                         │    │    手机号* [____]                        │ │
+│  │                         │    │    姓名*   [____]                        │ │
+│  │                         │    │    邮箱    [____] (可选)                  │ │
+│  │                         │    │                                          │ │
+│  │                         │    │  [🛒 加入购物车]  [✨ 立即预约]           │ │
+│  │                         │    │                                          │ │
+│  │                         │    │  ✓ 免费取消 (提前24小时)                  │ │
+│  │                         │    │  💬 30秒完成预约                          │ │
+│  └────────────────────────┘    └──────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+              ┌─────────────────────┴─────────────────────┐
+              ↓                                           ↓
+┌──────────────────────────────┐            ┌──────────────────────────────┐
+│  PATH A: 加入购物车            │            │  PATH B: 立即预约              │
+│  (多品结账)                    │            │  (单品快速结账)                │
+│                              │            │                              │
+│  保存到 Zustand:              │            │  弹出确认 Modal:              │
+│  {                           │            │  ┌────────────────────────┐  │
+│    planId,                   │            │  │  订单确认               │  │
+│    date,    // 独立保存       │            │  │                        │  │
+│    time,    // 独立保存       │            │  │  情侣套餐 × 1組         │  │
+│    quantity,                 │            │  │  📍 京都祇园本店         │  │
+│    upgrades,                 │            │  │  📅 2025-01-15 10:00   │  │
+│    storeId, // 从搜索上下文    │            │  │  📷 专业摄影 +¥30,000   │  │
+│  }                           │            │  │  ───────────────────── │  │
+│                              │            │  │  💰 合计: ¥45,000      │  │
+│  用户继续浏览...              │            │  │                        │  │
+│              ↓               │            │  │  📞 联系信息            │  │
+│  购物车 /cart                │            │  │    手机: [必填]         │  │
+│  ├── 套餐列表 (按店铺分组)    │            │  │    姓名: [必填]         │  │
+│  ├── 每项显示独立日期时间     │            │  │    邮箱: [可选]         │  │
+│  ├── 可调整数量/删除          │            │  │                        │  │
+│  └── [去预约]                │            │  │  [返回] [确认预约]      │  │
+│              ↓               │            │  └────────────────────────┘  │
+│  预约确认 /booking           │            │              │               │
+│  ├── 订单摘要 (按店铺分组)    │            │              ↓               │
+│  ├── 联系信息 (统一填写)      │            │  POST /api/bookings          │
+│  └── [确认预约]              │            │              │               │
+│              ↓               │            │              ↓               │
+└──────────────────────────────┘            └──────────────────────────────┘
+              │                                           │
+              └─────────────────┬─────────────────────────┘
+                                ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STAGE 4: Booking Created                                                    │
+│                                                                              │
+│  多店铺预约自动拆分:                                                          │
+│  ├── 购物车有来自 N 个不同店铺的套餐                                           │
+│  └── 创建 N 个独立的 Booking 记录                                             │
+│                                                                              │
+│  成功页 /booking/success                                                     │
+│  ├── 显示所有预约确认号                                                       │
+│  ├── 发送确认邮件 (如填写了邮箱)                                               │
+│  └── 引导: 添加到日历 / 查看详情                                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Cart Data Structure
+
+```typescript
+interface CartItem {
+  id: string;              // 唯一ID (自生成)
+  planId: string;          // 套餐ID
+  name: string;            // 套餐名称
+
+  // 价格相关
+  price: number;           // 单价 (分)
+  originalPrice?: number;  // 原价 (用于显示折扣)
+  pricingUnit: "person" | "group";
+  unitLabel: string;       // "人" | "組"
+  unitDescription?: string; // "2人" | "2大人+1小孩"
+
+  // 预约信息 (每项独立保存)
+  quantity: number;        // 数量 (人数或組数)
+  date: string;            // 到店日期 "2025-01-15"
+  time: string;            // 到店时间 "10:00"
+
+  // 店铺 (从搜索上下文获取，非用户手动选择)
+  storeId: string;
+  storeName: string;
+
+  // 增值服务
+  upgrades: SelectedUpgrade[];
+
+  // 其他
+  image?: string;
+  isCampaign?: boolean;
+}
+
+interface SelectedUpgrade {
+  id: string;
+  name: string;
+  price: number;  // 每組价格
+  icon: string;
+}
+```
+
+### Auto-Suggest Logic (日期时间)
+
+当用户添加新套餐到购物车时，自动建议日期时间：
+
+```typescript
+const existingItems = cartStore.items;
+
+// 1. 优先: 相同店铺的已有预约
+const sameStoreItem = existingItems.find(item => item.storeId === currentPlan.storeId);
+if (sameStoreItem) {
+  suggestedDate = sameStoreItem.date;
+  suggestedTime = sameStoreItem.time;
+  // UI: "与「情侣套餐」安排同一时间？ [是] [否，选择其他时间]"
+}
+
+// 2. 备选: 最近添加的日期
+else if (existingItems.length > 0) {
+  const lastItem = existingItems[existingItems.length - 1];
+  suggestedDate = lastItem.date;
+  // UI: "您之前选择了 1月15日 [使用此日期]"
+}
+
+// 3. 默认: 从 URL 参数读取 (搜索页带过来的)
+else if (searchParams.date) {
+  suggestedDate = searchParams.date;
+}
+```
+
+### Guest vs Registered User
+
+| 字段 | 游客 | 注册用户 |
+|------|------|----------|
+| 姓名 | 手动填写 | 自动填充 (session.user.name) |
+| 邮箱 | 手动填写 | 自动填充 (session.user.email) |
+| 手机 | 手动填写 | 自动填充 (如 User.phone 存在) |
+| 购物车 | localStorage 持久化 | 同上 (未来可同步到服务端) |
+| 历史订单 | 无法查看 | /profile 页面查看 |
+| 快速预约 | 每次填写联系信息 | 一键预约 (信息已保存) |
+
+**建议**: 在 User 模型添加 `phone` 字段，让注册用户保存手机号后可自动填充。
+
+### Booking API Changes
+
+创建预约时，购物车按店铺拆分为多个 Booking：
+
+```typescript
+// POST /api/bookings
+// Request body 包含多个 items，可能来自不同店铺
+
+// 后端逻辑:
+const itemsByStore = groupBy(items, 'storeId');
+
+const bookings = await Promise.all(
+  Object.entries(itemsByStore).map(([storeId, storeItems]) =>
+    prisma.booking.create({
+      data: {
+        storeId,
+        visitDate: storeItems[0].date,  // 同店铺使用第一个的日期
+        visitTime: storeItems[0].time,
+        guestName,
+        guestEmail,
+        guestPhone,
+        items: {
+          create: storeItems.map(item => ({
+            planId: item.planId,
+            quantity: item.quantity,
+            unitPrice: item.price,
+            // ...
+          }))
+        }
+      }
+    })
+  )
+);
+
+// Response: 返回所有创建的 booking IDs
+return { bookingIds: bookings.map(b => b.id) };
+```
+
+### Required Fields Summary
+
+| 阶段 | 必填字段 | 可选字段 |
+|------|----------|----------|
+| 搜索 | (无) | 地点, 日期, 主题 |
+| 套餐详情 | 日期, 时间, 数量 | 增值服务 |
+| 立即预约 | 手机号, 姓名 | 邮箱, 特殊要求 |
+| 购物车预约 | 手机号, 姓名 | 邮箱, 特殊要求 |
+
+**最小路径**: 用户只需填写 **4 个字段** (日期 + 时间 + 手机 + 姓名) 即可完成预约。
+
+---
 
 ### API Routes
 
