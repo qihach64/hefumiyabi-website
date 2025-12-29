@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { Sparkles, Camera, RotateCcw, ZoomIn, Star, Users, ChevronRight } from "lucide-react";
+import { Camera, RotateCcw, Maximize2 } from "lucide-react";
 import TryOnModal from "@/components/TryOnModal";
 import ImageComparison from "@/components/ImageComparison";
 import { useTryOnStore } from "@/store/tryOn";
@@ -32,13 +32,6 @@ export default function AITryOnSection({ plan }: AITryOnSectionProps) {
 
   const tryOnResult = mounted ? getTryOnResult(plan.id) : null;
   const hasTryOn = !!tryOnResult;
-
-  // Mock stats - 后期可接真实数据
-  const stats = {
-    tryOnCount: 328,
-    rating: 4.9,
-    reviewCount: 56,
-  };
 
   const handleRetry = () => {
     removeTryOnResult(plan.id);
@@ -72,9 +65,9 @@ export default function AITryOnSection({ plan }: AITryOnSectionProps) {
             />
             <button
               onClick={() => setShowComparison(false)}
-              className="absolute -top-12 right-0 text-white hover:text-gray-300 text-[14px] font-medium transition-colors"
+              className="absolute -top-12 right-0 text-white/80 hover:text-white text-[14px] font-medium transition-colors"
             >
-              关闭 ✕
+              关闭
             </button>
           </div>
         </div>
@@ -82,175 +75,155 @@ export default function AITryOnSection({ plan }: AITryOnSectionProps) {
 
       {/* 主容器 */}
       <section className="relative">
-        {/* Section Header */}
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-px bg-gradient-to-r from-sakura-400 to-transparent" />
-          <span className="text-[12px] uppercase tracking-[0.25em] text-sakura-500 font-medium">
-            AI Virtual Try-On
+        {/* Section Header - 和风极简风格 */}
+        <div className="flex items-center gap-3 mb-8">
+          <div className="w-12 h-px bg-gradient-to-r from-stone-300 to-transparent" />
+          <span className="text-[11px] uppercase tracking-[0.3em] text-stone-400 font-medium">
+            Virtual Try-On
           </span>
         </div>
 
         {hasTryOn ? (
           // ============================================
-          // 已试穿状态：显示对比结果
+          // 已试穿状态：优雅的对比展示
           // ============================================
-          <div className="rounded-2xl overflow-hidden border border-sakura-200 bg-gradient-to-br from-sakura-50/50 to-white">
+          <div className="bg-[#FDFBF7] rounded-2xl border border-stone-200/60 overflow-hidden">
             {/* 对比图区域 */}
-            <div className="grid grid-cols-2 gap-px bg-sakura-200">
+            <div className="grid grid-cols-2">
               {/* 原图 */}
-              <div className="relative aspect-[3/4] bg-white">
+              <div className="relative aspect-[3/4] border-r border-stone-200/40">
                 <Image
                   src={plan.imageUrl || ""}
                   alt="套餐原图"
                   fill
                   className="object-cover"
                 />
-                <div className="absolute top-3 left-3 px-3 py-1.5 bg-white/90 backdrop-blur-sm rounded-full text-[12px] font-medium text-gray-700 shadow-sm">
-                  套餐原图
+                <div className="absolute bottom-4 left-4">
+                  <span className="px-3 py-1.5 bg-white/95 backdrop-blur-sm rounded text-[11px] font-medium text-stone-600 tracking-wide">
+                    Original
+                  </span>
                 </div>
               </div>
 
               {/* 试穿效果 */}
-              <div className="relative aspect-[3/4] bg-white">
+              <div className="relative aspect-[3/4]">
                 <Image
                   src={tryOnResult.resultPhoto}
                   alt="试穿效果"
                   fill
                   className="object-cover"
                 />
-                <div className="absolute top-3 left-3 px-3 py-1.5 bg-sakura-600 rounded-full text-[12px] font-medium text-white shadow-sm">
-                  ✨ 你的试穿效果
+                <div className="absolute bottom-4 left-4">
+                  <span className="px-3 py-1.5 bg-sakura-600 rounded text-[11px] font-medium text-white tracking-wide">
+                    Your Look
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* 操作栏 */}
-            <div className="p-4 flex items-center justify-between">
-              <div className="text-[14px] text-gray-600">
-                <span className="text-sakura-600 font-medium">试穿成功！</span>
-                <span className="ml-2">喜欢这个效果吗？</span>
-              </div>
-              <div className="flex items-center gap-2">
+            {/* 底部操作栏 */}
+            <div className="px-6 py-4 bg-white/50 border-t border-stone-100 flex items-center justify-between">
+              <p className="text-[14px] text-stone-600">
+                <span className="text-stone-800 font-medium">优雅，一如所见。</span>
+              </p>
+              <div className="flex items-center gap-3">
                 <button
                   onClick={handleRetry}
-                  className="flex items-center gap-1.5 px-3 py-2 text-[13px] text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-2 text-[13px] text-stone-500 hover:text-stone-800 transition-colors duration-300"
                 >
-                  <RotateCcw className="w-4 h-4" />
-                  重新试穿
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>重新体验</span>
                 </button>
                 <button
                   onClick={() => setShowComparison(true)}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-sakura-600 hover:bg-sakura-700 text-white text-[13px] font-medium rounded-lg transition-colors"
+                  className="flex items-center gap-1.5 px-4 py-2 bg-stone-800 hover:bg-stone-900 text-white text-[13px] font-medium rounded-lg transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
                 >
-                  <ZoomIn className="w-4 h-4" />
-                  查看大图对比
+                  <Maximize2 className="w-3.5 h-3.5" />
+                  <span>查看细节</span>
                 </button>
               </div>
             </div>
           </div>
         ) : (
           // ============================================
-          // 未试穿状态：引导用户体验
+          // 未试穿状态：雅致的邀请
           // ============================================
-          <div className="rounded-2xl overflow-hidden border border-gray-200 bg-gradient-to-br from-sakura-50/30 via-white to-wabi-50/30">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
-              {/* 左侧：示意图 */}
-              <div className="relative aspect-[4/3] md:aspect-auto md:min-h-[320px] bg-gradient-to-br from-sakura-100 to-sakura-50 overflow-hidden">
-                {/* 装饰背景 */}
-                <div className="absolute inset-0 opacity-20">
-                  <div className="absolute top-1/4 left-1/4 w-32 h-32 rounded-full bg-sakura-300 blur-3xl" />
-                  <div className="absolute bottom-1/4 right-1/4 w-40 h-40 rounded-full bg-sakura-400 blur-3xl" />
-                </div>
+          <div className="relative bg-[#FDFBF7] rounded-2xl border border-stone-200/60 overflow-hidden">
+            {/* 主内容区 */}
+            <div className="grid grid-cols-1 lg:grid-cols-5">
+              {/* 左侧：视觉区域 (3/5) */}
+              <div className="lg:col-span-3 relative">
+                {/* 背景图片 - 套餐图作为氛围 */}
+                <div className="relative aspect-[4/3] lg:aspect-auto lg:h-full min-h-[280px] lg:min-h-[360px]">
+                  {plan.imageUrl && (
+                    <Image
+                      src={plan.imageUrl}
+                      alt={plan.name}
+                      fill
+                      className="object-cover"
+                    />
+                  )}
+                  {/* 渐变遮罩 */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#FDFBF7]/95 lg:to-[#FDFBF7]" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#FDFBF7]/80 via-transparent to-transparent lg:hidden" />
 
-                {/* 示意图：原图 + 箭头 + 效果图 */}
-                <div className="relative h-full flex items-center justify-center gap-4 p-6">
-                  {/* 原图缩略 */}
-                  <div className="relative w-24 h-32 md:w-32 md:h-44 rounded-xl overflow-hidden shadow-lg border-2 border-white">
-                    {plan.imageUrl ? (
-                      <Image
-                        src={plan.imageUrl}
-                        alt="套餐图片"
-                        fill
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-sakura-200 flex items-center justify-center">
-                        <span className="text-4xl">👘</span>
+                  {/* 悬浮的"照片"暗示 - 拍立得风格 */}
+                  <div className="absolute bottom-6 right-6 lg:bottom-auto lg:top-1/2 lg:right-8 lg:-translate-y-1/2">
+                    <div className="w-20 h-24 lg:w-28 lg:h-36 bg-white rounded shadow-xl rotate-6 p-1.5 lg:p-2">
+                      <div className="w-full h-3/4 bg-stone-100 rounded-sm flex items-center justify-center">
+                        <Camera className="w-6 h-6 lg:w-8 lg:h-8 text-stone-300" />
                       </div>
-                    )}
-                    <div className="absolute bottom-1 left-1 right-1 bg-white/90 backdrop-blur-sm rounded text-[10px] text-center py-0.5 font-medium text-gray-600">
-                      套餐
-                    </div>
-                  </div>
-
-                  {/* 箭头 */}
-                  <div className="flex flex-col items-center gap-1">
-                    <Sparkles className="w-6 h-6 text-sakura-500" />
-                    <ChevronRight className="w-5 h-5 text-sakura-400" />
-                  </div>
-
-                  {/* 效果图占位 */}
-                  <div className="relative w-24 h-32 md:w-32 md:h-44 rounded-xl overflow-hidden shadow-lg border-2 border-sakura-300 bg-white">
-                    <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-b from-sakura-50 to-white">
-                      <Camera className="w-8 h-8 text-sakura-400" />
-                      <span className="text-[11px] text-sakura-500 font-medium">你的照片</span>
-                    </div>
-                    <div className="absolute bottom-1 left-1 right-1 bg-sakura-600 rounded text-[10px] text-center py-0.5 font-medium text-white">
-                      试穿效果
+                      <div className="mt-1 lg:mt-2 text-center">
+                        <span className="text-[8px] lg:text-[10px] text-stone-400 tracking-wider">YOUR PHOTO</span>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* 右侧：文案 + CTA */}
-              <div className="p-6 md:p-8 flex flex-col justify-center">
-                {/* 标题 */}
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-10 h-10 rounded-xl bg-sakura-100 flex items-center justify-center">
-                    <Sparkles className="w-5 h-5 text-sakura-600" />
-                  </div>
-                  <div>
-                    <h3 className="text-[18px] font-semibold text-gray-900">
-                      AI 虚拟试穿
-                    </h3>
-                    <p className="text-[12px] text-sakura-600 font-medium">
-                      Kimono One 独家功能
-                    </p>
-                  </div>
-                </div>
+              {/* 右侧：文案区域 (2/5) */}
+              <div className="lg:col-span-2 p-8 lg:p-10 flex flex-col justify-center">
+                {/* 小标签 */}
+                <span className="text-[10px] uppercase tracking-[0.35em] text-sakura-500 font-medium mb-4">
+                  Exclusive Feature
+                </span>
 
-                {/* 描述 */}
-                <p className="text-[15px] text-gray-600 leading-relaxed mb-4">
-                  上传一张您的照片，AI 将在<span className="text-sakura-600 font-medium">5秒内</span>生成您穿着这款和服的真实效果图。
+                {/* 主标题 - Serif */}
+                <h3 className="font-serif text-[24px] lg:text-[28px] text-stone-800 leading-tight mb-4">
+                  预见你的<br />
+                  <span className="text-sakura-600">优雅</span>时刻
+                </h3>
+
+                {/* 描述文案 - 情感化 */}
+                <p className="text-[14px] lg:text-[15px] text-stone-500 leading-relaxed mb-8">
+                  上传一张您的照片，<br className="hidden lg:block" />
+                  让和服与您的气质相遇，<br className="hidden lg:block" />
+                  遇见另一个自己。
                 </p>
 
-                {/* 社会证明 */}
-                <div className="flex items-center gap-4 mb-6 text-[13px] text-gray-500">
-                  <div className="flex items-center gap-1.5">
-                    <Users className="w-4 h-4 text-sakura-500" />
-                    <span><span className="font-semibold text-gray-700">{stats.tryOnCount}</span> 人已体验</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Star className="w-4 h-4 text-sakura-500 fill-sakura-500" />
-                    <span className="font-semibold text-gray-700">{stats.rating}</span>
-                    <span className="text-gray-400">({stats.reviewCount})</span>
-                  </div>
-                </div>
-
-                {/* CTA */}
+                {/* CTA 按钮 */}
                 <button
                   onClick={() => setShowTryOnModal(true)}
-                  className="w-full md:w-auto px-8 py-3.5 bg-sakura-600 hover:bg-sakura-700 text-white rounded-xl font-semibold text-[15px] transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                  className="group w-full lg:w-auto px-8 py-3.5 bg-sakura-600 hover:bg-sakura-700 text-white rounded-lg font-medium text-[14px] transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 flex items-center justify-center gap-2"
                 >
-                  <Camera className="w-5 h-5" />
-                  上传照片，立即体验
+                  <Camera className="w-4 h-4 transition-transform duration-300 group-hover:scale-110" />
+                  <span>开始体验</span>
                 </button>
 
-                {/* 提示 */}
-                <p className="text-[12px] text-gray-400 mt-3">
-                  支持 JPG、PNG 格式，建议正面半身照效果最佳
+                {/* 辅助信息 - 极度克制 */}
+                <p className="text-[11px] text-stone-400 mt-4 tracking-wide">
+                  支持 JPG / PNG · 正面半身照效果最佳
                 </p>
               </div>
+            </div>
+
+            {/* 装饰元素 - 和风纹样暗示 */}
+            <div className="absolute top-4 right-4 w-16 h-16 opacity-[0.03]">
+              <svg viewBox="0 0 100 100" fill="currentColor" className="text-stone-900">
+                <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="1" />
+                <circle cx="50" cy="50" r="30" fill="none" stroke="currentColor" strokeWidth="1" />
+                <circle cx="50" cy="50" r="15" fill="none" stroke="currentColor" strokeWidth="1" />
+              </svg>
             </div>
           </div>
         )}

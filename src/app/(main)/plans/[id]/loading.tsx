@@ -99,36 +99,32 @@ export default function PlanDetailLoading() {
             </div>
           </section>
 
-          {/* AI 虚拟试穿骨架 */}
+          {/* AI 虚拟试穿骨架 - 雅致风格 */}
           <section>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-px bg-sakura-200" />
-              <div className="h-3 w-32 bg-sakura-100 rounded animate-pulse" />
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-12 h-px bg-stone-200" />
+              <div className="h-3 w-24 bg-stone-100 rounded animate-pulse" />
             </div>
-            <div className="rounded-2xl overflow-hidden border border-gray-200 bg-gradient-to-br from-sakura-50/30 to-white">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
-                {/* 左侧示意图骨架 */}
-                <div className="aspect-[4/3] md:aspect-auto md:min-h-[320px] bg-sakura-50 flex items-center justify-center gap-4 p-6">
-                  <div className="w-24 h-32 md:w-32 md:h-44 bg-sakura-100 rounded-xl animate-pulse" />
-                  <div className="w-6 h-6 bg-sakura-200 rounded animate-pulse" />
-                  <div className="w-24 h-32 md:w-32 md:h-44 bg-sakura-100 rounded-xl animate-pulse" />
+            <div className="rounded-2xl overflow-hidden border border-stone-200/60 bg-[#FDFBF7]">
+              <div className="grid grid-cols-1 lg:grid-cols-5">
+                {/* 左侧视觉区域 (3/5) */}
+                <div className="lg:col-span-3 relative aspect-[4/3] lg:aspect-auto lg:min-h-[360px] bg-stone-100 animate-pulse">
+                  {/* 拍立得骨架 */}
+                  <div className="absolute bottom-6 right-6 lg:bottom-auto lg:top-1/2 lg:right-8 lg:-translate-y-1/2">
+                    <div className="w-20 h-24 lg:w-28 lg:h-36 bg-white rounded shadow-lg rotate-6" />
+                  </div>
                 </div>
-                {/* 右侧文案骨架 */}
-                <div className="p-6 md:p-8 flex flex-col justify-center">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-10 h-10 bg-sakura-100 rounded-xl animate-pulse" />
-                    <div>
-                      <div className="h-5 w-24 bg-gray-200 rounded animate-pulse mb-1" />
-                      <div className="h-3 w-32 bg-sakura-100 rounded animate-pulse" />
-                    </div>
+                {/* 右侧文案区域 (2/5) */}
+                <div className="lg:col-span-2 p-8 lg:p-10 flex flex-col justify-center">
+                  <div className="h-2 w-20 bg-sakura-100 rounded animate-pulse mb-4" />
+                  <div className="h-8 w-32 bg-stone-200 rounded animate-pulse mb-2" />
+                  <div className="h-8 w-24 bg-stone-200 rounded animate-pulse mb-4" />
+                  <div className="space-y-2 mb-8">
+                    <div className="h-4 w-full bg-stone-100 rounded animate-pulse" />
+                    <div className="h-4 w-4/5 bg-stone-100 rounded animate-pulse" />
+                    <div className="h-4 w-3/5 bg-stone-100 rounded animate-pulse" />
                   </div>
-                  <div className="h-4 w-full bg-gray-100 rounded animate-pulse mb-2" />
-                  <div className="h-4 w-4/5 bg-gray-100 rounded animate-pulse mb-4" />
-                  <div className="flex gap-4 mb-6">
-                    <div className="h-4 w-20 bg-gray-100 rounded animate-pulse" />
-                    <div className="h-4 w-16 bg-gray-100 rounded animate-pulse" />
-                  </div>
-                  <div className="h-12 w-48 bg-sakura-200 rounded-xl animate-pulse" />
+                  <div className="h-12 w-32 bg-sakura-200 rounded-lg animate-pulse" />
                 </div>
               </div>
             </div>
