@@ -200,88 +200,54 @@ export default function PlanDetailLoading() {
             </section>
           </div>
 
-          {/* 右侧预订卡片骨架 - Airbnb 悬浮风格 */}
+          {/* 右侧预订卡片骨架 */}
           <div className="lg:col-span-1">
             <div className="lg:sticky lg:top-24">
-              <div className="bg-white rounded-2xl border border-black/5 p-6 shadow-[0_6px_16px_rgba(0,0,0,0.12)]">
+              <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
                 {/* 价格骨架 */}
                 <div className="mb-6">
-                  <div className="h-8 w-32 bg-stone-200 rounded animate-pulse mb-2" />
-                  <div className="h-4 w-20 bg-stone-100 rounded animate-pulse" />
+                  <div className="h-8 w-28 bg-gray-200 rounded animate-pulse mb-2" />
+                  <div className="h-4 w-20 bg-gray-100 rounded animate-pulse" />
                 </div>
 
                 {/* 店铺信息 */}
-                <div className="mb-5 px-4 py-3 bg-stone-50/80 rounded-xl">
-                  <div className="h-4 w-28 bg-stone-200 rounded animate-pulse" />
+                <div className="mb-4 p-3 bg-gray-50 rounded-xl">
+                  <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
                 </div>
 
-                {/* Airbnb 风格表单组 */}
-                <div className="mb-5 rounded-xl border border-stone-200 overflow-hidden">
-                  {/* 日期 + 时间行 */}
-                  <div className="grid grid-cols-2 divide-x divide-stone-200">
-                    <div className="p-3">
-                      <div className="h-2.5 w-12 bg-stone-200 rounded animate-pulse mb-2" />
-                      <div className="h-5 w-full bg-stone-100 rounded animate-pulse" />
+                {/* 表单字段骨架 */}
+                <div className="space-y-4 mb-6">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="border border-gray-200 rounded-xl p-3">
+                      <div className="h-3 w-16 bg-gray-200 rounded animate-pulse mb-2" />
+                      <div className="h-5 w-full bg-gray-100 rounded animate-pulse" />
                     </div>
-                    <div className="p-3">
-                      <div className="h-2.5 w-12 bg-stone-200 rounded animate-pulse mb-2" />
-                      <div className="h-5 w-full bg-stone-100 rounded animate-pulse" />
-                    </div>
-                  </div>
-                  {/* 人数行 */}
-                  <div className="p-3 border-t border-stone-200">
-                    <div className="h-2.5 w-10 bg-stone-200 rounded animate-pulse mb-2" />
-                    <div className="flex items-center justify-between">
-                      <div className="h-5 w-16 bg-stone-100 rounded animate-pulse" />
-                      <div className="flex gap-1">
-                        <div className="w-8 h-8 rounded-full bg-stone-100 animate-pulse" />
-                        <div className="w-8 h-8 rounded-full bg-stone-100 animate-pulse" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 电话输入 */}
-                <div className="mb-6 p-3 rounded-xl border border-stone-200">
-                  <div className="h-2.5 w-16 bg-stone-200 rounded animate-pulse mb-2" />
-                  <div className="h-5 w-full bg-stone-100 rounded animate-pulse" />
+                  ))}
                 </div>
 
                 {/* 按钮骨架 */}
-                <div className="space-y-3 mb-4">
-                  {/* 主按钮 - 渐变 */}
-                  <div className="h-12 w-full bg-gradient-to-r from-sakura-200 to-sakura-300 rounded-xl animate-pulse" />
-                  {/* 次按钮 - 边框 */}
-                  <div className="h-12 w-full border border-stone-200 rounded-xl animate-pulse" />
+                <div className="space-y-3">
+                  <div className="h-12 w-full bg-gray-200 rounded-lg animate-pulse" />
+                  <div className="h-12 w-full bg-gray-200 rounded-lg animate-pulse" />
+                  <div className="h-12 w-full bg-sakura-200 rounded-lg animate-pulse" />
                 </div>
 
                 {/* 提示文字 */}
-                <div className="h-3 w-20 bg-stone-100 rounded animate-pulse mx-auto" />
-
-                {/* 安全保障 */}
-                <div className="mt-6 pt-5 border-t border-stone-100">
-                  <div className="flex items-start gap-3">
-                    <div className="w-4 h-4 bg-sakura-100 rounded animate-pulse" />
-                    <div className="flex-1">
-                      <div className="h-3 w-20 bg-stone-200 rounded animate-pulse mb-1" />
-                      <div className="h-2.5 w-32 bg-stone-100 rounded animate-pulse" />
-                    </div>
-                  </div>
-                </div>
+                <div className="h-4 w-24 bg-gray-100 rounded animate-pulse mx-auto mt-4" />
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* MiniBookingBar 骨架 (移动端) - 毛玻璃效果 */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-stone-100 p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] z-40">
+      {/* MiniBookingBar 骨架 (移动端) */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-2xl z-40">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <div className="h-6 w-24 bg-stone-200 rounded animate-pulse mb-1" />
-            <div className="h-3 w-16 bg-stone-100 rounded animate-pulse" />
+            <div className="h-5 w-20 bg-gray-200 rounded animate-pulse mb-1" />
+            <div className="h-3 w-16 bg-gray-100 rounded animate-pulse" />
           </div>
-          <div className="h-12 w-24 bg-gradient-to-r from-sakura-200 to-sakura-300 rounded-xl animate-pulse" />
+          <div className="h-12 w-24 bg-sakura-200 rounded-lg animate-pulse" />
         </div>
       </div>
     </div>
