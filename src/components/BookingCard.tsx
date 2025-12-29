@@ -1,11 +1,24 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
-import { Calendar, Users, Clock, Shield, X, Sparkles, Plus, Check } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  Calendar,
+  Clock,
+  Shield,
+  X,
+  Sparkles,
+  Check,
+  ShoppingCart,
+  Minus,
+  Plus,
+  Phone,
+  MapPin,
+} from "lucide-react";
 import { Badge } from "@/components/ui";
 import TryOnModal from "@/components/TryOnModal";
-import GuestsDropdown, { GuestsDetail } from "@/components/GuestsDropdown";
+import InstantBookingModal from "@/components/InstantBookingModal";
+import { useCartStore, type CartItemInput } from "@/store/cart";
 import type { SelectedUpgrade } from "@/components/PlanDetailClient";
 
 interface BookingCardProps {
@@ -18,130 +31,188 @@ interface BookingCardProps {
     depositAmount: number;
     isCampaign?: boolean;
     imageUrl?: string;
+    // Pricing unit fields
+    pricingUnit?: "person" | "group";
+    unitLabel?: string;
+    unitDescription?: string;
+    minQuantity?: number;
+    maxQuantity?: number;
+  };
+  // Store context (from search or plan detail page)
+  store: {
+    id: string;
+    name: string;
   };
   selectedUpgrades?: SelectedUpgrade[];
   onRemoveUpgrade?: (upgradeId: string) => void;
 }
 
-export default function BookingCard({ plan, selectedUpgrades = [], onRemoveUpgrade }: BookingCardProps) {
-  // 读取URL搜索参数
+export default function BookingCard({
+  plan,
+  store,
+  selectedUpgrades = [],
+  onRemoveUpgrade,
+}: BookingCardProps) {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const searchDate = searchParams.get('date');
-  const searchGuests = searchParams.get('guests');
-  const searchMen = searchParams.get('men');
-  const searchWomen = searchParams.get('women');
-  const searchChildren = searchParams.get('children');
+  const searchDate = searchParams.get("date");
 
+  // Cart store
+  const addItem = useCartStore((state) => state.addItem);
+
+  // Form state
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
-  const [guests, setGuests] = useState(1);
-  const [guestsDetail, setGuestsDetail] = useState<GuestsDetail>({
-    total: 1,
-    men: 0,
-    women: 1,
-    children: 0,
-  });
+  const [quantity, setQuantity] = useState(plan.minQuantity || 1);
+  const [phone, setPhone] = useState("");
+
+  // Modal state
   const [showMobileModal, setShowMobileModal] = useState(false);
   const [showTryOnModal, setShowTryOnModal] = useState(false);
+  const [showInstantBookingModal, setShowInstantBookingModal] = useState(false);
+  const [addedToCart, setAddedToCart] = useState(false);
 
-  // 自动填充搜索参数
+  // Pricing unit info
+  const pricingUnit = plan.pricingUnit || "person";
+  const unitLabel = plan.unitLabel || "人";
+  const unitDescription = plan.unitDescription;
+  const minQty = plan.minQuantity || 1;
+  const maxQty = plan.maxQuantity || 10;
+
+  // Auto-fill date from search params
   useEffect(() => {
     if (searchDate) {
       setDate(searchDate);
     }
-    if (searchGuests) {
-      const guestsNum = parseInt(searchGuests);
-      if (guestsNum > 0 && guestsNum <= 10) {
-        setGuests(guestsNum);
-      }
-    }
-    // 填充详细人数信息
-    if (searchMen || searchWomen || searchChildren) {
-      const men = searchMen ? parseInt(searchMen) : 0;
-      const women = searchWomen ? parseInt(searchWomen) : 0;
-      const children = searchChildren ? parseInt(searchChildren) : 0;
-      const total = men + women + children;
+  }, [searchDate]);
 
-      setGuestsDetail({
-        total: total || 1,
-        men,
-        women,
-        children,
-      });
+  // Calculate discount percentage
+  const discountPercent =
+    plan.originalPrice && plan.originalPrice > plan.price
+      ? Math.round(
+          ((plan.originalPrice - plan.price) / plan.originalPrice) * 100
+        )
+      : 0;
 
-      if (total > 0) {
-        setGuests(total);
-      }
-    }
-  }, [searchDate, searchGuests, searchMen, searchWomen, searchChildren]);
-
-  // 计算优惠百分比
-  const discountPercent = plan.originalPrice && plan.originalPrice > plan.price
-    ? Math.round(((plan.originalPrice - plan.price) / plan.originalPrice) * 100)
-    : 0;
-
-  // 计算增值服务总价
+  // Calculate upgrade services total (per group, not per person)
   const upgradesTotal = selectedUpgrades.reduce((sum, u) => sum + u.price, 0);
 
-  // 计算总价（含增值服务）
-  const basePricePerPerson = plan.price;
-  const totalPricePerPerson = basePricePerPerson + upgradesTotal;
-  const subtotal = totalPricePerPerson * guests;
-  const deposit = plan.depositAmount * guests;
+  // Calculate totals
+  const basePrice = plan.price;
+  const unitPrice = basePrice + (pricingUnit === "group" ? upgradesTotal : 0);
+  const subtotal =
+    pricingUnit === "person"
+      ? basePrice * quantity + upgradesTotal
+      : unitPrice * quantity;
+  const deposit =
+    pricingUnit === "person"
+      ? plan.depositAmount * quantity
+      : plan.depositAmount * quantity;
   const balance = subtotal - deposit;
 
-  const handleBooking = () => {
-    // 构建查询参数
-    const params = new URLSearchParams({
-      planId: plan.id,
-      date: date,
-      time: time,
-      guests: guests.toString(),
-    });
-
-    // 跳转到预订页面
-    window.location.href = `/booking?${params.toString()}`;
+  // Quantity handlers
+  const decreaseQuantity = () => {
+    if (quantity > minQty) {
+      setQuantity(quantity - 1);
+    }
   };
 
-  const isBookingEnabled = date && time && guests > 0;
+  const increaseQuantity = () => {
+    if (quantity < maxQty) {
+      setQuantity(quantity + 1);
+    }
+  };
 
-  // 预订表单内容（桌面端和移动端共用）
-  const BookingFormContent = () => (
-    <>
-      {/* 价格区域 */}
+  // Build cart item
+  const buildCartItem = (): CartItemInput => ({
+    type: "PLAN",
+    planId: plan.id,
+    name: plan.name,
+    price: plan.price,
+    originalPrice: plan.originalPrice,
+    image: plan.imageUrl,
+    quantity,
+    addOns: selectedUpgrades.map((u) => u.id),
+    storeId: store.id,
+    storeName: store.name,
+    visitDate: date || undefined,
+    visitTime: time || undefined,
+    pricingUnit,
+    unitLabel,
+    unitDescription,
+    minQuantity: minQty,
+    maxQuantity: maxQty,
+    duration: plan.duration,
+    isCampaign: plan.isCampaign,
+  });
+
+  // Add to cart handler
+  const handleAddToCart = () => {
+    addItem(buildCartItem());
+    setAddedToCart(true);
+    setTimeout(() => setAddedToCart(false), 2000);
+  };
+
+  // Instant booking handler
+  const handleInstantBooking = () => {
+    if (!date || !time) {
+      // Show mobile modal to fill date/time first
+      setShowMobileModal(true);
+      return;
+    }
+    setShowInstantBookingModal(true);
+  };
+
+  // Form validation
+  const isFormValid = date && time;
+
+  // Render price display based on pricing unit
+  const renderPriceDisplay = () => {
+    const showUpgradePrice = selectedUpgrades.length > 0;
+
+    return (
       <div className="mb-6">
-        {/* 有增值服务时显示含增值价格 */}
-        {selectedUpgrades.length > 0 ? (
+        {showUpgradePrice ? (
           <>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-[12px] px-2 py-0.5 bg-sakura-100 text-sakura-700 rounded-full font-medium">
-                💫 含增值服务
+                含增值服务
               </span>
             </div>
             <div className="flex items-baseline gap-2 mb-2">
-              <span className="text-2xl font-bold text-sakura-600">
-                ¥{(totalPricePerPerson / 100).toLocaleString()}
+              <span className="text-[26px] font-semibold text-sakura-600">
+                ¥{((basePrice + (pricingUnit === "group" ? upgradesTotal : 0)) / 100).toLocaleString()}
               </span>
-              <span className="text-gray-600">/ 人</span>
-              <span className="text-sm text-gray-400 line-through ml-1">
-                ¥{(basePricePerPerson / 100).toLocaleString()}
+              <span className="text-[14px] text-gray-600">
+                / {unitLabel}
+                {unitDescription && (
+                  <span className="text-gray-400 ml-1">({unitDescription})</span>
+                )}
               </span>
             </div>
             <div className="text-[12px] text-gray-500">
-              基础 ¥{(basePricePerPerson / 100).toLocaleString()} + 增值 ¥{(upgradesTotal / 100).toLocaleString()}
+              基础 ¥{(basePrice / 100).toLocaleString()}
+              {pricingUnit === "group" && (
+                <> + 增值 ¥{(upgradesTotal / 100).toLocaleString()}</>
+              )}
             </div>
           </>
         ) : (
           <>
             <div className="flex items-baseline gap-2 mb-2">
-              <span className="text-2xl font-bold text-gray-900">
+              <span className="text-[26px] font-semibold text-gray-900">
                 ¥{(plan.price / 100).toLocaleString()}
               </span>
-              <span className="text-gray-600">/ 人</span>
+              <span className="text-[14px] text-gray-600">
+                / {unitLabel}
+                {unitDescription && (
+                  <span className="text-gray-400 ml-1">({unitDescription})</span>
+                )}
+              </span>
 
               {plan.originalPrice && plan.originalPrice > plan.price && (
                 <>
-                  <span className="text-lg text-gray-400 line-through ml-2">
+                  <span className="text-[16px] text-gray-400 line-through ml-2">
                     ¥{(plan.originalPrice / 100).toLocaleString()}
                   </span>
                   {plan.isCampaign && (
@@ -160,23 +231,42 @@ export default function BookingCard({ plan, selectedUpgrades = [], onRemoveUpgra
             <Badge variant="warning" size="sm">
               限时优惠
             </Badge>
-            <span className="text-sm text-gray-600">
-              活动期间特惠价格
-            </span>
+            <span className="text-[14px] text-gray-600">活动期间特惠价格</span>
           </div>
         )}
       </div>
+    );
+  };
 
-      {/* 已选增值服务列表 */}
+  // Booking form content (shared between desktop and mobile)
+  const BookingFormContent = () => (
+    <>
+      {/* Price display */}
+      {renderPriceDisplay()}
+
+      {/* Store info */}
+      <div className="mb-4 p-3 bg-gray-50 rounded-xl border border-gray-200">
+        <div className="flex items-center gap-2 text-[14px]">
+          <MapPin className="w-4 h-4 text-sakura-500" />
+          <span className="text-gray-900 font-medium">{store.name}</span>
+        </div>
+      </div>
+
+      {/* Selected upgrades list */}
       {selectedUpgrades.length > 0 && (
         <div className="mb-6 p-3 bg-sakura-50 rounded-xl border border-sakura-200">
           <div className="flex items-center gap-2 mb-2">
             <Check className="w-4 h-4 text-sakura-600" />
-            <span className="text-[12px] font-semibold text-sakura-800">已选增值服务</span>
+            <span className="text-[12px] font-semibold text-sakura-800">
+              已选增值服务
+            </span>
           </div>
           <div className="space-y-1.5">
             {selectedUpgrades.map((upgrade) => (
-              <div key={upgrade.id} className="flex items-center justify-between text-[12px]">
+              <div
+                key={upgrade.id}
+                className="flex items-center justify-between text-[12px]"
+              >
                 <div className="flex items-center gap-1.5">
                   <span>{upgrade.icon}</span>
                   <span className="text-gray-700">{upgrade.name}</span>
@@ -198,39 +288,35 @@ export default function BookingCard({ plan, selectedUpgrades = [], onRemoveUpgra
         </div>
       )}
 
-      {/* 预订表单 */}
+      {/* Booking form */}
       <div className="space-y-4 mb-6">
-        {/* 日期选择 */}
+        {/* Date picker */}
         <div
-          className={`border rounded-xl transition-colors cursor-pointer ${date && searchDate ? 'border-green-500 bg-green-50/30' : 'border-gray-300 hover:border-gray-900'}`}
+          className={`border rounded-xl transition-colors cursor-pointer ${
+            date && searchDate
+              ? "border-green-500 bg-green-50/30"
+              : "border-gray-300 hover:border-gray-900"
+          }`}
           onClick={() => {
-            const input = document.getElementById('booking-date-input') as HTMLInputElement;
+            const input = document.getElementById(
+              "booking-date-input"
+            ) as HTMLInputElement;
             input?.focus();
             try {
               input?.showPicker?.();
-            } catch (error) {
+            } catch {
               input?.click();
             }
           }}
         >
           <div className="p-3">
-            <label
-              className="flex items-center gap-2 text-xs font-semibold text-gray-700 mb-2 cursor-pointer"
-              onClick={(e) => {
-                e.preventDefault();
-                const input = document.getElementById('booking-date-input') as HTMLInputElement;
-                input?.focus();
-                try {
-                  input?.showPicker?.();
-                } catch (error) {
-                  input?.click();
-                }
-              }}
-            >
+            <label className="flex items-center gap-2 text-[12px] font-semibold text-gray-700 mb-2 cursor-pointer">
               <Calendar className="w-4 h-4 text-sakura-500" />
               到店日期
               {date && searchDate && (
-                <span className="ml-auto text-xs text-green-600 font-normal">✓ 已从搜索预填</span>
+                <span className="ml-auto text-[12px] text-green-600 font-normal">
+                  已从搜索预填
+                </span>
               )}
             </label>
             <input
@@ -238,18 +324,18 @@ export default function BookingCard({ plan, selectedUpgrades = [], onRemoveUpgra
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full text-sm text-gray-900 bg-transparent border-none outline-none cursor-pointer"
-              min={new Date().toISOString().split('T')[0]}
+              className="w-full text-[14px] text-gray-900 bg-transparent border-none outline-none cursor-pointer"
+              min={new Date().toISOString().split("T")[0]}
             />
           </div>
         </div>
 
-        {/* 时间选择 */}
+        {/* Time picker */}
         <div className="border border-gray-300 rounded-xl hover:border-gray-900 transition-colors cursor-pointer relative">
           <div className="p-3">
             <label
               htmlFor="booking-time-select"
-              className="flex items-center gap-2 text-xs font-semibold text-gray-700 mb-2 cursor-pointer"
+              className="flex items-center gap-2 text-[12px] font-semibold text-gray-700 mb-2 cursor-pointer"
             >
               <Clock className="w-4 h-4 text-sakura-500" />
               到店时间
@@ -276,85 +362,175 @@ export default function BookingCard({ plan, selectedUpgrades = [], onRemoveUpgra
               <option value="15:30">下午 3:30</option>
               <option value="16:00">下午 4:00</option>
             </select>
-            <div className="text-sm text-gray-900 pointer-events-none">
+            <div className="text-[14px] text-gray-900 pointer-events-none">
               {time ? (
                 <>
-                  {time.startsWith('09') || time.startsWith('10') || time.startsWith('11') ? '上午' :
-                   time === '12:00' ? '中午' : '下午'} {time}
+                  {time.startsWith("09") ||
+                  time.startsWith("10") ||
+                  time.startsWith("11")
+                    ? "上午"
+                    : time === "12:00"
+                    ? "中午"
+                    : "下午"}{" "}
+                  {time}
                 </>
               ) : (
-                '请选择时间'
+                "请选择时间"
               )}
             </div>
           </div>
         </div>
 
-        {/* 人数选择 */}
-        <div className="border border-gray-300 rounded-xl hover:border-gray-900 transition-colors relative cursor-pointer">
-          <div className="p-3 cursor-pointer">
-            <GuestsDropdown
-              value={guests}
-              onChange={setGuests}
-              onDetailChange={setGuestsDetail}
-              initialDetail={guestsDetail}
-              dropdownClassName="left-0 right-0 w-auto"
+        {/* Quantity selector */}
+        <div className="border border-gray-300 rounded-xl hover:border-gray-900 transition-colors">
+          <div className="p-3">
+            <label className="flex items-center gap-2 text-[12px] font-semibold text-gray-700 mb-2">
+              {pricingUnit === "person" ? (
+                <>
+                  <span className="text-[16px]">👤</span>
+                  人数
+                </>
+              ) : (
+                <>
+                  <span className="text-[16px]">📦</span>
+                  数量
+                </>
+              )}
+              {unitDescription && (
+                <span className="text-[12px] text-gray-400 font-normal ml-1">
+                  ({unitDescription})
+                </span>
+              )}
+            </label>
+            <div className="flex items-center justify-between">
+              <button
+                onClick={decreaseQuantity}
+                disabled={quantity <= minQty}
+                className="w-8 h-8 rounded-lg border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                <Minus className="w-4 h-4" />
+              </button>
+              <span className="text-[16px] font-semibold text-gray-900">
+                {quantity} {unitLabel}
+              </span>
+              <button
+                onClick={increaseQuantity}
+                disabled={quantity >= maxQty}
+                className="w-8 h-8 rounded-lg border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Phone input */}
+        <div className="border border-gray-300 rounded-xl hover:border-gray-900 transition-colors">
+          <div className="p-3">
+            <label className="flex items-center gap-2 text-[12px] font-semibold text-gray-700 mb-2">
+              <Phone className="w-4 h-4 text-sakura-500" />
+              联系电话
+              <span className="text-[12px] text-gray-400 font-normal">
+                (可选)
+              </span>
+            </label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="用于预约确认通知"
+              className="w-full text-[14px] text-gray-900 bg-transparent border-none outline-none placeholder:text-gray-400"
             />
           </div>
         </div>
       </div>
 
-      {/* 试穿按钮（主 CTA） */}
+      {/* Try-on button (secondary) */}
       <button
         onClick={() => setShowTryOnModal(true)}
-        className="w-full mb-3 bg-sakura-600 hover:bg-sakura-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+        className="w-full mb-3 bg-white hover:bg-sakura-50 text-sakura-600 font-semibold py-3 px-6 rounded-lg border border-sakura-300 transition-all duration-300"
       >
         <span className="flex items-center justify-center gap-2">
-          <Sparkles className="w-5 h-5" />
+          <Sparkles className="w-4 h-4" />
           试穿看看
         </span>
       </button>
 
-      {/* 预订按钮（次要选项） */}
+      {/* Add to cart button */}
       <button
-        onClick={handleBooking}
-        disabled={!isBookingEnabled}
-        className="w-full mb-4 bg-white hover:bg-sakura-50 text-sakura-600 font-semibold py-3 px-6 rounded-lg border border-sakura-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
+        onClick={handleAddToCart}
+        disabled={!isFormValid}
+        className={`w-full mb-3 font-semibold py-3 px-6 rounded-lg transition-all duration-300 flex items-center justify-center gap-2
+          ${
+            addedToCart
+              ? "bg-green-500 text-white"
+              : "bg-gray-100 hover:bg-gray-200 text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+          }`}
       >
-        直接预订
+        {addedToCart ? (
+          <>
+            <Check className="w-4 h-4" />
+            已加入购物车
+          </>
+        ) : (
+          <>
+            <ShoppingCart className="w-4 h-4" />
+            加入购物车
+          </>
+        )}
       </button>
 
-      {/* 提示信息 */}
-      <div className="text-center text-sm text-gray-600 mb-6">
+      {/* Instant booking button (primary CTA) */}
+      <button
+        onClick={handleInstantBooking}
+        disabled={!isFormValid}
+        className="w-full mb-4 bg-sakura-600 hover:bg-sakura-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        立即预约
+      </button>
+
+      {/* Hint */}
+      <div className="text-center text-[14px] text-gray-600 mb-6">
         预订前不会收费
       </div>
 
-      {/* 价格明细 */}
-      {(guests > 1 || selectedUpgrades.length > 0) && (
+      {/* Price breakdown */}
+      {(quantity > 1 || selectedUpgrades.length > 0) && (
         <div className="space-y-3 pt-6 border-t border-gray-200">
-          {/* 套餐基础价 */}
-          <div className="flex justify-between text-sm">
+          {/* Base price */}
+          <div className="flex justify-between text-[14px]">
             <span className="text-gray-600">
-              套餐价格 ¥{(basePricePerPerson / 100).toLocaleString()} × {guests} 人
+              套餐价格 ¥{(basePrice / 100).toLocaleString()} × {quantity}{" "}
+              {unitLabel}
             </span>
             <span className="text-gray-900">
-              ¥{((basePricePerPerson * guests) / 100).toLocaleString()}
+              ¥{((basePrice * quantity) / 100).toLocaleString()}
             </span>
           </div>
 
-          {/* 增值服务明细 */}
+          {/* Upgrades breakdown */}
           {selectedUpgrades.length > 0 && (
             <>
               {selectedUpgrades.map((upgrade) => (
-                <div key={upgrade.id} className="flex justify-between text-sm">
+                <div
+                  key={upgrade.id}
+                  className="flex justify-between text-[14px]"
+                >
                   <span className="text-gray-600">
-                    {upgrade.icon} {upgrade.name} × {guests} 人
+                    {upgrade.icon} {upgrade.name}
+                    {pricingUnit === "person" && <> × {quantity} {unitLabel}</>}
                   </span>
                   <span className="text-sakura-600">
-                    +¥{((upgrade.price * guests) / 100).toLocaleString()}
+                    +¥
+                    {(
+                      (pricingUnit === "person"
+                        ? upgrade.price * quantity
+                        : upgrade.price) / 100
+                    ).toLocaleString()}
                   </span>
                 </div>
               ))}
-              <div className="flex justify-between text-sm pt-2 border-t border-dashed border-gray-200">
+              <div className="flex justify-between text-[14px] pt-2 border-t border-dashed border-gray-200">
                 <span className="text-gray-700 font-medium">小计</span>
                 <span className="text-gray-900 font-medium">
                   ¥{(subtotal / 100).toLocaleString()}
@@ -365,13 +541,13 @@ export default function BookingCard({ plan, selectedUpgrades = [], onRemoveUpgra
 
           {deposit > 0 && (
             <>
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-[14px]">
                 <span className="text-gray-600">定金</span>
                 <span className="text-gray-900">
                   ¥{(deposit / 100).toLocaleString()}
                 </span>
               </div>
-              <div className="flex justify-between text-sm pt-3 border-t border-gray-200">
+              <div className="flex justify-between text-[14px] pt-3 border-t border-gray-200">
                 <span className="font-semibold text-gray-900">到店支付</span>
                 <span className="font-semibold text-gray-900">
                   ¥{(balance / 100).toLocaleString()}
@@ -382,13 +558,13 @@ export default function BookingCard({ plan, selectedUpgrades = [], onRemoveUpgra
         </div>
       )}
 
-      {/* 安全提示 */}
+      {/* Security notice */}
       <div className="mt-6 pt-6 border-t border-gray-200">
-        <div className="flex items-start gap-3 text-sm text-gray-600">
-          <Shield className="w-5 h-5 text-sakura-500 flex-shrink-0 mt-0.5" />
+        <div className="flex items-start gap-3 text-[14px] text-gray-600">
+          <Shield className="w-4 h-4 text-sakura-500 flex-shrink-0 mt-0.5" />
           <div>
             <p className="font-semibold text-gray-900 mb-1">预订安全保障</p>
-            <p className="text-xs leading-relaxed">
+            <p className="text-[12px] leading-relaxed">
               我们承诺保护您的个人信息和支付安全，支持7天无理由取消政策
             </p>
           </div>
@@ -399,93 +575,96 @@ export default function BookingCard({ plan, selectedUpgrades = [], onRemoveUpgra
 
   return (
     <>
-      {/* 试穿弹窗 */}
+      {/* Try-on modal */}
       <TryOnModal
         isOpen={showTryOnModal}
         onClose={() => setShowTryOnModal(false)}
         plan={plan}
       />
 
-      {/* 桌面端：侧边栏 */}
+      {/* Instant booking modal */}
+      <InstantBookingModal
+        isOpen={showInstantBookingModal}
+        onClose={() => setShowInstantBookingModal(false)}
+        plan={plan}
+        store={store}
+        quantity={quantity}
+        visitDate={date}
+        visitTime={time}
+        phone={phone}
+        selectedUpgrades={selectedUpgrades}
+        subtotal={subtotal}
+        deposit={deposit}
+      />
+
+      {/* Desktop: Sidebar */}
       <div className="hidden lg:block">
         <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-shadow duration-300">
           <BookingFormContent />
         </div>
       </div>
 
-      {/* 移动端：底部固定栏 + 弹出模态框 */}
+      {/* Mobile: Fixed bottom bar + modal */}
       <div className="lg:hidden">
-        {/* 底部固定价格栏 */}
+        {/* Fixed bottom price bar */}
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-2xl z-40 safe-area-bottom">
           <div className="flex items-center justify-between gap-4">
             <div>
-              {selectedUpgrades.length > 0 ? (
-                <>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-xl font-bold text-sakura-600">
-                      ¥{(totalPricePerPerson / 100).toLocaleString()}
-                    </span>
-                    <span className="text-sm text-gray-600">/ 人</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-[12px] text-gray-500">
-                    <span>含 {selectedUpgrades.length} 项增值</span>
-                    <span className="text-sakura-500">+¥{(upgradesTotal / 100).toLocaleString()}</span>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-xl font-bold text-gray-900">
-                      ¥{(plan.price / 100).toLocaleString()}
-                    </span>
-                    <span className="text-sm text-gray-600">/ 人</span>
-                  </div>
-                  {plan.isCampaign && (
-                    <Badge variant="warning" size="sm" className="mt-1">
-                      限时优惠
-                    </Badge>
-                  )}
-                </>
+              <div className="flex items-baseline gap-2">
+                <span className="text-[18px] font-semibold text-gray-900">
+                  ¥{(plan.price / 100).toLocaleString()}
+                </span>
+                <span className="text-[14px] text-gray-600">/ {unitLabel}</span>
+              </div>
+              {selectedUpgrades.length > 0 && (
+                <div className="flex items-center gap-1 text-[12px] text-gray-500">
+                  <span>含 {selectedUpgrades.length} 项增值</span>
+                  <span className="text-sakura-500">
+                    +¥{(upgradesTotal / 100).toLocaleString()}
+                  </span>
+                </div>
               )}
             </div>
             <button
               onClick={() => setShowMobileModal(true)}
-              className="bg-sakura-600 hover:bg-sakura-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors"
+              className="bg-sakura-600 hover:bg-sakura-700 text-white font-semibold py-3 px-8 rounded-lg transition-all duration-300"
             >
               预订
             </button>
           </div>
         </div>
 
-        {/* 移动端模态框 */}
+        {/* Mobile modal */}
         {showMobileModal && (
           <>
-            {/* 遮罩层 */}
+            {/* Overlay */}
             <div
               className="fixed inset-0 bg-black/50 z-50"
               onClick={() => setShowMobileModal(false)}
             />
 
-            {/* 底部抽屉 */}
+            {/* Bottom drawer */}
             <div className="fixed inset-x-0 bottom-0 bg-white rounded-t-2xl z-50 max-h-[90vh] overflow-y-auto safe-area-bottom">
-              {/* 拖动指示器 */}
+              {/* Drag indicator */}
               <div className="flex justify-center py-3 border-b border-gray-200">
                 <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
               </div>
 
-              {/* 标题栏 */}
+              {/* Title bar */}
               <div className="flex items-center justify-between p-4 border-b border-gray-200">
-                <h2 className="text-lg font-bold text-gray-900">预订套餐</h2>
+                <h2 className="text-[18px] font-semibold text-gray-900">
+                  预订套餐
+                </h2>
                 <button
                   onClick={() => setShowMobileModal(false)}
                   className="p-2 rounded-full hover:bg-gray-100 transition-colors"
                   aria-label="关闭"
                 >
-                  <X className="w-5 h-5 text-gray-600" />
+                  <X className="w-4 h-4 text-gray-600" />
                 </button>
               </div>
 
-              {/* 表单内容 */}
+              {/* Form content */}
               <div className="p-6">
                 <BookingFormContent />
               </div>

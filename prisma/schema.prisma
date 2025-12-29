@@ -186,6 +186,7 @@ model Store {
   bookingItems BookingItem[]
   kimonos      KimonoStore[]
   listings     Listing[]
+  planStores   PlanStore[]   // 店铺可售套餐 (1:N via junction)
 
   @@index([merchantId])
   @@map("stores")
@@ -261,6 +262,15 @@ model RentalPlan {
   imageUrl      String?
   images        String[]      @default([])  // 多图支持
 
+  // ========== 计价单位 (Pricing Unit) ==========
+  // "person" = 按人计价 (女士套餐 ¥8,800/人)
+  // "group" = 按组计价 (情侣套餐 ¥15,000/组)
+  pricingUnit     String   @default("person") @map("pricing_unit")
+  unitLabel       String   @default("人") @map("unit_label")     // 显示: "人" | "組" | "套"
+  unitDescription String?  @map("unit_description")               // "2人" | "2大人+1小孩" | null
+  minQuantity     Int      @default(1) @map("min_quantity")
+  maxQuantity     Int      @default(10) @map("max_quantity")
+
   // 主题关联
   themeId  String?
   theme    Theme?    @relation(fields: [themeId], references: [id], onDelete: SetNull)
@@ -301,6 +311,7 @@ model RentalPlan {
   cartItems      CartItem[]
   planTags       PlanTag[]
   planComponents PlanComponent[]  // 套餐包含的服务组件
+  planStores     PlanStore[]      // 套餐可用店铺 (1:N)
 
   @@index([merchantId])
   @@index([themeId])
@@ -309,6 +320,32 @@ model RentalPlan {
   @@index([isCampaign])
   @@index([availableFrom, availableUntil])
   @@map("rental_plans")
+}
+
+// ============================================
+// 套餐-店铺关联 (Plan-Store Junction Table)
+// ============================================
+// 一个套餐可以在多个店铺销售
+// 用户搜索地点后，筛选出该店铺可用的套餐
+model PlanStore {
+  id        String   @id @default(cuid())
+  planId    String   @map("plan_id")
+  storeId   String   @map("store_id")
+
+  plan      RentalPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  store     Store      @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  // 可按店铺启用/禁用此套餐
+  isActive  Boolean  @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([planId, storeId])
+  @@index([planId])
+  @@index([storeId])
+  @@index([storeId, isActive])
+  @@map("plan_stores")
 }
 
 model Listing {

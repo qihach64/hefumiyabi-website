@@ -34,6 +34,11 @@ interface Theme {
   name: string;
 }
 
+interface Store {
+  id: string;
+  name: string;
+}
+
 interface Plan {
   id: string;
   name: string;
@@ -50,14 +55,21 @@ interface Plan {
   availableUntil?: Date | null;
   campaign?: Campaign | null;
   theme?: Theme | null;
+  // Pricing unit fields
+  pricingUnit?: string | null;
+  unitLabel?: string | null;
+  unitDescription?: string | null;
+  minQuantity?: number | null;
+  maxQuantity?: number | null;
 }
 
 interface PlanDetailClientProps {
   plan: Plan;
+  store: Store; // Store context from search/URL
   mapData?: MapData | null;
 }
 
-export default function PlanDetailClient({ plan, mapData }: PlanDetailClientProps) {
+export default function PlanDetailClient({ plan, store, mapData }: PlanDetailClientProps) {
   const [mounted, setMounted] = useState(false);
   const [isInFullWidthSection, setIsInFullWidthSection] = useState(true);
   const [selectedUpgrades, setSelectedUpgrades] = useState<SelectedUpgrade[]>([]);
@@ -370,7 +382,13 @@ export default function PlanDetailClient({ plan, mapData }: PlanDetailClientProp
                   depositAmount: plan.depositAmount,
                   isCampaign: plan.isCampaign,
                   imageUrl: plan.imageUrl ?? undefined,
+                  pricingUnit: (plan.pricingUnit as "person" | "group") ?? "person",
+                  unitLabel: plan.unitLabel ?? "人",
+                  unitDescription: plan.unitDescription ?? undefined,
+                  minQuantity: plan.minQuantity ?? 1,
+                  maxQuantity: plan.maxQuantity ?? 10,
                 }}
+                store={store}
                 selectedUpgrades={selectedUpgrades}
                 onRemoveUpgrade={handleRemoveUpgrade}
               />
