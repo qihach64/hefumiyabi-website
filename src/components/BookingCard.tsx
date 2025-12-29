@@ -94,20 +94,14 @@ export default function BookingCard({
         )
       : 0;
 
-  // Calculate upgrade services total (per group, not per person)
-  const upgradesTotal = selectedUpgrades.reduce((sum, u) => sum + u.price, 0);
+  // Calculate upgrade services total PER UNIT (each person/group pays for upgrades)
+  const upgradesPerUnit = selectedUpgrades.reduce((sum, u) => sum + u.price, 0);
 
-  // Calculate totals
+  // Calculate totals - upgrades are per unit, multiplied by quantity
   const basePrice = plan.price;
-  const unitPrice = basePrice + (pricingUnit === "group" ? upgradesTotal : 0);
-  const subtotal =
-    pricingUnit === "person"
-      ? basePrice * quantity + upgradesTotal
-      : unitPrice * quantity;
-  const deposit =
-    pricingUnit === "person"
-      ? plan.depositAmount * quantity
-      : plan.depositAmount * quantity;
+  const unitPriceWithUpgrades = basePrice + upgradesPerUnit;
+  const subtotal = unitPriceWithUpgrades * quantity;
+  const deposit = plan.depositAmount * quantity;
   const balance = subtotal - deposit;
 
   // Quantity handlers
@@ -181,7 +175,7 @@ export default function BookingCard({
             </div>
             <div className="flex items-baseline gap-2 mb-2">
               <span className="text-[26px] font-semibold text-sakura-600">
-                ¥{((basePrice + (pricingUnit === "group" ? upgradesTotal : 0)) / 100).toLocaleString()}
+                ¥{(unitPriceWithUpgrades / 100).toLocaleString()}
               </span>
               <span className="text-[14px] text-gray-600">
                 / {unitLabel}
@@ -191,10 +185,7 @@ export default function BookingCard({
               </span>
             </div>
             <div className="text-[12px] text-gray-500">
-              基础 ¥{(basePrice / 100).toLocaleString()}
-              {pricingUnit === "group" && (
-                <> + 增值 ¥{(upgradesTotal / 100).toLocaleString()}</>
-              )}
+              基础 ¥{(basePrice / 100).toLocaleString()} + 增值 ¥{(upgradesPerUnit / 100).toLocaleString()}
             </div>
           </>
         ) : (
@@ -260,6 +251,9 @@ export default function BookingCard({
             <span className="text-[12px] font-semibold text-sakura-800">
               已选增值服务
             </span>
+            <span className="text-[11px] text-sakura-600 ml-auto">
+              /{unitLabel}
+            </span>
           </div>
           <div className="space-y-1.5">
             {selectedUpgrades.map((upgrade) => (
@@ -273,7 +267,7 @@ export default function BookingCard({
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sakura-600 font-medium">
-                    +¥{(upgrade.price / 100).toLocaleString()}
+                    +¥{(upgrade.price / 100).toLocaleString()}/{unitLabel}
                   </span>
                   <button
                     onClick={() => onRemoveUpgrade?.(upgrade.id)}
@@ -497,46 +491,35 @@ export default function BookingCard({
       {/* Price breakdown */}
       {(quantity > 1 || selectedUpgrades.length > 0) && (
         <div className="space-y-3 pt-6 border-t border-gray-200">
-          {/* Base price */}
+          {/* Unit price breakdown */}
+          <div className="text-[12px] text-gray-500 mb-2">
+            单价明细：套餐 ¥{(basePrice / 100).toLocaleString()}
+            {selectedUpgrades.length > 0 && (
+              <> + 增值 ¥{(upgradesPerUnit / 100).toLocaleString()}</>
+            )}
+            {" "}= ¥{(unitPriceWithUpgrades / 100).toLocaleString()}/{unitLabel}
+          </div>
+
+          {/* Total calculation */}
           <div className="flex justify-between text-[14px]">
             <span className="text-gray-600">
-              套餐价格 ¥{(basePrice / 100).toLocaleString()} × {quantity}{" "}
-              {unitLabel}
+              ¥{(unitPriceWithUpgrades / 100).toLocaleString()} × {quantity} {unitLabel}
             </span>
-            <span className="text-gray-900">
-              ¥{((basePrice * quantity) / 100).toLocaleString()}
+            <span className="text-gray-900 font-medium">
+              ¥{(subtotal / 100).toLocaleString()}
             </span>
           </div>
 
-          {/* Upgrades breakdown */}
+          {/* Upgrades detail (collapsed style) */}
           {selectedUpgrades.length > 0 && (
-            <>
+            <div className="text-[12px] text-gray-500 pl-2 border-l-2 border-sakura-200">
               {selectedUpgrades.map((upgrade) => (
-                <div
-                  key={upgrade.id}
-                  className="flex justify-between text-[14px]"
-                >
-                  <span className="text-gray-600">
-                    {upgrade.icon} {upgrade.name}
-                    {pricingUnit === "person" && <> × {quantity} {unitLabel}</>}
-                  </span>
-                  <span className="text-sakura-600">
-                    +¥
-                    {(
-                      (pricingUnit === "person"
-                        ? upgrade.price * quantity
-                        : upgrade.price) / 100
-                    ).toLocaleString()}
-                  </span>
+                <div key={upgrade.id} className="flex justify-between py-0.5">
+                  <span>{upgrade.icon} {upgrade.name}</span>
+                  <span>+¥{(upgrade.price / 100).toLocaleString()}/{unitLabel}</span>
                 </div>
               ))}
-              <div className="flex justify-between text-[14px] pt-2 border-t border-dashed border-gray-200">
-                <span className="text-gray-700 font-medium">小计</span>
-                <span className="text-gray-900 font-medium">
-                  ¥{(subtotal / 100).toLocaleString()}
-                </span>
-              </div>
-            </>
+            </div>
           )}
 
           {deposit > 0 && (
@@ -612,7 +595,7 @@ export default function BookingCard({
             <div>
               <div className="flex items-baseline gap-2">
                 <span className="text-[18px] font-semibold text-gray-900">
-                  ¥{(plan.price / 100).toLocaleString()}
+                  ¥{(unitPriceWithUpgrades / 100).toLocaleString()}
                 </span>
                 <span className="text-[14px] text-gray-600">/ {unitLabel}</span>
               </div>
@@ -620,7 +603,7 @@ export default function BookingCard({
                 <div className="flex items-center gap-1 text-[12px] text-gray-500">
                   <span>含 {selectedUpgrades.length} 项增值</span>
                   <span className="text-sakura-500">
-                    +¥{(upgradesTotal / 100).toLocaleString()}
+                    (+¥{(upgradesPerUnit / 100).toLocaleString()}/{unitLabel})
                   </span>
                 </div>
               )}

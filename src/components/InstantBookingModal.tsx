@@ -84,10 +84,10 @@ export default function InstantBookingModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Pricing calculations
+  // Pricing calculations - upgrades are per unit
   const unitLabel = plan.unitLabel || "人";
-  const planTotal = plan.price * quantity;
-  const upgradesTotal = selectedUpgrades.reduce((sum, u) => sum + u.price, 0);
+  const upgradesPerUnit = selectedUpgrades.reduce((sum, u) => sum + u.price, 0);
+  const unitPriceWithUpgrades = plan.price + upgradesPerUnit;
   const balance = subtotal - deposit;
 
   // Form validation
@@ -143,8 +143,8 @@ export default function InstantBookingModal({
               planId: plan.id,
               storeId: store.id,
               quantity,
-              unitPrice: plan.price,
-              totalPrice: planTotal,
+              unitPrice: unitPriceWithUpgrades, // Unit price includes upgrades
+              totalPrice: subtotal, // subtotal = unitPriceWithUpgrades × quantity
               addOns: selectedUpgrades.map((u) => u.id),
             },
           ],
@@ -292,36 +292,48 @@ export default function InstantBookingModal({
               </div>
             </div>
 
-            {/* Price breakdown - detailed with upgrades */}
+            {/* Price breakdown - upgrades per unit */}
             <div className="bg-sakura-50/50 rounded-lg p-3 space-y-1.5">
-              {/* Plan price */}
-              <div className="flex justify-between text-[13px]">
-                <span className="text-gray-600">
-                  套餐费用 ({quantity} {unitLabel} × ¥{(plan.price / 100).toLocaleString()})
-                </span>
-                <span className="text-gray-900">
-                  ¥{(planTotal / 100).toLocaleString()}
-                </span>
-              </div>
-
-              {/* Upgrades breakdown */}
-              {selectedUpgrades.length > 0 && (
+              {/* Unit price breakdown */}
+              {selectedUpgrades.length > 0 ? (
                 <>
-                  {selectedUpgrades.map((upgrade) => (
-                    <div key={upgrade.id} className="flex justify-between text-[13px]">
-                      <span className="text-gray-600 flex items-center gap-1">
-                        <span className="text-[11px]">{upgrade.icon}</span>
-                        {upgrade.name}
-                      </span>
-                      <span className="text-gray-900">
-                        +¥{(upgrade.price / 100).toLocaleString()}
-                      </span>
-                    </div>
-                  ))}
+                  {/* Show unit price composition */}
+                  <div className="text-[12px] text-gray-500 mb-1">
+                    单价：套餐 ¥{(plan.price / 100).toLocaleString()} + 增值 ¥{(upgradesPerUnit / 100).toLocaleString()} = ¥{(unitPriceWithUpgrades / 100).toLocaleString()}/{unitLabel}
+                  </div>
+
+                  {/* Upgrades detail */}
+                  <div className="text-[11px] text-gray-400 pl-2 border-l border-sakura-200 space-y-0.5 mb-2">
+                    {selectedUpgrades.map((upgrade) => (
+                      <div key={upgrade.id} className="flex justify-between">
+                        <span>{upgrade.icon} {upgrade.name}</span>
+                        <span>+¥{(upgrade.price / 100).toLocaleString()}/{unitLabel}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Total calculation */}
+                  <div className="flex justify-between text-[13px]">
+                    <span className="text-gray-600">
+                      ¥{(unitPriceWithUpgrades / 100).toLocaleString()} × {quantity} {unitLabel}
+                    </span>
+                    <span className="text-gray-900">
+                      ¥{(subtotal / 100).toLocaleString()}
+                    </span>
+                  </div>
                 </>
+              ) : (
+                <div className="flex justify-between text-[13px]">
+                  <span className="text-gray-600">
+                    ¥{(plan.price / 100).toLocaleString()} × {quantity} {unitLabel}
+                  </span>
+                  <span className="text-gray-900">
+                    ¥{(subtotal / 100).toLocaleString()}
+                  </span>
+                </div>
               )}
 
-              {/* Subtotal */}
+              {/* Total line */}
               <div className="flex justify-between text-[14px] pt-1.5 border-t border-sakura-200/50">
                 <span className="font-medium text-gray-900">合计</span>
                 <span className="font-semibold text-sakura-600">
