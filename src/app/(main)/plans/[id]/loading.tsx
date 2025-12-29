@@ -98,6 +98,41 @@ export default function PlanDetailLoading() {
               ))}
             </div>
           </section>
+
+          {/* AI 虚拟试穿骨架 */}
+          <section>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-px bg-sakura-200" />
+              <div className="h-3 w-32 bg-sakura-100 rounded animate-pulse" />
+            </div>
+            <div className="rounded-2xl overflow-hidden border border-gray-200 bg-gradient-to-br from-sakura-50/30 to-white">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
+                {/* 左侧示意图骨架 */}
+                <div className="aspect-[4/3] md:aspect-auto md:min-h-[320px] bg-sakura-50 flex items-center justify-center gap-4 p-6">
+                  <div className="w-24 h-32 md:w-32 md:h-44 bg-sakura-100 rounded-xl animate-pulse" />
+                  <div className="w-6 h-6 bg-sakura-200 rounded animate-pulse" />
+                  <div className="w-24 h-32 md:w-32 md:h-44 bg-sakura-100 rounded-xl animate-pulse" />
+                </div>
+                {/* 右侧文案骨架 */}
+                <div className="p-6 md:p-8 flex flex-col justify-center">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-10 h-10 bg-sakura-100 rounded-xl animate-pulse" />
+                    <div>
+                      <div className="h-5 w-24 bg-gray-200 rounded animate-pulse mb-1" />
+                      <div className="h-3 w-32 bg-sakura-100 rounded animate-pulse" />
+                    </div>
+                  </div>
+                  <div className="h-4 w-full bg-gray-100 rounded animate-pulse mb-2" />
+                  <div className="h-4 w-4/5 bg-gray-100 rounded animate-pulse mb-4" />
+                  <div className="flex gap-4 mb-6">
+                    <div className="h-4 w-20 bg-gray-100 rounded animate-pulse" />
+                    <div className="h-4 w-16 bg-gray-100 rounded animate-pulse" />
+                  </div>
+                  <div className="h-12 w-48 bg-sakura-200 rounded-xl animate-pulse" />
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
 
         {/* 两栏区域骨架 */}

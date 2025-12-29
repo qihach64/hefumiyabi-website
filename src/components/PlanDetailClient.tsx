@@ -7,6 +7,7 @@ import BookingCard from "@/components/BookingCard";
 import MiniBookingBar from "@/components/MiniBookingBar";
 import VisualHub from "@/components/plan/VisualHub";
 import ServiceMap from "@/components/plan/ServiceMap";
+import AITryOnSection from "@/components/plan/AITryOnSection";
 import UpgradeServices from "@/components/plan/UpgradeServices";
 import SocialProof from "@/components/plan/SocialProof";
 import JourneyTimeline from "@/components/plan/JourneyTimeline";
@@ -325,6 +326,18 @@ export default function PlanDetailClient({ plan, store, mapData }: PlanDetailCli
           <ServiceMap
             includes={plan.includes}
             mapData={mapData}
+          />
+
+          {/* AI 虚拟试穿 - Killer Feature */}
+          <AITryOnSection
+            plan={{
+              id: plan.id,
+              name: plan.name,
+              price: plan.price,
+              originalPrice: plan.originalPrice ?? undefined,
+              imageUrl: plan.imageUrl ?? undefined,
+              isCampaign: plan.isCampaign,
+            }}
           />
 
           {/* 活动信息 - Sakura 风格设计 */}

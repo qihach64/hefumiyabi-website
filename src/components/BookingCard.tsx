@@ -7,7 +7,6 @@ import {
   Clock,
   Shield,
   X,
-  Sparkles,
   Check,
   ShoppingCart,
   Minus,
@@ -16,7 +15,6 @@ import {
   MapPin,
 } from "lucide-react";
 import { Badge } from "@/components/ui";
-import TryOnModal from "@/components/TryOnModal";
 import InstantBookingModal from "@/components/InstantBookingModal";
 import { useCartStore, type CartItemInput } from "@/store/cart";
 import type { SelectedUpgrade } from "@/components/PlanDetailClient";
@@ -68,7 +66,6 @@ export default function BookingCard({
 
   // Modal state
   const [showMobileModal, setShowMobileModal] = useState(false);
-  const [showTryOnModal, setShowTryOnModal] = useState(false);
   const [showInstantBookingModal, setShowInstantBookingModal] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
 
@@ -439,17 +436,6 @@ export default function BookingCard({
         </div>
       </div>
 
-      {/* Try-on button (secondary) */}
-      <button
-        onClick={() => setShowTryOnModal(true)}
-        className="w-full mb-3 bg-white hover:bg-sakura-50 text-sakura-600 font-semibold py-3 px-6 rounded-lg border border-sakura-300 transition-all duration-300"
-      >
-        <span className="flex items-center justify-center gap-2">
-          <Sparkles className="w-4 h-4" />
-          试穿看看
-        </span>
-      </button>
-
       {/* Add to cart button */}
       <button
         onClick={handleAddToCart}
@@ -558,13 +544,6 @@ export default function BookingCard({
 
   return (
     <>
-      {/* Try-on modal */}
-      <TryOnModal
-        isOpen={showTryOnModal}
-        onClose={() => setShowTryOnModal(false)}
-        plan={plan}
-      />
-
       {/* Instant booking modal */}
       <InstantBookingModal
         isOpen={showInstantBookingModal}
