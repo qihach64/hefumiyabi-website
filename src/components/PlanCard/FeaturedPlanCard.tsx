@@ -153,8 +153,8 @@ export default function FeaturedPlanCard({
         className="group block bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-gray-100 hover:border-sakura-200/50 h-full relative"
       >
         <div className="flex flex-col h-full">
-          {/* 图片容器 - 3:4 比例 */}
-          <div className="relative w-full aspect-[3/4] overflow-hidden bg-gray-100 flex-shrink-0">
+          {/* 图片容器 - 3:4 比例，四角圆角 */}
+          <div className="relative w-full aspect-[3/4] overflow-hidden rounded-xl bg-gray-100 flex-shrink-0">
             {hasTryOn && tryOnResult ? (
               <div
                 className="absolute inset-0 animate-in fade-in duration-300"

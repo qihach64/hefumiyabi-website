@@ -223,10 +223,10 @@ export default function PlanCard({
       <Link
         href={planDetailHref}
         target="_blank"
-        className={`group block ${cardVariantStyles[variant]}`}
+        className={`group block overflow-hidden ${cardVariantStyles[variant]}`}
       >
-        <div className={`relative ${variant !== 'default' && variant !== 'interactive' ? 'p-3' : ''}`}>
-          {/* 图片容器 - 支持不同比例 */}
+        <div className="relative">
+          {/* 图片容器 - 支持不同比例，四角圆角 */}
           <div className={`relative ${aspectRatioStyles[aspectRatio]} overflow-hidden rounded-xl bg-gray-100`}>
             {hasTryOn && tryOnResult ? (
               /* 已试穿：显示对比图 - 淡入效果 */
@@ -323,8 +323,8 @@ export default function PlanCard({
             )}
           </div>
 
-          {/* 信息区域 - 统一风格，padding 稍微减小以适应更紧凑的列表 */}
-          <div className={`mt-3 space-y-1 ${variant !== 'default' && variant !== 'interactive' ? 'pb-2' : ''}`}>
+          {/* 信息区域 - 统一 padding */}
+          <div className="px-3 pt-3 pb-3 space-y-1">
             {/* 商家名称 + 地区 */}
             {(showMerchant && plan.merchantName) || plan.region ? (
               <div className="flex items-center gap-1.5 text-[11px] text-gray-500 truncate">
