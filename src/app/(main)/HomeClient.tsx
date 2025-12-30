@@ -253,20 +253,20 @@ export default function HomeClient({
     setSelectedTagIds([]);
   };
 
-  // 过滤器侧边栏组件
+  // 过滤器侧边栏组件 - Zen 风格
   const FilterSidebar = () => (
     <aside className="lg:sticky lg:top-24">
-      <div className="bg-card rounded-lg border p-6 space-y-6">
+      <div className="bg-white rounded-xl border border-wabi-200 p-6 space-y-6">
         {/* 筛选器标题 */}
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold flex items-center gap-2">
-            <Filter className="w-5 h-5" />
+          <h2 className="text-lg font-bold flex items-center gap-2 text-stone-900">
+            <Filter className="w-5 h-5 text-stone-500" />
             筛选条件
           </h2>
           {hasActiveFilters && (
             <button
               onClick={clearFilters}
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+              className="text-xs text-wabi-500 hover:text-sakura-600 transition-colors flex items-center gap-1"
             >
               <X className="w-3 h-3" />
               清除
@@ -279,18 +279,18 @@ export default function HomeClient({
           <div>
             <button
               onClick={() => setIsStoreExpanded(!isStoreExpanded)}
-              className="w-full text-sm font-semibold mb-3 flex items-center justify-between hover:opacity-70 transition-opacity"
+              className="w-full text-sm font-semibold mb-3 flex items-center justify-between text-stone-700 hover:text-stone-900 transition-colors"
             >
               <div className="flex items-center gap-2">
                 <StoreIcon className="w-4 h-4 text-sakura-500" />
                 <span>选择店铺</span>
                 {selectedStoreId && (
-                  <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
+                  <span className="text-xs bg-sakura-500 text-white px-2 py-0.5 rounded-full">
                     1
                   </span>
                 )}
               </div>
-              <span className="text-gray-400">{isStoreExpanded ? '▼' : '▶'}</span>
+              <span className="text-wabi-400 text-xs">{isStoreExpanded ? '▼' : '▶'}</span>
             </button>
 
             {isStoreExpanded && (
@@ -298,10 +298,10 @@ export default function HomeClient({
                 <button
                   onClick={() => setSelectedStoreId('')}
                   className={`
-                    px-3 py-1.5 rounded-full text-xs font-medium transition-all
+                    px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200
                     ${selectedStoreId === ''
                       ? 'bg-sakura-100 text-sakura-700 ring-2 ring-sakura-300'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      : 'bg-wabi-100 text-wabi-700 hover:bg-wabi-200'
                     }
                   `}
                 >
@@ -312,10 +312,10 @@ export default function HomeClient({
                     key={store.id}
                     onClick={() => setSelectedStoreId(store.id)}
                     className={`
-                      px-3 py-1.5 rounded-full text-xs font-medium transition-all
+                      px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200
                       ${selectedStoreId === store.id
                         ? 'bg-sakura-100 text-sakura-700 ring-2 ring-sakura-300'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        : 'bg-wabi-100 text-wabi-700 hover:bg-wabi-200'
                       }
                     `}
                   >
@@ -332,18 +332,18 @@ export default function HomeClient({
           <div>
             <button
               onClick={() => setIsRegionExpanded(!isRegionExpanded)}
-              className="w-full text-sm font-semibold mb-3 flex items-center justify-between hover:opacity-70 transition-opacity"
+              className="w-full text-sm font-semibold mb-3 flex items-center justify-between text-stone-700 hover:text-stone-900 transition-colors"
             >
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-sakura-500" />
                 <span>选择地区</span>
                 {selectedRegion && (
-                  <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
+                  <span className="text-xs bg-sakura-500 text-white px-2 py-0.5 rounded-full">
                     1
                   </span>
                 )}
               </div>
-              <span className="text-gray-400">{isRegionExpanded ? '▼' : '▶'}</span>
+              <span className="text-wabi-400 text-xs">{isRegionExpanded ? '▼' : '▶'}</span>
             </button>
 
             {isRegionExpanded && (
@@ -351,10 +351,10 @@ export default function HomeClient({
                 <button
                   onClick={() => setSelectedRegion('')}
                   className={`
-                    px-3 py-1.5 rounded-full text-xs font-medium transition-all
+                    px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200
                     ${selectedRegion === ''
                       ? 'bg-sakura-100 text-sakura-700 ring-2 ring-sakura-300'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      : 'bg-wabi-100 text-wabi-700 hover:bg-wabi-200'
                     }
                   `}
                 >
@@ -365,10 +365,10 @@ export default function HomeClient({
                     key={region}
                     onClick={() => setSelectedRegion(region)}
                     className={`
-                      px-3 py-1.5 rounded-full text-xs font-medium transition-all
+                      px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200
                       ${selectedRegion === region
                         ? 'bg-sakura-100 text-sakura-700 ring-2 ring-sakura-300'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        : 'bg-wabi-100 text-wabi-700 hover:bg-wabi-200'
                       }
                     `}
                   >
@@ -389,18 +389,18 @@ export default function HomeClient({
             <div key={category.id}>
               <button
                 onClick={() => toggleCategory(category.id)}
-                className="w-full text-sm font-semibold mb-3 flex items-center justify-between hover:opacity-70 transition-opacity"
+                className="w-full text-sm font-semibold mb-3 flex items-center justify-between text-stone-700 hover:text-stone-900 transition-colors"
               >
                 <div className="flex items-center gap-2">
                   {category.icon && <span className="text-base">{category.icon}</span>}
-                  <span style={{ color: category.color || undefined }}>{category.name}</span>
+                  <span>{category.name}</span>
                   {selectedCount > 0 && (
-                    <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
+                    <span className="text-xs bg-sakura-500 text-white px-2 py-0.5 rounded-full">
                       {selectedCount}
                     </span>
                   )}
                 </div>
-                <span className="text-gray-400">{isExpanded ? '▼' : '▶'}</span>
+                <span className="text-wabi-400 text-xs">{isExpanded ? '▼' : '▶'}</span>
               </button>
 
               {isExpanded && (
@@ -412,16 +412,12 @@ export default function HomeClient({
                         key={tag.id}
                         onClick={() => toggleTag(tag.id)}
                         className={`
-                          px-3 py-1.5 rounded-full text-xs font-medium transition-all
+                          px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200
                           ${isSelected
                             ? 'bg-sakura-100 text-sakura-700 ring-2 ring-sakura-300'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            : 'bg-wabi-100 text-wabi-700 hover:bg-wabi-200'
                           }
                         `}
-                        style={isSelected && tag.color ? {
-                          backgroundColor: `${tag.color}20`,
-                          color: tag.color,
-                        } : undefined}
                       >
                         {tag.icon && <span className="mr-1">{tag.icon}</span>}
                         {tag.name}
@@ -468,13 +464,13 @@ export default function HomeClient({
                 <FilterSidebar />
               </div>
 
-              {/* 移动端筛选器按钮 */}
+              {/* 移动端筛选器按钮 - Zen 风格 */}
               <div className="lg:hidden mb-6">
                 <button
                   onClick={() => setIsMobileFilterOpen(true)}
-                  className="w-full flex items-center justify-between px-4 py-3 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 active:scale-[0.98] transition-all shadow-sm"
+                  className="w-full flex items-center justify-between px-4 py-3 bg-white border border-wabi-200 rounded-xl hover:bg-wabi-50 hover:border-sakura-200 active:scale-[0.98] transition-all shadow-sm"
                 >
-                  <span className="flex items-center gap-2 font-medium text-gray-900">
+                  <span className="flex items-center gap-2 font-medium text-stone-900">
                     <Filter className="w-5 h-5 text-sakura-500" />
                     筛选条件
                     {hasActiveFilters && (
@@ -483,7 +479,7 @@ export default function HomeClient({
                       </span>
                     )}
                   </span>
-                  <span className="text-sm text-gray-500">点击筛选</span>
+                  <span className="text-sm text-wabi-500">点击筛选</span>
                 </button>
               </div>
 
@@ -578,15 +574,12 @@ export default function HomeClient({
             onHeroVisibilityChange={setIsHeroVisible}
           />
 
-          {/* Theme Sections */}
+          {/* Theme Sections - Zen 风格：纯白背景 + 边框分隔 */}
           <div>
             {themeSections.map((section, index) => (
               <section
                 key={section.id}
-                className={`py-8 md:py-12 ${index < themeSections.length - 1 ? "mb-0" : ""}`}
-                style={{
-                  background: `linear-gradient(to bottom, ${section.color}08 0%, ${section.color}03 50%, transparent 100%)`,
-                }}
+                className={`py-8 md:py-12 bg-white ${index > 0 ? "border-t border-wabi-100" : ""}`}
               >
                 <div className="container">
                   {section.plans.length > 0 ? (
@@ -621,80 +614,60 @@ export default function HomeClient({
                         </div>
                       ))}
 
-                      {/* 占位卡片 1: 更多即将上线 */}
+                      {/* 占位卡片 1: 更多即将上线 - Zen line-frame 风格 */}
                       <div className="snap-start flex-shrink-0 w-[75vw] max-w-[280px] sm:w-[280px] md:w-[260px] lg:w-full lg:snap-start lg:h-full">
-                        <div className="h-full flex flex-col bg-gray-50 rounded-xl border-2 border-dashed border-gray-200 p-6 items-center justify-center text-center hover:border-gray-300 transition-colors group">
-                          <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center mb-4 shadow-sm group-hover:scale-110 transition-transform duration-300">
-                            <Sparkles className="w-6 h-6 text-gray-400 group-hover:text-sakura-400 transition-colors" />
+                        <div className="h-full flex flex-col bg-white rounded-xl border-2 border-dashed border-wabi-200 p-6 items-center justify-center text-center hover:border-sakura-200 transition-colors group">
+                          <div className="w-12 h-12 rounded-full bg-wabi-50 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                            <Sparkles className="w-6 h-6 text-wabi-400 group-hover:text-sakura-400 transition-colors" />
                           </div>
-                          <h3 className="text-gray-900 font-semibold mb-2">更多款式筹备中</h3>
-                          <p className="text-sm text-gray-500 mb-4">
+                          <h3 className="text-stone-800 font-semibold mb-2">更多款式筹备中</h3>
+                          <p className="text-sm text-wabi-500 mb-4">
                             我们正在为您精心挑选更多{section.label}主题的和服
                           </p>
-                          <span className="text-xs font-medium text-gray-400 group-hover:text-sakura-500 transition-colors flex items-center gap-1">
+                          <span className="text-xs font-medium text-wabi-400 group-hover:text-sakura-500 transition-colors flex items-center gap-1">
                             敬请期待 <ArrowRight className="w-3 h-3" />
                           </span>
                         </div>
                       </div>
 
-                      {/* 占位卡片 2: 商家入驻 CTA */}
+                      {/* 占位卡片 2: 商家入驻 CTA - Zen line-frame 风格 */}
                       <div className="snap-start flex-shrink-0 w-[75vw] max-w-[280px] sm:w-[280px] md:w-[260px] lg:w-full lg:snap-start lg:h-full">
-                        <div 
-                          className="h-full flex flex-col rounded-xl p-6 items-center justify-center text-center relative overflow-hidden group cursor-pointer"
-                          style={{
-                            background: `linear-gradient(135deg, ${section.color}08 0%, ${section.color}15 100%)`,
-                            border: `1px solid ${section.color}20`,
-                          }}
+                        <div
+                          className="h-full flex flex-col bg-white rounded-xl border-2 border-dashed border-wabi-200 p-6 items-center justify-center text-center relative overflow-hidden group cursor-pointer hover:border-sakura-200 transition-colors"
                           onClick={() => window.location.href = '/merchant/register'}
                         >
-                          <div 
-                            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                            style={{
-                              background: `radial-gradient(circle at center, ${section.color}10 0%, transparent 70%)`,
-                            }}
-                          />
-                          
-                          <div 
-                            className="w-12 h-12 rounded-full flex items-center justify-center mb-4 shadow-sm bg-white group-hover:scale-110 transition-transform duration-300"
+                          <div
+                            className="w-12 h-12 rounded-full flex items-center justify-center mb-4 bg-wabi-50 group-hover:scale-110 transition-transform duration-300"
                           >
-                            <StoreIcon className="w-6 h-6" style={{ color: section.color }} />
+                            <StoreIcon className="w-6 h-6 text-wabi-400 group-hover:text-sakura-500 transition-colors" />
                           </div>
-                          
-                          <h3 className="font-bold text-gray-900 mb-2">我是商家</h3>
-                          <p className="text-sm text-gray-600 mb-6">
+
+                          <h3 className="font-bold text-stone-800 mb-2">我是商家</h3>
+                          <p className="text-sm text-wabi-500 mb-6">
                             想要在这里展示您的和服？立即入驻平台
                           </p>
-                          
-                          <button 
-                            className="text-xs font-bold px-4 py-2 rounded-full bg-white shadow-sm hover:shadow-md transition-all flex items-center gap-1.5"
-                            style={{ color: section.color }}
-                          >
+
+                          <button className="text-xs font-bold px-4 py-2 rounded-full bg-sakura-50 text-sakura-600 hover:bg-sakura-100 transition-all flex items-center gap-1.5">
                             免费入驻 <Plus className="w-3 h-3" />
                           </button>
                         </div>
                       </div>
                     </ScrollableSection>
                   ) : (
-                    /* 即将上线的 Theme */
+                    /* 即将上线的 Theme - Zen 风格 */
                     <div className="px-4 md:px-0">
                       <div className="flex items-start gap-3 md:gap-4 mb-4">
-                        <div
-                          className="w-10 h-10 md:w-12 md:h-12 rounded-2xl flex items-center justify-center flex-shrink-0 opacity-50"
-                          style={{
-                            backgroundColor: `${section.color}15`,
-                            border: `1px solid ${section.color}30`,
-                          }}
-                        >
-                          <span className="text-xl md:text-2xl">{section.icon}</span>
+                        <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl flex items-center justify-center flex-shrink-0 bg-wabi-50 opacity-60">
+                          <span className="text-xl md:text-2xl grayscale">{section.icon}</span>
                         </div>
                         <div className="flex flex-col flex-1">
                           <div className="flex items-center gap-2">
-                            <h2 className="text-xl md:text-2xl font-bold text-gray-400">{section.label}</h2>
-                            <span className="px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-500 rounded-full">
+                            <h2 className="text-xl md:text-2xl font-bold text-wabi-400">{section.label}</h2>
+                            <span className="px-2.5 py-0.5 text-xs font-medium bg-wabi-100 text-wabi-500 rounded-full">
                               即将上线
                             </span>
                           </div>
-                          <p className="text-sm md:text-base text-gray-400 mt-1">{section.description}</p>
+                          <p className="text-sm md:text-base text-wabi-400 mt-1">{section.description}</p>
                         </div>
                       </div>
                     </div>

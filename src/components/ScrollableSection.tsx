@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import HorizontalScroller, { HorizontalScrollerRef } from "./HorizontalScroller";
 import { getThemeIcon } from "@/lib/themeIcons";
 
@@ -39,69 +39,41 @@ export default function ScrollableSection({
 
   return (
     <div>
-      {/* 标题区域 - 优化设计，更突出 */}
+      {/* 标题区域 - Zen 风格：统一配色 */}
       <div className="flex items-center justify-between mb-6 md:mb-8 px-1">
         <div className="flex items-start gap-4 md:gap-5 flex-1 min-w-0">
-          {/* 主题图标 - 更突出的设计 */}
+          {/* 主题图标 - Zen 风格：统一 wabi-50 背景 */}
           {IconComponent && (
-            <div
-              className="flex-shrink-0 w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center transition-all duration-300 hover:scale-105"
-              style={{
-                background: color
-                  ? `linear-gradient(135deg, ${color}15 0%, ${color}25 100%)`
-                  : 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)',
-                border: `2px solid ${color ? `${color}30` : '#e5e7eb'}`,
-                boxShadow: color
-                  ? `0 4px 12px ${color}20, 0 2px 4px ${color}10`
-                  : '0 2px 8px rgba(0, 0, 0, 0.08)',
-              }}
-            >
+            <div className="flex-shrink-0 w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-wabi-50 flex items-center justify-center transition-all duration-300 hover:scale-105">
               <IconComponent
                 className="w-7 h-7 md:w-8 md:h-8"
                 style={{ color: iconColor }}
               />
             </div>
           )}
-          
-          {/* 标题和描述 - 优化布局，增加视觉层次和区分度 */}
+
+          {/* 标题和描述 - Zen 风格：统一 stone/wabi 配色 */}
           <div className="flex flex-col flex-1 min-w-0">
-            <h2 
-              className="text-2xl md:text-3xl lg:text-[36px] font-extrabold leading-[1.15] tracking-[-0.03em] mb-2.5"
-              style={{
-                // 使用主题色，如果没有则使用深色
-                color: color ? color : '#111827',
-                // 添加更明显的文字阴影
-                textShadow: color 
-                  ? `0 2px 12px ${color}20, 0 1px 3px ${color}10`
-                  : '0 2px 4px rgba(0, 0, 0, 0.08)',
-                fontWeight: 800,
-                letterSpacing: '-0.03em',
-              }}
-            >
+            <h2 className="text-2xl md:text-3xl lg:text-[32px] font-bold leading-tight tracking-tight text-stone-900 mb-1.5">
               {title}
             </h2>
             {description && (
-              <p
-                className="text-sm md:text-base font-medium leading-relaxed tracking-wide"
-                style={{ 
-                  color: color ? `${color}aa` : '#6b7280',
-                }}
-              >
+              <p className="text-sm md:text-base text-wabi-500 leading-relaxed">
                 {description}
               </p>
             )}
           </div>
         </div>
 
-        {/* 左右箭头按钮 - 统一在 Header 显示 */}
+        {/* 左右箭头按钮 - Zen 风格 */}
         <div className="hidden md:flex items-center gap-3 flex-shrink-0">
           <button
             onClick={() => scrollerRef.current?.scrollLeft()}
             disabled={!canScrollLeft}
             className={`w-9 h-9 flex items-center justify-center rounded-full border transition-all duration-200
-              ${!canScrollLeft 
-                ? 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed' 
-                : 'bg-white border-gray-200 text-gray-700 hover:border-gray-400 hover:shadow-sm active:scale-95'
+              ${!canScrollLeft
+                ? 'bg-wabi-50 border-wabi-100 text-wabi-300 cursor-not-allowed'
+                : 'bg-white border-wabi-200 text-wabi-600 hover:border-sakura-200 hover:text-sakura-500 active:scale-95'
               }`}
             aria-label="向左滚动"
           >
@@ -111,9 +83,9 @@ export default function ScrollableSection({
             onClick={() => scrollerRef.current?.scrollRight()}
             disabled={!canScrollRight}
             className={`w-9 h-9 flex items-center justify-center rounded-full border transition-all duration-200
-              ${!canScrollRight 
-                ? 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed' 
-                : 'bg-white border-gray-200 text-gray-700 hover:border-gray-400 hover:shadow-sm active:scale-95'
+              ${!canScrollRight
+                ? 'bg-wabi-50 border-wabi-100 text-wabi-300 cursor-not-allowed'
+                : 'bg-white border-wabi-200 text-wabi-600 hover:border-sakura-200 hover:text-sakura-500 active:scale-95'
               }`}
             aria-label="向右滚动"
           >
@@ -122,15 +94,8 @@ export default function ScrollableSection({
         </div>
       </div>
 
-      {/* 分割线 */}
-      <div 
-        className="h-[1px] mb-6 md:mb-8 transition-colors duration-300"
-        style={{
-          background: color
-            ? `linear-gradient(to right, transparent 0%, ${color}25 20%, ${color}30 50%, ${color}25 80%, transparent 100%)`
-            : 'linear-gradient(to right, transparent 0%, #e5e7eb 20%, #d1d5db 50%, #e5e7eb 80%, transparent 100%)',
-        }}
-      />
+      {/* 分割线 - Zen 风格：简洁单色 */}
+      <div className="h-px bg-wabi-100 mb-6 md:mb-8" />
 
       {/* 内容区域 - 左侧大卡片 + 右侧小卡片 */}
       {featuredChild ? (
