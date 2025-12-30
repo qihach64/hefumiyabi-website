@@ -200,40 +200,52 @@ export default function PlanDetailLoading() {
             </section>
           </div>
 
-          {/* 右侧预订卡片骨架 */}
+          {/* 右侧预订卡片骨架 - 雅致和风 */}
           <div className="lg:col-span-1">
             <div className="lg:sticky lg:top-24">
-              <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+              <div className="bg-white rounded-xl border border-wabi-200 p-6 shadow-lg shadow-gray-200/50">
                 {/* 价格骨架 */}
                 <div className="mb-6">
-                  <div className="h-8 w-28 bg-gray-200 rounded animate-pulse mb-2" />
-                  <div className="h-4 w-20 bg-gray-100 rounded animate-pulse" />
+                  <div className="h-8 w-32 bg-gray-200 rounded animate-pulse mb-2" />
+                  <div className="h-4 w-20 bg-wabi-100 rounded animate-pulse" />
                 </div>
 
                 {/* 店铺信息 */}
-                <div className="mb-4 p-3 bg-gray-50 rounded-xl">
-                  <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+                <div className="mb-4 px-4 py-3 bg-wabi-50 rounded-xl border border-wabi-100">
+                  <div className="h-4 w-28 bg-wabi-200 rounded animate-pulse" />
                 </div>
 
-                {/* 表单字段骨架 */}
-                <div className="space-y-4 mb-6">
+                {/* 日式方格表单骨架 */}
+                <div className="mb-6 rounded-xl border border-wabi-300 divide-y divide-wabi-200 overflow-hidden">
                   {[...Array(4)].map((_, i) => (
-                    <div key={i} className="border border-gray-200 rounded-xl p-3">
-                      <div className="h-3 w-16 bg-gray-200 rounded animate-pulse mb-2" />
-                      <div className="h-5 w-full bg-gray-100 rounded animate-pulse" />
+                    <div key={i} className="p-4">
+                      <div className="h-3 w-16 bg-wabi-200 rounded animate-pulse mb-2" />
+                      <div className="h-5 w-full bg-wabi-100 rounded animate-pulse" />
                     </div>
                   ))}
                 </div>
 
                 {/* 按钮骨架 */}
-                <div className="space-y-3">
-                  <div className="h-12 w-full bg-gray-200 rounded-lg animate-pulse" />
-                  <div className="h-12 w-full bg-gray-200 rounded-lg animate-pulse" />
+                <div className="space-y-3 mb-4">
                   <div className="h-12 w-full bg-sakura-200 rounded-lg animate-pulse" />
+                  <div className="h-12 w-full bg-wabi-100 rounded-lg animate-pulse" />
                 </div>
 
                 {/* 提示文字 */}
-                <div className="h-4 w-24 bg-gray-100 rounded animate-pulse mx-auto mt-4" />
+                <div className="h-3 w-24 bg-wabi-100 rounded animate-pulse mx-auto mb-6" />
+
+                {/* 安全保障骨架 */}
+                <div className="pt-5 border-t border-wabi-100">
+                  <div className="px-4 py-3 bg-wabi-50/50 rounded-xl">
+                    <div className="flex items-start gap-3">
+                      <div className="w-4 h-4 bg-sakura-100 rounded animate-pulse" />
+                      <div className="flex-1">
+                        <div className="h-3 w-20 bg-wabi-200 rounded animate-pulse mb-1" />
+                        <div className="h-2.5 w-32 bg-wabi-100 rounded animate-pulse" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -241,11 +253,11 @@ export default function PlanDetailLoading() {
       </div>
 
       {/* MiniBookingBar 骨架 (移动端) */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-2xl z-40">
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-wabi-200 p-4 shadow-lg z-40">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <div className="h-5 w-20 bg-gray-200 rounded animate-pulse mb-1" />
-            <div className="h-3 w-16 bg-gray-100 rounded animate-pulse" />
+            <div className="h-5 w-24 bg-gray-200 rounded animate-pulse mb-1" />
+            <div className="h-3 w-16 bg-wabi-100 rounded animate-pulse" />
           </div>
           <div className="h-12 w-24 bg-sakura-200 rounded-lg animate-pulse" />
         </div>
