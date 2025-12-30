@@ -177,12 +177,12 @@ export default function UpgradeServices({
                 }
               `}
             >
-              {/* 主行：缩略图/图标 + 信息 + 价格 + 添加按钮 */}
-              <div className="flex items-center gap-4 p-4">
+              {/* 主行：缩略图/图标 + 信息 + 价格 + 添加按钮 + 展开箭头 */}
+              <div className="flex items-center gap-3 p-4">
                 {/* 缩略图或图标容器 */}
                 {hasImages ? (
                   <div
-                    className="relative w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 bg-wabi-100"
+                    className="relative w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-wabi-100"
                     onClick={(e) => openGallery(option.images, 0, e)}
                   >
                     <Image
@@ -190,14 +190,14 @@ export default function UpgradeServices({
                       alt={option.name}
                       fill
                       className="object-cover transition-transform duration-300 group-hover:scale-105"
-                      sizes="56px"
+                      sizes="48px"
                       unoptimized
                     />
                   </div>
                 ) : (
                   <div
                     className={`
-                      w-14 h-14 rounded-lg flex items-center justify-center text-2xl flex-shrink-0
+                      w-12 h-12 rounded-lg flex items-center justify-center text-xl flex-shrink-0
                       ${added ? "bg-sakura-100" : "bg-wabi-100"}
                     `}
                   >
@@ -205,49 +205,50 @@ export default function UpgradeServices({
                   </div>
                 )}
 
-                {/* 信息 */}
+                {/* 信息区 */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <h4 className="text-[15px] font-medium text-stone-800">
+                    <h4 className="text-[15px] font-medium text-stone-800 truncate">
                       {option.name}
                     </h4>
                     {option.popular && (
-                      <span className="px-1.5 py-0.5 bg-sakura-500 text-white text-[9px] font-medium rounded tracking-wider">
+                      <span className="px-1.5 py-0.5 bg-sakura-500 text-white text-[9px] font-medium rounded tracking-wider flex-shrink-0">
                         人気
                       </span>
                     )}
-                    {/* 展开箭头 */}
-                    <ChevronDown
-                      className={`
-                        w-4 h-4 text-stone-400 transition-transform duration-300 ml-auto
-                        ${expanded ? "rotate-180" : ""}
-                        group-hover:text-stone-500
-                      `}
-                    />
                   </div>
                   <p className="text-[13px] text-stone-500 mt-0.5 line-clamp-1">
                     {option.description}
                   </p>
                 </div>
 
-                {/* 价格 + 添加按钮 */}
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  <span className="text-[16px] font-semibold text-sakura-600">
-                    +¥{(option.price / 100).toLocaleString()}
-                  </span>
-                  <button
-                    onClick={(e) => handleToggle(option, e)}
-                    className={`
-                      w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200
-                      ${added
-                        ? "bg-sakura-500 text-white hover:bg-sakura-600 shadow-sm"
-                        : "bg-stone-100 text-stone-500 hover:bg-sakura-100 hover:text-sakura-600"
-                      }
-                    `}
-                  >
-                    {added ? <Check className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
-                  </button>
-                </div>
+                {/* 价格 */}
+                <span className="text-[15px] font-semibold text-sakura-600 flex-shrink-0">
+                  +¥{(option.price / 100).toLocaleString()}
+                </span>
+
+                {/* 添加按钮 */}
+                <button
+                  onClick={(e) => handleToggle(option, e)}
+                  className={`
+                    w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0
+                    ${added
+                      ? "bg-sakura-500 text-white hover:bg-sakura-600 shadow-sm"
+                      : "bg-stone-100 text-stone-500 hover:bg-sakura-100 hover:text-sakura-600"
+                    }
+                  `}
+                >
+                  {added ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                </button>
+
+                {/* 展开箭头 - 独立在最右侧 */}
+                <ChevronDown
+                  className={`
+                    w-4 h-4 text-stone-400 transition-transform duration-300 flex-shrink-0
+                    ${expanded ? "rotate-180" : ""}
+                    group-hover:text-stone-500
+                  `}
+                />
               </div>
 
               {/* ========================================
