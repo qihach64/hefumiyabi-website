@@ -267,11 +267,11 @@ export default function PlanCard({
             {!hasTryOn && (
               <button
                 onClick={handleTryOn}
-                className="absolute top-3 right-3 p-2 rounded-full glass-button text-gray-700 hover:text-sakura-600 z-10"
+                className="absolute top-3 right-3 p-2.5 rounded-full glass-button text-gray-700 hover:text-sakura-600 z-10"
                 aria-label="AI试穿"
                 title="点击试穿看看"
               >
-                <Sparkles className="w-5 h-5" />
+                <Sparkles className="w-4 h-4" />
               </button>
             )}
 
@@ -279,11 +279,11 @@ export default function PlanCard({
             {hasTryOn && (
               <button
                 onClick={handleRetry}
-                className="absolute top-3 right-3 p-2 rounded-full glass-button hover:text-sakura-600 z-10"
+                className="absolute top-3 right-3 p-2.5 rounded-full glass-button hover:text-sakura-600 z-10"
                 aria-label="重新试穿"
                 title="点击重新试穿"
               >
-                <RotateCcw className="w-5 h-5 text-sakura-600" />
+                <RotateCcw className="w-4 h-4 text-sakura-600" />
               </button>
             )}
 
@@ -291,7 +291,7 @@ export default function PlanCard({
             <button
               onClick={handleToggleCart}
               disabled={isAdding}
-              className={`absolute bottom-3 right-3 p-2 rounded-full transition-all glass-button ${
+              className={`absolute bottom-3 right-3 p-2.5 rounded-full transition-all glass-button ${
                 justChanged
                   ? lastAction === 'add'
                     ? 'bg-green-50/90 text-green-600 scale-110 border-green-200'
@@ -304,10 +304,10 @@ export default function PlanCard({
               title={isInCart ? "点击从购物车移除" : "点击加入购物车"}
             >
               {justChanged ? (
-                <Check className="w-5 h-5" />
+                <Check className="w-4 h-4" />
               ) : (
                 <ShoppingCart
-                  className={`w-5 h-5 ${isInCart ? 'fill-current' : ''}`}
+                  className={`w-4 h-4 ${isInCart ? 'fill-current' : ''}`}
                 />
               )}
             </button>
@@ -327,16 +327,16 @@ export default function PlanCard({
           <div className={`mt-3 space-y-1 ${variant !== 'default' && variant !== 'interactive' ? 'pb-2' : ''}`}>
             {/* 商家名称 + 地区 */}
             {(showMerchant && plan.merchantName) || plan.region ? (
-              <div className="flex items-center gap-1.5 text-[12px] text-gray-400 truncate">
+              <div className="flex items-center gap-1.5 text-[11px] text-gray-500 truncate">
                 {showMerchant && plan.merchantName && (
-                  <span className="font-medium tracking-wide">{plan.merchantName}</span>
+                  <span className="font-semibold tracking-wide uppercase">{plan.merchantName}</span>
                 )}
                 {showMerchant && plan.merchantName && plan.region && (
                   <div className="h-0.5 w-0.5 rounded-full bg-gray-300" />
                 )}
                 {plan.region && (
-                  <div className="flex items-center gap-0.5 text-gray-400">
-                    <MapPin className="w-3 h-3" />
+                  <div className="flex items-center gap-0.5">
+                    <MapPin className="w-3 h-3" style={{ color: accentColor }} />
                     <span>{plan.region}</span>
                   </div>
                 )}
@@ -344,28 +344,33 @@ export default function PlanCard({
             ) : null}
 
             {/* 套餐名称 */}
-            <h3 className="font-medium text-[15px] text-gray-900 line-clamp-2 leading-snug group-hover:text-gray-700 transition-colors duration-500">
+            <h3 className="font-medium text-[15px] text-gray-900 line-clamp-2 leading-snug group-hover:text-sakura-600 transition-colors duration-300">
               {plan.name}
             </h3>
 
-            {/* 分隔线 - 主题色 */}
+            {/* 分隔线 - 主题色渐变 */}
             <div
-              className="h-px transition-all duration-500 ease-out group-hover:w-10"
+              className="h-px transition-all duration-500 ease-out group-hover:w-12"
               style={{
-                width: '24px',
-                backgroundColor: `${accentColor}50`,
+                width: '28px',
+                background: `linear-gradient(to right, ${accentColor}60, transparent)`,
               }}
             />
 
             {/* 价格区域 */}
-            <div className="flex items-baseline gap-1.5">
+            <div className="flex items-baseline flex-wrap gap-x-1.5 gap-y-0.5">
               <span className="text-[16px] font-semibold text-gray-900 whitespace-nowrap">
                 ¥{(plan.price / 100).toLocaleString()}/人
               </span>
               {plan.originalPrice && plan.originalPrice > 0 && plan.originalPrice > plan.price && (
-                <span className="text-[12px] text-gray-400 line-through">
-                  ¥{(plan.originalPrice / 100).toLocaleString()}
-                </span>
+                <>
+                  <span className="text-[11px] text-gray-400 line-through">
+                    ¥{(plan.originalPrice / 100).toLocaleString()}
+                  </span>
+                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-red-50 text-red-600">
+                    省¥{((plan.originalPrice - plan.price) / 100).toLocaleString()}
+                  </span>
+                </>
               )}
             </div>
 

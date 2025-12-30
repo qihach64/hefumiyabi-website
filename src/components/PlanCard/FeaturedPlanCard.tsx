@@ -150,7 +150,7 @@ export default function FeaturedPlanCard({
       <Link
         href={planDetailHref}
         target="_blank"
-        className="group block bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-sakura-lg transition-all duration-500 border border-gray-100 hover:border-sakura-200/50 h-full relative"
+        className="group block bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-gray-100 hover:border-sakura-200/50 h-full relative"
       >
         <div className="flex flex-col h-full">
           {/* 图片容器 - 3:4 比例 */}
@@ -188,11 +188,11 @@ export default function FeaturedPlanCard({
               </>
             )}
 
-            {/* 精选标签 - Sakura 品牌色（品牌元素用 sakura） */}
-            <div className="absolute top-4 left-4 z-10">
-              <div className="px-3 py-1.5 rounded-full bg-sakura-600 flex items-center gap-1.5 shadow-sm">
-                <Award className="w-4 h-4 text-white" />
-                <span className="text-[13px] font-semibold text-white">
+            {/* 精选标签 - Sakura 品牌色 */}
+            <div className="absolute top-3 left-3 z-10">
+              <div className="px-2.5 py-1 rounded-full bg-sakura-600 flex items-center gap-1 shadow-sm">
+                <Award className="w-3.5 h-3.5 text-white" />
+                <span className="text-[12px] font-semibold text-white">
                   精选推荐
                 </span>
               </div>
@@ -202,7 +202,7 @@ export default function FeaturedPlanCard({
             {!hasTryOn && (
               <button
                 onClick={handleTryOn}
-                className="absolute top-4 right-4 p-2.5 rounded-full glass-button text-gray-700 hover:text-sakura-600 z-10"
+                className="absolute top-3 right-3 p-2.5 rounded-full glass-button text-gray-700 hover:text-sakura-600 z-10"
                 aria-label="AI试穿"
                 title="点击试穿看看"
               >
@@ -214,7 +214,7 @@ export default function FeaturedPlanCard({
             {hasTryOn && (
               <button
                 onClick={handleRetry}
-                className="absolute top-4 right-4 p-2.5 rounded-full glass-button hover:text-sakura-600 z-10"
+                className="absolute top-3 right-3 p-2.5 rounded-full glass-button hover:text-sakura-600 z-10"
                 aria-label="重新试穿"
                 title="点击重新试穿"
               >
@@ -226,7 +226,7 @@ export default function FeaturedPlanCard({
             <button
               onClick={handleToggleCart}
               disabled={isAdding}
-              className={`absolute bottom-4 right-4 p-3 rounded-full transition-all glass-button ${
+              className={`absolute bottom-3 right-3 p-2.5 rounded-full transition-all glass-button ${
                 justChanged
                   ? lastAction === 'add'
                     ? 'bg-green-50/90 text-green-600 scale-110 border-green-200'
@@ -239,10 +239,10 @@ export default function FeaturedPlanCard({
               title={isInCart ? "点击从购物车移除" : "点击加入购物车"}
             >
               {justChanged ? (
-                <Check className="w-6 h-6" />
+                <Check className="w-5 h-5" />
               ) : (
                 <ShoppingCart
-                  className={`w-6 h-6 ${isInCart ? 'fill-current' : ''}`}
+                  className={`w-5 h-5 ${isInCart ? 'fill-current' : ''}`}
                 />
               )}
             </button>
@@ -250,11 +250,7 @@ export default function FeaturedPlanCard({
           </div>
 
           {/* 信息区域 - 重新排版，均匀留白 */}
-          <div className="p-5 md:p-6 flex-1 flex flex-col bg-white/50 backdrop-blur-sm relative z-20">
-            {/* 装饰性背景光晕 */}
-             <div 
-                className="absolute top-0 right-0 w-32 h-32 bg-sakura-100/30 rounded-full blur-3xl -z-10 translate-x-10 -translate-y-10 pointer-events-none"
-             />
+          <div className="p-5 md:p-6 flex-1 flex flex-col bg-white relative z-20">
 
             {/* 第一区块：商家 + 地区 + 套餐名称 */}
             <div className="mb-4">
