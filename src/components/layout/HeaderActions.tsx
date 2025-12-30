@@ -44,7 +44,7 @@ const HeaderActions = memo(function HeaderActions({ isLoggedIn, merchant }: Head
         {merchant && (merchant.status === "PENDING" || merchant.status === "REJECTED") && (
           <Link
             href="/merchant/pending"
-            className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-full text-sm font-medium transition-all bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200"
+            className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-full text-sm font-medium transition-all bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border border-yellow-200"
           >
             <Store className="w-4 h-4" />
             <span className="hidden md:inline">
@@ -102,7 +102,7 @@ const HeaderActions = memo(function HeaderActions({ isLoggedIn, merchant }: Head
       {merchant && (merchant.status === "PENDING" || merchant.status === "REJECTED") && (
         <Link
           href="/merchant/pending"
-          className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-full text-sm font-medium transition-all bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200"
+          className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-full text-sm font-medium transition-all bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border border-yellow-200"
         >
           <Store className="w-4 h-4" />
           <span className="hidden md:inline">

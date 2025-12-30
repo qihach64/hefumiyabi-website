@@ -40,7 +40,7 @@ export default function UserMenu({ user }: UserMenuProps) {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 hover:opacity-80 transition"
       >
-        <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-rose-400 to-pink-400 flex items-center justify-center text-white font-bold text-sm shadow-sm">
+        <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-sakura-500 flex items-center justify-center text-white font-bold text-sm shadow-sm">
           {user.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
         </div>
         <ChevronDown

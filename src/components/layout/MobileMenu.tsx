@@ -129,7 +129,7 @@ export default function MobileMenu({ isLoggedIn, userName, userEmail, merchant }
 
         {/* 用户信息区域 */}
         {isLoggedIn && (
-          <div className="p-4 bg-gradient-to-br from-sakura-50 to-rose-50 border-b border-gray-100">
+          <div className="p-4 bg-sakura-50 border-b border-gray-100">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-sakura-500 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md">
                 {userName?.charAt(0)?.toUpperCase() || <User className="w-6 h-6" />}
@@ -156,7 +156,7 @@ export default function MobileMenu({ isLoggedIn, userName, userEmail, merchant }
                     className={cn(
                       "text-xs font-medium px-2 py-0.5 rounded-full",
                       merchant.status === "APPROVED" && "bg-green-100 text-green-700",
-                      merchant.status === "PENDING" && "bg-amber-100 text-amber-700",
+                      merchant.status === "PENDING" && "bg-yellow-100 text-yellow-700",
                       merchant.status === "REJECTED" && "bg-red-100 text-red-700"
                     )}
                   >
@@ -189,13 +189,13 @@ export default function MobileMenu({ isLoggedIn, userName, userEmail, merchant }
                     isActive
                       ? "bg-sakura-50 text-sakura-700 font-semibold shadow-sm"
                       : "text-gray-700",
-                    link.special && !isActive && "text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-rose-500"
+                    link.special && !isActive && "text-sakura-600"
                   )}
                 >
                   <Icon className={cn(
                     "w-5 h-5 shrink-0",
                     isActive && "text-sakura-600",
-                    link.special && !isActive && "text-pink-500"
+                    link.special && !isActive && "text-sakura-500"
                   )} />
                   <div className="flex-1 min-w-0">
                     <div className="font-medium flex items-center gap-2">
@@ -237,7 +237,7 @@ export default function MobileMenu({ isLoggedIn, userName, userEmail, merchant }
                     href="/merchant/pending"
                     className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-gray-50 transition-all active:scale-[0.98]"
                   >
-                    <StoreIcon className="w-5 h-5 text-amber-600" />
+                    <StoreIcon className="w-5 h-5 text-yellow-600" />
                     <div className="flex-1">
                       <div className="font-medium">申请审核中</div>
                       <div className="text-xs text-gray-500">查看申请状态</div>

@@ -599,11 +599,11 @@ const HeaderSearchBarInner = memo(function HeaderSearchBarInner() {
                           transition-all duration-200
                           flex items-center justify-center
                           ${isSelected
-                            ? 'bg-gray-900 text-white'
+                            ? 'bg-sakura-500 text-white'
                             : day.isToday
-                              ? 'bg-gray-100 text-gray-900 font-semibold'
+                              ? 'bg-sakura-50 text-sakura-700 ring-1 ring-sakura-200 font-semibold'
                               : day.isCurrentMonth && !day.isPast
-                                ? 'text-gray-900 hover:bg-gray-100'
+                                ? 'text-gray-900 hover:bg-sakura-50'
                                 : 'text-gray-300 cursor-not-allowed'
                           }
                         `}
@@ -615,10 +615,10 @@ const HeaderSearchBarInner = memo(function HeaderSearchBarInner() {
                 </div>
 
                 {/* 快捷选项 */}
-                <div className="mt-4 pt-3 border-t border-gray-100 flex gap-2">
+                <div className="mt-4 pt-3 border-t border-wabi-100 flex gap-2">
                   <button
                     onClick={() => handleDateSelect(new Date())}
-                    className="flex-1 py-2 text-[13px] font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                    className="flex-1 py-2 text-[13px] font-medium text-wabi-700 bg-wabi-50 rounded-lg hover:bg-sakura-50 hover:text-sakura-700 transition-colors"
                   >
                     今天
                   </button>
@@ -628,7 +628,7 @@ const HeaderSearchBarInner = memo(function HeaderSearchBarInner() {
                       tomorrow.setDate(tomorrow.getDate() + 1);
                       handleDateSelect(tomorrow);
                     }}
-                    className="flex-1 py-2 text-[13px] font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                    className="flex-1 py-2 text-[13px] font-medium text-wabi-700 bg-wabi-50 rounded-lg hover:bg-sakura-50 hover:text-sakura-700 transition-colors"
                   >
                     明天
                   </button>
@@ -638,7 +638,7 @@ const HeaderSearchBarInner = memo(function HeaderSearchBarInner() {
                       nextWeek.setDate(nextWeek.getDate() + 7);
                       handleDateSelect(nextWeek);
                     }}
-                    className="flex-1 py-2 text-[13px] font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                    className="flex-1 py-2 text-[13px] font-medium text-wabi-700 bg-wabi-50 rounded-lg hover:bg-sakura-50 hover:text-sakura-700 transition-colors"
                   >
                     下周
                   </button>
