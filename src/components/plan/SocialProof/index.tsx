@@ -124,7 +124,7 @@ export default function SocialProof({
       </div>
 
       {/* 评分卡片 */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className="bg-white rounded-xl border border-wabi-200 p-6">
         <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8">
           {/* 综合评分 */}
           <div className="flex items-center gap-3">
@@ -133,7 +133,7 @@ export default function SocialProof({
           </div>
 
           {/* 分隔线 */}
-          <div className="hidden sm:block w-px h-12 bg-gray-200" />
+          <div className="hidden sm:block w-px h-12 bg-wabi-200" />
 
           {/* 统计数据 */}
           <div className="flex items-center gap-6 text-[14px]">
@@ -166,14 +166,14 @@ export default function SocialProof({
                   className={`
                     px-3 py-1.5 rounded-full text-[13px] font-medium transition-all duration-200
                     ${activeTag === tag
-                      ? "bg-gray-900 text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      ? "bg-sakura-600 text-white"
+                      : "bg-wabi-100 text-wabi-600 hover:bg-wabi-200"
                     }
                   `}
                 >
                   {tag}
                   {count > 0 && (
-                    <span className={`ml-1.5 ${activeTag === tag ? "text-gray-300" : "text-gray-400"}`}>
+                    <span className={`ml-1.5 ${activeTag === tag ? "text-sakura-200" : "text-wabi-400"}`}>
                       {count}
                     </span>
                   )}
@@ -189,7 +189,7 @@ export default function SocialProof({
         {visibleReviews.map((review) => (
           <div
             key={review.id}
-            className="bg-white rounded-xl border border-gray-200 p-5"
+            className="bg-white rounded-xl border border-wabi-200 p-5 hover:border-sakura-200 transition-colors duration-200"
           >
             {/* 头部：用户信息 */}
             <div className="flex items-start justify-between mb-3">
@@ -204,7 +204,7 @@ export default function SocialProof({
                       {review.author}
                     </span>
                     {review.authorType && (
-                      <span className="px-2 py-0.5 bg-gray-100 text-gray-500 text-[11px] rounded-full">
+                      <span className="px-2 py-0.5 bg-wabi-100 text-wabi-600 text-[11px] rounded-full">
                         {review.authorType}
                       </span>
                     )}
@@ -239,7 +239,7 @@ export default function SocialProof({
                 {review.photos.slice(0, 4).map((photo, idx) => (
                   <button
                     key={idx}
-                    className="relative w-20 h-20 rounded-lg overflow-hidden cursor-pointer group bg-gray-100"
+                    className="relative w-20 h-20 rounded-lg overflow-hidden cursor-pointer group bg-wabi-100 hover:ring-2 hover:ring-sakura-300 transition-all"
                     onClick={() => openGallery(review.photos!, idx)}
                   >
                     {/* 实际使用时替换为真实图片 */}
@@ -292,7 +292,7 @@ export default function SocialProof({
       {filteredReviews.length > 4 && (
         <button
           onClick={() => setShowAllReviews(!showAllReviews)}
-          className="w-full py-3 border border-gray-300 rounded-xl text-[14px] font-semibold text-gray-900 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+          className="w-full py-3 border border-wabi-300 rounded-xl text-[14px] font-semibold text-gray-900 hover:bg-wabi-50 hover:border-sakura-300 transition-all duration-200 flex items-center justify-center gap-2"
         >
           {showAllReviews ? (
             <>收起评价</>

@@ -162,8 +162,8 @@ export default function JourneyTimeline({
       </div>
 
       {/* 当日体验时间轴 */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50">
+      <div className="bg-white rounded-xl border border-wabi-200 overflow-hidden">
+        <div className="px-5 py-4 border-b border-wabi-100 bg-wabi-50/50">
           <div className="flex items-center justify-between">
             <h4 className="text-[16px] font-semibold text-gray-900">
               当日体验流程
@@ -195,7 +195,7 @@ export default function JourneyTimeline({
                   className={`
                     w-full px-5 py-4 flex items-start gap-4 text-left
                     transition-all duration-200
-                    ${isExpanded ? "bg-gray-50" : "hover:bg-gray-50/50"}
+                    ${isExpanded ? "bg-wabi-50" : "hover:bg-wabi-50/50"}
                   `}
                 >
                   {/* 时间 + 图标 */}
@@ -245,7 +245,7 @@ export default function JourneyTimeline({
                           flex items-center gap-1 px-2 py-1 rounded-full text-[11px]
                           ${isExpanded
                             ? "bg-sakura-100 text-sakura-700"
-                            : "bg-gray-100 text-gray-500"
+                            : "bg-wabi-100 text-wabi-500"
                           }
                         `}
                       >
@@ -305,9 +305,9 @@ export default function JourneyTimeline({
       </div>
 
       {/* 预订须知 - 整合预订流程 */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-wabi-200 overflow-hidden">
         {/* 标题 */}
-        <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50">
+        <div className="px-5 py-4 border-b border-wabi-100 bg-wabi-50/50">
           <h4 className="text-[16px] font-semibold text-gray-900">
             预订须知
           </h4>
@@ -320,7 +320,7 @@ export default function JourneyTimeline({
               <span className="text-[13px] font-medium text-gray-700">预订流程</span>
               <span className="text-[11px] text-sakura-600 font-medium">约 2 分钟完成</span>
             </div>
-            <div className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
+            <div className="flex items-center justify-between bg-wabi-50 rounded-lg p-3">
               {[
                 { num: 1, label: "选择日期" },
                 { num: 2, label: "填写信息" },
@@ -370,8 +370,8 @@ export default function JourneyTimeline({
 
           {/* 取消政策 */}
           {cancelPolicy && (
-            <div className="pt-3 border-t border-gray-100">
-              <p className="text-[12px] text-gray-500">
+            <div className="pt-3 border-t border-wabi-100">
+              <p className="text-[12px] text-wabi-500">
                 💡 {cancelPolicy}
               </p>
             </div>
