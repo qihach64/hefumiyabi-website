@@ -188,22 +188,12 @@ export default function FeaturedPlanCard({
               </>
             )}
 
-            {/* 精选标签 - 使用 Glass Premium 风格 */}
+            {/* 精选标签 - Sakura 品牌色（品牌元素用 sakura） */}
             <div className="absolute top-4 left-4 z-10">
-              <div
-                className="px-3 py-1.5 rounded-full glass-premium flex items-center gap-2"
-                style={{
-                   // 移除硬编码的渐变背景，改用边框和文字渐变来体现高级感
-                   // 或者保留渐变但增加透明度
-                   background: 'rgba(255, 255, 255, 0.8)',
-                   border: '1px solid rgba(245, 158, 11, 0.3)',
-                }}
-              >
-                <div className="p-1 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-sm">
-                    <Award className="w-3 h-3" />
-                </div>
-                <span className="text-sm font-bold text-gray-800 tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-amber-600 to-orange-600">
-                    精选推荐
+              <div className="px-3 py-1.5 rounded-full bg-sakura-600 flex items-center gap-1.5 shadow-sm">
+                <Award className="w-4 h-4 text-white" />
+                <span className="text-[13px] font-semibold text-white">
+                  精选推荐
                 </span>
               </div>
             </div>
