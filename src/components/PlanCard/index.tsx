@@ -172,8 +172,8 @@ export default function PlanCard({
         className={`group block overflow-hidden ${cardVariantStyles[variant]}`}
       >
         <div className="relative">
-          {/* 图片容器 - 支持不同比例，四角圆角 */}
-          <div className={`relative ${aspectRatioStyles[aspectRatio]} overflow-hidden rounded-xl bg-gray-100`}>
+          {/* 图片容器 - 支持不同比例，顶部圆角 */}
+          <div className={`relative ${aspectRatioStyles[aspectRatio]} overflow-hidden rounded-t-xl bg-gray-100`}>
             {plan.imageUrl ? (
               <Image
                 src={plan.imageUrl}
