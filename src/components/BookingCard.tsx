@@ -1,10 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
-  Calendar,
-  Clock,
   Shield,
   X,
   Check,
@@ -20,6 +18,7 @@ import { Badge } from "@/components/ui";
 import InstantBookingModal from "@/components/InstantBookingModal";
 import { useCartStore, type CartItemInput } from "@/store/cart";
 import type { SelectedUpgrade } from "@/components/PlanDetailClient";
+import CollapsibleDateTimePicker from "@/components/booking/CollapsibleDateTimePicker";
 
 interface BookingCardProps {
   plan: {
@@ -53,7 +52,6 @@ export default function BookingCard({
   selectedUpgrades = [],
   onRemoveUpgrade,
 }: BookingCardProps) {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const searchDate = searchParams.get("date");
 
@@ -273,135 +271,67 @@ export default function BookingCard({
       {/* ========================================
           预订表单 - 日式方格 (Grid Cells)
       ======================================== */}
-      <div className="mb-6 rounded-xl border border-wabi-300 divide-y divide-wabi-200 overflow-hidden hover:border-sakura-400 transition-colors duration-300">
-        {/* 日期选择 */}
-        <div
-          className={`p-4 cursor-pointer transition-colors hover:bg-wabi-50/50 ${
-            date && searchDate ? "bg-green-50/30" : ""
-          }`}
-          onClick={() => {
-            const input = document.getElementById("booking-date-input") as HTMLInputElement;
-            input?.focus();
-            try {
-              input?.showPicker?.();
-            } catch {
-              input?.click();
-            }
-          }}
-        >
-          <div className="flex items-center justify-between mb-1">
-            <label className="flex items-center gap-2 text-[12px] font-medium text-gray-600 cursor-pointer">
-              <Calendar className="w-4 h-4 text-sakura-500" />
-              到店日期
+      <div className="mb-6 space-y-3">
+        {/* 日期时间选择 - 可折叠 */}
+        <CollapsibleDateTimePicker
+          date={date}
+          time={time}
+          onDateChange={setDate}
+          onTimeChange={setTime}
+          dateAutoFilled={!!searchDate && !!date}
+        />
+
+        {/* 人数和电话选择 */}
+        <div className="rounded-xl border border-wabi-200 divide-y divide-wabi-200 overflow-hidden hover:border-sakura-300 transition-colors duration-300">
+          {/* 人数选择 */}
+          <div className="p-4 hover:bg-wabi-50/50 transition-colors">
+            <label className="flex items-center gap-2 text-[12px] font-medium text-gray-600 mb-2">
+              {pricingUnit === "person" ? (
+                <Users className="w-4 h-4 text-sakura-500" />
+              ) : (
+                <Package className="w-4 h-4 text-sakura-500" />
+              )}
+              {pricingUnit === "person" ? "人数" : "数量"}
+              {unitDescription && (
+                <span className="text-wabi-400 font-normal">({unitDescription})</span>
+              )}
             </label>
-            {date && searchDate && (
-              <span className="text-[10px] text-green-600 font-medium">
-                ✓ 已预填
+            <div className="flex items-center justify-between">
+              <button
+                onClick={decreaseQuantity}
+                disabled={quantity <= minQty}
+                className="w-8 h-8 rounded-lg border border-wabi-200 flex items-center justify-center text-gray-600 hover:bg-wabi-50 hover:border-sakura-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                <Minus className="w-4 h-4" />
+              </button>
+              <span className="text-[16px] font-semibold text-gray-900">
+                {quantity} {unitLabel}
               </span>
-            )}
+              <button
+                onClick={increaseQuantity}
+                disabled={quantity >= maxQty}
+                className="w-8 h-8 rounded-lg border border-wabi-200 flex items-center justify-center text-gray-600 hover:bg-wabi-50 hover:border-sakura-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
           </div>
-          <input
-            id="booking-date-input"
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="w-full text-[15px] text-gray-900 bg-transparent border-none outline-none cursor-pointer"
-            min={new Date().toISOString().split("T")[0]}
-          />
-        </div>
 
-        {/* 时间选择 */}
-        <div className="p-4 cursor-pointer hover:bg-wabi-50/50 transition-colors relative">
-          <label className="flex items-center gap-2 text-[12px] font-medium text-gray-600 mb-1 cursor-pointer">
-            <Clock className="w-4 h-4 text-sakura-500" />
-            到店时间
-          </label>
-          <select
-            id="booking-time-select"
-            value={time}
-            onChange={(e) => setTime(e.target.value)}
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-          >
-            <option value="">请选择时间</option>
-            <option value="09:00">上午 9:00</option>
-            <option value="09:30">上午 9:30</option>
-            <option value="10:00">上午 10:00</option>
-            <option value="10:30">上午 10:30</option>
-            <option value="11:00">上午 11:00</option>
-            <option value="11:30">上午 11:30</option>
-            <option value="12:00">中午 12:00</option>
-            <option value="13:00">下午 1:00</option>
-            <option value="13:30">下午 1:30</option>
-            <option value="14:00">下午 2:00</option>
-            <option value="14:30">下午 2:30</option>
-            <option value="15:00">下午 3:00</option>
-            <option value="15:30">下午 3:30</option>
-            <option value="16:00">下午 4:00</option>
-          </select>
-          <div className="text-[15px] text-gray-900 pointer-events-none">
-            {time ? (
-              <>
-                {time.startsWith("09") || time.startsWith("10") || time.startsWith("11")
-                  ? "上午"
-                  : time === "12:00"
-                  ? "中午"
-                  : "下午"}{" "}
-                {time}
-              </>
-            ) : (
-              <span className="text-wabi-400">请选择时间</span>
-            )}
+          {/* 电话 (可选) */}
+          <div className="p-4 hover:bg-wabi-50/50 transition-colors">
+            <label className="flex items-center gap-2 text-[12px] font-medium text-gray-600 mb-1">
+              <Phone className="w-4 h-4 text-sakura-500" />
+              联系电话
+              <span className="text-wabi-400 font-normal">(可选)</span>
+            </label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="用于预约确认通知"
+              className="w-full text-[15px] text-gray-900 bg-transparent border-none outline-none placeholder:text-wabi-300"
+            />
           </div>
-        </div>
-
-        {/* 人数选择 */}
-        <div className="p-4 hover:bg-wabi-50/50 transition-colors">
-          <label className="flex items-center gap-2 text-[12px] font-medium text-gray-600 mb-2">
-            {pricingUnit === "person" ? (
-              <Users className="w-4 h-4 text-sakura-500" />
-            ) : (
-              <Package className="w-4 h-4 text-sakura-500" />
-            )}
-            {pricingUnit === "person" ? "人数" : "数量"}
-            {unitDescription && (
-              <span className="text-wabi-400 font-normal">({unitDescription})</span>
-            )}
-          </label>
-          <div className="flex items-center justify-between">
-            <button
-              onClick={decreaseQuantity}
-              disabled={quantity <= minQty}
-              className="w-8 h-8 rounded-lg border border-wabi-200 flex items-center justify-center text-gray-600 hover:bg-wabi-50 hover:border-sakura-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            >
-              <Minus className="w-4 h-4" />
-            </button>
-            <span className="text-[16px] font-semibold text-gray-900">
-              {quantity} {unitLabel}
-            </span>
-            <button
-              onClick={increaseQuantity}
-              disabled={quantity >= maxQty}
-              className="w-8 h-8 rounded-lg border border-wabi-200 flex items-center justify-center text-gray-600 hover:bg-wabi-50 hover:border-sakura-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-        {/* 电话 (可选) */}
-        <div className="p-4 hover:bg-wabi-50/50 transition-colors">
-          <label className="flex items-center gap-2 text-[12px] font-medium text-gray-600 mb-1">
-            <Phone className="w-4 h-4 text-sakura-500" />
-            联系电话
-            <span className="text-wabi-400 font-normal">(可选)</span>
-          </label>
-          <input
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="用于预约确认通知"
-            className="w-full text-[15px] text-gray-900 bg-transparent border-none outline-none placeholder:text-wabi-300"
-          />
         </div>
       </div>
 
