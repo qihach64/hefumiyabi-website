@@ -574,12 +574,12 @@ export default function HomeClient({
             onHeroVisibilityChange={setIsHeroVisible}
           />
 
-          {/* Theme Sections - Zen 风格：纯白背景 + 边框分隔 */}
+          {/* Theme Sections - Miyabi 风格：背景色交替 + 无边框 */}
           <div>
             {themeSections.map((section, index) => (
               <section
                 key={section.id}
-                className={`py-8 md:py-12 bg-white ${index > 0 ? "border-t border-wabi-100" : ""}`}
+                className={`py-8 md:py-12 ${index % 2 === 0 ? "bg-white" : "bg-[#FDFBF7]"}`}
               >
                 <div className="container">
                   {section.plans.length > 0 ? (
@@ -654,22 +654,28 @@ export default function HomeClient({
                       </div>
                     </ScrollableSection>
                   ) : (
-                    /* 即将上线的 Theme - Zen 风格 */
+                    /* 即将上线的 Theme - Miyabi 风格 */
                     <div className="px-4 md:px-0">
-                      <div className="flex items-start gap-3 md:gap-4 mb-4">
-                        <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl flex items-center justify-center flex-shrink-0 bg-wabi-50 opacity-60">
-                          <span className="text-xl md:text-2xl grayscale">{section.icon}</span>
-                        </div>
-                        <div className="flex flex-col flex-1">
-                          <div className="flex items-center gap-2">
-                            <h2 className="text-xl md:text-2xl font-bold text-wabi-400">{section.label}</h2>
+                      <div className="flex items-center gap-3 mb-6">
+                        {/* 渐变装饰线 */}
+                        <div className="w-10 h-px bg-gradient-to-r from-wabi-300 to-transparent" />
+                        <div className="flex flex-col">
+                          {/* 英文小标题 */}
+                          <span className="text-[12px] uppercase tracking-[0.25em] text-wabi-400 font-medium mb-1">
+                            Coming Soon
+                          </span>
+                          {/* 主标题：使用 font-serif */}
+                          <div className="flex items-center gap-3">
+                            <h2 className="text-[24px] md:text-[28px] font-serif text-wabi-400 leading-tight">
+                              {section.label}
+                            </h2>
                             <span className="px-2.5 py-0.5 text-xs font-medium bg-wabi-100 text-wabi-500 rounded-full">
                               即将上线
                             </span>
                           </div>
-                          <p className="text-sm md:text-base text-wabi-400 mt-1">{section.description}</p>
                         </div>
                       </div>
+                      <p className="text-sm md:text-base text-wabi-400 ml-[52px]">{section.description}</p>
                     </div>
                   )}
                 </div>

@@ -39,63 +39,83 @@ export default function ScrollableSection({
 
   return (
     <div>
-      {/* 标题区域 - Zen 风格：统一配色 */}
+      {/* 标题区域 - Miyabi 风格：装饰线 + Serif 字体 */}
       <div className="flex items-center justify-between mb-6 md:mb-8 px-1">
-        <div className="flex items-start gap-4 md:gap-5 flex-1 min-w-0">
-          {/* 主题图标 - Zen 风格：统一 wabi-50 背景 */}
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          {/* 渐变装饰线 */}
+          <div
+            className="w-10 h-px bg-gradient-to-r to-transparent flex-shrink-0"
+            style={{ backgroundImage: `linear-gradient(to right, ${iconColor}, transparent)` }}
+          />
+
+          {/* 主题图标 */}
           {IconComponent && (
-            <div className="flex-shrink-0 w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-wabi-50 flex items-center justify-center transition-all duration-300 hover:scale-105">
+            <div
+              className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center transition-all duration-300 hover:scale-105"
+              style={{ backgroundColor: `${iconColor}15` }}
+            >
               <IconComponent
-                className="w-7 h-7 md:w-8 md:h-8"
+                className="w-5 h-5 md:w-6 md:h-6"
                 style={{ color: iconColor }}
               />
             </div>
           )}
 
-          {/* 标题和描述 - Zen 风格：统一 stone/wabi 配色 */}
+          {/* 标题和描述 - Miyabi 风格 */}
           <div className="flex flex-col flex-1 min-w-0">
-            <h2 className="text-2xl md:text-3xl lg:text-[32px] font-bold leading-tight tracking-tight text-stone-900 mb-1.5">
+            {/* 英文小标题 */}
+            <span
+              className="text-[11px] uppercase tracking-[0.2em] font-medium mb-0.5"
+              style={{ color: iconColor }}
+            >
+              Collection
+            </span>
+            {/* 主标题：Serif 字体 */}
+            <h2 className="text-[22px] md:text-[26px] lg:text-[28px] font-serif leading-tight text-stone-900">
               {title}
             </h2>
             {description && (
-              <p className="text-sm md:text-base text-wabi-500 leading-relaxed">
+              <p className="text-[13px] md:text-sm text-wabi-500 leading-relaxed mt-1 hidden md:block">
                 {description}
               </p>
             )}
           </div>
         </div>
 
-        {/* 左右箭头按钮 - Zen 风格 */}
-        <div className="hidden md:flex items-center gap-3 flex-shrink-0">
+        {/* 左右箭头按钮 - Miyabi 风格 */}
+        <div className="hidden md:flex items-center gap-2 flex-shrink-0">
           <button
             onClick={() => scrollerRef.current?.scrollLeft()}
             disabled={!canScrollLeft}
-            className={`w-9 h-9 flex items-center justify-center rounded-full border transition-all duration-200
+            className={`w-8 h-8 flex items-center justify-center rounded-full border transition-all duration-200
               ${!canScrollLeft
                 ? 'bg-wabi-50 border-wabi-100 text-wabi-300 cursor-not-allowed'
                 : 'bg-white border-wabi-200 text-wabi-600 hover:border-sakura-200 hover:text-sakura-500 active:scale-95'
               }`}
             aria-label="向左滚动"
           >
-            <ChevronLeft className="w-5 h-5" />
+            <ChevronLeft className="w-4 h-4" />
           </button>
           <button
             onClick={() => scrollerRef.current?.scrollRight()}
             disabled={!canScrollRight}
-            className={`w-9 h-9 flex items-center justify-center rounded-full border transition-all duration-200
+            className={`w-8 h-8 flex items-center justify-center rounded-full border transition-all duration-200
               ${!canScrollRight
                 ? 'bg-wabi-50 border-wabi-100 text-wabi-300 cursor-not-allowed'
                 : 'bg-white border-wabi-200 text-wabi-600 hover:border-sakura-200 hover:text-sakura-500 active:scale-95'
               }`}
             aria-label="向右滚动"
           >
-            <ChevronRight className="w-5 h-5" />
+            <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      {/* 分割线 - Zen 风格：简洁单色 */}
-      <div className="h-px bg-wabi-100 mb-6 md:mb-8" />
+      {/* 分割线 - Miyabi 风格：渐变线 */}
+      <div
+        className="h-px mb-6 md:mb-8 bg-gradient-to-r to-transparent"
+        style={{ backgroundImage: `linear-gradient(to right, ${iconColor}30, transparent)` }}
+      />
 
       {/* 内容区域 - 左侧大卡片 + 右侧小卡片 */}
       {featuredChild ? (
