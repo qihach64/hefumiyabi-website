@@ -1,15 +1,12 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ShoppingCart, Star, Check, Sparkles, RotateCcw, MapPin } from "lucide-react";
+import { ShoppingCart, Check, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui";
 import { useCartStore } from "@/store/cart";
-import { useTryOnStore } from "@/store/tryOn";
-import TryOnModal from "@/components/TryOnModal";
-import ImageComparison from "@/components/ImageComparison";
 
 interface Tag {
   id: string;
@@ -81,24 +78,15 @@ export default function PlanCard({
   const [isAdding, setIsAdding] = useState(false);
   const [justChanged, setJustChanged] = useState(false);
   const [lastAction, setLastAction] = useState<'add' | 'remove' | null>(null);
-  const [showTryOnModal, setShowTryOnModal] = useState(false);
-  const [mounted, setMounted] = useState(false);
 
   const searchParams = useSearchParams();
   const addItem = useCartStore((state) => state.addItem);
   const removeItem = useCartStore((state) => state.removeItem);
   const items = useCartStore((state) => state.items);
 
-  const getTryOnResult = useTryOnStore((state) => state.getTryOnResult);
-  const removeTryOnResult = useTryOnStore((state) => state.removeTryOnResult);
-
   // 检查是否已在购物车中
   const cartItem = items.find(item => item.planId === plan.id);
   const isInCart = !!cartItem;
-
-  // 检查是否有试穿记录（只在客户端挂载后读取）
-  const tryOnResult = mounted ? getTryOnResult(plan.id) : null;
-  const hasTryOn = !!tryOnResult;
 
   // 构建详情页链接 - 保留搜索参数
   const planDetailHref = useMemo(() => {
@@ -126,11 +114,6 @@ export default function PlanCard({
     return queryString ? `/plans/${plan.id}?${queryString}` : `/plans/${plan.id}`;
   }, [plan.id, searchParams]);
 
-  // 客户端挂载标记
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   // 计算优惠金额
   const discountAmount = plan.originalPrice && plan.originalPrice > plan.price
     ? plan.originalPrice - plan.price
@@ -157,13 +140,6 @@ export default function PlanCard({
         image: plan.imageUrl,
         addOns: [],
         isCampaign: plan.isCampaign,
-        // 如果有试穿记录，携带试穿照片
-        tryOnPhoto: tryOnResult ? {
-          originalPhoto: tryOnResult.originalPhoto,
-          resultPhoto: tryOnResult.resultPhoto,
-          timestamp: new Date(tryOnResult.timestamp),
-          planImageUrl: tryOnResult.planImageUrl,
-        } : undefined,
       });
       setLastAction('add');
     }
@@ -174,21 +150,6 @@ export default function PlanCard({
       setJustChanged(false);
       setLastAction(null);
     }, 1000);
-  };
-
-  // 打开试穿弹窗
-  const handleTryOn = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setShowTryOnModal(true);
-  };
-
-  // 重新试穿
-  const handleRetry = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    removeTryOnResult(plan.id);
-    setShowTryOnModal(true);
   };
 
   // 分类标签
@@ -205,22 +166,7 @@ export default function PlanCard({
   };
 
   return (
-    <>
-      {/* 试穿弹窗 */}
-      <TryOnModal
-        isOpen={showTryOnModal}
-        onClose={() => setShowTryOnModal(false)}
-        plan={{
-          id: plan.id,
-          name: plan.name,
-          price: plan.price,
-          originalPrice: plan.originalPrice,
-          imageUrl: plan.imageUrl,
-          isCampaign: plan.isCampaign,
-        }}
-      />
-
-      <Link
+    <Link
         href={planDetailHref}
         target="_blank"
         className={`group block overflow-hidden ${cardVariantStyles[variant]}`}
@@ -228,70 +174,25 @@ export default function PlanCard({
         <div className="relative">
           {/* 图片容器 - 支持不同比例，四角圆角 */}
           <div className={`relative ${aspectRatioStyles[aspectRatio]} overflow-hidden rounded-xl bg-gray-100`}>
-            {hasTryOn && tryOnResult ? (
-              /* 已试穿：显示对比图 - 淡入效果 */
-              <div
-                className="absolute inset-0 animate-in fade-in duration-300"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                }}
-              >
-                <ImageComparison
-                  beforeImage={plan.imageUrl || ''}
-                  afterImage={tryOnResult.resultPhoto}
-                  beforeLabel="套餐原图"
-                  afterLabel="试穿效果"
-                />
-              </div>
+            {plan.imageUrl ? (
+              <Image
+                src={plan.imageUrl}
+                alt={plan.name}
+                fill
+                className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              />
             ) : (
-              /* 未试穿：显示套餐图片 */
-              <>
-                {plan.imageUrl ? (
-                  <Image
-                    src={plan.imageUrl}
-                    alt={plan.name}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                  />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center bg-sakura-50">
-                    <span className="text-6xl opacity-20">👘</span>
-                  </div>
-                )}
-              </>
+              <div className="absolute inset-0 flex items-center justify-center bg-sakura-50">
+                <span className="text-6xl opacity-20">👘</span>
+              </div>
             )}
 
-            {/* 试穿按钮 - Glass Button */}
-            {!hasTryOn && (
-              <button
-                onClick={handleTryOn}
-                className="absolute top-3 right-3 p-2.5 rounded-full glass-button text-gray-700 hover:text-sakura-600 z-10"
-                aria-label="AI试穿"
-                title="点击试穿看看"
-              >
-                <Sparkles className="w-4 h-4" />
-              </button>
-            )}
-
-            {/* 已试穿状态：重新试穿按钮 */}
-            {hasTryOn && (
-              <button
-                onClick={handleRetry}
-                className="absolute top-3 right-3 p-2.5 rounded-full glass-button hover:text-sakura-600 z-10"
-                aria-label="重新试穿"
-                title="点击重新试穿"
-              >
-                <RotateCcw className="w-4 h-4 text-sakura-600" />
-              </button>
-            )}
-
-            {/* 购物车按钮 - Glass Button */}
+            {/* 购物车按钮 - 右上角 */}
             <button
               onClick={handleToggleCart}
               disabled={isAdding}
-              className={`absolute bottom-3 right-3 p-2.5 rounded-full transition-all glass-button ${
+              className={`absolute top-3 right-3 p-2.5 rounded-full transition-all glass-button z-10 ${
                 justChanged
                   ? lastAction === 'add'
                     ? 'bg-green-50/90 text-green-600 scale-110 border-green-200'
@@ -406,7 +307,6 @@ export default function PlanCard({
             )}
           </div>
         </div>
-      </Link>
-    </>
+    </Link>
   );
 }

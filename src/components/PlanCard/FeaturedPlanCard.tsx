@@ -1,15 +1,11 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ShoppingCart, Star, Check, Sparkles, RotateCcw, Award, MapPin, Users } from "lucide-react";
-import { Badge } from "@/components/ui";
+import { ShoppingCart, Check, Award, MapPin } from "lucide-react";
 import { useCartStore } from "@/store/cart";
-import { useTryOnStore } from "@/store/tryOn";
-import TryOnModal from "@/components/TryOnModal";
-import ImageComparison from "@/components/ImageComparison";
 
 interface Tag {
   id: string;
@@ -46,22 +42,14 @@ export default function FeaturedPlanCard({
   const [isAdding, setIsAdding] = useState(false);
   const [justChanged, setJustChanged] = useState(false);
   const [lastAction, setLastAction] = useState<'add' | 'remove' | null>(null);
-  const [showTryOnModal, setShowTryOnModal] = useState(false);
-  const [mounted, setMounted] = useState(false);
 
   const searchParams = useSearchParams();
   const addItem = useCartStore((state) => state.addItem);
   const removeItem = useCartStore((state) => state.removeItem);
   const items = useCartStore((state) => state.items);
 
-  const getTryOnResult = useTryOnStore((state) => state.getTryOnResult);
-  const removeTryOnResult = useTryOnStore((state) => state.removeTryOnResult);
-
   const cartItem = items.find(item => item.planId === plan.id);
   const isInCart = !!cartItem;
-
-  const tryOnResult = mounted ? getTryOnResult(plan.id) : null;
-  const hasTryOn = !!tryOnResult;
 
   const planDetailHref = useMemo(() => {
     const params = new URLSearchParams();
@@ -72,10 +60,6 @@ export default function FeaturedPlanCard({
     const queryString = params.toString();
     return queryString ? `/plans/${plan.id}?${queryString}` : `/plans/${plan.id}`;
   }, [plan.id, searchParams]);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const discountAmount = plan.originalPrice && plan.originalPrice > plan.price
     ? plan.originalPrice - plan.price
@@ -101,12 +85,6 @@ export default function FeaturedPlanCard({
         image: plan.imageUrl,
         addOns: [],
         isCampaign: plan.isCampaign,
-        tryOnPhoto: tryOnResult ? {
-          originalPhoto: tryOnResult.originalPhoto,
-          resultPhoto: tryOnResult.resultPhoto,
-          timestamp: new Date(tryOnResult.timestamp),
-          planImageUrl: tryOnResult.planImageUrl,
-        } : undefined,
       });
       setLastAction('add');
     }
@@ -119,35 +97,8 @@ export default function FeaturedPlanCard({
     }, 1000);
   };
 
-  const handleTryOn = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setShowTryOnModal(true);
-  };
-
-  const handleRetry = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    removeTryOnResult(plan.id);
-    setShowTryOnModal(true);
-  };
-
   return (
-    <>
-      <TryOnModal
-        isOpen={showTryOnModal}
-        onClose={() => setShowTryOnModal(false)}
-        plan={{
-          id: plan.id,
-          name: plan.name,
-          price: plan.price,
-          originalPrice: plan.originalPrice,
-          imageUrl: plan.imageUrl,
-          isCampaign: plan.isCampaign,
-        }}
-      />
-
-      <Link
+    <Link
         href={planDetailHref}
         target="_blank"
         className="group block bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-gray-100 hover:border-sakura-200/50 h-full relative"
@@ -155,37 +106,18 @@ export default function FeaturedPlanCard({
         <div className="flex flex-col h-full">
           {/* 图片容器 - 3:4 比例，四角圆角 */}
           <div className="relative w-full aspect-[3/4] overflow-hidden rounded-xl bg-gray-100 flex-shrink-0">
-            {hasTryOn && tryOnResult ? (
-              <div
-                className="absolute inset-0 animate-in fade-in duration-300"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                }}
-              >
-                <ImageComparison
-                  beforeImage={plan.imageUrl || ''}
-                  afterImage={tryOnResult.resultPhoto}
-                  beforeLabel="套餐原图"
-                  afterLabel="试穿效果"
-                />
-              </div>
+            {plan.imageUrl ? (
+              <Image
+                src={plan.imageUrl}
+                alt={plan.name}
+                fill
+                className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                sizes="(max-width: 768px) 100vw, 500px"
+              />
             ) : (
-              <>
-                {plan.imageUrl ? (
-                  <Image
-                    src={plan.imageUrl}
-                    alt={plan.name}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-                    sizes="(max-width: 768px) 100vw, 500px"
-                  />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center bg-sakura-50">
-                    <span className="text-8xl opacity-20">👘</span>
-                  </div>
-                )}
-              </>
+              <div className="absolute inset-0 flex items-center justify-center bg-sakura-50">
+                <span className="text-8xl opacity-20">👘</span>
+              </div>
             )}
 
             {/* 精选标签 - Sakura 品牌色 */}
@@ -198,35 +130,11 @@ export default function FeaturedPlanCard({
               </div>
             </div>
 
-            {/* 试穿按钮 - Glass Button */}
-            {!hasTryOn && (
-              <button
-                onClick={handleTryOn}
-                className="absolute top-3 right-3 p-2.5 rounded-full glass-button text-gray-700 hover:text-sakura-600 z-10"
-                aria-label="AI试穿"
-                title="点击试穿看看"
-              >
-                <Sparkles className="w-5 h-5" />
-              </button>
-            )}
-
-            {/* 已试穿状态：重新试穿按钮 */}
-            {hasTryOn && (
-              <button
-                onClick={handleRetry}
-                className="absolute top-3 right-3 p-2.5 rounded-full glass-button hover:text-sakura-600 z-10"
-                aria-label="重新试穿"
-                title="点击重新试穿"
-              >
-                <RotateCcw className="w-5 h-5 text-sakura-600" />
-              </button>
-            )}
-
-            {/* 购物车按钮 - Glass Button */}
+            {/* 购物车按钮 - 右上角 */}
             <button
               onClick={handleToggleCart}
               disabled={isAdding}
-              className={`absolute bottom-3 right-3 p-2.5 rounded-full transition-all glass-button ${
+              className={`absolute top-3 right-3 p-2.5 rounded-full transition-all glass-button z-10 ${
                 justChanged
                   ? lastAction === 'add'
                     ? 'bg-green-50/90 text-green-600 scale-110 border-green-200'
@@ -368,7 +276,6 @@ export default function FeaturedPlanCard({
             </div>
           </div>
         </div>
-      </Link>
-    </>
+    </Link>
   );
 }
