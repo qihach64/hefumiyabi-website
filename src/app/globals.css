@@ -418,3 +418,10 @@ body {
 .search-plan-card .aspect-square {
   aspect-ratio: 3 / 2;
 }
+
+/* ================================
+   Sonner Toast 图标样式
+   ================================ */
+[data-sonner-toast][data-type="success"] [data-icon] svg {
+  color: var(--sakura-500) !important;
+}
