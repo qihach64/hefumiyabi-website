@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ShoppingCart, Check, Award, MapPin } from "lucide-react";
+import { toast } from "sonner";
 import { useCartStore } from "@/store/cart";
 
 interface Tag {
@@ -74,6 +75,7 @@ export default function FeaturedPlanCard({
     if (isInCart && cartItem) {
       removeItem(cartItem.id);
       setLastAction('remove');
+      toast.success("已从购物车移除");
     } else {
       addItem({
         type: 'PLAN',
@@ -87,6 +89,7 @@ export default function FeaturedPlanCard({
         isCampaign: plan.isCampaign,
       });
       setLastAction('add');
+      toast.success("已加入购物车");
     }
 
     setJustChanged(true);
