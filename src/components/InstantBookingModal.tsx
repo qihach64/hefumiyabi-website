@@ -8,14 +8,18 @@ import {
   Calendar,
   Clock,
   MapPin,
-  User,
-  Mail,
-  Phone,
   Check,
   Loader2,
   AlertCircle,
 } from "lucide-react";
 import type { SelectedUpgrade } from "@/components/PlanDetailClient";
+import ContactForm, {
+  type ContactFormValues,
+  type ContactFormErrors,
+} from "@/components/booking/ContactForm";
+import PriceBreakdown, {
+  type UpgradeItem,
+} from "@/components/booking/PriceBreakdown";
 
 interface InstantBookingModalProps {
   isOpen: boolean;
@@ -62,36 +66,60 @@ export default function InstantBookingModal({
   const router = useRouter();
   const { data: session } = useSession();
 
-  // Form state for contact info - pre-fill from session if available
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState(initialPhone);
-  const [notes, setNotes] = useState("");
+  // Form state - unified with ContactFormValues
+  const [formValues, setFormValues] = useState<ContactFormValues>({
+    name: "",
+    email: "",
+    phone: initialPhone,
+    notes: "",
+  });
+  const [formErrors, setFormErrors] = useState<ContactFormErrors>({});
 
   // Pre-fill user info when session is available
   useEffect(() => {
     if (session?.user) {
-      if (session.user.name && !name) {
-        setName(session.user.name);
-      }
-      if (session.user.email && !email) {
-        setEmail(session.user.email);
-      }
+      setFormValues((prev) => ({
+        ...prev,
+        name: prev.name || session.user?.name || "",
+        email: prev.email || session.user?.email || "",
+      }));
     }
-  }, [session, name, email]);
+  }, [session]);
+
+  // Sync initial phone when it changes
+  useEffect(() => {
+    if (initialPhone && !formValues.phone) {
+      setFormValues((prev) => ({ ...prev, phone: initialPhone }));
+    }
+  }, [initialPhone, formValues.phone]);
 
   // Submission state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Pricing calculations - upgrades are per unit
+  // Pricing calculations
   const unitLabel = plan.unitLabel || "人";
   const upgradesPerUnit = selectedUpgrades.reduce((sum, u) => sum + u.price, 0);
   const unitPriceWithUpgrades = plan.price + upgradesPerUnit;
-  const balance = subtotal - deposit;
 
   // Form validation
-  const isFormValid = name.trim() && (email.trim() || phone.trim());
+  const validateForm = (): boolean => {
+    const errors: ContactFormErrors = {};
+
+    if (!formValues.name.trim()) {
+      errors.name = "请填写姓名";
+    }
+
+    if (!formValues.email.trim() && !formValues.phone.trim()) {
+      errors.email = "邮箱或电话至少填一项";
+      errors.phone = "邮箱或电话至少填一项";
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const isFormValid = formValues.name.trim() && (formValues.email.trim() || formValues.phone.trim());
 
   // Format date display (compact)
   const formatDate = (dateStr: string) => {
@@ -104,15 +132,9 @@ export default function InstantBookingModal({
     });
   };
 
-  // Format time display (compact)
-  const formatTime = (timeStr: string) => {
-    if (!timeStr) return "";
-    return timeStr;
-  };
-
   // Handle submit
   const handleSubmit = async () => {
-    if (!isFormValid) return;
+    if (!validateForm()) return;
 
     setIsSubmitting(true);
     setError(null);
@@ -125,10 +147,10 @@ export default function InstantBookingModal({
         },
         body: JSON.stringify({
           // Guest info
-          guestName: name,
-          guestEmail: email || null,
-          guestPhone: phone || null,
-          specialRequests: notes || null,
+          guestName: formValues.name,
+          guestEmail: formValues.email || null,
+          guestPhone: formValues.phone || null,
+          specialRequests: formValues.notes || null,
 
           // Booking details
           visitDate,
@@ -143,8 +165,8 @@ export default function InstantBookingModal({
               planId: plan.id,
               storeId: store.id,
               quantity,
-              unitPrice: unitPriceWithUpgrades, // Unit price includes upgrades
-              totalPrice: subtotal, // subtotal = unitPriceWithUpgrades × quantity
+              unitPrice: unitPriceWithUpgrades,
+              totalPrice: subtotal,
               addOns: selectedUpgrades.map((u) => u.id),
             },
           ],
@@ -167,6 +189,14 @@ export default function InstantBookingModal({
     }
   };
 
+  // Convert selectedUpgrades to UpgradeItem format
+  const upgrades: UpgradeItem[] = selectedUpgrades.map((u) => ({
+    id: u.id,
+    name: u.name,
+    icon: u.icon,
+    price: u.price,
+  }));
+
   if (!isOpen) return null;
 
   return (
@@ -177,20 +207,20 @@ export default function InstantBookingModal({
         onClick={onClose}
       />
 
-      {/* Modal - more compact design */}
+      {/* Modal - compact design */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div
           className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-y-auto"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header - compact */}
-          <div className="sticky top-0 bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between rounded-t-xl z-10">
+          <div className="sticky top-0 bg-white border-b border-wabi-100 px-4 py-3 flex items-center justify-between rounded-t-xl z-10">
             <h2 className="text-[16px] font-semibold text-gray-900">
               确认预约
             </h2>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+              className="p-1.5 rounded-lg hover:bg-wabi-50 transition-colors"
               aria-label="关闭"
             >
               <X className="w-4 h-4 text-gray-500" />
@@ -200,7 +230,7 @@ export default function InstantBookingModal({
           {/* Content - compact spacing */}
           <div className="px-4 py-3 space-y-4">
             {/* Booking summary - inline style */}
-            <div className="bg-gray-50 rounded-lg p-3">
+            <div className="bg-wabi-50 rounded-lg p-3">
               {/* Plan info row */}
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-[14px]">👘</span>
@@ -221,134 +251,31 @@ export default function InstantBookingModal({
                 </span>
                 <span className="flex items-center gap-1">
                   <Clock className="w-3 h-3 text-sakura-500" />
-                  {formatTime(visitTime)}
+                  {visitTime}
                 </span>
               </div>
             </div>
 
-            {/* Contact form - compact inputs */}
-            <div className="space-y-3">
-              <p className="text-[12px] font-medium text-gray-500 uppercase tracking-wide">
-                联系信息
-              </p>
+            {/* Contact form - using shared component in compact mode */}
+            <ContactForm
+              values={formValues}
+              onChange={setFormValues}
+              errors={formErrors}
+              compact
+              showTitle
+            />
 
-              {/* Name + Email row */}
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="flex items-center gap-1 text-[11px] text-gray-500 mb-1">
-                    <User className="w-3 h-3" />
-                    姓名 <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="您的姓名"
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[14px] focus:outline-none focus:border-sakura-400 transition-colors"
-                  />
-                </div>
-                <div>
-                  <label className="flex items-center gap-1 text-[11px] text-gray-500 mb-1">
-                    <Mail className="w-3 h-3" />
-                    邮箱
-                  </label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="接收确认邮件"
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[14px] focus:outline-none focus:border-sakura-400 transition-colors"
-                  />
-                </div>
-              </div>
-
-              {/* Phone row */}
-              <div>
-                <label className="flex items-center gap-1 text-[11px] text-gray-500 mb-1">
-                  <Phone className="w-3 h-3" />
-                  电话 <span className="text-[10px] text-gray-400">(邮箱或电话至少填一项)</span>
-                </label>
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="用于预约确认通知"
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[14px] focus:outline-none focus:border-sakura-400 transition-colors"
-                />
-              </div>
-
-              {/* Notes - smaller */}
-              <div>
-                <label className="text-[11px] text-gray-500 mb-1 block">
-                  备注 <span className="text-gray-400">(可选)</span>
-                </label>
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="特殊要求"
-                  rows={2}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[14px] focus:outline-none focus:border-sakura-400 transition-colors resize-none"
-                />
-              </div>
-            </div>
-
-            {/* Price breakdown - upgrades per unit */}
-            <div className="bg-sakura-50/50 rounded-lg p-3 space-y-1.5">
-              {/* Unit price breakdown */}
-              {selectedUpgrades.length > 0 ? (
-                <>
-                  {/* Show unit price composition */}
-                  <div className="text-[12px] text-gray-500 mb-1">
-                    单价：套餐 ¥{(plan.price / 100).toLocaleString()} + 增值 ¥{(upgradesPerUnit / 100).toLocaleString()} = ¥{(unitPriceWithUpgrades / 100).toLocaleString()}/{unitLabel}
-                  </div>
-
-                  {/* Upgrades detail */}
-                  <div className="text-[11px] text-gray-400 pl-2 border-l border-sakura-200 space-y-0.5 mb-2">
-                    {selectedUpgrades.map((upgrade) => (
-                      <div key={upgrade.id} className="flex justify-between">
-                        <span>{upgrade.icon} {upgrade.name}</span>
-                        <span>+¥{(upgrade.price / 100).toLocaleString()}/{unitLabel}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Total calculation */}
-                  <div className="flex justify-between text-[13px]">
-                    <span className="text-gray-600">
-                      ¥{(unitPriceWithUpgrades / 100).toLocaleString()} × {quantity} {unitLabel}
-                    </span>
-                    <span className="text-gray-900">
-                      ¥{(subtotal / 100).toLocaleString()}
-                    </span>
-                  </div>
-                </>
-              ) : (
-                <div className="flex justify-between text-[13px]">
-                  <span className="text-gray-600">
-                    ¥{(plan.price / 100).toLocaleString()} × {quantity} {unitLabel}
-                  </span>
-                  <span className="text-gray-900">
-                    ¥{(subtotal / 100).toLocaleString()}
-                  </span>
-                </div>
-              )}
-
-              {/* Total line */}
-              <div className="flex justify-between text-[14px] pt-1.5 border-t border-sakura-200/50">
-                <span className="font-medium text-gray-900">合计</span>
-                <span className="font-semibold text-sakura-600">
-                  ¥{(subtotal / 100).toLocaleString()}
-                </span>
-              </div>
-
-              {/* Deposit info */}
-              {deposit > 0 && (
-                <div className="flex justify-between text-[12px] text-gray-500">
-                  <span>定金 ¥{(deposit / 100).toLocaleString()}</span>
-                  <span>到店支付 ¥{(balance / 100).toLocaleString()}</span>
-                </div>
-              )}
-            </div>
+            {/* Price breakdown - using shared component in single mode */}
+            <PriceBreakdown
+              mode="single"
+              planName={plan.name}
+              planPrice={plan.price}
+              quantity={quantity}
+              unitLabel={unitLabel}
+              upgrades={upgrades}
+              deposit={deposit}
+              compact
+            />
 
             {/* Error message */}
             {error && (
@@ -365,7 +292,7 @@ export default function InstantBookingModal({
           </div>
 
           {/* Footer - compact */}
-          <div className="sticky bottom-0 bg-white border-t border-gray-100 px-4 py-3 rounded-b-xl">
+          <div className="sticky bottom-0 bg-white border-t border-wabi-100 px-4 py-3 rounded-b-xl">
             <button
               onClick={handleSubmit}
               disabled={!isFormValid || isSubmitting}
