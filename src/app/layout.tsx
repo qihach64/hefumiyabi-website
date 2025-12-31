@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Noto_Sans_SC, Noto_Serif_SC, Shippori_Mincho } from "next/font/google";
+import { Toaster } from "sonner";
 import "./globals.css";
 import SessionProvider from "@/components/providers/SessionProvider";
 
@@ -41,6 +42,24 @@ export default function RootLayout({
     <html lang="zh-CN" suppressHydrationWarning>
       <body className={`${notoSansSC.variable} ${notoSerifSC.variable} ${shipporiMincho.variable} font-sans antialiased`}>
         <SessionProvider>{children}</SessionProvider>
+        <Toaster
+          position="top-center"
+          toastOptions={{
+            style: {
+              background: 'white',
+              border: '1px solid var(--wabi-200)',
+              color: 'var(--wabi-800)',
+              borderRadius: '12px',
+              fontFamily: 'var(--font-sans)',
+              fontSize: '15px',
+              padding: '12px 16px',
+              boxShadow: '0 4px 12px -2px rgba(0, 0, 0, 0.08)',
+            },
+            classNames: {
+              success: '[&>svg]:text-sakura-500',
+            },
+          }}
+        />
       </body>
     </html>
   );

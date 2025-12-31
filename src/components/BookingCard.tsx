@@ -14,6 +14,7 @@ import {
   Users,
   Package,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui";
 import InstantBookingModal from "@/components/InstantBookingModal";
 import { useCartStore, type CartItemInput } from "@/store/cart";
@@ -144,6 +145,7 @@ export default function BookingCard({
   const handleAddToCart = () => {
     if (isInCart) return; // 防止重复添加
     addItem(buildCartItem());
+    toast.success("已加入购物车");
   };
 
   // Instant booking handler
