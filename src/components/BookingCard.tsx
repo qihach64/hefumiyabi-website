@@ -57,6 +57,10 @@ export default function BookingCard({
 
   // Cart store
   const addItem = useCartStore((state) => state.addItem);
+  const items = useCartStore((state) => state.items);
+
+  // 持久化状态：是否已在购物车
+  const isInCart = items.some((item) => item.planId === plan.id);
 
   // Form state
   const [date, setDate] = useState("");
@@ -67,7 +71,6 @@ export default function BookingCard({
   // Modal state
   const [showMobileModal, setShowMobileModal] = useState(false);
   const [showInstantBookingModal, setShowInstantBookingModal] = useState(false);
-  const [addedToCart, setAddedToCart] = useState(false);
 
   // Pricing unit info
   const pricingUnit = plan.pricingUnit || "person";
@@ -139,9 +142,8 @@ export default function BookingCard({
 
   // Add to cart handler
   const handleAddToCart = () => {
+    if (isInCart) return; // 防止重复添加
     addItem(buildCartItem());
-    setAddedToCart(true);
-    setTimeout(() => setAddedToCart(false), 2000);
   };
 
   // Instant booking handler
@@ -351,17 +353,17 @@ export default function BookingCard({
         {/* 次按钮：加入购物车 */}
         <button
           onClick={handleAddToCart}
-          disabled={!isFormValid}
+          disabled={!isFormValid || isInCart}
           className={`w-full font-semibold py-3 px-6 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 ${
-            addedToCart
-              ? "bg-green-500 text-white"
+            isInCart
+              ? "bg-sakura-100 text-sakura-700 cursor-default"
               : "bg-wabi-50 text-sakura-700 hover:bg-sakura-50 disabled:opacity-50 disabled:cursor-not-allowed"
           }`}
         >
-          {addedToCart ? (
+          {isInCart ? (
             <>
               <Check className="w-4 h-4" />
-              已加入购物车
+              已在购物车
             </>
           ) : (
             <>
