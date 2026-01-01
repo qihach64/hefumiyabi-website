@@ -386,10 +386,10 @@ export default function PlanDetailClient({ plan, store, mapData }: PlanDetailCli
               onRemoveUpgrade={handleRemoveUpgrade}
             />
 
-            <JourneyTimeline duration={plan.duration} />
-
             {/* 店铺位置 - 地图展示 */}
             <StoreLocationCard store={store} />
+
+            <JourneyTimeline duration={plan.duration} />
 
             <SocialProof />
           </div>
