@@ -76,11 +76,9 @@ interface Plan {
 interface RelatedPlan {
   id: string;
   name: string;
-  nameEn?: string | null;
   price: number;
   originalPrice?: number | null;
   imageUrl?: string | null;
-  region?: string | null;
   isCampaign?: boolean;
   includes?: string[];
 }

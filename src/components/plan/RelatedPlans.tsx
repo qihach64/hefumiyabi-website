@@ -7,11 +7,9 @@ import PlanCard from "@/components/PlanCard";
 interface RelatedPlan {
   id: string;
   name: string;
-  nameEn?: string | null;
   price: number;
   originalPrice?: number | null;
   imageUrl?: string | null;
-  region?: string | null;
   isCampaign?: boolean;
   includes?: string[];
 }
@@ -97,11 +95,9 @@ export default function RelatedPlans({
                 plan={{
                   id: plan.id,
                   name: plan.name,
-                  nameEn: plan.nameEn ?? undefined,
                   price: plan.price,
                   originalPrice: plan.originalPrice ?? undefined,
                   imageUrl: plan.imageUrl ?? undefined,
-                  region: plan.region ?? undefined,
                   isCampaign: plan.isCampaign,
                   includes: plan.includes,
                 }}
@@ -122,11 +118,9 @@ export default function RelatedPlans({
               plan={{
                 id: plan.id,
                 name: plan.name,
-                nameEn: plan.nameEn ?? undefined,
                 price: plan.price,
                 originalPrice: plan.originalPrice ?? undefined,
                 imageUrl: plan.imageUrl ?? undefined,
-                region: plan.region ?? undefined,
                 isCampaign: plan.isCampaign,
                 includes: plan.includes,
               }}

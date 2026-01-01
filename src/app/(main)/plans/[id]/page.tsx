@@ -153,11 +153,9 @@ export default async function PlanDetailPage({
   let relatedPlans: {
     id: string;
     name: string;
-    nameEn: string | null;
     price: number;
     originalPrice: number | null;
     imageUrl: string | null;
-    region: string | null;
     isCampaign: boolean;
     includes: string[];
   }[] = [];
@@ -172,11 +170,9 @@ export default async function PlanDetailPage({
       select: {
         id: true,
         name: true,
-        nameEn: true,
         price: true,
         originalPrice: true,
         imageUrl: true,
-        region: true,
         isCampaign: true,
         includes: true,
       },
