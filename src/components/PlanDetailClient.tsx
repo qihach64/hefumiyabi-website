@@ -11,6 +11,7 @@ import AITryOnSection from "@/components/plan/AITryOnSection";
 import UpgradeServices from "@/components/plan/UpgradeServices";
 import SocialProof from "@/components/plan/SocialProof";
 import JourneyTimeline from "@/components/plan/JourneyTimeline";
+import StoreLocationCard from "@/components/plan/StoreLocationCard";
 import { useSearchBar } from "@/contexts/SearchBarContext";
 import type { MapData } from "@/components/plan/InteractiveKimonoMap/types";
 
@@ -38,6 +39,13 @@ interface Theme {
 interface Store {
   id: string;
   name: string;
+  city?: string | null;
+  address?: string | null;
+  addressEn?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  phone?: string | null;
+  openingHours?: unknown;
 }
 
 interface Plan {
@@ -379,6 +387,10 @@ export default function PlanDetailClient({ plan, store, mapData }: PlanDetailCli
             />
 
             <JourneyTimeline duration={plan.duration} />
+
+            {/* 店铺位置 - 地图展示 */}
+            <StoreLocationCard store={store} />
+
             <SocialProof />
           </div>
 

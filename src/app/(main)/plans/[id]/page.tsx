@@ -46,6 +46,12 @@ export default async function PlanDetailPage({
               id: true,
               name: true,
               city: true,
+              address: true,
+              addressEn: true,
+              latitude: true,
+              longitude: true,
+              phone: true,
+              openingHours: true,
             },
           },
         },
@@ -57,9 +63,22 @@ export default async function PlanDetailPage({
     notFound();
   }
 
+  // Store type with location data
+  type StoreWithLocation = {
+    id: string;
+    name: string;
+    city?: string | null;
+    address?: string | null;
+    addressEn?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    phone?: string | null;
+    openingHours?: unknown;
+  };
+
   // Determine which store to use
   // Priority: 1. URL param (from search) -> 2. First available store -> 3. Default placeholder
-  let store: { id: string; name: string };
+  let store: StoreWithLocation;
 
   if (storeId) {
     // Try to find the store from planStores
@@ -68,26 +87,61 @@ export default async function PlanDetailPage({
       store = {
         id: matchedStore.store.id,
         name: matchedStore.store.name,
+        city: matchedStore.store.city,
+        address: matchedStore.store.address,
+        addressEn: matchedStore.store.addressEn,
+        latitude: matchedStore.store.latitude,
+        longitude: matchedStore.store.longitude,
+        phone: matchedStore.store.phone,
+        openingHours: matchedStore.store.openingHours,
       };
     } else {
       // Fallback: fetch the store directly (might be valid store not in planStores)
       const storeData = await prisma.store.findUnique({
         where: { id: storeId },
-        select: { id: true, name: true },
+        select: {
+          id: true,
+          name: true,
+          city: true,
+          address: true,
+          addressEn: true,
+          latitude: true,
+          longitude: true,
+          phone: true,
+          openingHours: true,
+        },
       });
       store = storeData || { id: "default", name: "请选择店铺" };
     }
   } else if (plan.planStores.length > 0) {
     // Use first available store
+    const firstStore = plan.planStores[0].store;
     store = {
-      id: plan.planStores[0].store.id,
-      name: plan.planStores[0].store.name,
+      id: firstStore.id,
+      name: firstStore.name,
+      city: firstStore.city,
+      address: firstStore.address,
+      addressEn: firstStore.addressEn,
+      latitude: firstStore.latitude,
+      longitude: firstStore.longitude,
+      phone: firstStore.phone,
+      openingHours: firstStore.openingHours,
     };
   } else {
     // Fallback: use plan's storeName field or default
     const defaultStore = await prisma.store.findFirst({
       where: { isActive: true },
-      select: { id: true, name: true },
+      select: {
+        id: true,
+        name: true,
+        city: true,
+        address: true,
+        addressEn: true,
+        latitude: true,
+        longitude: true,
+        phone: true,
+        openingHours: true,
+      },
     });
     store = defaultStore || { id: "default", name: plan.storeName || "店铺" };
   }
