@@ -85,36 +85,14 @@ export default function RelatedPlans({
         )}
       </div>
 
-      {/* 套餐网格 - 移动端横向滚动，桌面端网格 */}
-      <div className="relative">
-        {/* 移动端横向滚动 */}
-        <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide md:hidden -mx-4 px-4">
-          {plans.map((plan) => (
-            <div key={plan.id} className="flex-shrink-0 w-[200px]">
-              <PlanCard
-                plan={{
-                  id: plan.id,
-                  name: plan.name,
-                  price: plan.price,
-                  originalPrice: plan.originalPrice ?? undefined,
-                  imageUrl: plan.imageUrl ?? undefined,
-                  isCampaign: plan.isCampaign,
-                  includes: plan.includes,
-                }}
-                variant="interactive"
-                aspectRatio="square"
-                themeSlug={themeSlug}
-                themeColor={accentColor}
-              />
-            </div>
-          ))}
-        </div>
-
-        {/* 桌面端网格 */}
-        <div className="hidden md:grid md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {plans.slice(0, 4).map((plan) => (
+      {/* 套餐横向滚动 - 复用主页样式 */}
+      <div className="flex gap-3 md:gap-4 overflow-x-auto scroll-smooth pb-4 -mb-4 scrollbar-hide snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0">
+        {plans.map((plan) => (
+          <div
+            key={plan.id}
+            className="snap-start flex-shrink-0 w-[75vw] max-w-[280px] sm:w-[280px] md:w-[260px]"
+          >
             <PlanCard
-              key={plan.id}
               plan={{
                 id: plan.id,
                 name: plan.name,
@@ -124,13 +102,13 @@ export default function RelatedPlans({
                 isCampaign: plan.isCampaign,
                 includes: plan.includes,
               }}
-              variant="interactive"
+              variant="soft"
               aspectRatio="square"
               themeSlug={themeSlug}
               themeColor={accentColor}
             />
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
     </section>
   );
