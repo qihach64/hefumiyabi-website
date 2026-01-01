@@ -158,10 +158,13 @@ export default async function PlanDetailPage({
     imageUrl: string | null;
     isCampaign: boolean;
     includes: string[];
+    merchantName: string;
+    region: string;
+    planTags: { tag: { id: string; code: string; name: string; icon: string | null; color: string | null } }[];
   }[] = [];
 
   if (plan.themeId) {
-    relatedPlans = await prisma.rentalPlan.findMany({
+    const rawRelatedPlans = await prisma.rentalPlan.findMany({
       where: {
         themeId: plan.themeId,
         id: { not: plan.id },
@@ -175,6 +178,39 @@ export default async function PlanDetailPage({
         imageUrl: true,
         isCampaign: true,
         includes: true,
+        region: true,
+        storeName: true,
+        merchant: {
+          select: {
+            businessName: true,
+          },
+        },
+        planTags: {
+          include: {
+            tag: {
+              select: {
+                id: true,
+                code: true,
+                name: true,
+                icon: true,
+                color: true,
+              },
+            },
+          },
+        },
+        planComponents: {
+          include: {
+            merchantComponent: {
+              include: {
+                template: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
       orderBy: [
         { isFeatured: "desc" },
@@ -182,6 +218,22 @@ export default async function PlanDetailPage({
       ],
       take: 8,
     });
+
+    // Transform to match expected interface
+    relatedPlans = rawRelatedPlans.map((p) => ({
+      id: p.id,
+      name: p.name,
+      price: p.price,
+      originalPrice: p.originalPrice,
+      imageUrl: p.imageUrl,
+      isCampaign: p.isCampaign,
+      includes: p.planComponents.length > 0
+        ? p.planComponents.map((pc) => pc.merchantComponent.template.name)
+        : p.includes,
+      merchantName: p.merchant?.businessName || p.storeName || "",
+      region: p.region || "",
+      planTags: p.planTags,
+    }));
   }
 
   return (

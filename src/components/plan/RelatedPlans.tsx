@@ -4,6 +4,14 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import PlanCard from "@/components/PlanCard";
 
+interface Tag {
+  id: string;
+  code: string;
+  name: string;
+  icon: string | null;
+  color: string | null;
+}
+
 interface RelatedPlan {
   id: string;
   name: string;
@@ -12,6 +20,9 @@ interface RelatedPlan {
   imageUrl?: string | null;
   isCampaign?: boolean;
   includes?: string[];
+  merchantName?: string;
+  region?: string;
+  planTags?: { tag: Tag }[];
 }
 
 interface RelatedPlansProps {
@@ -101,6 +112,9 @@ export default function RelatedPlans({
                 imageUrl: plan.imageUrl ?? undefined,
                 isCampaign: plan.isCampaign,
                 includes: plan.includes,
+                merchantName: plan.merchantName,
+                region: plan.region,
+                planTags: plan.planTags,
               }}
               variant="soft"
               aspectRatio="square"

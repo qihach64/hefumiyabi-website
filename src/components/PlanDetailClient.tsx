@@ -73,6 +73,14 @@ interface Plan {
   maxQuantity?: number | null;
 }
 
+interface Tag {
+  id: string;
+  code: string;
+  name: string;
+  icon: string | null;
+  color: string | null;
+}
+
 interface RelatedPlan {
   id: string;
   name: string;
@@ -81,6 +89,9 @@ interface RelatedPlan {
   imageUrl?: string | null;
   isCampaign?: boolean;
   includes?: string[];
+  merchantName?: string;
+  region?: string;
+  planTags?: { tag: Tag }[];
 }
 
 interface PlanDetailClientProps {
