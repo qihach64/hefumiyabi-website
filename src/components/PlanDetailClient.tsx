@@ -12,6 +12,7 @@ import UpgradeServices from "@/components/plan/UpgradeServices";
 import SocialProof from "@/components/plan/SocialProof";
 import JourneyTimeline from "@/components/plan/JourneyTimeline";
 import StoreLocationCard from "@/components/plan/StoreLocationCard";
+import RelatedPlans from "@/components/plan/RelatedPlans";
 import { useSearchBar } from "@/contexts/SearchBarContext";
 import type { MapData } from "@/components/plan/InteractiveKimonoMap/types";
 
@@ -72,13 +73,26 @@ interface Plan {
   maxQuantity?: number | null;
 }
 
+interface RelatedPlan {
+  id: string;
+  name: string;
+  nameEn?: string | null;
+  price: number;
+  originalPrice?: number | null;
+  imageUrl?: string | null;
+  region?: string | null;
+  isCampaign?: boolean;
+  includes?: string[];
+}
+
 interface PlanDetailClientProps {
   plan: Plan;
   store: Store; // Store context from search/URL
   mapData?: MapData | null;
+  relatedPlans?: RelatedPlan[];
 }
 
-export default function PlanDetailClient({ plan, store, mapData }: PlanDetailClientProps) {
+export default function PlanDetailClient({ plan, store, mapData, relatedPlans }: PlanDetailClientProps) {
   const [mounted, setMounted] = useState(false);
   const [isInFullWidthSection, setIsInFullWidthSection] = useState(true);
   const [selectedUpgrades, setSelectedUpgrades] = useState<SelectedUpgrade[]>([]);
@@ -420,6 +434,15 @@ export default function PlanDetailClient({ plan, store, mapData }: PlanDetailCli
             </div>
           </div>
         </div>
+
+        {/* 猜你喜欢 - 同主题相关套餐 */}
+        {relatedPlans && relatedPlans.length > 0 && (
+          <RelatedPlans
+            plans={relatedPlans}
+            themeName={plan.theme?.name}
+            themeSlug={plan.theme?.slug}
+          />
+        )}
       </div>
 
       {/* MiniBookingBar */}

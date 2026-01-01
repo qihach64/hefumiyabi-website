@@ -149,5 +149,51 @@ export default async function PlanDetailPage({
   // Get plan-specific hotspot map data
   const mapData = await getPlanMapData(id);
 
-  return <PlanDetailClient plan={plan} store={store} mapData={mapData} />;
+  // Fetch related plans from the same theme (excluding current plan)
+  let relatedPlans: {
+    id: string;
+    name: string;
+    nameEn: string | null;
+    price: number;
+    originalPrice: number | null;
+    imageUrl: string | null;
+    region: string | null;
+    isCampaign: boolean;
+    includes: string[];
+  }[] = [];
+
+  if (plan.themeId) {
+    relatedPlans = await prisma.rentalPlan.findMany({
+      where: {
+        themeId: plan.themeId,
+        id: { not: plan.id },
+        isActive: true,
+      },
+      select: {
+        id: true,
+        name: true,
+        nameEn: true,
+        price: true,
+        originalPrice: true,
+        imageUrl: true,
+        region: true,
+        isCampaign: true,
+        includes: true,
+      },
+      orderBy: [
+        { isFeatured: "desc" },
+        { currentBookings: "desc" },
+      ],
+      take: 8,
+    });
+  }
+
+  return (
+    <PlanDetailClient
+      plan={plan}
+      store={store}
+      mapData={mapData}
+      relatedPlans={relatedPlans}
+    />
+  );
 }
