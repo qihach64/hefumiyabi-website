@@ -22,6 +22,7 @@ const updatePlanSchema = z.object({
   merchantComponentIds: z.array(z.string()).optional(), // 简化版：只传商户组件 ID 数组
   planComponents: z.array(planComponentSchema).optional(), // 完整版：传组件配置
   imageUrl: z.union([z.string().url(), z.literal("")]).optional().nullable().transform(val => val || null),
+  images: z.array(z.string().url()).optional().default([]), // 多图支持
   storeName: z.string().optional().nullable(),
   region: z.string().optional().nullable(),
   themeId: z.string().optional().nullable(),
@@ -204,6 +205,7 @@ export async function PATCH(
           originalPrice: validatedData.originalPrice || null,
           includes: [], // 已废弃，使用 PlanComponent
           imageUrl: validatedData.imageUrl || null,
+          images: validatedData.images || [],
           storeName: validatedData.storeName || null,
           region: validatedData.region || null,
           themeId: validatedData.themeId || null,

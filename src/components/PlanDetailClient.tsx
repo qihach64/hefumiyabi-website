@@ -60,6 +60,7 @@ interface Plan {
   description?: string | null;
   includes: string[];
   imageUrl?: string | null;
+  images?: string[]; // 多图支持
   region?: string | null;
   isCampaign?: boolean;
   availableUntil?: Date | null;
@@ -336,6 +337,13 @@ export default function PlanDetailClient({ plan, store, mapData, relatedPlans }:
               imageUrl: plan.imageUrl ?? undefined,
               isCampaign: plan.isCampaign,
             }}
+            officialImages={
+              plan.images && plan.images.length > 0
+                ? plan.images
+                : plan.imageUrl
+                  ? [plan.imageUrl]
+                  : undefined
+            }
           />
 
           {/* 套餐简介 - 更大留白 */}

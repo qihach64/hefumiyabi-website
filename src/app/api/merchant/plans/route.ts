@@ -15,6 +15,7 @@ const createPlanSchema = z.object({
   duration: z.number().int().positive("时长必须大于0"),
   includes: z.array(z.string()),
   imageUrl: z.union([z.string().url(), z.literal("")]).optional().nullable().transform(val => val || ""),
+  images: z.array(z.string().url()).optional().default([]), // 多图支持
   storeName: z.string().optional().nullable().transform(val => val || ""),
   region: z.string().optional().nullable().transform(val => val || ""),
   tags: z.array(z.string()),
@@ -66,6 +67,7 @@ export async function POST(request: Request) {
         duration: validatedData.duration,
         includes: validatedData.includes,
         imageUrl: validatedData.imageUrl || null,
+        images: validatedData.images || [],
         storeName: validatedData.storeName || null,
         region: validatedData.region || null,
         tags: validatedData.tags,

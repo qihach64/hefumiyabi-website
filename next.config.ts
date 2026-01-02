@@ -11,14 +11,30 @@ const nextConfig: NextConfig = {
   },
   images: {
     remotePatterns: [
+      // AWS S3 + CloudFront (新图片系统)
+      {
+        protocol: "https",
+        hostname: "*.cloudfront.net",
+      },
+      {
+        protocol: "https",
+        hostname: "*.s3.ap-northeast-1.amazonaws.com",
+      },
+      {
+        protocol: "https",
+        hostname: "*.s3.amazonaws.com",
+      },
+      // 占位图服务
       {
         protocol: "https",
         hostname: "placehold.co",
       },
+      // Supabase (AI 试穿结果，迁移前保留)
       {
         protocol: "https",
         hostname: "*.supabase.co",
       },
+      // 第三方图片服务
       {
         protocol: "https",
         hostname: "res.cloudinary.com",

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button, Badge } from "@/components/ui";
 import { Save, Loader2, X, Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
+import ImageUploader from "@/components/ImageUploader";
 import PlanCardPreview from "@/components/PlanCard/PlanCardPreview";
 import PlanComponentEditor, { ComponentConfig } from "./PlanComponentEditor";
 
@@ -79,6 +79,7 @@ interface PlanEditFormProps {
     originalPrice?: number | null;
     planComponents?: PlanComponent[];
     imageUrl?: string | null;
+    images?: string[];
     storeName?: string | null;
     region?: string | null;
     themeId?: string | null;
@@ -189,6 +190,7 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
     price: plan.price / 100, // 转换为元
     originalPrice: plan.originalPrice ? plan.originalPrice / 100 : "",
     imageUrl: plan.imageUrl || "",
+    images: plan.images || [],
     storeName: plan.storeName || "",
     region: plan.region || "",
     isActive: plan.isActive,
@@ -223,6 +225,7 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
             hotmapLabelPosition: config.hotmapLabelPosition,
           })),
           imageUrl: formData.imageUrl || null,
+          images: formData.images || [],
           storeName: formData.storeName || null,
           region: formData.region || null,
           themeId: selectedThemeId,
@@ -477,35 +480,36 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
         {/* 图片 */}
         <div className="bg-white rounded-2xl border border-gray-200 p-6">
           <h2 className="text-lg font-bold text-gray-900 mb-5">套餐图片</h2>
+          <p className="text-sm text-gray-600 mb-4">
+            上传多张套餐图片，选择一张作为卡片主图，其余图片将在详情页展示
+          </p>
 
-          <div className="flex gap-4 items-start">
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                图片URL
-              </label>
-              <input
-                type="url"
-                value={formData.imageUrl}
-                onChange={(e) =>
-                  setFormData({ ...formData, imageUrl: e.target.value })
-                }
-                placeholder="https://example.com/image.jpg"
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sakura-500 focus:border-transparent"
-              />
-            </div>
-
-            {/* 图片预览缩略图 */}
-            {formData.imageUrl && (
-              <div className="relative w-24 h-24 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0">
-                <Image
-                  src={formData.imageUrl}
-                  alt="套餐图片预览"
-                  fill
-                  className="object-cover"
-                />
-              </div>
-            )}
-          </div>
+          <ImageUploader
+            category="plan"
+            entityId={plan.id}
+            purpose="main"
+            multiple={true}
+            maxFiles={10}
+            value={formData.images}
+            mainImage={formData.imageUrl}
+            onChange={(urls) => {
+              setFormData(prev => {
+                // 如果主图不在新的图片列表中，重置主图为第一张
+                const newMainImage = prev.imageUrl && urls.includes(prev.imageUrl)
+                  ? prev.imageUrl
+                  : urls[0] || "";
+                return { ...prev, images: urls, imageUrl: newMainImage };
+              });
+            }}
+            onMainImageChange={(url) => {
+              setFormData(prev => ({ ...prev, imageUrl: url }));
+            }}
+            onError={(err) => setError(err)}
+            aspectRatio="3:4"
+          />
+          <p className="mt-3 text-xs text-gray-500">
+            建议尺寸：800×1067像素 (3:4比例)，支持 JPG、PNG、WebP 格式，最大 10MB，最多 10 张
+          </p>
         </div>
 
         {/* 套餐内容配置 - v10.1 组件选择和热点编辑 */}

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui";
 import { Save, Loader2, Plus, X } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
+import ImageUploader from "@/components/ImageUploader";
 
 const PLAN_CATEGORIES = [
   { value: "LADIES", label: "女士套餐" },
@@ -33,6 +33,7 @@ export default function PlanCreateForm() {
     duration: "240", // 默认4小时
     includes: ["和服租赁", "专业着装服务", "发型设计", "配饰提供"],
     imageUrl: "",
+    images: [] as string[],
     storeName: "",
     region: "",
     tags: [],
@@ -347,38 +348,35 @@ export default function PlanCreateForm() {
       {/* 图片 */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6">
         <h2 className="text-xl font-bold text-gray-900 mb-6">套餐图片</h2>
+        <p className="text-sm text-gray-600 mb-4">
+          上传多张套餐图片，选择一张作为卡片主图，其余图片将在详情页展示
+        </p>
 
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              图片URL
-            </label>
-            <input
-              type="url"
-              value={formData.imageUrl}
-              onChange={(e) =>
-                setFormData({ ...formData, imageUrl: e.target.value })
-              }
-              placeholder="https://example.com/image.jpg"
-              className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sakura-500 focus:border-transparent"
-            />
-            <p className="mt-1 text-xs text-gray-500">
-              建议尺寸：800x600像素，支持 JPG、PNG 格式
-            </p>
-          </div>
-
-          {/* 图片预览 */}
-          {formData.imageUrl && (
-            <div className="relative w-full h-64 bg-gray-100 rounded-xl overflow-hidden">
-              <Image
-                src={formData.imageUrl}
-                alt="套餐图片预览"
-                fill
-                className="object-cover"
-              />
-            </div>
-          )}
-        </div>
+        <ImageUploader
+          category="plan"
+          purpose="main"
+          multiple={true}
+          maxFiles={10}
+          value={formData.images}
+          mainImage={formData.imageUrl}
+          onChange={(urls) => {
+            setFormData(prev => {
+              // 如果主图不在新的图片列表中，重置主图为第一张
+              const newMainImage = prev.imageUrl && urls.includes(prev.imageUrl)
+                ? prev.imageUrl
+                : urls[0] || "";
+              return { ...prev, images: urls, imageUrl: newMainImage };
+            });
+          }}
+          onMainImageChange={(url) => {
+            setFormData(prev => ({ ...prev, imageUrl: url }));
+          }}
+          onError={(err) => setError(err)}
+          aspectRatio="3:4"
+        />
+        <p className="mt-3 text-xs text-gray-500">
+          建议尺寸：800×1067像素 (3:4比例)，支持 JPG、PNG、WebP 格式，最大 10MB，最多 10 张
+        </p>
       </div>
 
       {/* 包含内容 */}

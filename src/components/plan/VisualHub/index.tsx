@@ -59,10 +59,12 @@ export default function VisualHub({
   const tryOnResult = mounted ? getTryOnResult(plan.id) : null;
   const hasTryOn = !!tryOnResult;
 
-  // Mock 数据 - 后期替换为真实数据
-  const mockOfficialImages = officialImages || (plan.imageUrl
-    ? [plan.imageUrl, plan.imageUrl, plan.imageUrl, plan.imageUrl, plan.imageUrl, plan.imageUrl]
-    : []);
+  // 使用真实图片数据，如无则使用主图作为唯一图片
+  const mockOfficialImages = officialImages && officialImages.length > 0
+    ? officialImages
+    : plan.imageUrl
+      ? [plan.imageUrl]
+      : [];
 
   const mockCustomerPhotos = customerPhotos || [
     { url: plan.imageUrl || "", author: "小红", date: "2024-12" },
@@ -291,7 +293,85 @@ function OfficialGallery({
     );
   }
 
-  // Airbnb 风格 2+4 网格
+  // 单图 - 全宽展示
+  if (images.length === 1) {
+    return (
+      <div
+        className="relative h-[400px] md:h-[520px] cursor-pointer group"
+        onClick={() => onImageClick(0)}
+      >
+        <Image
+          src={images[0]}
+          alt={`${planName} - 主图`}
+          fill
+          className="object-cover group-hover:brightness-95 transition-all duration-300"
+          priority
+        />
+      </div>
+    );
+  }
+
+  // 2张图 - 左右对半
+  if (images.length === 2) {
+    return (
+      <div className="grid grid-cols-2 gap-2 h-[400px] md:h-[480px]">
+        {images.map((img, idx) => (
+          <div
+            key={idx}
+            className="relative cursor-pointer group"
+            onClick={() => onImageClick(idx)}
+          >
+            <Image
+              src={img}
+              alt={`${planName} - 图片${idx + 1}`}
+              fill
+              className="object-cover group-hover:brightness-95 transition-all duration-300"
+              priority={idx === 0}
+            />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // 3-4张图 - 左大右小
+  if (images.length <= 4) {
+    return (
+      <div className="grid grid-cols-2 gap-2 h-[400px] md:h-[480px]">
+        {/* 左侧大图 */}
+        <div
+          className="row-span-2 relative group cursor-pointer"
+          onClick={() => onImageClick(0)}
+        >
+          <Image
+            src={images[0]}
+            alt={`${planName} - 图片1`}
+            fill
+            className="object-cover group-hover:brightness-95 transition-all duration-300"
+            priority
+          />
+        </div>
+
+        {/* 右侧小图 */}
+        {images.slice(1).map((img, idx) => (
+          <div
+            key={idx}
+            className="relative cursor-pointer group"
+            onClick={() => onImageClick(idx + 1)}
+          >
+            <Image
+              src={img}
+              alt={`${planName} - 图片${idx + 2}`}
+              fill
+              className="object-cover group-hover:brightness-95 transition-all duration-300"
+            />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // 5张及以上 - Airbnb 风格 2+4 网格
   return (
     <div className="grid grid-cols-4 gap-2 h-[400px] md:h-[480px]">
       {/* 左侧大图 */}
