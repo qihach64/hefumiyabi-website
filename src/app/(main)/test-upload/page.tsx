@@ -73,7 +73,7 @@ export default function TestUploadPage() {
         <p>测试说明：</p>
         <ul className="list-disc list-inside mt-2 space-y-1">
           <li>支持 JPEG, PNG, WebP 格式</li>
-          <li>最大文件大小 10MB</li>
+          <li>最大文件大小 20MB</li>
           <li>最多上传 5 张图片</li>
           <li>上传后图片通过 CloudFront CDN 访问</li>
         </ul>

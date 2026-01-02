@@ -60,8 +60,8 @@ export const ALLOWED_IMAGE_TYPES = [
 
 export type AllowedImageType = (typeof ALLOWED_IMAGE_TYPES)[number];
 
-// 最大文件大小 (10MB)
-export const MAX_FILE_SIZE = 10 * 1024 * 1024;
+// 最大文件大小 (20MB)
+export const MAX_FILE_SIZE = 20 * 1024 * 1024;
 
 // 图片尺寸变体
 export const IMAGE_VARIANTS = {

@@ -375,7 +375,7 @@ export default function PlanCreateForm() {
           aspectRatio="3:4"
         />
         <p className="mt-3 text-xs text-gray-500">
-          建议尺寸：800×1067像素 (3:4比例)，支持 JPG、PNG、WebP 格式，最大 10MB，最多 10 张
+          建议尺寸：800×1067像素 (3:4比例)，支持 JPG、PNG、WebP 格式，最大 20MB，最多 10 张
         </p>
       </div>
 

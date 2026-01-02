@@ -36,7 +36,7 @@ interface ImageUploaderProps {
   disabled?: boolean;
 }
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 export default function ImageUploader({
@@ -57,6 +57,7 @@ export default function ImageUploader({
 }: ImageUploaderProps) {
   const [images, setImages] = useState<UploadedImage[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 已有图片
@@ -186,6 +187,11 @@ export default function ImageUploader({
     });
 
     if (validationErrors.length > 0) {
+      // 显示内联错误提示
+      setValidationErrors(validationErrors);
+      // 5秒后自动清除
+      setTimeout(() => setValidationErrors([]), 5000);
+      // 同时通知父组件
       onError?.(validationErrors.join('\n'));
     }
 
@@ -295,8 +301,35 @@ export default function ImageUploader({
   // 确定当前主图（如果未设置，使用第一张）
   const currentMainImage = mainImage || existingUrls[0] || '';
 
+  // 清除单条错误
+  const dismissError = (index: number) => {
+    setValidationErrors(prev => prev.filter((_, i) => i !== index));
+  };
+
   return (
     <div className={`space-y-4 ${className}`}>
+      {/* 验证错误提示 */}
+      {validationErrors.length > 0 && (
+        <div className="space-y-2">
+          {validationErrors.map((error, index) => (
+            <div
+              key={index}
+              className="flex items-start gap-3 p-3 bg-red-50 border border-red-200 rounded-lg text-[14px] animate-in fade-in slide-in-from-top-2 duration-300"
+            >
+              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+              <span className="flex-1 text-red-700">{error}</span>
+              <button
+                type="button"
+                onClick={() => dismissError(index)}
+                className="p-1 hover:bg-red-100 rounded transition-colors"
+              >
+                <X className="w-4 h-4 text-red-500" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* 图片网格 */}
       {(existingUrls.length > 0 || images.length > 0) && (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
@@ -449,7 +482,7 @@ export default function ImageUploader({
             </div>
 
             <p className="text-xs text-gray-400">
-              支持 JPEG, PNG, WebP，最大 10MB
+              支持 JPEG, PNG, WebP，最大 20MB
               {multiple && maxFiles > 1 && (
                 <span>，最多 {maxFiles} 张</span>
               )}

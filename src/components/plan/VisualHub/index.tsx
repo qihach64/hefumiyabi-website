@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { Camera, Users, Sparkles, Scissors, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
+import { Camera, Users, Sparkles, Scissors, ChevronLeft, ChevronRight, RotateCcw, Grid3X3 } from "lucide-react";
 import ImageGalleryModal from "@/components/ImageGalleryModal";
 import TryOnModal from "@/components/TryOnModal";
 import ImageComparison from "@/components/ImageComparison";
@@ -274,7 +274,8 @@ export default function VisualHub({
 }
 
 // ============================================
-// 子组件：官方图片画廊
+// 子组件：官方图片画廊 - "紧凑型全宽瀑布流" 布局
+// 4列瀑布流 + 最多8张 + 底部渐变入口
 // ============================================
 function OfficialGallery({
   images,
@@ -285,132 +286,96 @@ function OfficialGallery({
   planName: string;
   onImageClick: (index: number) => void;
 }) {
+  // 最大显示数量
+  const MAX_DISPLAY = 8;
+
+  // 空状态
   if (images.length === 0) {
     return (
-      <div className="h-[400px] flex items-center justify-center bg-sakura-50">
+      <div className="h-[300px] flex items-center justify-center bg-wabi-50 rounded-2xl">
         <span className="text-8xl opacity-20">👘</span>
       </div>
     );
   }
 
-  // 单图 - 全宽展示
+  // 单图 - 居中限宽展示
   if (images.length === 1) {
     return (
-      <div
-        className="relative h-[400px] md:h-[520px] cursor-pointer group"
-        onClick={() => onImageClick(0)}
-      >
-        <Image
-          src={images[0]}
-          alt={`${planName} - 主图`}
-          fill
-          className="object-cover group-hover:brightness-95 transition-all duration-300"
-          priority
-        />
+      <div className="flex justify-center">
+        <div
+          className="cursor-pointer group max-w-md"
+          onClick={() => onImageClick(0)}
+        >
+          <Image
+            src={images[0]}
+            alt={`${planName} - 主图`}
+            width={0}
+            height={0}
+            sizes="100vw"
+            className="w-full h-auto max-h-[500px] object-cover rounded-2xl group-hover:-translate-y-1 group-hover:shadow-lg transition-all duration-300"
+            priority
+          />
+        </div>
       </div>
     );
   }
 
-  // 2张图 - 左右对半
-  if (images.length === 2) {
-    return (
-      <div className="grid grid-cols-2 gap-2 h-[400px] md:h-[480px]">
-        {images.map((img, idx) => (
+  // 计算显示的图片
+  const displayImages = images.slice(0, MAX_DISPLAY);
+  const hasMore = images.length > MAX_DISPLAY;
+  const totalCount = images.length;
+
+  return (
+    <div className="relative">
+      {/* 瀑布流容器 */}
+      <div className="columns-2 gap-2 sm:columns-3 sm:gap-3 lg:columns-4 lg:gap-4">
+        {displayImages.map((img, idx) => (
           <div
             key={idx}
-            className="relative cursor-pointer group"
+            className="mb-2 sm:mb-3 lg:mb-4 break-inside-avoid cursor-pointer group"
             onClick={() => onImageClick(idx)}
           >
             <Image
               src={img}
               alt={`${planName} - 图片${idx + 1}`}
-              fill
-              className="object-cover group-hover:brightness-95 transition-all duration-300"
-              priority={idx === 0}
+              width={0}
+              height={0}
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              className="w-full h-auto max-h-[500px] object-cover rounded-xl group-hover:-translate-y-1 group-hover:shadow-lg transition-all duration-300"
+              priority={idx < 4}
             />
           </div>
         ))}
       </div>
-    );
-  }
 
-  // 3-4张图 - 左大右小
-  if (images.length <= 4) {
-    return (
-      <div className="grid grid-cols-2 gap-2 h-[400px] md:h-[480px]">
-        {/* 左侧大图 */}
-        <div
-          className="row-span-2 relative group cursor-pointer"
-          onClick={() => onImageClick(0)}
-        >
-          <Image
-            src={images[0]}
-            alt={`${planName} - 图片1`}
-            fill
-            className="object-cover group-hover:brightness-95 transition-all duration-300"
-            priority
-          />
-        </div>
-
-        {/* 右侧小图 */}
-        {images.slice(1).map((img, idx) => (
-          <div
-            key={idx}
-            className="relative cursor-pointer group"
-            onClick={() => onImageClick(idx + 1)}
+      {/* 底部渐变遮罩 + 查看全部按钮 */}
+      {hasMore && (
+        <div className="absolute bottom-0 left-0 right-0 h-[120px] bg-gradient-to-t from-wabi-50 to-transparent flex items-end justify-center pb-4 pointer-events-none">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onImageClick(0);
+            }}
+            className="pointer-events-auto flex items-center gap-2 px-6 py-2.5 bg-white border border-gray-200 shadow-md text-gray-900 text-[14px] font-medium rounded-full hover:scale-105 hover:shadow-lg transition-all duration-300"
           >
-            <Image
-              src={img}
-              alt={`${planName} - 图片${idx + 2}`}
-              fill
-              className="object-cover group-hover:brightness-95 transition-all duration-300"
-            />
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  // 5张及以上 - Airbnb 风格 2+4 网格
-  return (
-    <div className="grid grid-cols-4 gap-2 h-[400px] md:h-[480px]">
-      {/* 左侧大图 */}
-      <div
-        className="col-span-4 md:col-span-2 row-span-2 relative group cursor-pointer"
-        onClick={() => onImageClick(0)}
-      >
-        <Image
-          src={images[0]}
-          alt={`${planName} - 图片1`}
-          fill
-          className="object-cover group-hover:brightness-95 transition-all duration-300"
-          priority
-        />
-      </div>
-
-      {/* 右侧4小图 */}
-      {images.slice(1, 5).map((img, idx) => (
-        <div
-          key={idx}
-          className="col-span-2 md:col-span-1 relative cursor-pointer group"
-          onClick={() => onImageClick(idx + 1)}
-        >
-          <Image
-            src={img}
-            alt={`${planName} - 图片${idx + 2}`}
-            fill
-            className="object-cover group-hover:brightness-95 transition-all duration-300"
-          />
-          {/* 最后一张显示更多 */}
-          {idx === 3 && images.length > 5 && (
-            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-              <span className="text-white text-[16px] font-semibold">
-                +{images.length - 5}
-              </span>
-            </div>
-          )}
+            <Grid3X3 className="w-4 h-4" />
+            <span>查看全部 ({totalCount})</span>
+          </button>
         </div>
-      ))}
+      )}
+
+      {/* 无更多图片时的底部按钮 */}
+      {!hasMore && images.length > 1 && (
+        <div className="flex justify-center mt-6">
+          <button
+            onClick={() => onImageClick(0)}
+            className="flex items-center gap-2 px-6 py-2.5 bg-white border border-gray-200 shadow-sm text-gray-900 text-[14px] font-medium rounded-full hover:scale-105 hover:shadow-md transition-all duration-300"
+          >
+            <Grid3X3 className="w-4 h-4" />
+            <span>查看全部 ({totalCount})</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
