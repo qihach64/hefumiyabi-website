@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { Camera, Users, Sparkles, Scissors, ChevronLeft, ChevronRight, RotateCcw, Grid3X3 } from "lucide-react";
+import { Camera, Users, Sparkles, Scissors, ChevronLeft, ChevronRight, RotateCcw, Grid3X3, Heart, Share2, Check, Link2 } from "lucide-react";
 import ImageGalleryModal from "@/components/ImageGalleryModal";
 import TryOnModal from "@/components/TryOnModal";
 import ImageComparison from "@/components/ImageComparison";
 import { useTryOnStore } from "@/store/tryOn";
+import { useFavoritesStore } from "@/store/favorites";
+import { toast } from "sonner";
 
 // Tab 配置
 const TABS = [
@@ -125,6 +127,7 @@ export default function VisualHub({
         return (
           <OfficialGallery
             images={mockOfficialImages}
+            planId={plan.id}
             planName={plan.name}
             onImageClick={handleOpenGallery}
           />
@@ -256,19 +259,82 @@ export default function VisualHub({
 
 // ============================================
 // 子组件：官方图片画廊 - "紧凑型全宽瀑布流" 布局
-// 4列瀑布流 + 最多8张 + 底部渐变入口
+// 4列瀑布流 + 最多8张 + 收藏/分享按钮
 // ============================================
 function OfficialGallery({
   images,
+  planId,
   planName,
   onImageClick
 }: {
   images: string[];
+  planId: string;
   planName: string;
   onImageClick: (index: number) => void;
 }) {
+  const [mounted, setMounted] = useState(false);
+  const { isFavorite, toggleFavorite } = useFavoritesStore();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // 最大显示数量
   const MAX_DISPLAY = 8;
+
+  // 处理收藏
+  const handleFavorite = (e: React.MouseEvent, imageUrl: string) => {
+    e.stopPropagation();
+    const isNowFavorite = toggleFavorite({ planId, planName, imageUrl });
+
+    if (isNowFavorite) {
+      toast.success("已添加到心愿单", {
+        description: "可在个人中心查看收藏",
+        icon: <Heart className="w-4 h-4 fill-sakura-500 text-sakura-500" />,
+      });
+    } else {
+      toast("已从心愿单移除", {
+        icon: <Heart className="w-4 h-4 text-gray-400" />,
+      });
+    }
+  };
+
+  // 处理分享
+  const handleShare = async (e: React.MouseEvent, imageUrl: string, imageIndex: number) => {
+    e.stopPropagation();
+
+    const shareUrl = `${window.location.origin}/plans/${planId}?image=${imageIndex}`;
+    const shareTitle = `${planName} | 江戸和装工房雅`;
+    const shareText = `发现一套超美的和服套餐！✨ ${planName}`;
+
+    // 尝试使用原生分享 API (移动端优先)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: shareUrl,
+        });
+        toast.success("分享成功");
+      } catch (err) {
+        // 用户取消分享不显示错误
+        if ((err as Error).name !== "AbortError") {
+          console.error("Share failed:", err);
+        }
+      }
+    } else {
+      // 降级到复制链接
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        toast.success("链接已复制", {
+          description: "可粘贴分享给好友",
+          icon: <Link2 className="w-4 h-4 text-sakura-500" />,
+        });
+      } catch (err) {
+        toast.error("复制失败，请手动复制链接");
+      }
+    }
+  };
 
   // 空状态
   if (images.length === 0) {
@@ -281,10 +347,11 @@ function OfficialGallery({
 
   // 单图 - 居中限宽展示
   if (images.length === 1) {
+    const isFav = mounted && isFavorite(planId, images[0]);
     return (
       <div className="flex justify-center">
         <div
-          className="cursor-pointer group max-w-md"
+          className="relative cursor-pointer group max-w-md"
           onClick={() => onImageClick(0)}
         >
           <Image
@@ -296,6 +363,27 @@ function OfficialGallery({
             className="w-full h-auto max-h-[500px] object-cover rounded-2xl group-hover:-translate-y-1 group-hover:shadow-lg transition-all duration-300"
             priority
           />
+          {/* 悬停操作按钮 */}
+          <div className="absolute top-3 right-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <button
+              onClick={(e) => handleFavorite(e, images[0])}
+              className={`p-2.5 rounded-full backdrop-blur-sm transition-all duration-300 hover:scale-110 ${
+                isFav
+                  ? "bg-sakura-500 text-white"
+                  : "bg-white/90 text-gray-700 hover:bg-white"
+              }`}
+              title={isFav ? "取消收藏" : "添加到心愿单"}
+            >
+              <Heart className={`w-5 h-5 ${isFav ? "fill-current" : ""}`} />
+            </button>
+            <button
+              onClick={(e) => handleShare(e, images[0], 0)}
+              className="p-2.5 bg-white/90 rounded-full backdrop-blur-sm text-gray-700 hover:bg-white transition-all duration-300 hover:scale-110"
+              title="分享"
+            >
+              <Share2 className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -310,23 +398,53 @@ function OfficialGallery({
     <div className="relative">
       {/* 瀑布流容器 */}
       <div className="columns-2 gap-2 sm:columns-3 sm:gap-3 lg:columns-4 lg:gap-4">
-        {displayImages.map((img, idx) => (
-          <div
-            key={idx}
-            className="mb-2 sm:mb-3 lg:mb-4 break-inside-avoid cursor-pointer group"
-            onClick={() => onImageClick(idx)}
-          >
-            <Image
-              src={img}
-              alt={`${planName} - 图片${idx + 1}`}
-              width={0}
-              height={0}
-              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              className="w-full h-auto max-h-[500px] object-cover rounded-xl group-hover:-translate-y-1 group-hover:shadow-lg transition-all duration-300"
-              priority={idx < 4}
-            />
-          </div>
-        ))}
+        {displayImages.map((img, idx) => {
+          const isFav = mounted && isFavorite(planId, img);
+          return (
+            <div
+              key={idx}
+              className="relative mb-2 sm:mb-3 lg:mb-4 break-inside-avoid cursor-pointer group"
+              onClick={() => onImageClick(idx)}
+            >
+              <Image
+                src={img}
+                alt={`${planName} - 图片${idx + 1}`}
+                width={0}
+                height={0}
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                className="w-full h-auto max-h-[500px] object-cover rounded-xl group-hover:-translate-y-1 group-hover:shadow-lg transition-all duration-300"
+                priority={idx < 4}
+              />
+              {/* 悬停操作按钮 */}
+              <div className="absolute top-2 right-2 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <button
+                  onClick={(e) => handleFavorite(e, img)}
+                  className={`p-2 rounded-full backdrop-blur-sm transition-all duration-300 hover:scale-110 ${
+                    isFav
+                      ? "bg-sakura-500 text-white"
+                      : "bg-white/90 text-gray-700 hover:bg-white"
+                  }`}
+                  title={isFav ? "取消收藏" : "添加到心愿单"}
+                >
+                  <Heart className={`w-4 h-4 ${isFav ? "fill-current" : ""}`} />
+                </button>
+                <button
+                  onClick={(e) => handleShare(e, img, idx)}
+                  className="p-2 bg-white/90 rounded-full backdrop-blur-sm text-gray-700 hover:bg-white transition-all duration-300 hover:scale-110"
+                  title="分享"
+                >
+                  <Share2 className="w-4 h-4" />
+                </button>
+              </div>
+              {/* 已收藏标记 (始终显示) */}
+              {isFav && (
+                <div className="absolute top-2 left-2 p-1.5 bg-sakura-500 rounded-full text-white">
+                  <Heart className="w-3 h-3 fill-current" />
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* 底部渐变遮罩 + 查看全部按钮 */}
