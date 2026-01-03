@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Store, ArrowRight } from "lucide-react";
 import CartIcon from "../CartIcon";
+import WishlistIcon from "../WishlistIcon";
 import { useState, useEffect, memo } from "react";
 
 interface HeaderActionsProps {
@@ -65,6 +66,7 @@ const HeaderActions = memo(function HeaderActions({ isLoggedIn, merchant }: Head
           </Link>
         )}
 
+        <WishlistIcon />
         <CartIcon />
       </div>
     );
@@ -124,8 +126,13 @@ const HeaderActions = memo(function HeaderActions({ isLoggedIn, merchant }: Head
         </Link>
       )}
 
-      {/* 购物车图标 - 仅在客户模式显示 */}
-      {!isMerchantPage && <CartIcon />}
+      {/* 心愿单和购物车图标 - 仅在客户模式显示 */}
+      {!isMerchantPage && (
+        <>
+          <WishlistIcon />
+          <CartIcon />
+        </>
+      )}
     </div>
   );
 });
