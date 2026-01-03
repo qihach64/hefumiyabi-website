@@ -312,6 +312,7 @@ model RentalPlan {
   planTags       PlanTag[]
   planComponents PlanComponent[]  // 套餐包含的服务组件
   planStores     PlanStore[]      // 套餐可用店铺 (1:N)
+  favorites      Favorite[]       // 用户收藏
 
   @@index([merchantId])
   @@index([themeId])
@@ -480,12 +481,19 @@ model BookingKimono {
 model Favorite {
   id        String   @id @default(cuid())
   userId    String
-  kimonoId  String
+  kimonoId  String?
+  planId    String?       // 套餐收藏
+  imageUrl  String?       // 收藏的具体图片 URL
   createdAt DateTime @default(now())
-  kimono    Kimono   @relation(fields: [kimonoId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  kimono    Kimono?      @relation(fields: [kimonoId], references: [id], onDelete: Cascade)
+  plan      RentalPlan?  @relation(fields: [planId], references: [id], onDelete: Cascade)
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, kimonoId])
+  @@unique([userId, planId, imageUrl])
+  @@index([userId])
+  @@index([planId])
   @@map("favorites")
 }
 

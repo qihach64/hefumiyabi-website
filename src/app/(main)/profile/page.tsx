@@ -1,10 +1,11 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { Calendar, Mail, Phone } from "lucide-react";
+import { Calendar, Mail, Phone, Heart, ChevronRight } from "lucide-react";
 import EmailVerificationBanner from "@/components/auth/EmailVerificationBanner";
 import BookingsList from "@/components/BookingsList";
 import { Badge } from "@/components/ui";
+import Link from "next/link";
 
 export default async function ProfilePage() {
   const session = await auth();
@@ -13,25 +14,33 @@ export default async function ProfilePage() {
     redirect("/login");
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    include: {
-      bookings: {
-        include: {
-          items: {
-            include: {
-              store: true,
-              plan: true,
+  const [user, favoritesCount] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      include: {
+        bookings: {
+          include: {
+            items: {
+              include: {
+                store: true,
+                plan: true,
+              },
             },
           },
+          orderBy: {
+            createdAt: "desc",
+          },
+          take: 10,
         },
-        orderBy: {
-          createdAt: "desc",
-        },
-        take: 10,
       },
-    },
-  });
+    }),
+    prisma.favorite.count({
+      where: {
+        userId: session.user.id,
+        planId: { not: null },
+      },
+    }),
+  ]);
 
   // 获取每个 booking item 的 campaignPlan 信息（如果有）
   if (user) {
@@ -103,6 +112,29 @@ export default async function ProfilePage() {
               </div>
             </div>
           </div>
+
+          {/* 心愿单入口 */}
+          <Link
+            href="/profile/wishlist"
+            className="block bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6 hover:shadow-md hover:border-sakura-200 transition-all group"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-sakura-100 flex items-center justify-center group-hover:bg-sakura-200 transition-colors">
+                  <Heart className="w-6 h-6 text-sakura-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">我的心愿单</h3>
+                  <p className="text-sm text-gray-600">
+                    {favoritesCount > 0
+                      ? `已收藏 ${favoritesCount} 个套餐`
+                      : "收藏喜欢的和服套餐"}
+                  </p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-sakura-600 group-hover:translate-x-1 transition-all" />
+            </div>
+          </Link>
 
           {/* 预约记录 - Airbnb 风格 */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 hover:shadow-md transition-shadow">
