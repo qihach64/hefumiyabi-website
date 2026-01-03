@@ -308,13 +308,14 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
         )}
 
         {/* 基本信息 */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-5">基本信息</h2>
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300 p-6">
+          <h2 className="font-serif text-[18px] font-semibold text-gray-900 mb-2">基本信息</h2>
+          <div className="h-px w-full bg-gradient-to-r from-sakura-200 via-sakura-100 to-transparent mb-6" />
 
           <div className="space-y-5">
             {/* 套餐名称 */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-[14px] font-medium text-gray-700 mb-1.5">
                 套餐名称 <span className="text-red-500">*</span>
               </label>
               <input
@@ -324,16 +325,16 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
                 }
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sakura-500 focus:border-transparent"
+                className="w-full px-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sakura-200 focus:border-sakura-400 transition-all duration-200"
               />
             </div>
 
             {/* 主题选择 */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-[14px] font-medium text-gray-700 mb-1.5">
                 所属主题
               </label>
-              <p className="text-xs text-gray-500 mb-2">选择套餐所属的主题分类，便于用户发现</p>
+              <p className="text-[13px] text-gray-500 mb-2">选择套餐所属的主题分类，便于用户发现</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                 {themes.map((theme) => {
                   const isSelected = selectedThemeId === theme.id;
@@ -365,7 +366,7 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
 
             {/* 描述 */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-[14px] font-medium text-gray-700 mb-1.5">
                 套餐描述 <span className="text-red-500">*</span>
               </label>
               <textarea
@@ -376,13 +377,13 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
                   setFormData({ ...formData, description: e.target.value })
                 }
                 placeholder="描述套餐的主要特点和服务内容"
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sakura-500 focus:border-transparent resize-none"
+                className="w-full px-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sakura-200 focus:border-sakura-400 transition-all duration-200 resize-none"
               />
             </div>
 
             {/* 核心卖点 */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-[14px] font-medium text-gray-700 mb-1.5">
                 核心卖点
               </label>
               <input
@@ -392,9 +393,9 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
                   setFormData({ ...formData, highlights: e.target.value })
                 }
                 placeholder="例如：含专业跟拍、适合网红打卡"
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sakura-500 focus:border-transparent"
+                className="w-full px-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sakura-200 focus:border-sakura-400 transition-all duration-200"
               />
-              <p className="text-xs text-gray-500 mt-1">简短的一句话卖点，突出套餐最大亮点</p>
+              <p className="text-[13px] text-gray-500 mt-1">简短的一句话卖点，突出套餐最大亮点</p>
             </div>
           </div>
         </div>
@@ -402,11 +403,12 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
         {/* 店铺信息 + 价格信息 - 合并为一行 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* 店铺信息 */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-5">店铺信息</h2>
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300 p-6">
+            <h2 className="font-serif text-[18px] font-semibold text-gray-900 mb-2">店铺信息</h2>
+            <div className="h-px w-full bg-gradient-to-r from-sakura-200 via-sakura-100 to-transparent mb-6" />
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label className="block text-[14px] font-medium text-gray-700 mb-1.5">
                   店铺名称
                 </label>
                 <input
@@ -416,11 +418,11 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
                     setFormData({ ...formData, storeName: e.target.value })
                   }
                   placeholder="例如：浅草本店"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sakura-500 focus:border-transparent"
+                  className="w-full px-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sakura-200 focus:border-sakura-400 transition-all duration-200"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label className="block text-[14px] font-medium text-gray-700 mb-1.5">
                   所在地区
                 </label>
                 <input
@@ -430,18 +432,19 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
                     setFormData({ ...formData, region: e.target.value })
                   }
                   placeholder="例如：东京浅草、京都祇园"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sakura-500 focus:border-transparent"
+                  className="w-full px-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sakura-200 focus:border-sakura-400 transition-all duration-200"
                 />
               </div>
             </div>
           </div>
 
           {/* 价格信息 */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-5">价格信息</h2>
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300 p-6">
+            <h2 className="font-serif text-[18px] font-semibold text-gray-900 mb-2">价格信息</h2>
+            <div className="h-px w-full bg-gradient-to-r from-sakura-200 via-sakura-100 to-transparent mb-6" />
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label className="block text-[14px] font-medium text-gray-700 mb-1.5">
                   当前价格 (¥) <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -453,11 +456,11 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
                   onChange={(e) =>
                     setFormData({ ...formData, price: Number(e.target.value) })
                   }
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sakura-500 focus:border-transparent"
+                  className="w-full px-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sakura-200 focus:border-sakura-400 transition-all duration-200"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label className="block text-[14px] font-medium text-gray-700 mb-1.5">
                   原价 (¥)
                 </label>
                 <input
@@ -469,18 +472,19 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
                     setFormData({ ...formData, originalPrice: e.target.value })
                   }
                   placeholder="可选，用于显示折扣"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sakura-500 focus:border-transparent"
+                  className="w-full px-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sakura-200 focus:border-sakura-400 transition-all duration-200"
                 />
-                <p className="text-xs text-gray-500 mt-1">设置原价后将显示折扣标签</p>
+                <p className="text-[13px] text-gray-500 mt-1">设置原价后将显示折扣标签</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* 图片 */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-5">套餐图片</h2>
-          <p className="text-sm text-gray-600 mb-4">
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300 p-6">
+          <h2 className="font-serif text-[18px] font-semibold text-gray-900 mb-2">套餐图片</h2>
+          <div className="h-px w-full bg-gradient-to-r from-sakura-200 via-sakura-100 to-transparent mb-6" />
+          <p className="text-[14px] text-gray-600 mb-4">
             上传多张套餐图片，选择一张作为卡片主图，其余图片将在详情页展示
           </p>
 
@@ -507,7 +511,7 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
             onError={(err) => setError(err)}
             aspectRatio="3:4"
           />
-          <p className="mt-3 text-xs text-gray-500">
+          <p className="mt-3 text-[13px] text-gray-500">
             建议尺寸：800×1067像素 (3:4比例)，支持 JPG、PNG、WebP 格式，最大 20MB，最多 10 张
           </p>
         </div>
@@ -523,16 +527,17 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
         />
 
         {/* 标签 - 新标签系统 */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-5">套餐标签</h2>
-          <p className="text-sm text-gray-600 mb-4">
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300 p-6">
+          <h2 className="font-serif text-[18px] font-semibold text-gray-900 mb-2">套餐标签</h2>
+          <div className="h-px w-full bg-gradient-to-r from-sakura-200 via-sakura-100 to-transparent mb-6" />
+          <p className="text-[14px] text-gray-600 mb-4">
             选择适合您套餐的标签，帮助用户更容易找到和筛选
           </p>
 
           {/* 已选标签预览 */}
           {selectedTagIds.length > 0 && (
-            <div className="mb-5 p-3 bg-sakura-50 rounded-xl">
-              <p className="text-sm font-medium text-gray-700 mb-2">
+            <div className="mb-5 p-4 bg-sakura-50/50 rounded-xl border border-sakura-100">
+              <p className="text-[14px] font-medium text-gray-700 mb-2">
                 已选择 {selectedTagIds.length} 个标签：
               </p>
               <div className="flex flex-wrap gap-2">
@@ -564,22 +569,22 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
               ).length;
 
               return (
-                <div key={category.id} className="border border-gray-200 rounded-xl overflow-hidden">
+                <div key={category.id} className="border border-gray-200 rounded-xl overflow-hidden hover:border-sakura-200 transition-colors">
                   {/* 分类标题 */}
                   <button
                     type="button"
                     onClick={() => toggleCategory(category.id)}
-                    className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors flex items-center justify-between"
+                    className="w-full px-4 py-3 bg-gray-50/80 hover:bg-sakura-50/50 transition-all duration-200 flex items-center justify-between"
                   >
                     <div className="flex items-center gap-3">
                       {category.icon && (
                         <span className="text-xl">{category.icon}</span>
                       )}
                       <div className="text-left">
-                        <p className="font-semibold text-gray-900 text-sm">{category.name}</p>
-                        <p className="text-xs text-gray-600">
+                        <p className="font-serif font-semibold text-gray-900 text-[14px]">{category.name}</p>
+                        <p className="text-[12px] text-gray-500">
                           {category.tags.length} 个标签
-                          {selectedCount > 0 && ` · 已选 ${selectedCount} 个`}
+                          {selectedCount > 0 && <span className="text-sakura-600"> · 已选 {selectedCount} 个</span>}
                         </p>
                       </div>
                     </div>
@@ -606,13 +611,16 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
                               key={tag.id}
                               type="button"
                               onClick={() => toggleTag(tag.id)}
-                              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
+                              className={`px-3 py-1.5 rounded-full text-[13px] font-medium transition-all duration-200 ${
                                 isSelected
-                                  ? 'text-white shadow-md scale-105'
-                                  : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                                  ? 'text-white shadow-sm'
+                                  : 'bg-white border border-gray-200 text-gray-600 hover:border-sakura-300 hover:text-sakura-600'
                               }`}
                               style={{
                                 backgroundColor: isSelected
+                                  ? (tag.color || category.color || '#FF5580')
+                                  : undefined,
+                                borderColor: isSelected
                                   ? (tag.color || category.color || '#FF5580')
                                   : undefined
                               }}
@@ -640,21 +648,22 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
         </div>
 
         {/* 套餐状态 */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-5">套餐状态</h2>
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300 p-6">
+          <h2 className="font-serif text-[18px] font-semibold text-gray-900 mb-2">套餐状态</h2>
+          <div className="h-px w-full bg-gradient-to-r from-sakura-200 via-sakura-100 to-transparent mb-6" />
 
-          <label className="flex items-center gap-3 p-4 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50">
+          <label className="flex items-center gap-3 p-4 border border-gray-200 rounded-xl cursor-pointer hover:bg-sakura-50/30 hover:border-sakura-200 transition-all duration-200">
             <input
               type="checkbox"
               checked={formData.isActive}
               onChange={(e) =>
                 setFormData({ ...formData, isActive: e.target.checked })
               }
-              className="w-5 h-5 text-sakura-600 border-gray-300 rounded focus:ring-sakura-500"
+              className="w-5 h-5 text-sakura-600 border-gray-300 rounded focus:ring-sakura-200 focus:ring-2"
             />
             <div>
-              <p className="font-medium text-gray-900">上架状态</p>
-              <p className="text-sm text-gray-600">开启后，用户可以查看并预订此套餐</p>
+              <p className="font-medium text-gray-900 text-[14px]">上架状态</p>
+              <p className="text-[13px] text-gray-500">开启后，用户可以查看并预订此套餐</p>
             </div>
           </label>
         </div>
@@ -694,16 +703,17 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
         onClick={() => setShowPreview(!showPreview)}
         className={`
           fixed bottom-6 right-6 z-40
-          flex items-center gap-2 px-4 py-3 rounded-full
-          shadow-lg transition-all duration-300
+          flex items-center gap-2 px-5 py-3 rounded-full
+          transition-all duration-300
+          hover:scale-105 active:scale-95
           ${showPreview
-            ? "bg-gray-800 text-white hover:bg-gray-700"
-            : "bg-sakura-500 text-white hover:bg-sakura-600"
+            ? "bg-gray-800 text-white hover:bg-gray-700 shadow-lg"
+            : "bg-gradient-to-r from-sakura-400 to-sakura-500 text-white shadow-lg shadow-sakura-500/30 hover:shadow-xl hover:shadow-sakura-500/40"
           }
         `}
       >
         <Eye className="w-5 h-5" />
-        <span className="font-medium">
+        <span className="font-medium text-[14px]">
           {showPreview ? "关闭预览" : "用户预览"}
         </span>
         {showPreview ? (
@@ -716,16 +726,16 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
       {/* 侧边预览面板 */}
       <div
         className={`
-          fixed top-0 right-0 h-full w-[360px] bg-white border-l border-gray-200 shadow-2xl
+          fixed top-0 right-0 h-full w-[360px] bg-[#FDFBF7] border-l border-gray-200 shadow-2xl
           transform transition-transform duration-300 ease-out z-50
           ${showPreview ? "translate-x-0" : "translate-x-full"}
         `}
       >
         {/* 面板头部 */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-gray-50">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-white">
           <div>
-            <h3 className="font-bold text-gray-900">用户预览</h3>
-            <p className="text-xs text-gray-500">实时查看用户看到的效果</p>
+            <h3 className="font-serif font-semibold text-gray-900 text-[16px]">用户预览</h3>
+            <p className="text-[12px] text-gray-500">实时查看用户看到的效果</p>
           </div>
           <button
             type="button"
@@ -746,9 +756,9 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
           />
 
           {/* 预览提示 */}
-          <div className="mt-6 p-4 bg-blue-50 rounded-xl">
-            <p className="text-sm text-blue-700">
-              <strong>提示：</strong>此预览展示的是用户在套餐列表中看到的卡片效果。
+          <div className="mt-6 p-4 bg-sakura-50/50 border border-sakura-100 rounded-xl">
+            <p className="text-[13px] text-gray-600">
+              <span className="font-medium text-sakura-600">提示：</span>此预览展示的是用户在套餐列表中看到的卡片效果。
               实际详情页会展示更多信息。
             </p>
           </div>
