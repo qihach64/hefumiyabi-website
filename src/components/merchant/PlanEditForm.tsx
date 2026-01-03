@@ -1,13 +1,36 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Button, Badge } from "@/components/ui";
-import { Save, Loader2, X, Eye, ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui";
+import {
+  Save,
+  Loader2,
+  FileText,
+  Send,
+  Clock,
+  ArrowLeft,
+} from "lucide-react";
 import Link from "next/link";
-import ImageUploader from "@/components/ImageUploader";
-import PlanCardPreview from "@/components/PlanCard/PlanCardPreview";
-import PlanComponentEditor, { ComponentConfig } from "./PlanComponentEditor";
+
+// Tab 组件
+import TabNavigation, { TabId } from "./PlanEditorTabs";
+import BasicInfoTab from "./PlanEditorTabs/BasicInfoTab";
+import PricingTab from "./PlanEditorTabs/PricingTab";
+import ComponentsTab from "./PlanEditorTabs/ComponentsTab";
+import CategoryTagsTab from "./PlanEditorTabs/CategoryTagsTab";
+import AdvancedTab from "./PlanEditorTabs/AdvancedTab";
+
+// 预览组件
+import PlanEditPreview from "./PlanEditPreview";
+
+// 草稿 Store
+import {
+  PlanFormData,
+  ComponentConfig,
+  defaultFormData,
+  usePlanDraftStore,
+} from "@/store/planDraft";
 
 interface Tag {
   id: string;
@@ -35,7 +58,6 @@ interface Theme {
   color: string | null;
 }
 
-// v10.1: PlanComponent links to MerchantComponent
 interface PlanComponent {
   id: string;
   merchantComponentId: string;
@@ -77,66 +99,193 @@ interface PlanEditFormProps {
     category: string;
     price: number;
     originalPrice?: number | null;
+    depositAmount?: number;
+    pricingUnit?: string | null;
+    unitLabel?: string | null;
+    unitDescription?: string | null;
+    minQuantity?: number | null;
+    maxQuantity?: number | null;
+    duration?: number;
     planComponents?: PlanComponent[];
     imageUrl?: string | null;
     images?: string[];
     storeName?: string | null;
     region?: string | null;
     themeId?: string | null;
-    planTags?: { tag: Tag }[]; // 新的标签系统
+    planTags?: { tag: Tag }[];
     isActive: boolean;
     isFeatured: boolean;
     isCampaign: boolean;
+    isLimited?: boolean;
+    maxBookings?: number | null;
+    availableFrom?: string | null;
+    availableUntil?: string | null;
+    status?: string;
   };
   mapTemplate?: MapTemplateData | null;
 }
 
-// PLAN_CATEGORIES 已删除 - 使用 Theme 系统替代
-
 export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
   const router = useRouter();
+
+  // UI 状态
+  const [activeTab, setActiveTab] = useState<TabId>("basic");
   const [isLoading, setIsLoading] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [success, setSuccess] = useState<string | null>(null);
 
-  // 预览面板状态
-  const [showPreview, setShowPreview] = useState(false);
+  // 草稿 Store
+  const { saveDraft, getDraft, clearDraft, hasDraft, getLastSaved } =
+    usePlanDraftStore();
+  const [lastSavedTime, setLastSavedTime] = useState<Date | null>(null);
+  const [showDraftRecovery, setShowDraftRecovery] = useState(false);
 
-  // 标签系统
-  const [tagCategories, setTagCategories] = useState<TagCategory[]>([]);
-  const [selectedTagIds, setSelectedTagIds] = useState<string[]>(
-    plan.planTags?.map(pt => pt.tag.id) || []
-  );
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
-
-  // 主题系统
+  // 主题和标签数据
   const [themes, setThemes] = useState<Theme[]>([]);
-  const [selectedThemeId, setSelectedThemeId] = useState<string | null>(plan.themeId || null);
+  const [tagCategories, setTagCategories] = useState<TagCategory[]>([]);
 
-  // 服务组件系统 (v10.1: 使用 merchantComponentId)
-  const [selectedMerchantComponentIds, setSelectedMerchantComponentIds] = useState<string[]>(
-    plan.planComponents?.map(pc => pc.merchantComponentId) || []
-  );
+  // 表单数据
+  const [formData, setFormData] = useState<PlanFormData>(() => ({
+    name: plan.name,
+    description: plan.description,
+    highlights: plan.highlights || "",
+    price: plan.price / 100,
+    originalPrice: plan.originalPrice ? plan.originalPrice / 100 : "",
+    depositAmount: plan.depositAmount ? plan.depositAmount / 100 : "",
+    pricingUnit: (plan.pricingUnit as "person" | "group") || "person",
+    unitLabel: plan.unitLabel || "人",
+    unitDescription: plan.unitDescription || "",
+    minQuantity: plan.minQuantity || 1,
+    maxQuantity: plan.maxQuantity || 10,
+    duration: plan.duration || 4,
+    imageUrl: plan.imageUrl || "",
+    images: plan.images || [],
+    storeName: plan.storeName || "",
+    region: plan.region || "",
+    themeId: plan.themeId || null,
+    selectedTagIds: plan.planTags?.map((pt) => pt.tag.id) || [],
+    category: plan.category,
+    isLimited: plan.isLimited || false,
+    maxBookings: plan.maxBookings || null,
+    availableFrom: plan.availableFrom || null,
+    availableUntil: plan.availableUntil || null,
+    isFeatured: plan.isFeatured,
+    isActive: plan.isActive,
+  }));
 
-  // 组件配置（包含位置信息）
+  // 组件配置
+  const [selectedMerchantComponentIds, setSelectedMerchantComponentIds] = useState<
+    string[]
+  >(plan.planComponents?.map((pc) => pc.merchantComponentId) || []);
+
   const [componentConfigs, setComponentConfigs] = useState<ComponentConfig[]>(
-    plan.planComponents?.map(pc => ({
+    plan.planComponents?.map((pc) => ({
       merchantComponentId: pc.merchantComponentId,
       hotmapX: pc.hotmapX ?? null,
       hotmapY: pc.hotmapY ?? null,
       hotmapLabelPosition: pc.hotmapLabelPosition ?? "right",
+      hotmapOrder: pc.hotmapOrder ?? 0,
     })) || []
   );
 
-  // 获取已选标签的完整信息（合并 plan.planTags 和 tagCategories）
+  // 自动保存定时器
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 加载主题和标签
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [themesRes, tagsRes] = await Promise.all([
+          fetch("/api/themes"),
+          fetch("/api/tags/categories"),
+        ]);
+
+        if (themesRes.ok) {
+          const data = await themesRes.json();
+          setThemes(data.themes || []);
+        }
+
+        if (tagsRes.ok) {
+          const data = await tagsRes.json();
+          setTagCategories(data.categories || []);
+        }
+      } catch (error) {
+        console.error("加载数据失败:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // 检查草稿恢复
+  useEffect(() => {
+    if (hasDraft(plan.id)) {
+      const draft = getDraft(plan.id);
+      if (draft) {
+        const draftTime = new Date(draft.lastSaved);
+        // 如果草稿比较新，提示恢复
+        setShowDraftRecovery(true);
+      }
+    }
+  }, [plan.id, hasDraft, getDraft]);
+
+  // 恢复草稿
+  const recoverDraft = () => {
+    const draft = getDraft(plan.id);
+    if (draft) {
+      setFormData(draft.formData);
+      setComponentConfigs(draft.componentConfigs);
+      setSelectedMerchantComponentIds(draft.selectedMerchantComponentIds);
+      setLastSavedTime(new Date(draft.lastSaved));
+    }
+    setShowDraftRecovery(false);
+  };
+
+  // 丢弃草稿
+  const discardDraft = () => {
+    clearDraft(plan.id);
+    setShowDraftRecovery(false);
+  };
+
+  // 自动保存草稿（防抖）
+  const triggerAutoSave = useCallback(() => {
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+
+    autoSaveTimerRef.current = setTimeout(() => {
+      saveDraft(plan.id, formData, componentConfigs, selectedMerchantComponentIds);
+      setLastSavedTime(new Date());
+    }, 3000);
+  }, [plan.id, formData, componentConfigs, selectedMerchantComponentIds, saveDraft]);
+
+  // 表单变化时触发自动保存
+  useEffect(() => {
+    triggerAutoSave();
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [formData, componentConfigs, selectedMerchantComponentIds, triggerAutoSave]);
+
+  // 表单字段更新
+  const handleFormChange = <K extends keyof PlanFormData>(
+    field: K,
+    value: PlanFormData[K]
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  // 获取已选标签的完整信息
   const getSelectedTags = (): Tag[] => {
     const allTags = [
-      ...(plan.planTags?.map(pt => pt.tag) || []),
-      ...tagCategories.flatMap(cat => cat.tags)
+      ...(plan.planTags?.map((pt) => pt.tag) || []),
+      ...tagCategories.flatMap((cat) => cat.tags),
     ];
-    // 去重并筛选已选标签
     const uniqueTags = allTags.reduce((acc, tag) => {
-      if (!acc.find(t => t.id === tag.id) && selectedTagIds.includes(tag.id)) {
+      if (!acc.find((t) => t.id === tag.id) && formData.selectedTagIds.includes(tag.id)) {
         acc.push(tag);
       }
       return acc;
@@ -144,634 +293,307 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
     return uniqueTags;
   };
 
-  // 加载标签分类和主题
-  useEffect(() => {
-    fetchTagCategories();
-    fetchThemes();
-  }, []);
+  // 获取当前主题
+  const getCurrentTheme = () => {
+    return themes.find((t) => t.id === formData.themeId) || null;
+  };
 
-  async function fetchTagCategories() {
-    try {
-      const response = await fetch('/api/tags/categories');
-      if (response.ok) {
-        const data = await response.json();
-        const categories = data.categories || [];
-        setTagCategories(categories);
-        // 只展开包含已选标签的分类
-        const categoriesToExpand = categories
-          .filter((cat: TagCategory) =>
-            cat.tags.some(tag => selectedTagIds.includes(tag.id))
-          )
-          .map((c: TagCategory) => c.id);
-        setExpandedCategories(new Set(categoriesToExpand));
-      }
-    } catch (error) {
-      console.error('Failed to fetch tag categories:', error);
-    }
-  }
-
-  async function fetchThemes() {
-    try {
-      const response = await fetch('/api/themes');
-      if (response.ok) {
-        const data = await response.json();
-        setThemes(data.themes || []);
-      }
-    } catch (error) {
-      console.error('Failed to fetch themes:', error);
-    }
-  }
-
-  // 表单状态
-  const [formData, setFormData] = useState({
-    name: plan.name,
-    description: plan.description,
-    highlights: plan.highlights || "",
-    price: plan.price / 100, // 转换为元
-    originalPrice: plan.originalPrice ? plan.originalPrice / 100 : "",
-    imageUrl: plan.imageUrl || "",
-    images: plan.images || [],
-    storeName: plan.storeName || "",
-    region: plan.region || "",
-    isActive: plan.isActive,
-  });
-
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+  // 保存草稿到服务器
+  const handleSaveDraft = async () => {
+    setIsSavingDraft(true);
     setError(null);
-    setSuccess(false);
 
     try {
       const response = await fetch(`/api/merchant/plans/${plan.id}`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: formData.name,
-          description: formData.description,
-          highlights: formData.highlights || null,
-          price: Math.round(Number(formData.price) * 100), // 转换为分
-          originalPrice: formData.originalPrice
-            ? Math.round(Number(formData.originalPrice) * 100)
-            : null,
-          // v10.1: 组件配置（包含位置信息）
-          planComponents: componentConfigs.map(config => ({
-            merchantComponentId: config.merchantComponentId,
-            hotmapX: config.hotmapX,
-            hotmapY: config.hotmapY,
-            hotmapLabelPosition: config.hotmapLabelPosition,
-          })),
-          imageUrl: formData.imageUrl || null,
-          images: formData.images || [],
-          storeName: formData.storeName || null,
-          region: formData.region || null,
-          themeId: selectedThemeId,
-          tagIds: selectedTagIds,
-          isActive: formData.isActive,
+          ...buildSubmitData(),
+          status: "DRAFT",
         }),
       });
 
-      // Check response status first
       if (!response.ok) {
-        // Try to parse error message from JSON response
-        try {
-          const data = await response.json();
-          throw new Error(data.message || `更新失败 (${response.status})`);
-        } catch (jsonError) {
-          // If JSON parsing fails, throw generic error
-          throw new Error(`更新失败 (${response.status})`);
-        }
+        const data = await response.json();
+        throw new Error(data.message || "保存草稿失败");
       }
 
-      // Success
-      setSuccess(true);
-      // 滚动到页面顶部显示成功提示
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      // 3秒后隐藏成功提示
-      setTimeout(() => {
-        setSuccess(false);
-      }, 3000);
+      clearDraft(plan.id);
+      setSuccess("草稿已保存");
+      setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "更新失败，请重试");
+      setError(err instanceof Error ? err.message : "保存草稿失败");
+    } finally {
+      setIsSavingDraft(false);
+    }
+  };
+
+  // 发布套餐
+  const handlePublish = async () => {
+    // 验证必填字段
+    if (!formData.name.trim()) {
+      setError("请填写套餐名称");
+      setActiveTab("basic");
+      return;
+    }
+    if (!formData.description.trim() || formData.description.length < 10) {
+      setError("请填写套餐描述（至少 10 个字符）");
+      setActiveTab("basic");
+      return;
+    }
+    if (formData.price <= 0) {
+      setError("请设置有效的价格");
+      setActiveTab("pricing");
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/merchant/plans/${plan.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...buildSubmitData(),
+          status: "PUBLISHED",
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || "发布失败");
+      }
+
+      clearDraft(plan.id);
+      setSuccess("套餐已发布！");
+      setTimeout(() => {
+        router.push("/merchant/listings");
+      }, 1500);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "发布失败，请重试");
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 新标签系统函数
-  const toggleTag = (tagId: string) => {
-    setSelectedTagIds(prev =>
-      prev.includes(tagId)
-        ? prev.filter(id => id !== tagId)
-        : [...prev, tagId]
-    );
-  };
+  // 构建提交数据
+  const buildSubmitData = () => ({
+    name: formData.name,
+    description: formData.description,
+    highlights: formData.highlights || null,
+    price: Math.round(Number(formData.price) * 100),
+    originalPrice: formData.originalPrice
+      ? Math.round(Number(formData.originalPrice) * 100)
+      : null,
+    depositAmount: formData.depositAmount
+      ? Math.round(Number(formData.depositAmount) * 100)
+      : 0,
+    pricingUnit: formData.pricingUnit,
+    unitLabel: formData.unitLabel,
+    unitDescription: formData.unitDescription || null,
+    minQuantity: formData.minQuantity,
+    maxQuantity: formData.maxQuantity,
+    duration: formData.duration,
+    planComponents: componentConfigs.map((config) => ({
+      merchantComponentId: config.merchantComponentId,
+      hotmapX: config.hotmapX,
+      hotmapY: config.hotmapY,
+      hotmapLabelPosition: config.hotmapLabelPosition,
+      hotmapOrder: config.hotmapOrder,
+    })),
+    imageUrl: formData.imageUrl || null,
+    images: formData.images || [],
+    storeName: formData.storeName || null,
+    region: formData.region || null,
+    themeId: formData.themeId,
+    tagIds: formData.selectedTagIds,
+    isLimited: formData.isLimited,
+    maxBookings: formData.maxBookings,
+    availableFrom: formData.availableFrom,
+    availableUntil: formData.availableUntil,
+    isFeatured: formData.isFeatured,
+    isActive: formData.isActive,
+  });
 
-  const toggleCategory = (categoryId: string) => {
-    setExpandedCategories(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(categoryId)) {
-        newSet.delete(categoryId);
-      } else {
-        newSet.add(categoryId);
-      }
-      return newSet;
+  // 格式化上次保存时间
+  const formatLastSaved = () => {
+    if (!lastSavedTime) return null;
+    const now = new Date();
+    const diff = now.getTime() - lastSavedTime.getTime();
+    const minutes = Math.floor(diff / 60000);
+
+    if (minutes < 1) return "刚刚";
+    if (minutes < 60) return `${minutes} 分钟前`;
+    return lastSavedTime.toLocaleTimeString("zh-CN", {
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   return (
-    <div className="relative">
-      {/* 主表单区域 - 全宽 */}
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* 固定位置的成功提示 */}
-        {success && (
-          <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-5 duration-300">
-            <div className="bg-green-600 text-white px-6 py-4 rounded-xl shadow-lg flex items-center gap-3">
-              <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <p className="font-semibold">保存成功！</p>
-            </div>
-          </div>
-        )}
-
-        {/* 错误提示 */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
-            {error}
-          </div>
-        )}
-
-        {/* 基本信息 */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300 p-6">
-          <h2 className="font-serif text-[18px] font-semibold text-gray-900 mb-2">基本信息</h2>
-          <div className="h-px w-full bg-gradient-to-r from-sakura-200 via-sakura-100 to-transparent mb-6" />
-
-          <div className="space-y-5">
-            {/* 套餐名称 */}
-            <div>
-              <label className="block text-[14px] font-medium text-gray-700 mb-1.5">
-                套餐名称 <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                className="w-full px-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sakura-200 focus:border-sakura-400 transition-all duration-200"
-              />
-            </div>
-
-            {/* 主题选择 */}
-            <div>
-              <label className="block text-[14px] font-medium text-gray-700 mb-1.5">
-                所属主题
-              </label>
-              <p className="text-[13px] text-gray-500 mb-2">选择套餐所属的主题分类，便于用户发现</p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                {themes.map((theme) => {
-                  const isSelected = selectedThemeId === theme.id;
-                  return (
-                    <button
-                      key={theme.id}
-                      type="button"
-                      onClick={() => setSelectedThemeId(isSelected ? null : theme.id)}
-                      className={`p-2.5 rounded-xl border-2 transition-all duration-200 text-left ${
-                        isSelected
-                          ? 'border-sakura-500 bg-sakura-50'
-                          : 'border-gray-200 hover:border-gray-300 bg-white'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        {theme.icon && <span className="text-lg">{theme.icon}</span>}
-                        <span className={`font-medium text-sm ${isSelected ? 'text-sakura-700' : 'text-gray-900'}`}>
-                          {theme.name}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-              {themes.length === 0 && (
-                <p className="text-sm text-gray-500 py-4 text-center">加载主题中...</p>
-              )}
-            </div>
-
-            {/* 描述 */}
-            <div>
-              <label className="block text-[14px] font-medium text-gray-700 mb-1.5">
-                套餐描述 <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                required
-                rows={3}
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
-                placeholder="描述套餐的主要特点和服务内容"
-                className="w-full px-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sakura-200 focus:border-sakura-400 transition-all duration-200 resize-none"
-              />
-            </div>
-
-            {/* 核心卖点 */}
-            <div>
-              <label className="block text-[14px] font-medium text-gray-700 mb-1.5">
-                核心卖点
-              </label>
-              <input
-                type="text"
-                value={formData.highlights}
-                onChange={(e) =>
-                  setFormData({ ...formData, highlights: e.target.value })
-                }
-                placeholder="例如：含专业跟拍、适合网红打卡"
-                className="w-full px-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sakura-200 focus:border-sakura-400 transition-all duration-200"
-              />
-              <p className="text-[13px] text-gray-500 mt-1">简短的一句话卖点，突出套餐最大亮点</p>
-            </div>
-          </div>
-        </div>
-
-        {/* 店铺信息 + 价格信息 - 合并为一行 */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* 店铺信息 */}
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300 p-6">
-            <h2 className="font-serif text-[18px] font-semibold text-gray-900 mb-2">店铺信息</h2>
-            <div className="h-px w-full bg-gradient-to-r from-sakura-200 via-sakura-100 to-transparent mb-6" />
-            <div className="space-y-4">
-              <div>
-                <label className="block text-[14px] font-medium text-gray-700 mb-1.5">
-                  店铺名称
-                </label>
-                <input
-                  type="text"
-                  value={formData.storeName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, storeName: e.target.value })
-                  }
-                  placeholder="例如：浅草本店"
-                  className="w-full px-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sakura-200 focus:border-sakura-400 transition-all duration-200"
-                />
-              </div>
-              <div>
-                <label className="block text-[14px] font-medium text-gray-700 mb-1.5">
-                  所在地区
-                </label>
-                <input
-                  type="text"
-                  value={formData.region}
-                  onChange={(e) =>
-                    setFormData({ ...formData, region: e.target.value })
-                  }
-                  placeholder="例如：东京浅草、京都祇园"
-                  className="w-full px-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sakura-200 focus:border-sakura-400 transition-all duration-200"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* 价格信息 */}
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300 p-6">
-            <h2 className="font-serif text-[18px] font-semibold text-gray-900 mb-2">价格信息</h2>
-            <div className="h-px w-full bg-gradient-to-r from-sakura-200 via-sakura-100 to-transparent mb-6" />
-            <div className="space-y-4">
-              <div>
-                <label className="block text-[14px] font-medium text-gray-700 mb-1.5">
-                  当前价格 (¥) <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  required
-                  min="0"
-                  step="1"
-                  value={formData.price}
-                  onChange={(e) =>
-                    setFormData({ ...formData, price: Number(e.target.value) })
-                  }
-                  className="w-full px-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sakura-200 focus:border-sakura-400 transition-all duration-200"
-                />
-              </div>
-              <div>
-                <label className="block text-[14px] font-medium text-gray-700 mb-1.5">
-                  原价 (¥)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={formData.originalPrice}
-                  onChange={(e) =>
-                    setFormData({ ...formData, originalPrice: e.target.value })
-                  }
-                  placeholder="可选，用于显示折扣"
-                  className="w-full px-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sakura-200 focus:border-sakura-400 transition-all duration-200"
-                />
-                <p className="text-[13px] text-gray-500 mt-1">设置原价后将显示折扣标签</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* 图片 */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300 p-6">
-          <h2 className="font-serif text-[18px] font-semibold text-gray-900 mb-2">套餐图片</h2>
-          <div className="h-px w-full bg-gradient-to-r from-sakura-200 via-sakura-100 to-transparent mb-6" />
-          <p className="text-[14px] text-gray-600 mb-4">
-            上传多张套餐图片，选择一张作为卡片主图，其余图片将在详情页展示
-          </p>
-
-          <ImageUploader
-            category="plan"
-            entityId={plan.id}
-            purpose="main"
-            multiple={true}
-            maxFiles={10}
-            value={formData.images}
-            mainImage={formData.imageUrl}
-            onChange={(urls) => {
-              setFormData(prev => {
-                // 如果主图不在新的图片列表中，重置主图为第一张
-                const newMainImage = prev.imageUrl && urls.includes(prev.imageUrl)
-                  ? prev.imageUrl
-                  : urls[0] || "";
-                return { ...prev, images: urls, imageUrl: newMainImage };
-              });
-            }}
-            onMainImageChange={(url) => {
-              setFormData(prev => ({ ...prev, imageUrl: url }));
-            }}
-            onError={(err) => setError(err)}
-            aspectRatio="3:4"
-          />
-          <p className="mt-3 text-[13px] text-gray-500">
-            建议尺寸：800×1067像素 (3:4比例)，支持 JPG、PNG、WebP 格式，最大 20MB，最多 10 张
-          </p>
-        </div>
-
-        {/* 套餐内容配置 - v10.1 组件选择和热点编辑 */}
-        <PlanComponentEditor
-          selectedMerchantComponentIds={selectedMerchantComponentIds}
-          onChange={setSelectedMerchantComponentIds}
-          componentConfigs={componentConfigs}
-          onConfigChange={setComponentConfigs}
-          themeId={selectedThemeId}
-          mapTemplate={mapTemplate}
-        />
-
-        {/* 标签 - 新标签系统 */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300 p-6">
-          <h2 className="font-serif text-[18px] font-semibold text-gray-900 mb-2">套餐标签</h2>
-          <div className="h-px w-full bg-gradient-to-r from-sakura-200 via-sakura-100 to-transparent mb-6" />
-          <p className="text-[14px] text-gray-600 mb-4">
-            选择适合您套餐的标签，帮助用户更容易找到和筛选
-          </p>
-
-          {/* 已选标签预览 */}
-          {selectedTagIds.length > 0 && (
-            <div className="mb-5 p-4 bg-sakura-50/50 rounded-xl border border-sakura-100">
-              <p className="text-[14px] font-medium text-gray-700 mb-2">
-                已选择 {selectedTagIds.length} 个标签：
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {tagCategories.flatMap(cat => cat.tags)
-                  .filter(tag => selectedTagIds.includes(tag.id))
-                  .map(tag => (
-                    <Badge key={tag.id} variant="info" size="md">
-                      {tag.icon && <span className="mr-1">{tag.icon}</span>}
-                      {tag.name}
-                      <button
-                        type="button"
-                        onClick={() => toggleTag(tag.id)}
-                        className="ml-2 hover:text-red-600"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </Badge>
-                  ))}
-              </div>
-            </div>
-          )}
-
-          {/* 标签分类选择器 */}
-          <div className="space-y-3">
-            {tagCategories.map((category) => {
-              const isExpanded = expandedCategories.has(category.id);
-              const selectedCount = category.tags.filter(tag =>
-                selectedTagIds.includes(tag.id)
-              ).length;
-
-              return (
-                <div key={category.id} className="border border-gray-200 rounded-xl overflow-hidden hover:border-sakura-200 transition-colors">
-                  {/* 分类标题 */}
-                  <button
-                    type="button"
-                    onClick={() => toggleCategory(category.id)}
-                    className="w-full px-4 py-3 bg-gray-50/80 hover:bg-sakura-50/50 transition-all duration-200 flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-3">
-                      {category.icon && (
-                        <span className="text-xl">{category.icon}</span>
-                      )}
-                      <div className="text-left">
-                        <p className="font-serif font-semibold text-gray-900 text-[14px]">{category.name}</p>
-                        <p className="text-[12px] text-gray-500">
-                          {category.tags.length} 个标签
-                          {selectedCount > 0 && <span className="text-sakura-600"> · 已选 {selectedCount} 个</span>}
-                        </p>
-                      </div>
-                    </div>
-                    <svg
-                      className={`w-5 h-5 text-gray-600 transition-transform duration-200 ${
-                        isExpanded ? 'rotate-180' : ''
-                      }`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
-
-                  {/* 标签列表 */}
-                  {isExpanded && (
-                    <div className="p-4 bg-white">
-                      <div className="flex flex-wrap gap-2">
-                        {category.tags.map((tag) => {
-                          const isSelected = selectedTagIds.includes(tag.id);
-                          return (
-                            <button
-                              key={tag.id}
-                              type="button"
-                              onClick={() => toggleTag(tag.id)}
-                              className={`px-3 py-1.5 rounded-full text-[13px] font-medium transition-all duration-200 ${
-                                isSelected
-                                  ? 'text-white shadow-sm'
-                                  : 'bg-white border border-gray-200 text-gray-600 hover:border-sakura-300 hover:text-sakura-600'
-                              }`}
-                              style={{
-                                backgroundColor: isSelected
-                                  ? (tag.color || category.color || '#FF5580')
-                                  : undefined,
-                                borderColor: isSelected
-                                  ? (tag.color || category.color || '#FF5580')
-                                  : undefined
-                              }}
-                            >
-                              {tag.icon && <span className="mr-1">{tag.icon}</span>}
-                              {tag.name}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {/* 空状态 */}
-          {tagCategories.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              <p>暂无可用标签分类</p>
-              <p className="text-sm mt-2">请联系管理员添加标签</p>
-            </div>
-          )}
-        </div>
-
-        {/* 套餐状态 */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300 p-6">
-          <h2 className="font-serif text-[18px] font-semibold text-gray-900 mb-2">套餐状态</h2>
-          <div className="h-px w-full bg-gradient-to-r from-sakura-200 via-sakura-100 to-transparent mb-6" />
-
-          <label className="flex items-center gap-3 p-4 border border-gray-200 rounded-xl cursor-pointer hover:bg-sakura-50/30 hover:border-sakura-200 transition-all duration-200">
-            <input
-              type="checkbox"
-              checked={formData.isActive}
-              onChange={(e) =>
-                setFormData({ ...formData, isActive: e.target.checked })
-              }
-              className="w-5 h-5 text-sakura-600 border-gray-300 rounded focus:ring-sakura-200 focus:ring-2"
-            />
-            <div>
-              <p className="font-medium text-gray-900 text-[14px]">上架状态</p>
-              <p className="text-[13px] text-gray-500">开启后，用户可以查看并预订此套餐</p>
-            </div>
-          </label>
-        </div>
-
-        {/* 操作按钮 */}
-        <div className="flex gap-3 pb-8">
-          <Button
-            type="submit"
-            variant="primary"
-            size="lg"
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                保存中...
-              </>
-            ) : (
-              <>
-                <Save className="w-5 h-5 mr-2" />
-                保存修改
-              </>
-            )}
-          </Button>
-
-          <Link href="/merchant/listings">
-            <Button variant="secondary" size="lg" disabled={isLoading}>
-              取消
-            </Button>
-          </Link>
-        </div>
-      </form>
-
-      {/* 浮动预览按钮 */}
-      <button
-        type="button"
-        onClick={() => setShowPreview(!showPreview)}
-        className={`
-          fixed bottom-6 right-6 z-40
-          flex items-center gap-2 px-5 py-3 rounded-full
-          transition-all duration-300
-          hover:scale-105 active:scale-95
-          ${showPreview
-            ? "bg-gray-800 text-white hover:bg-gray-700 shadow-lg"
-            : "bg-gradient-to-r from-sakura-400 to-sakura-500 text-white shadow-lg shadow-sakura-500/30 hover:shadow-xl hover:shadow-sakura-500/40"
-          }
-        `}
-      >
-        <Eye className="w-5 h-5" />
-        <span className="font-medium text-[14px]">
-          {showPreview ? "关闭预览" : "用户预览"}
-        </span>
-        {showPreview ? (
-          <ChevronRight className="w-4 h-4" />
-        ) : (
-          <ChevronLeft className="w-4 h-4" />
-        )}
-      </button>
-
-      {/* 侧边预览面板 */}
-      <div
-        className={`
-          fixed top-0 right-0 h-full w-[360px] bg-[#FDFBF7] border-l border-gray-200 shadow-2xl
-          transform transition-transform duration-300 ease-out z-50
-          ${showPreview ? "translate-x-0" : "translate-x-full"}
-        `}
-      >
-        {/* 面板头部 */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-white">
-          <div>
-            <h3 className="font-serif font-semibold text-gray-900 text-[16px]">用户预览</h3>
-            <p className="text-[12px] text-gray-500">实时查看用户看到的效果</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setShowPreview(false)}
-            className="p-2 rounded-lg hover:bg-gray-200 transition-colors"
-          >
-            <X className="w-5 h-5 text-gray-600" />
-          </button>
-        </div>
-
-        {/* 面板内容 */}
-        <div className="p-5 overflow-y-auto" style={{ height: "calc(100% - 73px)" }}>
-          <PlanCardPreview
-            formData={formData}
-            selectedTags={getSelectedTags()}
-            isActive={formData.isActive}
-            isCampaign={plan.isCampaign}
-          />
-
-          {/* 预览提示 */}
-          <div className="mt-6 p-4 bg-sakura-50/50 border border-sakura-100 rounded-xl">
-            <p className="text-[13px] text-gray-600">
-              <span className="font-medium text-sakura-600">提示：</span>此预览展示的是用户在套餐列表中看到的卡片效果。
-              实际详情页会展示更多信息。
+    <div className="min-h-screen bg-[#FDFBF7]">
+      {/* 草稿恢复弹窗 */}
+      {showDraftRecovery && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl">
+            <h3 className="text-lg font-bold text-gray-800 mb-2">发现未保存的编辑</h3>
+            <p className="text-gray-600 mb-4">
+              您有一个未保存的草稿版本，是否要恢复？
             </p>
+            <div className="flex gap-3">
+              <button
+                onClick={recoverDraft}
+                className="flex-1 px-4 py-2 bg-[#D4A5A5] text-white rounded-xl font-medium hover:bg-[#c99595] transition-colors"
+              >
+                恢复草稿
+              </button>
+              <button
+                onClick={discardDraft}
+                className="flex-1 px-4 py-2 border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors"
+              >
+                丢弃
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 顶部导航栏 */}
+      <div className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
+        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* 左侧：返回和标题 */}
+            <div className="flex items-center gap-4">
+              <Link
+                href="/merchant/listings"
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5 text-gray-600" />
+              </Link>
+              <div>
+                <h1 className="text-lg font-bold text-gray-800">编辑套餐</h1>
+                <p className="text-xs text-gray-500 truncate max-w-[200px]">
+                  {formData.name || "未命名套餐"}
+                </p>
+              </div>
+            </div>
+
+            {/* 中间：上次保存时间 */}
+            {lastSavedTime && (
+              <div className="hidden md:flex items-center gap-1.5 text-xs text-gray-400">
+                <Clock className="w-3.5 h-3.5" />
+                <span>自动保存于 {formatLastSaved()}</span>
+              </div>
+            )}
+
+            {/* 右侧：操作按钮 */}
+            <div className="flex items-center gap-3">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={handleSaveDraft}
+                disabled={isSavingDraft || isLoading}
+              >
+                {isSavingDraft ? (
+                  <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                ) : (
+                  <FileText className="w-4 h-4 mr-1.5" />
+                )}
+                保存草稿
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                onClick={handlePublish}
+                disabled={isLoading || isSavingDraft}
+              >
+                {isLoading ? (
+                  <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4 mr-1.5" />
+                )}
+                发布
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* 遮罩层 */}
-      {showPreview && (
-        <div
-          className="fixed inset-0 bg-black/20 z-40"
-          onClick={() => setShowPreview(false)}
-        />
+      {/* 提示消息 */}
+      {(error || success) && (
+        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
+              {error}
+            </div>
+          )}
+          {success && (
+            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl">
+              {success}
+            </div>
+          )}
+        </div>
       )}
+
+      {/* 主体内容：60/40 布局 */}
+      <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="flex gap-6">
+          {/* 左侧：编辑区 (60%) */}
+          <div className="flex-1 min-w-0" style={{ maxWidth: "60%" }}>
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+              {/* Tab 导航 */}
+              <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+
+              {/* Tab 内容 */}
+              <div className="p-6 min-h-[500px]">
+                {activeTab === "basic" && (
+                  <BasicInfoTab formData={formData} onFormChange={handleFormChange} />
+                )}
+
+                {activeTab === "pricing" && (
+                  <PricingTab formData={formData} onFormChange={handleFormChange} />
+                )}
+
+                {activeTab === "components" && (
+                  <ComponentsTab
+                    themeId={formData.themeId}
+                    selectedMerchantComponentIds={selectedMerchantComponentIds}
+                    componentConfigs={componentConfigs}
+                    mapTemplate={mapTemplate}
+                    onComponentIdsChange={setSelectedMerchantComponentIds}
+                    onComponentConfigsChange={setComponentConfigs}
+                  />
+                )}
+
+                {activeTab === "tags" && (
+                  <CategoryTagsTab formData={formData} onFormChange={handleFormChange} />
+                )}
+
+                {activeTab === "advanced" && (
+                  <AdvancedTab formData={formData} onFormChange={handleFormChange} />
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* 右侧：预览区 (40%) */}
+          <div className="w-[40%] flex-shrink-0">
+            <div className="sticky top-24 h-[calc(100vh-120px)] bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+              <PlanEditPreview
+                formData={formData}
+                componentConfigs={componentConfigs}
+                selectedTags={getSelectedTags()}
+                theme={getCurrentTheme()}
+                store={formData.storeName ? { id: "preview", name: formData.storeName } : null}
+                isCampaign={plan.isCampaign}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

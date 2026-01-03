@@ -299,6 +299,9 @@ model RentalPlan {
   availableFrom  DateTime?
   availableUntil DateTime?
 
+  // 发布状态
+  status       PlanStatus @default(PUBLISHED)
+
   isActive     Boolean @default(true)
   isFeatured   Boolean @default(false)
   displayOrder Int     @default(0)  // 在主题内的排序
@@ -660,6 +663,12 @@ enum PlanCategory {
   FAMILY
   GROUP
   SPECIAL
+}
+
+enum PlanStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
 }
 
 enum BookingStatus {

@@ -12,22 +12,54 @@ const planComponentSchema = z.object({
   hotmapOrder: z.number().int().optional().default(0),
 });
 
-// 验证 schema - v10.1 简化版
+// 验证 schema - v10.2 完整版（支持草稿和所有字段）
 const updatePlanSchema = z.object({
+  // 基本信息
   name: z.string().min(1, "套餐名称不能为空"),
   description: z.string().min(10, "描述至少需要10个字符"),
   highlights: z.string().optional().nullable(),
+
+  // 价格信息
   price: z.number().int().positive("价格必须大于0"),
   originalPrice: z.number().int().positive().optional().nullable(),
+  depositAmount: z.number().int().min(0).optional().default(0),
+
+  // 计价单位
+  pricingUnit: z.enum(["person", "group"]).optional().default("person"),
+  unitLabel: z.string().optional().default("人"),
+  unitDescription: z.string().optional().nullable(),
+  minQuantity: z.number().int().min(1).optional().default(1),
+  maxQuantity: z.number().int().min(1).optional().default(10),
+
+  // 时长
+  duration: z.number().int().positive().optional(),
+
+  // 组件配置
   merchantComponentIds: z.array(z.string()).optional(), // 简化版：只传商户组件 ID 数组
   planComponents: z.array(planComponentSchema).optional(), // 完整版：传组件配置
+
+  // 图片
   imageUrl: z.union([z.string().url(), z.literal("")]).optional().nullable().transform(val => val || null),
   images: z.array(z.string().url()).optional().default([]), // 多图支持
+
+  // 店铺和地区
   storeName: z.string().optional().nullable(),
   region: z.string().optional().nullable(),
+
+  // 主题和标签
   themeId: z.string().optional().nullable(),
   tagIds: z.array(z.string()).optional(),
+
+  // 限量和时间限制
+  isLimited: z.boolean().optional().default(false),
+  maxBookings: z.number().int().positive().optional().nullable(),
+  availableFrom: z.string().datetime().optional().nullable(),
+  availableUntil: z.string().datetime().optional().nullable(),
+
+  // 状态
+  status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).optional(),
   isActive: z.boolean(),
+  isFeatured: z.boolean().optional().default(false),
 });
 
 // GET - 获取单个套餐详情（v10.1）
@@ -194,22 +226,50 @@ export async function PATCH(
 
     // 使用事务更新套餐、标签和组件
     const result = await prisma.$transaction(async (tx) => {
-      // 更新套餐基本信息
+      // 更新套餐基本信息（v10.2 - 支持所有字段）
       const updatedPlan = await tx.rentalPlan.update({
         where: { id },
         data: {
+          // 基本信息
           name: validatedData.name,
           description: validatedData.description,
           highlights: validatedData.highlights || null,
+
+          // 价格信息
           price: validatedData.price,
           originalPrice: validatedData.originalPrice || null,
+          depositAmount: validatedData.depositAmount,
+
+          // 计价单位
+          pricingUnit: validatedData.pricingUnit,
+          unitLabel: validatedData.unitLabel,
+          unitDescription: validatedData.unitDescription || null,
+          minQuantity: validatedData.minQuantity,
+          maxQuantity: validatedData.maxQuantity,
+
+          // 时长
+          ...(validatedData.duration !== undefined && { duration: validatedData.duration }),
+
+          // 图片
           includes: [], // 已废弃，使用 PlanComponent
           imageUrl: validatedData.imageUrl || null,
           images: validatedData.images || [],
+
+          // 店铺和地区
           storeName: validatedData.storeName || null,
           region: validatedData.region || null,
           themeId: validatedData.themeId || null,
+
+          // 限量和时间限制
+          isLimited: validatedData.isLimited,
+          maxBookings: validatedData.maxBookings || null,
+          availableFrom: validatedData.availableFrom ? new Date(validatedData.availableFrom) : null,
+          availableUntil: validatedData.availableUntil ? new Date(validatedData.availableUntil) : null,
+
+          // 状态
+          ...(validatedData.status !== undefined && { status: validatedData.status }),
           isActive: validatedData.isActive,
+          isFeatured: validatedData.isFeatured,
         },
       });
 
