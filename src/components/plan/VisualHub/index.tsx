@@ -249,25 +249,6 @@ export default function VisualHub({
         <div className="relative rounded-xl overflow-hidden bg-wabi-50">
           {renderTabContent()}
         </div>
-
-        {/* 底部操作栏 */}
-        <div className="flex items-center justify-between mt-4">
-          <div className="text-[14px] text-gray-500">
-            {activeTab === "official" && `${mockOfficialImages.length} 张官方图片`}
-            {activeTab === "customer" && `${mockCustomerPhotos.length} 张买家秀`}
-            {activeTab === "tryon" && (hasTryOn ? "已生成试穿效果" : "上传照片体验 AI 试穿")}
-            {activeTab === "hairstyle" && `${mockHairstyleImages.basic.length + mockHairstyleImages.premium.length} 种发型可选`}
-          </div>
-
-          {activeTab !== "tryon" && getCurrentImages().length > 0 && (
-            <button
-              onClick={() => handleOpenGallery(0)}
-              className="text-[14px] font-semibold text-gray-900 underline hover:text-sakura-600 transition-colors"
-            >
-              查看全部
-            </button>
-          )}
-        </div>
       </div>
     </>
   );

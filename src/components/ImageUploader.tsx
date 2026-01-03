@@ -60,6 +60,10 @@ export default function ImageUploader({
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // 拖拽排序状态
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
   // 已有图片
   const existingUrls = value || [];
 
@@ -306,6 +310,55 @@ export default function ImageUploader({
     setValidationErrors(prev => prev.filter((_, i) => i !== index));
   };
 
+  // 拖拽排序处理
+  const handleReorderDragStart = (e: React.DragEvent, index: number) => {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', index.toString());
+    setDraggedIndex(index);
+  };
+
+  const handleReorderDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (draggedIndex !== null && draggedIndex !== index) {
+      setDragOverIndex(index);
+    }
+  };
+
+  const handleReorderDragLeave = () => {
+    setDragOverIndex(null);
+  };
+
+  const handleReorderDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === dropIndex) {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    // 重新排序
+    const newUrls = [...existingUrls];
+    const [draggedItem] = newUrls.splice(draggedIndex, 1);
+    newUrls.splice(dropIndex, 0, draggedItem);
+
+    // 更新外部状态
+    if (onChange) {
+      onChange(newUrls);
+    }
+
+    // 如果拖动的是主图到其他位置，主图保持不变
+    // 如果主图被删除后需要重新设置，由 removeExistingUrl 处理
+
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleReorderDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
   return (
     <div className={`space-y-4 ${className}`}>
       {/* 验证错误提示 */}
@@ -334,34 +387,60 @@ export default function ImageUploader({
       {(existingUrls.length > 0 || images.length > 0) && (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
           {/* 已保存的图片 */}
-          {existingUrls.map((url) => {
+          {existingUrls.map((url, index) => {
             const isMain = url === currentMainImage;
+            const isDraggedItem = draggedIndex === index;
+            const isDropTarget = dragOverIndex === index;
             return (
               <div
                 key={url}
-                className={`relative ${aspectRatioClass} bg-gray-100 rounded-xl overflow-hidden group cursor-pointer
-                  ${isMain ? 'ring-2 ring-sakura-500 ring-offset-2' : 'hover:ring-2 hover:ring-gray-300'}`}
+                draggable={!disabled && existingUrls.length > 1}
+                onDragStart={(e) => handleReorderDragStart(e, index)}
+                onDragOver={(e) => handleReorderDragOver(e, index)}
+                onDragLeave={handleReorderDragLeave}
+                onDrop={(e) => handleReorderDrop(e, index)}
+                onDragEnd={handleReorderDragEnd}
+                className={`relative ${aspectRatioClass} bg-gray-100 rounded-xl overflow-hidden group
+                  ${isMain ? 'ring-2 ring-sakura-500 ring-offset-2' : 'hover:ring-2 hover:ring-gray-300'}
+                  ${isDraggedItem ? 'opacity-50 scale-95' : ''}
+                  ${isDropTarget ? 'ring-2 ring-blue-500 ring-offset-2' : ''}
+                  ${!disabled && existingUrls.length > 1 ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'}
+                  transition-all duration-200`}
                 onClick={() => !disabled && setAsMainImage(url)}
               >
                 <Image
                   src={url}
                   alt=""
                   fill
-                  className="object-cover"
+                  className="object-cover pointer-events-none"
                   sizes="200px"
                 />
 
+                {/* 拖拽手柄 - 多图时显示 */}
+                {!disabled && existingUrls.length > 1 && (
+                  <div className="absolute top-2 left-2 p-1.5 bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all z-10">
+                    <GripVertical className="w-4 h-4" />
+                  </div>
+                )}
+
                 {/* 主图标记 */}
                 {isMain && (
-                  <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-1 bg-sakura-500 text-white text-xs font-medium rounded-full">
+                  <div className={`absolute ${existingUrls.length > 1 ? 'top-10' : 'top-2'} left-2 flex items-center gap-1 px-2 py-1 bg-sakura-500 text-white text-xs font-medium rounded-full`}>
                     <Star className="w-3 h-3 fill-current" />
                     主图
                   </div>
                 )}
 
+                {/* 序号标记 */}
+                {!isMain && (
+                  <div className={`absolute ${existingUrls.length > 1 ? 'top-10' : 'top-2'} left-2 w-6 h-6 flex items-center justify-center bg-black/50 text-white text-xs font-medium rounded-full`}>
+                    {index + 1}
+                  </div>
+                )}
+
                 {/* 悬停提示 - 非主图时显示 */}
                 {!isMain && !disabled && (
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
                     <span className="text-white text-sm font-medium">点击设为主图</span>
                   </div>
                 )}
@@ -374,7 +453,7 @@ export default function ImageUploader({
                       e.stopPropagation();
                       removeExistingUrl(url);
                     }}
-                    className="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all"
+                    className="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all z-10"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -503,10 +582,18 @@ export default function ImageUploader({
 
       {/* 使用说明 */}
       {existingUrls.length > 0 && !disabled && (
-        <p className="text-xs text-gray-500 flex items-center gap-1">
-          <Star className="w-3 h-3 text-sakura-500 fill-current" />
-          点击图片可设为主图，主图将用于套餐卡片展示
-        </p>
+        <div className="text-xs text-gray-500 space-y-1">
+          <p className="flex items-center gap-1">
+            <Star className="w-3 h-3 text-sakura-500 fill-current" />
+            点击图片可设为主图，主图将用于套餐卡片展示
+          </p>
+          {existingUrls.length > 1 && (
+            <p className="flex items-center gap-1">
+              <GripVertical className="w-3 h-3 text-gray-400" />
+              拖拽图片可调整顺序
+            </p>
+          )}
+        </div>
       )}
     </div>
   );
