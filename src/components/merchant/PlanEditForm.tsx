@@ -464,25 +464,25 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7]">
+    <div className="min-h-screen bg-gray-50">
       {/* 草稿恢复弹窗 */}
       {showDraftRecovery && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl">
-            <h3 className="text-lg font-bold text-gray-800 mb-2">发现未保存的编辑</h3>
-            <p className="text-gray-600 mb-4">
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-xl">
+            <h3 className="text-[18px] font-semibold text-gray-900 mb-2">发现未保存的编辑</h3>
+            <p className="text-[14px] text-gray-600 mb-6">
               您有一个未保存的草稿版本，是否要恢复？
             </p>
-            <div className="flex gap-3">
+            <div className="flex gap-4">
               <button
                 onClick={recoverDraft}
-                className="flex-1 px-4 py-2 bg-[#D4A5A5] text-white rounded-xl font-medium hover:bg-[#c99595] transition-colors"
+                className="flex-1 px-4 py-2.5 bg-sakura-600 text-white rounded-lg text-[14px] font-medium hover:bg-sakura-700 transition-all duration-300"
               >
                 恢复草稿
               </button>
               <button
                 onClick={discardDraft}
-                className="flex-1 px-4 py-2 border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors"
+                className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 rounded-lg text-[14px] font-medium hover:bg-gray-50 transition-all duration-300"
               >
                 丢弃
               </button>
@@ -492,20 +492,20 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
       )}
 
       {/* 顶部导航栏 */}
-      <div className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-gray-200">
+        <div className="max-w-[1600px] mx-auto px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* 左侧：返回和标题 */}
             <div className="flex items-center gap-4">
               <Link
                 href="/merchant/listings"
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-gray-100 rounded-lg transition-all duration-300"
               >
                 <ArrowLeft className="w-5 h-5 text-gray-600" />
               </Link>
               <div>
-                <h1 className="text-lg font-bold text-gray-800">编辑套餐</h1>
-                <p className="text-xs text-gray-500 truncate max-w-[200px]">
+                <h1 className="text-[16px] font-semibold text-gray-900">编辑套餐</h1>
+                <p className="text-[12px] text-gray-500 truncate max-w-[240px]">
                   {formData.name || "未命名套餐"}
                 </p>
               </div>
@@ -513,7 +513,7 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
 
             {/* 中间：上次保存时间 */}
             {lastSavedTime && (
-              <div className="hidden md:flex items-center gap-1.5 text-xs text-gray-400">
+              <div className="hidden md:flex items-center gap-2 text-[12px] text-gray-400">
                 <Clock className="w-3.5 h-3.5" />
                 <span>自动保存于 {formatLastSaved()}</span>
               </div>
@@ -527,13 +527,14 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
                 size="sm"
                 onClick={handleSaveDraft}
                 disabled={isSavingDraft || isLoading}
+                className="rounded-lg"
               >
                 {isSavingDraft ? (
-                  <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 ) : (
-                  <FileText className="w-4 h-4 mr-1.5" />
+                  <FileText className="w-4 h-4 mr-2" />
                 )}
-                保存草稿
+                <span className="text-[14px]">保存草稿</span>
               </Button>
               <Button
                 type="button"
@@ -541,13 +542,14 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
                 size="sm"
                 onClick={handlePublish}
                 disabled={isLoading || isSavingDraft}
+                className="rounded-lg"
               >
                 {isLoading ? (
-                  <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 ) : (
-                  <Send className="w-4 h-4 mr-1.5" />
+                  <Send className="w-4 h-4 mr-2" />
                 )}
-                发布
+                <span className="text-[14px]">发布</span>
               </Button>
             </div>
           </div>
@@ -556,28 +558,28 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
 
       {/* 提示消息 */}
       {(error || success) && (
-        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+        <div className="max-w-[1600px] mx-auto px-6 lg:px-8 pt-4">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-[14px]">
               {error}
             </div>
           )}
           {success && (
-            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl">
+            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl text-[14px]">
               {success}
             </div>
           )}
         </div>
       )}
 
-      {/* 主体内容：全宽布局 */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+      {/* 主体内容：宽屏布局 */}
+      <div className="max-w-[1600px] mx-auto px-6 lg:px-8 py-6">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
           {/* Tab 导航 */}
           <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
 
           {/* Tab 内容 */}
-          <div className="p-6 min-h-[500px]">
+          <div className="p-6 lg:p-8 min-h-[600px]">
             {activeTab === "basic" && (
               <BasicInfoTab formData={formData} onFormChange={handleFormChange} />
             )}
@@ -606,7 +608,7 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
             )}
 
             {activeTab === "preview" && (
-              <div className="h-[calc(100vh-280px)] overflow-hidden rounded-xl border border-gray-100">
+              <div className="h-[calc(100vh-260px)] overflow-hidden rounded-xl border border-gray-100">
                 <PlanEditPreview
                   formData={formData}
                   componentConfigs={componentConfigs}

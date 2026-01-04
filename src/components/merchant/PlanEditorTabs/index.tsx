@@ -31,8 +31,8 @@ export default function TabNavigation({
   tabErrors = {},
 }: TabNavigationProps) {
   return (
-    <div className="border-b border-gray-200">
-      <nav className="flex space-x-1 px-2" aria-label="Tabs">
+    <div className="border-b border-gray-200 bg-gray-50/50">
+      <nav className="flex px-4 lg:px-6 gap-1" aria-label="Tabs">
         {TABS.map((tab) => {
           const isActive = activeTab === tab.id;
           const hasError = tabErrors[tab.id];
@@ -42,19 +42,19 @@ export default function TabNavigation({
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
               className={`
-                group relative flex items-center gap-2 px-4 py-3 text-sm font-medium
-                transition-all duration-200 rounded-t-lg
+                group relative flex items-center gap-2 px-4 py-3
+                text-[14px] font-medium transition-all duration-300
                 ${
                   isActive
-                    ? "text-[#8B4513] bg-white border-t border-l border-r border-gray-200 -mb-px"
-                    : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                    ? "text-sakura-700 bg-white border-t-2 border-t-sakura-500 border-x border-gray-200 -mb-px rounded-t-lg"
+                    : "text-gray-500 hover:text-gray-700 hover:bg-white/60 rounded-t-lg"
                 }
               `}
             >
               <span
                 className={`
-                  transition-colors
-                  ${isActive ? "text-[#D4A5A5]" : "text-gray-400 group-hover:text-gray-500"}
+                  transition-colors duration-300
+                  ${isActive ? "text-sakura-500" : "text-gray-400 group-hover:text-gray-500"}
                 `}
               >
                 {tab.icon}
@@ -64,11 +64,6 @@ export default function TabNavigation({
               {/* 错误指示器 */}
               {hasError && (
                 <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />
-              )}
-
-              {/* 激活状态下划线 */}
-              {isActive && (
-                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#D4A5A5] to-[#E8B4B8]" />
               )}
             </button>
           );
