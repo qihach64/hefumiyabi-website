@@ -64,6 +64,8 @@ interface PlanComponent {
   hotmapX?: number | null;
   hotmapY?: number | null;
   hotmapLabelPosition?: string;
+  hotmapLabelOffsetX?: number | null;
+  hotmapLabelOffsetY?: number | null;
   hotmapOrder?: number;
   merchantComponent: {
     id: string;
@@ -185,9 +187,31 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
       hotmapX: pc.hotmapX ?? null,
       hotmapY: pc.hotmapY ?? null,
       hotmapLabelPosition: pc.hotmapLabelPosition ?? "right",
+      hotmapLabelOffsetX: pc.hotmapLabelOffsetX ?? undefined,
+      hotmapLabelOffsetY: pc.hotmapLabelOffsetY ?? undefined,
       hotmapOrder: pc.hotmapOrder ?? 0,
     })) || []
   );
+
+  // 当 plan.planComponents 变化时（如 router.refresh() 后），同步更新状态
+  useEffect(() => {
+    if (plan.planComponents) {
+      setComponentConfigs(
+        plan.planComponents.map((pc) => ({
+          merchantComponentId: pc.merchantComponentId,
+          hotmapX: pc.hotmapX ?? null,
+          hotmapY: pc.hotmapY ?? null,
+          hotmapLabelPosition: pc.hotmapLabelPosition ?? "right",
+          hotmapLabelOffsetX: pc.hotmapLabelOffsetX ?? undefined,
+          hotmapLabelOffsetY: pc.hotmapLabelOffsetY ?? undefined,
+          hotmapOrder: pc.hotmapOrder ?? 0,
+        }))
+      );
+      setSelectedMerchantComponentIds(
+        plan.planComponents.map((pc) => pc.merchantComponentId)
+      );
+    }
+  }, [plan.planComponents]);
 
   // 自动保存定时器
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -320,6 +344,8 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
 
       clearDraft(plan.id);
       setSuccess("草稿已保存");
+      // 刷新页面数据以显示最新保存的状态
+      router.refresh();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "保存草稿失败");
@@ -367,9 +393,9 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
 
       clearDraft(plan.id);
       setSuccess("套餐已发布！");
-      setTimeout(() => {
-        router.push("/merchant/listings");
-      }, 1500);
+      // 刷新页面数据以显示最新保存的状态
+      router.refresh();
+      setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "发布失败，请重试");
     } finally {
@@ -400,6 +426,8 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
       hotmapX: config.hotmapX,
       hotmapY: config.hotmapY,
       hotmapLabelPosition: config.hotmapLabelPosition,
+      hotmapLabelOffsetX: config.hotmapLabelOffsetX,
+      hotmapLabelOffsetY: config.hotmapLabelOffsetY,
       hotmapOrder: config.hotmapOrder,
     })),
     imageUrl: formData.imageUrl || null,

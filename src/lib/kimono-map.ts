@@ -118,6 +118,8 @@ export async function getPlanMapData(planId: string): Promise<MapData | null> {
           x: pc.hotmapX!,
           y: pc.hotmapY!,
           labelPosition: (pc.hotmapLabelPosition || "right") as "left" | "right" | "top" | "bottom",
+          labelOffsetX: pc.hotmapLabelOffsetX,
+          labelOffsetY: pc.hotmapLabelOffsetY,
           displayOrder: pc.hotmapOrder ?? index,
           component: {
             id: tpl.id,

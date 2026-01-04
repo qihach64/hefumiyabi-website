@@ -65,6 +65,8 @@ export default async function EditListingPage({ params }: EditListingPageProps) 
           hotmapX: true,
           hotmapY: true,
           hotmapLabelPosition: true,
+          hotmapLabelOffsetX: true,
+          hotmapLabelOffsetY: true,
           hotmapOrder: true,
           merchantComponent: {
             select: {

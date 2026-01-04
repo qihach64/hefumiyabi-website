@@ -16,7 +16,7 @@ interface HotspotProps {
  * 保证编辑器和展示的视觉一致性 (WYSIWYG)
  */
 export default function Hotspot({ hotspot, onClick, isSelected, isHovered = false, showGuide = false }: HotspotProps) {
-  const { x, y, labelPosition, component, isIncluded = true } = hotspot;
+  const { x, y, labelPosition, labelOffsetX, labelOffsetY, component, isIncluded = true } = hotspot;
   // v9.1: 直接使用组件原生名称（不再支持套餐级别名称覆盖）
   const displayName = component.name;
   const icon = component.icon || "📍";
@@ -28,6 +28,8 @@ export default function Hotspot({ hotspot, onClick, isSelected, isHovered = fals
         x,
         y,
         labelPosition,
+        labelOffsetX: labelOffsetX ?? undefined,
+        labelOffsetY: labelOffsetY ?? undefined,
         name: displayName,
         icon,
         isIncluded,

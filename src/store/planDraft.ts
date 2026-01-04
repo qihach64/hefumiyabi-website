@@ -55,6 +55,8 @@ export interface ComponentConfig {
   hotmapX?: number | null;
   hotmapY?: number | null;
   hotmapLabelPosition?: string;
+  hotmapLabelOffsetX?: number; // 标签 X 偏移（像素）
+  hotmapLabelOffsetY?: number; // 标签 Y 偏移（像素）
   hotmapOrder?: number;
 }
 

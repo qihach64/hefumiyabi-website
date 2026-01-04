@@ -9,6 +9,8 @@ const planComponentSchema = z.object({
   hotmapX: z.number().min(0).max(1).optional().nullable(),
   hotmapY: z.number().min(0).max(1).optional().nullable(),
   hotmapLabelPosition: z.enum(["left", "right"]).optional().default("right"),
+  hotmapLabelOffsetX: z.number().optional().nullable(), // 标签 X 偏移（像素）
+  hotmapLabelOffsetY: z.number().optional().nullable(), // 标签 Y 偏移（像素）
   hotmapOrder: z.number().int().optional().default(0),
 });
 
@@ -141,6 +143,8 @@ export async function GET(
         hotmapX: pc.hotmapX,
         hotmapY: pc.hotmapY,
         hotmapLabelPosition: pc.hotmapLabelPosition,
+        hotmapLabelOffsetX: pc.hotmapLabelOffsetX,
+        hotmapLabelOffsetY: pc.hotmapLabelOffsetY,
         hotmapOrder: pc.hotmapOrder,
         // 商户组件信息
         merchantComponent: {
@@ -318,6 +322,8 @@ export async function PATCH(
               hotmapX: pc.hotmapX ?? null,
               hotmapY: pc.hotmapY ?? null,
               hotmapLabelPosition: pc.hotmapLabelPosition ?? "right",
+              hotmapLabelOffsetX: pc.hotmapLabelOffsetX ?? null,
+              hotmapLabelOffsetY: pc.hotmapLabelOffsetY ?? null,
               hotmapOrder: pc.hotmapOrder ?? 0,
             })),
           });

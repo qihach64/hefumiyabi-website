@@ -21,6 +21,8 @@ export interface HotspotData {
   x: number;
   y: number;
   labelPosition: "left" | "right" | "top" | "bottom";
+  labelOffsetX?: number | null; // 标签 X 偏移（像素）
+  labelOffsetY?: number | null; // 标签 Y 偏移（像素）
   displayOrder: number;
   component: ServiceComponentData;
   // Plan-specific config (v9.1 simplified)

@@ -1064,6 +1064,10 @@ model PlanComponent {
   // 标签显示方向
   hotmapLabelPosition  String           @default("right") @map("hotmap_label_position")
 
+  // 标签偏移位置（像素，相对于热点中心）
+  hotmapLabelOffsetX   Float?           @map("hotmap_label_offset_x")
+  hotmapLabelOffsetY   Float?           @map("hotmap_label_offset_y")
+
   // 热点显示顺序（用于动画、层级）
   hotmapOrder          Int              @default(0) @map("hotmap_order")
 

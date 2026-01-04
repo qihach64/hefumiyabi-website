@@ -61,6 +61,8 @@ export interface ComponentConfig {
   hotmapX?: number | null;
   hotmapY?: number | null;
   hotmapLabelPosition?: string;
+  hotmapLabelOffsetX?: number; // 标签 X 偏移（像素）
+  hotmapLabelOffsetY?: number; // 标签 Y 偏移（像素）
   hotmapOrder?: number;
 }
 
@@ -354,8 +356,11 @@ export default function PlanComponentEditor({
         }
       }
 
-      // 选中以显示属性面板
+      // 选中以显示属性面板，并强制展开右侧面板
       setSelectedComponentId(merchantComponentId);
+      if (isRightCollapsed) {
+        setIsRightCollapsed(false);
+      }
     },
     [
       selectedMerchantComponentIds,
@@ -366,13 +371,20 @@ export default function PlanComponentEditor({
       selectedComponentId,
       getAllComponents,
       mapTemplate,
+      isRightCollapsed,
     ]
   );
 
   // 从画布选中组件
-  const handleCanvasComponentClick = useCallback((merchantComponentId: string) => {
+  // source: 'hotspot' - 点击热点圆点（只选中，不展开面板，方便调整位置）
+  // source: 'label' - 点击标签卡片（选中并展开面板查看详情）
+  const handleCanvasComponentClick = useCallback((merchantComponentId: string, source: "hotspot" | "label") => {
     setSelectedComponentId(merchantComponentId);
-  }, []);
+    // 只有点击标签时才展开右侧面板
+    if (source === "label" && isRightCollapsed) {
+      setIsRightCollapsed(false);
+    }
+  }, [isRightCollapsed]);
 
   // ==================== 放置逻辑 ====================
 
@@ -471,6 +483,26 @@ export default function PlanComponentEditor({
       }
     },
     [selectedMerchantComponentIds, onChange, configs, setConfigs, selectedComponentId]
+  );
+
+  // 更新标签偏移位置
+  const handleLabelOffsetChange = useCallback(
+    (merchantComponentId: string, offsetX: number, offsetY: number) => {
+      setConfigs(
+        configs.map((c) =>
+          c.merchantComponentId === merchantComponentId
+            ? {
+                ...c,
+                hotmapLabelOffsetX: offsetX,
+                hotmapLabelOffsetY: offsetY,
+                // 同时更新 labelPosition 以便兼容旧逻辑
+                hotmapLabelPosition: offsetX < 0 ? "left" : "right",
+              }
+            : c
+        )
+      );
+    },
+    [configs, setConfigs]
   );
 
   // ==================== 面板拖拽调整 ====================
@@ -868,6 +900,8 @@ export default function PlanComponentEditor({
                         labelPosition:
                           (config.hotmapLabelPosition as "left" | "right" | "top" | "bottom") ||
                           "right",
+                        labelOffsetX: config.hotmapLabelOffsetX,
+                        labelOffsetY: config.hotmapLabelOffsetY,
                         name: component?.name ?? "加载中...",
                         icon: component?.icon ?? "📍",
                         isIncluded: true,
@@ -875,9 +909,10 @@ export default function PlanComponentEditor({
                       isEditable
                       isDragging={isDragging}
                       isSelected={isActive}
-                      onClick={() => handleCanvasComponentClick(config.merchantComponentId)}
+                      onClick={(source) => handleCanvasComponentClick(config.merchantComponentId, source)}
                       onDragStart={(e) => handleDragStart(e, config.merchantComponentId)}
                       onRemove={() => removeComponent(config.merchantComponentId)}
+                      onLabelOffsetChange={(offsetX, offsetY) => handleLabelOffsetChange(config.merchantComponentId, offsetX, offsetY)}
                     />
                   );
                 })}
@@ -885,7 +920,7 @@ export default function PlanComponentEditor({
 
               {/* 画布底部提示 */}
               <div className="mt-4 text-center text-xs text-gray-500">
-                拖拽调整位置 · 点击选中查看详情 · 点击 × 移除
+                拖拽热点调整位置 · 拖拽标签调整方向 · 点击标签查看详情
               </div>
             </div>
           ) : (
