@@ -570,59 +570,53 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
         </div>
       )}
 
-      {/* 主体内容：60/40 布局 */}
-      <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex gap-6">
-          {/* 左侧：编辑区 (60%) */}
-          <div className="flex-1 min-w-0" style={{ maxWidth: "60%" }}>
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-              {/* Tab 导航 */}
-              <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+      {/* 主体内容：全宽布局 */}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+          {/* Tab 导航 */}
+          <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
 
-              {/* Tab 内容 */}
-              <div className="p-6 min-h-[500px]">
-                {activeTab === "basic" && (
-                  <BasicInfoTab formData={formData} onFormChange={handleFormChange} />
-                )}
+          {/* Tab 内容 */}
+          <div className="p-6 min-h-[500px]">
+            {activeTab === "basic" && (
+              <BasicInfoTab formData={formData} onFormChange={handleFormChange} />
+            )}
 
-                {activeTab === "pricing" && (
-                  <PricingTab formData={formData} onFormChange={handleFormChange} />
-                )}
+            {activeTab === "pricing" && (
+              <PricingTab formData={formData} onFormChange={handleFormChange} />
+            )}
 
-                {activeTab === "components" && (
-                  <ComponentsTab
-                    themeId={formData.themeId}
-                    selectedMerchantComponentIds={selectedMerchantComponentIds}
-                    componentConfigs={componentConfigs}
-                    mapTemplate={mapTemplate}
-                    onComponentIdsChange={setSelectedMerchantComponentIds}
-                    onComponentConfigsChange={setComponentConfigs}
-                  />
-                )}
-
-                {activeTab === "tags" && (
-                  <CategoryTagsTab formData={formData} onFormChange={handleFormChange} />
-                )}
-
-                {activeTab === "advanced" && (
-                  <AdvancedTab formData={formData} onFormChange={handleFormChange} />
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* 右侧：预览区 (40%) */}
-          <div className="w-[40%] flex-shrink-0">
-            <div className="sticky top-24 h-[calc(100vh-120px)] bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-              <PlanEditPreview
-                formData={formData}
+            {activeTab === "components" && (
+              <ComponentsTab
+                themeId={formData.themeId}
+                selectedMerchantComponentIds={selectedMerchantComponentIds}
                 componentConfigs={componentConfigs}
-                selectedTags={getSelectedTags()}
-                theme={getCurrentTheme()}
-                store={formData.storeName ? { id: "preview", name: formData.storeName } : null}
-                isCampaign={plan.isCampaign}
+                mapTemplate={mapTemplate}
+                onComponentIdsChange={setSelectedMerchantComponentIds}
+                onComponentConfigsChange={setComponentConfigs}
               />
-            </div>
+            )}
+
+            {activeTab === "tags" && (
+              <CategoryTagsTab formData={formData} onFormChange={handleFormChange} />
+            )}
+
+            {activeTab === "advanced" && (
+              <AdvancedTab formData={formData} onFormChange={handleFormChange} />
+            )}
+
+            {activeTab === "preview" && (
+              <div className="h-[calc(100vh-280px)] overflow-hidden rounded-xl border border-gray-100">
+                <PlanEditPreview
+                  formData={formData}
+                  componentConfigs={componentConfigs}
+                  selectedTags={getSelectedTags()}
+                  theme={getCurrentTheme()}
+                  store={formData.storeName ? { id: "preview", name: formData.storeName } : null}
+                  isCampaign={plan.isCampaign}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
