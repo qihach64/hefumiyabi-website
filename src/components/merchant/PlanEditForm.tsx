@@ -356,6 +356,10 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
 
   // 发布套餐
   const handlePublish = async () => {
+    // 先保存草稿到 localStorage，确保修改不会丢失
+    saveDraft(plan.id, formData, componentConfigs, selectedMerchantComponentIds);
+    setLastSavedTime(new Date());
+
     // 验证必填字段
     if (!formData.name.trim()) {
       setError("请填写套餐名称");
