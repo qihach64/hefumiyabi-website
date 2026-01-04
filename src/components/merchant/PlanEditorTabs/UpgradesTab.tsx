@@ -472,14 +472,19 @@ export default function UpgradesTab({
                   const name = getUpgradeName(upgrade);
                   const icon = getUpgradeIcon(upgrade);
                   const basePrice = getUpgradeBasePrice(upgrade);
+                  const config = getConfig(upgrade.id);
 
                   return (
                     <div
                       key={upgrade.id}
                       className={`
                         group flex items-center gap-3 p-2.5 rounded-xl cursor-pointer transition-all
-                        ${isActive ? "bg-sakura-100 border border-sakura-300" : "hover:bg-white border border-transparent"}
-                        ${selected && !isActive ? "bg-sakura-50/50" : ""}
+                        ${isActive
+                          ? "bg-sakura-100 border-2 border-sakura-400 shadow-sm"
+                          : selected
+                            ? "bg-sakura-50 border border-sakura-200"
+                            : "hover:bg-white border border-transparent"
+                        }
                       `}
                       onClick={() => setSelectedId(upgrade.id)}
                     >
@@ -503,7 +508,7 @@ export default function UpgradesTab({
 
                       {/* 图标 */}
                       {upgrade.images.length > 0 ? (
-                        <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                        <div className={`relative w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 ${selected ? "ring-2 ring-sakura-300" : "bg-gray-100"}`}>
                           <Image
                             src={upgrade.images[0]}
                             alt={name}
@@ -514,7 +519,7 @@ export default function UpgradesTab({
                           />
                         </div>
                       ) : (
-                        <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-lg flex-shrink-0">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg flex-shrink-0 ${selected ? "bg-sakura-100" : "bg-gray-100"}`}>
                           {icon}
                         </div>
                       )}
@@ -522,7 +527,12 @@ export default function UpgradesTab({
                       {/* 信息 */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[13px] font-medium text-gray-900 truncate">{name}</span>
+                          <span className={`text-[13px] font-medium truncate ${selected ? "text-sakura-700" : "text-gray-900"}`}>{name}</span>
+                          {selected && (
+                            <span className="px-1.5 py-0.5 bg-sakura-500 text-white text-[10px] rounded font-medium">
+                              已加入
+                            </span>
+                          )}
                           {upgrade.isCustom && (
                             <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] rounded ${APPROVAL_STATUS_CONFIG[upgrade.approvalStatus].color}`}>
                               {APPROVAL_STATUS_CONFIG[upgrade.approvalStatus].icon}
@@ -532,11 +542,14 @@ export default function UpgradesTab({
                         </div>
                         <p className="text-[12px] text-gray-500">
                           ¥{(basePrice / 100).toLocaleString()}
+                          {config?.priceOverride && (
+                            <span className="ml-1 text-sakura-600">→ ¥{(config.priceOverride / 100).toLocaleString()}</span>
+                          )}
                         </p>
                       </div>
 
                       {/* 推荐标记 */}
-                      {getConfig(upgrade.id)?.isPopular && (
+                      {config?.isPopular && (
                         <Star className="w-4 h-4 text-amber-500 fill-amber-500 flex-shrink-0" />
                       )}
                     </div>
