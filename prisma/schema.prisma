@@ -819,6 +819,13 @@ enum PayoutStatus {
   CANCELLED
 }
 
+enum ComponentApprovalStatus {
+  DRAFT       // 草稿（商户刚创建，未提交）
+  PENDING     // 审核中（商户提交，管理员可见）
+  APPROVED    // 已通过（正式上架，所有套餐可用）
+  REJECTED    // 已驳回（需修改）
+}
+
 // ============================================
 // 标签系统 (Tag System)
 // ============================================
@@ -1014,9 +1021,22 @@ model MerchantComponent {
   merchantId    String   @map("merchant_id")
   merchant      Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
 
-  // 平台组件模板
-  templateId    String   @map("template_id")
-  template      ServiceComponent @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  // 平台组件模板（自定义服务时为 null）
+  templateId    String?  @map("template_id")
+  template      ServiceComponent? @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  // ========== 自定义服务标识 ==========
+  isCustom           Boolean                  @default(false) @map("is_custom")
+  approvalStatus     ComponentApprovalStatus  @default(APPROVED) @map("approval_status")
+  adminFeedback      String?                  @map("admin_feedback")  // 驳回理由
+
+  // ========== 自定义服务专用字段 ==========
+  // 当 isCustom=true 时使用这些字段，否则从 template 读取
+  customName         String?                  @map("custom_name")
+  customNameEn       String?                  @map("custom_name_en")
+  customDescription  String?                  @map("custom_description")
+  customIcon         String?                  @map("custom_icon")
+  customBasePrice    Int?                     @map("custom_base_price")
 
   // ========== 商户自定义内容 ==========
   // 空数组 = 使用平台默认内容 (template.defaultImages / template.defaultHighlights)
@@ -1024,7 +1044,7 @@ model MerchantComponent {
   highlights    String[]         @default([])
 
   // ========== 仅 ADDON 类型 ==========
-  // null = 使用平台建议价 (template.basePrice)
+  // null = 使用平台建议价 (template.basePrice 或 customBasePrice)
   price         Int?
 
   // ========== 启用状态 ==========
@@ -1041,6 +1061,7 @@ model MerchantComponent {
   @@unique([merchantId, templateId])
   @@index([merchantId])
   @@index([templateId])
+  @@index([approvalStatus])
   @@map("merchant_components")
 }
 
