@@ -33,7 +33,7 @@ interface PresignResponse {
  * 获取预签名上传 URL
  *
  * 权限控制:
- * - plan/kimono/campaign: 需要 ADMIN 或 MERCHANT 角色
+ * - plan/kimono/campaign/component: 需要 ADMIN 或 MERCHANT 角色
  * - merchant: 需要是对应商家的所有者
  * - user: 需要是当前登录用户
  * - tryon: 允许游客 (使用 session ID)
@@ -132,7 +132,8 @@ async function checkPermission(
   switch (category) {
     case 'plan':
     case 'kimono':
-    case 'campaign': {
+    case 'campaign':
+    case 'component': {
       // 需要管理员角色 或 拥有已审批的商家账户
       if (!userId) {
         return { allowed: false, message: '需要登录' };
