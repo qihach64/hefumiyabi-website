@@ -491,74 +491,9 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
         </div>
       )}
 
-      {/* 顶部导航栏 */}
-      <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-gray-200">
-        <div className="max-w-[1600px] mx-auto px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            {/* 左侧：返回和标题 */}
-            <div className="flex items-center gap-4">
-              <Link
-                href="/merchant/listings"
-                className="p-2 hover:bg-gray-100 rounded-lg transition-all duration-300"
-              >
-                <ArrowLeft className="w-5 h-5 text-gray-600" />
-              </Link>
-              <div>
-                <h1 className="text-[16px] font-semibold text-gray-900">编辑套餐</h1>
-                <p className="text-[12px] text-gray-500 truncate max-w-[240px]">
-                  {formData.name || "未命名套餐"}
-                </p>
-              </div>
-            </div>
-
-            {/* 中间：上次保存时间 */}
-            {lastSavedTime && (
-              <div className="hidden md:flex items-center gap-2 text-[12px] text-gray-400">
-                <Clock className="w-3.5 h-3.5" />
-                <span>自动保存于 {formatLastSaved()}</span>
-              </div>
-            )}
-
-            {/* 右侧：操作按钮 */}
-            <div className="flex items-center gap-3">
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={handleSaveDraft}
-                disabled={isSavingDraft || isLoading}
-                className="rounded-lg"
-              >
-                {isSavingDraft ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <FileText className="w-4 h-4 mr-2" />
-                )}
-                <span className="text-[14px]">保存草稿</span>
-              </Button>
-              <Button
-                type="button"
-                variant="primary"
-                size="sm"
-                onClick={handlePublish}
-                disabled={isLoading || isSavingDraft}
-                className="rounded-lg"
-              >
-                {isLoading ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <Send className="w-4 h-4 mr-2" />
-                )}
-                <span className="text-[14px]">发布</span>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* 提示消息 */}
       {(error || success) && (
-        <div className="max-w-[1600px] mx-auto px-6 lg:px-8 pt-4">
+        <div className="px-6 lg:px-8 pt-4">
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-[14px]">
               {error}
@@ -572,54 +507,107 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
         </div>
       )}
 
-      {/* 主体内容：宽屏布局 */}
-      <div className="max-w-[1600px] mx-auto px-6 lg:px-8 py-6">
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-          {/* Tab 导航 */}
-          <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+      {/* 主体内容：全宽布局 */}
+      <div className="bg-white min-h-screen">
+        {/* Tab 导航头部：包含返回、tabs 和操作按钮 */}
+        <div className="sticky top-0 z-40 bg-white border-b border-gray-200">
+          <div className="flex items-center justify-between px-4 lg:px-6">
+            {/* 左侧：返回按钮 + Tab 导航 */}
+            <div className="flex items-center">
+              <Link
+                href="/merchant/listings"
+                className="p-2 mr-2 hover:bg-gray-100 rounded-lg transition-all duration-300"
+              >
+                <ArrowLeft className="w-5 h-5 text-gray-600" />
+              </Link>
+              <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+            </div>
 
-          {/* Tab 内容 */}
-          <div className="p-6 lg:p-8 min-h-[600px]">
-            {activeTab === "basic" && (
-              <BasicInfoTab formData={formData} onFormChange={handleFormChange} />
-            )}
-
-            {activeTab === "pricing" && (
-              <PricingTab formData={formData} onFormChange={handleFormChange} />
-            )}
-
-            {activeTab === "components" && (
-              <ComponentsTab
-                themeId={formData.themeId}
-                selectedMerchantComponentIds={selectedMerchantComponentIds}
-                componentConfigs={componentConfigs}
-                mapTemplate={mapTemplate}
-                onComponentIdsChange={setSelectedMerchantComponentIds}
-                onComponentConfigsChange={setComponentConfigs}
-              />
-            )}
-
-            {activeTab === "tags" && (
-              <CategoryTagsTab formData={formData} onFormChange={handleFormChange} />
-            )}
-
-            {activeTab === "advanced" && (
-              <AdvancedTab formData={formData} onFormChange={handleFormChange} />
-            )}
-
-            {activeTab === "preview" && (
-              <div className="h-[calc(100vh-260px)] overflow-hidden rounded-xl border border-gray-100">
-                <PlanEditPreview
-                  formData={formData}
-                  componentConfigs={componentConfigs}
-                  selectedTags={getSelectedTags()}
-                  theme={getCurrentTheme()}
-                  store={formData.storeName ? { id: "preview", name: formData.storeName } : null}
-                  isCampaign={plan.isCampaign}
-                />
+            {/* 右侧：保存时间 + 操作按钮 */}
+            <div className="flex items-center gap-4">
+              {lastSavedTime && (
+                <div className="hidden lg:flex items-center gap-2 text-[12px] text-gray-400">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>自动保存于 {formatLastSaved()}</span>
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleSaveDraft}
+                  disabled={isSavingDraft || isLoading}
+                  className="rounded-lg"
+                >
+                  {isSavingDraft ? (
+                    <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                  ) : (
+                    <FileText className="w-4 h-4 mr-1.5" />
+                  )}
+                  <span className="text-[13px] hidden sm:inline">保存草稿</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  onClick={handlePublish}
+                  disabled={isLoading || isSavingDraft}
+                  className="rounded-lg"
+                >
+                  {isLoading ? (
+                    <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4 mr-1.5" />
+                  )}
+                  <span className="text-[13px]">发布</span>
+                </Button>
               </div>
-            )}
+            </div>
           </div>
+        </div>
+
+        {/* Tab 内容 */}
+        <div className="p-6 lg:p-8 min-h-[calc(100vh-60px)]">
+          {activeTab === "basic" && (
+            <BasicInfoTab formData={formData} onFormChange={handleFormChange} />
+          )}
+
+          {activeTab === "pricing" && (
+            <PricingTab formData={formData} onFormChange={handleFormChange} />
+          )}
+
+          {activeTab === "components" && (
+            <ComponentsTab
+              themeId={formData.themeId}
+              selectedMerchantComponentIds={selectedMerchantComponentIds}
+              componentConfigs={componentConfigs}
+              mapTemplate={mapTemplate}
+              onComponentIdsChange={setSelectedMerchantComponentIds}
+              onComponentConfigsChange={setComponentConfigs}
+            />
+          )}
+
+          {activeTab === "tags" && (
+            <CategoryTagsTab formData={formData} onFormChange={handleFormChange} />
+          )}
+
+          {activeTab === "advanced" && (
+            <AdvancedTab formData={formData} onFormChange={handleFormChange} />
+          )}
+
+          {activeTab === "preview" && (
+            <div className="h-[calc(100vh-140px)] overflow-hidden rounded-xl border border-gray-100">
+              <PlanEditPreview
+                formData={formData}
+                componentConfigs={componentConfigs}
+                selectedTags={getSelectedTags()}
+                theme={getCurrentTheme()}
+                store={formData.storeName ? { id: "preview", name: formData.storeName } : null}
+                isCampaign={plan.isCampaign}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>
