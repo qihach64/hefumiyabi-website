@@ -42,7 +42,8 @@ export type ImageCategory =
   | 'user'
   | 'campaign'
   | 'tryon'
-  | 'component';
+  | 'component'
+  | 'upgrade';
 
 export type ImagePurpose =
   | 'main'
@@ -102,6 +103,8 @@ export function generateS3Key(
       return `originals/tryon/${entityId}/${timestamp}-${random}.${extension}`;
     case 'component':
       return `originals/components/${entityId}/${purpose}-${timestamp}-${random}.${extension}`;
+    case 'upgrade':
+      return `originals/upgrades/${entityId}/${purpose}-${timestamp}-${random}.${extension}`;
     default:
       return `originals/misc/${entityId}/${timestamp}-${random}.${extension}`;
   }

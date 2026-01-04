@@ -14,6 +14,14 @@ const planComponentSchema = z.object({
   hotmapOrder: z.number().int().optional().default(0),
 });
 
+// PlanUpgrade 配置 schema（升级服务）
+const planUpgradeSchema = z.object({
+  merchantComponentId: z.string(),
+  priceOverride: z.number().int().positive().optional().nullable(), // 套餐级别价格覆盖
+  isPopular: z.boolean().optional().default(false),
+  displayOrder: z.number().int().optional().default(0),
+});
+
 // 验证 schema - v10.2 完整版（支持草稿和所有字段）
 const updatePlanSchema = z.object({
   // 基本信息
@@ -39,6 +47,9 @@ const updatePlanSchema = z.object({
   // 组件配置
   merchantComponentIds: z.array(z.string()).optional(), // 简化版：只传商户组件 ID 数组
   planComponents: z.array(planComponentSchema).optional(), // 完整版：传组件配置
+
+  // 升级服务配置
+  planUpgrades: z.array(planUpgradeSchema).optional(), // 套餐可选的升级服务
 
   // 图片
   imageUrl: z.union([z.string().url(), z.literal("")]).optional().nullable().transform(val => val || null),
@@ -126,6 +137,30 @@ export async function GET(
           },
           orderBy: { hotmapOrder: 'asc' },
         },
+        // 升级服务
+        planUpgrades: {
+          include: {
+            merchantComponent: {
+              include: {
+                template: {
+                  select: {
+                    id: true,
+                    code: true,
+                    name: true,
+                    nameJa: true,
+                    nameEn: true,
+                    description: true,
+                    icon: true,
+                    basePrice: true,
+                    defaultHighlights: true,
+                    defaultImages: true,
+                  },
+                },
+              },
+            },
+          },
+          orderBy: { displayOrder: 'asc' },
+        },
       },
     });
 
@@ -173,9 +208,47 @@ export async function GET(
       };
     });
 
+    // 转换 planUpgrades 数据格式以便前端使用
+    const enhancedPlanUpgrades = plan.planUpgrades.map(pu => {
+      const mc = pu.merchantComponent;
+      const template = mc.template;
+      // 有效价格优先级: 套餐覆盖价 > 商户价格 > 平台建议价
+      const effectivePrice = pu.priceOverride ?? mc.price ?? template.basePrice;
+      return {
+        id: pu.id,
+        planId: pu.planId,
+        merchantComponentId: pu.merchantComponentId,
+        priceOverride: pu.priceOverride,
+        isPopular: pu.isPopular,
+        displayOrder: pu.displayOrder,
+        // 商户组件信息
+        merchantComponent: {
+          id: mc.id,
+          isEnabled: mc.isEnabled,
+          price: mc.price,
+          images: mc.images.length > 0 ? mc.images : template.defaultImages,
+          highlights: mc.highlights.length > 0 ? mc.highlights : template.defaultHighlights,
+        },
+        // 模板信息
+        template: {
+          id: template.id,
+          code: template.code,
+          name: template.name,
+          nameJa: template.nameJa,
+          nameEn: template.nameEn,
+          description: template.description,
+          icon: template.icon,
+          basePrice: template.basePrice,
+        },
+        // 有效价格
+        effectivePrice,
+      };
+    });
+
     return NextResponse.json({
       ...plan,
       planComponents: enhancedPlanComponents,
+      planUpgrades: enhancedPlanUpgrades,
     });
   } catch (error) {
     console.error("获取套餐失败:", error);
@@ -336,6 +409,29 @@ export async function PATCH(
               planId: id,
               merchantComponentId: mcId,
               hotmapOrder: index,
+            })),
+          });
+        }
+      }
+
+      // 处理 PlanUpgrade（升级服务）
+      const planUpgrades = validatedData.planUpgrades;
+
+      if (planUpgrades !== undefined) {
+        // 删除所有旧升级服务关联
+        await tx.planUpgrade.deleteMany({
+          where: { planId: id },
+        });
+
+        // 创建新升级服务关联
+        if (planUpgrades.length > 0) {
+          await tx.planUpgrade.createMany({
+            data: planUpgrades.map((pu, index) => ({
+              planId: id,
+              merchantComponentId: pu.merchantComponentId,
+              priceOverride: pu.priceOverride ?? null,
+              isPopular: pu.isPopular ?? false,
+              displayOrder: pu.displayOrder ?? index,
             })),
           });
         }

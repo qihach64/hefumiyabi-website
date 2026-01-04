@@ -56,6 +56,29 @@ export default async function PlanDetailPage({
           },
         },
       },
+      planUpgrades: {
+        orderBy: { displayOrder: "asc" },
+        include: {
+          merchantComponent: {
+            select: {
+              id: true,
+              price: true,
+              images: true,
+              highlights: true,
+              template: {
+                select: {
+                  id: true,
+                  code: true,
+                  name: true,
+                  nameEn: true,
+                  description: true,
+                  icon: true,
+                },
+              },
+            },
+          },
+        },
+      },
     },
   });
 

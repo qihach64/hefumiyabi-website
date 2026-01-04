@@ -1,18 +1,40 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Image from "next/image";
 import { Plus, Check, ChevronDown } from "lucide-react";
 import ImageGalleryModal from "@/components/ImageGalleryModal";
 import type { SelectedUpgrade } from "@/components/PlanDetailClient";
 
-// 升级选项类型
+// 从 API 获取的升级服务类型
+interface PlanUpgrade {
+  id: string;
+  merchantComponentId: string;
+  priceOverride: number | null;
+  isPopular: boolean;
+  displayOrder: number;
+  merchantComponent: {
+    id: string;
+    price: number;
+    images: string[];
+    highlights: string[];
+    template: {
+      id: string;
+      code: string;
+      name: string;
+      nameEn: string | null;
+      description: string | null;
+      icon: string | null;
+    };
+  };
+}
+
+// 内部使用的升级选项类型
 interface UpgradeOption {
   id: string;
   name: string;
   nameEn: string;
   description: string;
-  detailedDescription: string;
   price: number;
   icon: string;
   popular?: boolean;
@@ -21,73 +43,14 @@ interface UpgradeOption {
 }
 
 interface UpgradeServicesProps {
+  planUpgrades?: PlanUpgrade[];
   selectedUpgrades: SelectedUpgrade[];
   onAddUpgrade: (upgrade: SelectedUpgrade) => void;
   onRemoveUpgrade: (upgradeId: string) => void;
 }
 
-// 升级选项数据
-const UPGRADE_OPTIONS: UpgradeOption[] = [
-  {
-    id: "photo",
-    name: "专业摄影",
-    nameEn: "Professional Photography",
-    description: "专业摄影师跟拍 30 分钟，含 20 张精修照片",
-    detailedDescription: "由资深摄影师全程跟拍，在清水寺、祇園、花见小路等京都最具代表性的景点为您留下珍贵回忆。",
-    price: 300000,
-    icon: "📷",
-    popular: true,
-    highlights: ["专业摄影师", "30分钟跟拍", "20张精修", "3日内交付"],
-    images: [
-      "https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=400&h=300&fit=crop",
-      "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=400&h=300&fit=crop",
-      "https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=400&h=300&fit=crop",
-    ],
-  },
-  {
-    id: "makeup",
-    name: "专业化妆",
-    nameEn: "Professional Makeup",
-    description: "资深化妆师全脸妆容，含卸妆",
-    detailedDescription: "由经验丰富的化妆师为您打造与和服完美搭配的精致妆容，服务包含卸妆。",
-    price: 250000,
-    icon: "💄",
-    highlights: ["资深化妆师", "和服配色", "全脸妆容", "含卸妆"],
-    images: [
-      "https://images.unsplash.com/photo-1596704017254-9b121068fb31?w=400&h=300&fit=crop",
-      "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=400&h=300&fit=crop",
-    ],
-  },
-  {
-    id: "premium-hairstyle",
-    name: "高级发型",
-    nameEn: "Premium Hairstyle",
-    description: "复杂盘发造型，含发饰",
-    detailedDescription: "专业造型师为您设计复杂精美的传统盘发造型，搭配精选发饰，完美呈现日式典雅之美。",
-    price: 200000,
-    icon: "✂️",
-    highlights: ["复杂盘发", "精选发饰", "持久定型", "专业造型师"],
-    images: [
-      "https://images.unsplash.com/photo-1522338242042-2d1c2c28d392?w=400&h=300&fit=crop",
-      "https://images.unsplash.com/photo-1519699047748-de8e457a634e?w=400&h=300&fit=crop",
-    ],
-  },
-  {
-    id: "extension",
-    name: "延长归还",
-    nameEn: "Extended Return",
-    description: "延长 2 小时归还时间",
-    detailedDescription: "为您的和服体验增加额外 2 小时的美好时光，无需匆忙赶回，更从容地游览拍照。",
-    price: 100000,
-    icon: "⏰",
-    highlights: ["额外2小时", "灵活安排", "更多拍照时间"],
-    images: [
-      "https://images.unsplash.com/photo-1493780474015-ba834fd0ce2f?w=400&h=300&fit=crop",
-    ],
-  },
-];
-
 export default function UpgradeServices({
+  planUpgrades,
   selectedUpgrades,
   onAddUpgrade,
   onRemoveUpgrade,
@@ -97,7 +60,29 @@ export default function UpgradeServices({
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [galleryIndex, setGalleryIndex] = useState(0);
 
+  // 将 planUpgrades 转换为内部 UpgradeOption 格式
+  const upgradeOptions: UpgradeOption[] = useMemo(() => {
+    if (!planUpgrades || planUpgrades.length === 0) return [];
+
+    return planUpgrades.map((pu) => ({
+      id: pu.merchantComponentId,
+      name: pu.merchantComponent.template.name,
+      nameEn: pu.merchantComponent.template.nameEn || pu.merchantComponent.template.name,
+      description: pu.merchantComponent.template.description || "",
+      price: pu.priceOverride ?? pu.merchantComponent.price,
+      icon: pu.merchantComponent.template.icon || "🎁",
+      popular: pu.isPopular,
+      highlights: pu.merchantComponent.highlights || [],
+      images: pu.merchantComponent.images || [],
+    }));
+  }, [planUpgrades]);
+
   const isSelected = (id: string) => selectedUpgrades.some((u) => u.id === id);
+
+  // 如果没有升级服务，不渲染此区块
+  if (upgradeOptions.length === 0) {
+    return null;
+  }
 
   const handleToggle = (option: UpgradeOption, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -159,7 +144,7 @@ export default function UpgradeServices({
           升级选项列表 - Wabi-Sabi 卡片
       ======================================== */}
       <div className="space-y-3">
-        {UPGRADE_OPTIONS.map((option) => {
+        {upgradeOptions.map((option) => {
           const added = isSelected(option.id);
           const expanded = expandedId === option.id;
           const hasImages = option.images.length > 0;

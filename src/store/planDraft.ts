@@ -61,11 +61,20 @@ export interface ComponentConfig {
   hotmapOrder?: number;
 }
 
+// 升级服务配置类型
+export interface UpgradeConfig {
+  merchantComponentId: string;
+  priceOverride: number | null;
+  isPopular: boolean;
+  displayOrder: number;
+}
+
 // 草稿数据
 export interface PlanDraft {
   formData: PlanFormData;
   componentConfigs: ComponentConfig[];
   selectedMerchantComponentIds: string[];
+  upgradeConfigs: UpgradeConfig[]; // 新增：升级服务配置
   lastSaved: string; // ISO 日期字符串
   isDirty: boolean;
 }
@@ -109,7 +118,8 @@ interface PlanDraftStore {
     planId: string,
     formData: PlanFormData,
     componentConfigs: ComponentConfig[],
-    selectedMerchantComponentIds: string[]
+    selectedMerchantComponentIds: string[],
+    upgradeConfigs?: UpgradeConfig[]
   ) => void;
 
   // 获取草稿
@@ -136,7 +146,7 @@ export const usePlanDraftStore = create<PlanDraftStore>()(
     (set, get) => ({
       drafts: {},
 
-      saveDraft: (planId, formData, componentConfigs, selectedMerchantComponentIds) => {
+      saveDraft: (planId, formData, componentConfigs, selectedMerchantComponentIds, upgradeConfigs = []) => {
         set((state) => ({
           drafts: {
             ...state.drafts,
@@ -144,6 +154,7 @@ export const usePlanDraftStore = create<PlanDraftStore>()(
               formData,
               componentConfigs,
               selectedMerchantComponentIds,
+              upgradeConfigs,
               lastSaved: new Date().toISOString(),
               isDirty: false,
             },
@@ -215,6 +226,7 @@ export function useAutoSaveDraft(
   formData: PlanFormData,
   componentConfigs: ComponentConfig[],
   selectedMerchantComponentIds: string[],
+  upgradeConfigs: UpgradeConfig[] = [],
   debounceMs: number = 3000
 ) {
   const { saveDraft, markDirty } = usePlanDraftStore();
@@ -223,7 +235,7 @@ export function useAutoSaveDraft(
   // 这个 hook 应该在组件中调用，这里只是返回必要的函数
   return {
     save: () => {
-      saveDraft(planId, formData, componentConfigs, selectedMerchantComponentIds);
+      saveDraft(planId, formData, componentConfigs, selectedMerchantComponentIds, upgradeConfigs);
     },
     markDirty: () => {
       markDirty(planId);

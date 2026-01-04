@@ -1,8 +1,8 @@
 "use client";
 
-import { FileText, CircleDollarSign, Puzzle, Tags, Settings, Eye } from "lucide-react";
+import { FileText, CircleDollarSign, Puzzle, Tags, Settings, Eye, Sparkles } from "lucide-react";
 
-export type TabId = "basic" | "pricing" | "components" | "tags" | "advanced" | "preview";
+export type TabId = "basic" | "pricing" | "components" | "upgrades" | "tags" | "advanced" | "preview";
 
 export interface TabItem {
   id: TabId;
@@ -14,6 +14,7 @@ export const TABS: TabItem[] = [
   { id: "basic", label: "基本信息", icon: <FileText className="w-4 h-4" /> },
   { id: "pricing", label: "价格设置", icon: <CircleDollarSign className="w-4 h-4" /> },
   { id: "components", label: "服务组件", icon: <Puzzle className="w-4 h-4" /> },
+  { id: "upgrades", label: "升级服务", icon: <Sparkles className="w-4 h-4" /> },
   { id: "tags", label: "分类标签", icon: <Tags className="w-4 h-4" /> },
   { id: "advanced", label: "高级设置", icon: <Settings className="w-4 h-4" /> },
   { id: "preview", label: "预览", icon: <Eye className="w-4 h-4" /> },

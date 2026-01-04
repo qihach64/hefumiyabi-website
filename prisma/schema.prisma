@@ -315,6 +315,7 @@ model RentalPlan {
   cartItems      CartItem[]
   planTags       PlanTag[]
   planComponents PlanComponent[]  // 套餐包含的服务组件
+  planUpgrades   PlanUpgrade[]    // 套餐可选的升级服务
   planStores     PlanStore[]      // 套餐可用店铺 (1:N)
   favorites      Favorite[]       // 用户收藏
 
@@ -1032,6 +1033,7 @@ model MerchantComponent {
 
   // ========== 关联 ==========
   planComponents PlanComponent[]
+  planUpgrades   PlanUpgrade[]     // 作为升级服务被套餐引用
 
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
@@ -1040,6 +1042,39 @@ model MerchantComponent {
   @@index([merchantId])
   @@index([templateId])
   @@map("merchant_components")
+}
+
+// ============================================
+// 套餐升级服务 (Plan Upgrade Services)
+// ============================================
+// 记录套餐可选的升级服务（使用 ADDON 类型的 ServiceComponent）
+
+model PlanUpgrade {
+  id                   String            @id @default(cuid())
+  planId               String            @map("plan_id")
+
+  // 关联商户组件实例（必须是 ADDON 类型）
+  merchantComponentId  String            @map("merchant_component_id")
+  merchantComponent    MerchantComponent @relation(fields: [merchantComponentId], references: [id], onDelete: Cascade)
+
+  plan                 RentalPlan        @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  // 套餐级别的价格覆盖（null = 使用 MerchantComponent.price 或 ServiceComponent.basePrice）
+  priceOverride        Int?              @map("price_override")
+
+  // 是否为推荐/人气服务
+  isPopular            Boolean           @default(false) @map("is_popular")
+
+  // 显示顺序
+  displayOrder         Int               @default(0) @map("display_order")
+
+  createdAt            DateTime          @default(now()) @map("created_at")
+  updatedAt            DateTime          @updatedAt @map("updated_at")
+
+  @@unique([planId, merchantComponentId])
+  @@index([planId])
+  @@index([merchantComponentId])
+  @@map("plan_upgrades")
 }
 
 // 套餐-组件关联 - v10.1

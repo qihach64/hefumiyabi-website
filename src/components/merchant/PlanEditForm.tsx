@@ -18,6 +18,7 @@ import TabNavigation, { TabId } from "./PlanEditorTabs";
 import BasicInfoTab from "./PlanEditorTabs/BasicInfoTab";
 import PricingTab from "./PlanEditorTabs/PricingTab";
 import ComponentsTab from "./PlanEditorTabs/ComponentsTab";
+import UpgradesTab from "./PlanEditorTabs/UpgradesTab";
 import CategoryTagsTab from "./PlanEditorTabs/CategoryTagsTab";
 import AdvancedTab from "./PlanEditorTabs/AdvancedTab";
 
@@ -28,6 +29,7 @@ import PlanEditPreview from "./PlanEditPreview";
 import {
   PlanFormData,
   ComponentConfig,
+  UpgradeConfig,
   defaultFormData,
   usePlanDraftStore,
 } from "@/store/planDraft";
@@ -90,6 +92,24 @@ interface MapTemplateData {
   }[];
 }
 
+interface PlanUpgrade {
+  id: string;
+  merchantComponentId: string;
+  priceOverride: number | null;
+  isPopular: boolean;
+  displayOrder: number;
+  merchantComponent: {
+    id: string;
+    price: number;
+    template: {
+      id: string;
+      code: string;
+      name: string;
+      icon: string | null;
+    };
+  };
+}
+
 interface PlanEditFormProps {
   plan: {
     id: string;
@@ -109,6 +129,7 @@ interface PlanEditFormProps {
     maxQuantity?: number | null;
     duration?: number;
     planComponents?: PlanComponent[];
+    planUpgrades?: PlanUpgrade[];
     imageUrl?: string | null;
     images?: string[];
     customMapImageUrl?: string | null;
@@ -195,6 +216,16 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
     })) || []
   );
 
+  // 升级服务配置
+  const [upgradeConfigs, setUpgradeConfigs] = useState<UpgradeConfig[]>(
+    plan.planUpgrades?.map((pu) => ({
+      merchantComponentId: pu.merchantComponentId,
+      priceOverride: pu.priceOverride,
+      isPopular: pu.isPopular,
+      displayOrder: pu.displayOrder,
+    })) || []
+  );
+
   // 当 plan.planComponents 变化时（如 router.refresh() 后），同步更新状态
   useEffect(() => {
     if (plan.planComponents) {
@@ -214,6 +245,20 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
       );
     }
   }, [plan.planComponents]);
+
+  // 当 plan.planUpgrades 变化时，同步更新状态
+  useEffect(() => {
+    if (plan.planUpgrades) {
+      setUpgradeConfigs(
+        plan.planUpgrades.map((pu) => ({
+          merchantComponentId: pu.merchantComponentId,
+          priceOverride: pu.priceOverride,
+          isPopular: pu.isPopular,
+          displayOrder: pu.displayOrder,
+        }))
+      );
+    }
+  }, [plan.planUpgrades]);
 
   // 自动保存定时器
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -263,6 +308,7 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
       setFormData(draft.formData);
       setComponentConfigs(draft.componentConfigs);
       setSelectedMerchantComponentIds(draft.selectedMerchantComponentIds);
+      setUpgradeConfigs(draft.upgradeConfigs || []);
       setLastSavedTime(new Date(draft.lastSaved));
     }
     setShowDraftRecovery(false);
@@ -281,10 +327,10 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
     }
 
     autoSaveTimerRef.current = setTimeout(() => {
-      saveDraft(plan.id, formData, componentConfigs, selectedMerchantComponentIds);
+      saveDraft(plan.id, formData, componentConfigs, selectedMerchantComponentIds, upgradeConfigs);
       setLastSavedTime(new Date());
     }, 3000);
-  }, [plan.id, formData, componentConfigs, selectedMerchantComponentIds, saveDraft]);
+  }, [plan.id, formData, componentConfigs, selectedMerchantComponentIds, upgradeConfigs, saveDraft]);
 
   // 表单变化时触发自动保存
   useEffect(() => {
@@ -294,7 +340,7 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
         clearTimeout(autoSaveTimerRef.current);
       }
     };
-  }, [formData, componentConfigs, selectedMerchantComponentIds, triggerAutoSave]);
+  }, [formData, componentConfigs, selectedMerchantComponentIds, upgradeConfigs, triggerAutoSave]);
 
   // 表单字段更新
   const handleFormChange = <K extends keyof PlanFormData>(
@@ -359,7 +405,7 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
   // 发布套餐
   const handlePublish = async () => {
     // 先保存草稿到 localStorage，确保修改不会丢失
-    saveDraft(plan.id, formData, componentConfigs, selectedMerchantComponentIds);
+    saveDraft(plan.id, formData, componentConfigs, selectedMerchantComponentIds, upgradeConfigs);
     setLastSavedTime(new Date());
 
     // 验证必填字段
@@ -435,6 +481,12 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
       hotmapLabelOffsetX: config.hotmapLabelOffsetX,
       hotmapLabelOffsetY: config.hotmapLabelOffsetY,
       hotmapOrder: config.hotmapOrder,
+    })),
+    planUpgrades: upgradeConfigs.map((config) => ({
+      merchantComponentId: config.merchantComponentId,
+      priceOverride: config.priceOverride,
+      isPopular: config.isPopular,
+      displayOrder: config.displayOrder,
     })),
     imageUrl: formData.imageUrl || null,
     images: formData.images || [],
@@ -591,6 +643,13 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
               onComponentIdsChange={setSelectedMerchantComponentIds}
               onComponentConfigsChange={setComponentConfigs}
               planId={plan.id}
+            />
+          )}
+
+          {activeTab === "upgrades" && (
+            <UpgradesTab
+              selectedUpgrades={upgradeConfigs}
+              onUpgradesChange={setUpgradeConfigs}
             />
           )}
 

@@ -49,6 +49,28 @@ interface Store {
   openingHours?: unknown;
 }
 
+interface PlanUpgrade {
+  id: string;
+  merchantComponentId: string;
+  priceOverride: number | null;
+  isPopular: boolean;
+  displayOrder: number;
+  merchantComponent: {
+    id: string;
+    price: number;
+    images: string[];
+    highlights: string[];
+    template: {
+      id: string;
+      code: string;
+      name: string;
+      nameEn: string | null;
+      description: string | null;
+      icon: string | null;
+    };
+  };
+}
+
 interface Plan {
   id: string;
   name: string;
@@ -67,6 +89,7 @@ interface Plan {
   availableUntil?: Date | null;
   campaign?: Campaign | null;
   theme?: Theme | null;
+  planUpgrades?: PlanUpgrade[];
   // Pricing unit fields
   pricingUnit?: string | null;
   unitLabel?: string | null;
@@ -414,6 +437,7 @@ export default function PlanDetailClient({ plan, store, mapData, relatedPlans }:
           <div className="lg:col-span-2 space-y-12">
             {/* 升级服务 - 独立区块，与 BookingCard 同视野 */}
             <UpgradeServices
+              planUpgrades={plan.planUpgrades}
               selectedUpgrades={selectedUpgrades}
               onAddUpgrade={handleAddUpgrade}
               onRemoveUpgrade={handleRemoveUpgrade}
