@@ -366,6 +366,8 @@ export default function ComponentsClient({
     images: string[];
     highlights: string[];
   }) => {
+    console.log('[ComponentsClient] Saving component details:', data);
+
     const response = await fetch("/api/merchant/component-overrides", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -376,8 +378,11 @@ export default function ComponentsClient({
       }),
     });
 
+    const result = await response.json();
+    console.log('[ComponentsClient] API response:', result);
+
     if (!response.ok) {
-      throw new Error("保存失败，请重试");
+      throw new Error(result.error || "保存失败，请重试");
     }
 
     // 更新本地状态

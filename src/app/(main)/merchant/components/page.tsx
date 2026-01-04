@@ -3,6 +3,9 @@ import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import ComponentsClient from "./ComponentsClient";
 
+// 强制动态渲染，避免缓存问题
+export const dynamic = 'force-dynamic';
+
 export default async function MerchantComponentsPage() {
   // 验证登录
   const session = await auth();

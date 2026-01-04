@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { auth } from '@/auth';
 import prisma from '@/lib/prisma';
 
@@ -150,6 +151,9 @@ export async function PUT(request: Request) {
       )
     );
 
+    // 清除页面缓存
+    revalidatePath('/merchant/components');
+
     return NextResponse.json({
       success: true,
       updated: results.length,
@@ -191,6 +195,8 @@ export async function PATCH(request: Request) {
       highlights?: string[];
     };
 
+    console.log('[PATCH component-overrides] Request body:', { id, price, isEnabled, images, highlights });
+
     if (!id) {
       return NextResponse.json(
         { error: 'id is required' },
@@ -198,26 +204,39 @@ export async function PATCH(request: Request) {
       );
     }
 
+    // 构建更新数据
+    const updateData: Record<string, unknown> = {};
+    if (price !== undefined) updateData.price = price;
+    if (isEnabled !== undefined) updateData.isEnabled = isEnabled;
+    if (images !== undefined) updateData.images = images;
+    if (highlights !== undefined) updateData.highlights = highlights;
+
+    console.log('[PATCH component-overrides] Update data:', updateData);
+
     // 更新组件配置
     const updated = await prisma.merchantComponent.update({
       where: {
         id,
         merchantId: merchant.id, // 确保只能更新自己的组件
       },
-      data: {
-        ...(price !== undefined && { price }),
-        ...(isEnabled !== undefined && { isEnabled }),
-        ...(images !== undefined && { images }),
-        ...(highlights !== undefined && { highlights }),
-      },
+      data: updateData,
     });
+
+    console.log('[PATCH component-overrides] Updated component:', {
+      id: updated.id,
+      images: updated.images,
+      highlights: updated.highlights,
+    });
+
+    // 清除页面缓存，确保刷新后显示最新数据
+    revalidatePath('/merchant/components');
 
     return NextResponse.json({
       success: true,
       component: updated,
     });
   } catch (error) {
-    console.error('Failed to update merchant component:', error);
+    console.error('[PATCH component-overrides] Error:', error);
     return NextResponse.json(
       { error: 'Failed to update merchant component' },
       { status: 500 }
