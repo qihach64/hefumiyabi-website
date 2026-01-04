@@ -43,6 +43,7 @@ const updatePlanSchema = z.object({
   // 图片
   imageUrl: z.union([z.string().url(), z.literal("")]).optional().nullable().transform(val => val || null),
   images: z.array(z.string().url()).optional().default([]), // 多图支持
+  customMapImageUrl: z.union([z.string().url(), z.literal("")]).optional().nullable().transform(val => val || null), // 自定义热点图背景
 
   // 店铺和地区
   storeName: z.string().optional().nullable(),
@@ -258,6 +259,7 @@ export async function PATCH(
           includes: [], // 已废弃，使用 PlanComponent
           imageUrl: validatedData.imageUrl || null,
           images: validatedData.images || [],
+          customMapImageUrl: validatedData.customMapImageUrl || null, // 自定义热点图背景
 
           // 店铺和地区
           storeName: validatedData.storeName || null,

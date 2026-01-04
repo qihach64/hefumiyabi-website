@@ -261,6 +261,7 @@ model RentalPlan {
   includes      String[]
   imageUrl      String?
   images        String[]      @default([])  // 多图支持
+  customMapImageUrl String?   @map("custom_map_image_url")  // 自定义热点图背景
 
   // ========== 计价单位 (Pricing Unit) ==========
   // "person" = 按人计价 (女士套餐 ¥8,800/人)

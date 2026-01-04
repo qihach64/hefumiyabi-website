@@ -87,6 +87,7 @@ interface PlanComponentEditorProps {
   onConfigChange?: (configs: ComponentConfig[]) => void;
   themeId?: string | null;
   mapTemplate?: MapTemplateData | null;
+  customMapImageUrl?: string; // 自定义热点图背景（优先于 mapTemplate.imageUrl）
   className?: string;
 }
 
@@ -127,6 +128,7 @@ export default function PlanComponentEditor({
   onConfigChange,
   themeId,
   mapTemplate,
+  customMapImageUrl,
   className = "",
 }: PlanComponentEditorProps) {
   // 数据状态
@@ -645,7 +647,9 @@ export default function PlanComponentEditor({
     );
   }
 
-  const hasMapTemplate = !!mapTemplate;
+  // 使用自定义背景图优先，否则使用模板背景图
+  const effectiveMapImageUrl = customMapImageUrl || mapTemplate?.imageUrl;
+  const hasMapTemplate = !!effectiveMapImageUrl;
 
   return (
     <div className={`bg-white rounded-2xl border border-gray-200 overflow-hidden ${className}`}>
@@ -934,9 +938,9 @@ export default function PlanComponentEditor({
                   height: `${600 * canvasZoom}px`,
                 }}
               >
-                {/* 背景图片 */}
+                {/* 背景图片（优先使用自定义背景，否则使用模板背景） */}
                 <Image
-                  src={mapTemplate.imageUrl}
+                  src={effectiveMapImageUrl!}
                   alt="套餐展示图"
                   fill
                   className="object-cover pointer-events-none select-none"

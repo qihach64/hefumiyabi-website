@@ -21,6 +21,7 @@ const OUTFIT_CATEGORY_CONFIG: Record<OutfitCategory, { label: string; icon: stri
 interface ServiceMapProps {
   includes: string[];
   mapData?: MapData | null;
+  customMapImageUrl?: string | null; // 自定义热点图背景（优先于 mapData.imageUrl）
 }
 
 // Demo 图片（展示用）
@@ -91,7 +92,10 @@ interface CategoryGroup {
 export default function ServiceMap({
   includes,
   mapData,
+  customMapImageUrl,
 }: ServiceMapProps) {
+  // 使用自定义背景图优先，否则使用 mapData 的背景图
+  const effectiveMapImageUrl = customMapImageUrl || mapData?.imageUrl;
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
   const [showMobileDetail, setShowMobileDetail] = useState(false);
@@ -211,10 +215,10 @@ export default function ServiceMap({
                 <div className="relative h-full aspect-[3/4]">
                   <div className="relative w-full h-full rounded-2xl overflow-hidden bg-gradient-to-b from-wabi-100 to-wabi-50 shadow-lg ring-1 ring-wabi-200">
                     <Image
-                      src={mapData.imageUrl}
+                      src={effectiveMapImageUrl!}
                       alt="和服套餐配件示意图"
                       fill
-                      className="object-contain"
+                      className="object-cover"
                       sizes="(max-width: 1024px) 100vw, 55vw"
                       priority
                       unoptimized
@@ -502,10 +506,10 @@ export default function ServiceMap({
                 <div className="relative w-full max-w-xs">
                   <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-gradient-to-b from-wabi-100 to-wabi-50 shadow-lg ring-1 ring-wabi-200">
                     <Image
-                      src={mapData.imageUrl}
+                      src={effectiveMapImageUrl!}
                       alt="和服套餐配件示意图"
                       fill
-                      className="object-contain"
+                      className="object-cover"
                       sizes="(max-width: 768px) 100vw, 320px"
                       priority
                       unoptimized

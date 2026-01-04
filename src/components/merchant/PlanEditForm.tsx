@@ -111,6 +111,7 @@ interface PlanEditFormProps {
     planComponents?: PlanComponent[];
     imageUrl?: string | null;
     images?: string[];
+    customMapImageUrl?: string | null;
     storeName?: string | null;
     region?: string | null;
     themeId?: string | null;
@@ -163,6 +164,7 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
     duration: plan.duration || 4,
     imageUrl: plan.imageUrl || "",
     images: plan.images || [],
+    customMapImageUrl: plan.customMapImageUrl || "",
     storeName: plan.storeName || "",
     region: plan.region || "",
     themeId: plan.themeId || null,
@@ -436,6 +438,7 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
     })),
     imageUrl: formData.imageUrl || null,
     images: formData.images || [],
+    customMapImageUrl: formData.customMapImageUrl || null,
     storeName: formData.storeName || null,
     region: formData.region || null,
     themeId: formData.themeId,
@@ -583,8 +586,11 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
               selectedMerchantComponentIds={selectedMerchantComponentIds}
               componentConfigs={componentConfigs}
               mapTemplate={mapTemplate}
+              customMapImageUrl={formData.customMapImageUrl}
+              onCustomMapImageChange={(url) => handleFormChange("customMapImageUrl", url)}
               onComponentIdsChange={setSelectedMerchantComponentIds}
               onComponentConfigsChange={setComponentConfigs}
+              planId={plan.id}
             />
           )}
 

@@ -61,6 +61,7 @@ interface Plan {
   includes: string[];
   imageUrl?: string | null;
   images?: string[]; // 多图支持
+  customMapImageUrl?: string | null; // 自定义热点图背景
   region?: string | null;
   isCampaign?: boolean;
   availableUntil?: Date | null;
@@ -365,6 +366,7 @@ export default function PlanDetailClient({ plan, store, mapData, relatedPlans }:
           <ServiceMap
             includes={plan.includes}
             mapData={mapData}
+            customMapImageUrl={plan.customMapImageUrl}
           />
 
           {/* AI 虚拟试穿 - Killer Feature */}

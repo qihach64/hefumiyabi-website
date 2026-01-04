@@ -163,7 +163,7 @@ export default function EditorHotspot({
         zIndex: isDragging || isLabelDragging ? 30 : isSelected ? 20 : 10,
       }}
     >
-      {/* 热点圆点 */}
+      {/* 热点圆点 - 精简小巧的标记点 */}
       <button
         ref={hotspotRef}
         type="button"
@@ -172,42 +172,33 @@ export default function EditorHotspot({
         onMouseLeave={() => setIsHoveredInternal(false)}
         onMouseDown={isEditable ? onDragStart : undefined}
         className={`
-          relative z-10 w-7 h-7 rounded-full
-          flex items-center justify-center
+          relative z-10 w-3 h-3 rounded-full
           transition-all duration-300
           ${isDragging
-            ? "bg-sakura-600 scale-150 shadow-lg ring-4 ring-sakura-200/60 cursor-grabbing"
+            ? "bg-sakura-600 scale-[2] shadow-lg ring-4 ring-sakura-200/60 cursor-grabbing"
             : isSelected
-              ? "bg-sakura-600 scale-125 shadow-lg ring-3 ring-sakura-300/50"
+              ? "bg-sakura-600 scale-150 shadow-lg ring-2 ring-sakura-300/50"
               : isHovered
-                ? "bg-sakura-500 scale-105 shadow-md"
+                ? "bg-sakura-500 scale-125 shadow-md"
                 : isIncluded
-                  ? "bg-sakura-400 hover:bg-sakura-500 hover:scale-105 shadow-sm"
-                  : "bg-gray-400 hover:bg-gray-500 hover:scale-105"
+                  ? "bg-sakura-500 hover:bg-sakura-600 hover:scale-125 shadow-sm"
+                  : "bg-gray-400 hover:bg-gray-500 hover:scale-125"
           }
         `}
         style={{
           boxShadow: isSelected || isDragging
-            ? "0 4px 12px -2px rgba(255, 122, 154, 0.4)"
+            ? "0 4px 12px -2px rgba(255, 122, 154, 0.5)"
             : undefined,
         }}
         aria-label={isEditable ? `拖拽调整 ${name} 位置` : `查看 ${name} 详情`}
       >
-        <span className="text-white text-[11px]">{icon}</span>
         {isEditable && !isDragging && !isSelected && (
-          <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-white rounded-full shadow-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200">
+          <div className="absolute -bottom-2 -right-2 w-4 h-4 bg-white rounded-full shadow-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200">
             <Move className="w-2.5 h-2.5 text-gray-500" />
           </div>
         )}
       </button>
 
-      {/* 脉冲动画圈 */}
-      {!isSelected && !isDragging && isIncluded && !isEditable && !isHovered && (
-        <div
-          className="absolute inset-0 rounded-full bg-sakura-300 opacity-50 animate-pulse"
-          style={{ animationDuration: "2.5s" }}
-        />
-      )}
 
       {/* 连接线 - 日式优雅风格 */}
       {(() => {

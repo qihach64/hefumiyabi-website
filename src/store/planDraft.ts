@@ -26,6 +26,7 @@ export interface PlanFormData {
   // 图片
   imageUrl: string;
   images: string[];
+  customMapImageUrl: string; // 自定义热点图背景
 
   // 店铺信息
   storeName: string;
@@ -85,6 +86,7 @@ export const defaultFormData: PlanFormData = {
   duration: 4,
   imageUrl: "",
   images: [],
+  customMapImageUrl: "",
   storeName: "",
   region: "",
   themeId: null,
