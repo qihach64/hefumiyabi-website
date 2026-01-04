@@ -385,13 +385,6 @@ export default function PlanDetailClient({ plan, store, mapData, relatedPlans }:
             </section>
           )}
 
-          {/* SERVICE MAP - 只展示包含项 */}
-          <ServiceMap
-            includes={plan.includes}
-            mapData={mapData}
-            customMapImageUrl={plan.customMapImageUrl}
-          />
-
           {/* AI 虚拟试穿 - Killer Feature */}
           <AITryOnSection
             plan={{
@@ -402,6 +395,13 @@ export default function PlanDetailClient({ plan, store, mapData, relatedPlans }:
               imageUrl: plan.imageUrl ?? undefined,
               isCampaign: plan.isCampaign,
             }}
+          />
+
+          {/* SERVICE MAP - 只展示包含项 */}
+          <ServiceMap
+            includes={plan.includes}
+            mapData={mapData}
+            customMapImageUrl={plan.customMapImageUrl}
           />
 
           {/* 活动信息 - Sakura 风格设计 */}
@@ -435,7 +435,7 @@ export default function PlanDetailClient({ plan, store, mapData, relatedPlans }:
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-10">
           {/* 左侧主内容区 */}
           <div className="lg:col-span-2 space-y-12">
-            {/* 升级服务 - 独立区块，与 BookingCard 同视野 */}
+            {/* 升级服务 - 横向滚动卡片，与 BookingCard 同视野 */}
             <UpgradeServices
               planUpgrades={plan.planUpgrades}
               selectedUpgrades={selectedUpgrades}

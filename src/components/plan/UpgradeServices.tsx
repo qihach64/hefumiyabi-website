@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import Image from "next/image";
-import { Plus, Check, ChevronDown } from "lucide-react";
+import { Plus, Check, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import ImageGalleryModal from "@/components/ImageGalleryModal";
 import type { SelectedUpgrade } from "@/components/PlanDetailClient";
 
@@ -55,10 +55,12 @@ export default function UpgradeServices({
   onAddUpgrade,
   onRemoveUpgrade,
 }: UpgradeServicesProps) {
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [showGallery, setShowGallery] = useState(false);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [galleryIndex, setGalleryIndex] = useState(0);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
 
   // 将 planUpgrades 转换为内部 UpgradeOption 格式
   const upgradeOptions: UpgradeOption[] = useMemo(() => {
@@ -98,10 +100,6 @@ export default function UpgradeServices({
     }
   };
 
-  const toggleExpand = (id: string) => {
-    setExpandedId(expandedId === id ? null : id);
-  };
-
   const openGallery = (images: string[], index: number, e: React.MouseEvent) => {
     e.stopPropagation();
     setGalleryImages(images);
@@ -109,199 +107,235 @@ export default function UpgradeServices({
     setShowGallery(true);
   };
 
+  // 滚动控制
+  const updateScrollButtons = () => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      setCanScrollLeft(container.scrollLeft > 0);
+      setCanScrollRight(
+        container.scrollLeft < container.scrollWidth - container.clientWidth - 10
+      );
+    }
+  };
+
+  const scroll = (direction: "left" | "right") => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      const scrollAmount = 300;
+      container.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth",
+      });
+      setTimeout(updateScrollButtons, 300);
+    }
+  };
+
   // 已选中的升级服务数量和总价
   const selectedCount = selectedUpgrades.length;
   const selectedTotal = selectedUpgrades.reduce((sum, u) => sum + u.price, 0);
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-6">
       {/* ========================================
-          区块标题 - 日式极简
+          区块标题 - 日式极简 + 已选摘要
       ======================================== */}
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-px bg-gradient-to-r from-sakura-400 to-transparent" />
-        <span className="text-[11px] uppercase tracking-[0.3em] text-sakura-500 font-medium">
-          Optional Upgrades
-        </span>
-      </div>
-
-      {/* 已选摘要 */}
-      {selectedCount > 0 && (
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-sakura-50/50 rounded-full border border-sakura-100">
-          <div className="w-4 h-4 rounded-full bg-sakura-500 flex items-center justify-center">
-            <Check className="w-2.5 h-2.5 text-white" />
-          </div>
-          <span className="text-[13px] font-medium text-sakura-700">
-            已选 {selectedCount} 项
-          </span>
-          <span className="text-[13px] text-sakura-500">
-            +¥{(selectedTotal / 100).toLocaleString()}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-px bg-gradient-to-r from-sakura-400 to-transparent" />
+          <span className="text-[12px] uppercase tracking-[0.25em] text-sakura-500 font-medium">
+            Upgrade Your Experience
           </span>
         </div>
-      )}
+
+        {/* 已选摘要 */}
+        {selectedCount > 0 && (
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-sakura-50 rounded-full border border-sakura-100">
+            <div className="w-4 h-4 rounded-full bg-sakura-500 flex items-center justify-center">
+              <Check className="w-2.5 h-2.5 text-white" />
+            </div>
+            <span className="text-[13px] font-medium text-sakura-700">
+              {selectedCount} 项
+            </span>
+            <span className="text-[13px] text-sakura-500">
+              +¥{(selectedTotal / 100).toLocaleString()}
+            </span>
+          </div>
+        )}
+      </div>
 
       {/* ========================================
-          升级选项列表 - Wabi-Sabi 卡片
+          横向滚动卡片 - Airbnb 风格
       ======================================== */}
-      <div className="space-y-3">
-        {upgradeOptions.map((option) => {
-          const added = isSelected(option.id);
-          const expanded = expandedId === option.id;
-          const hasImages = option.images.length > 0;
+      <div className="relative group/scroll">
+        {/* 左箭头 */}
+        {canScrollLeft && (
+          <button
+            onClick={() => scroll("left")}
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white shadow-lg border border-gray-200 flex items-center justify-center opacity-0 group-hover/scroll:opacity-100 transition-opacity duration-300 hover:scale-105"
+          >
+            <ChevronLeft className="w-5 h-5 text-gray-700" />
+          </button>
+        )}
 
-          return (
-            <div
-              key={option.id}
-              onClick={() => toggleExpand(option.id)}
-              className={`
-                group bg-white rounded-xl border overflow-hidden cursor-pointer
-                transition-all duration-300
-                ${added
-                  ? "border-sakura-300 bg-sakura-50/30"
-                  : "border-wabi-200 hover:border-sakura-200 hover:shadow-md"
-                }
-              `}
-            >
-              {/* 主行：缩略图/图标 + 信息 + 价格 + 添加按钮 + 展开箭头 */}
-              <div className="flex items-center gap-3 p-4">
-                {/* 缩略图或图标容器 */}
-                {hasImages ? (
-                  <div
-                    className="relative w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-wabi-100"
-                    onClick={(e) => openGallery(option.images, 0, e)}
-                  >
-                    <Image
-                      src={option.images[0]}
-                      alt={option.name}
-                      fill
-                      className="object-cover transition-transform duration-300 group-hover:scale-105"
-                      sizes="48px"
-                      unoptimized
-                    />
-                  </div>
-                ) : (
-                  <div
-                    className={`
-                      w-12 h-12 rounded-lg flex items-center justify-center text-xl flex-shrink-0
-                      ${added ? "bg-sakura-100" : "bg-wabi-100"}
-                    `}
-                  >
-                    <span className={added ? "" : "grayscale-[30%]"}>{option.icon}</span>
-                  </div>
-                )}
+        {/* 右箭头 */}
+        {canScrollRight && (
+          <button
+            onClick={() => scroll("right")}
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white shadow-lg border border-gray-200 flex items-center justify-center opacity-0 group-hover/scroll:opacity-100 transition-opacity duration-300 hover:scale-105"
+          >
+            <ChevronRight className="w-5 h-5 text-gray-700" />
+          </button>
+        )}
 
-                {/* 信息区 */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h4 className="text-[15px] font-medium text-stone-800 truncate">
-                      {option.name}
-                    </h4>
-                    {option.popular && (
-                      <span className="px-1.5 py-0.5 bg-sakura-500 text-white text-[9px] font-medium rounded tracking-wider flex-shrink-0">
-                        人気
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[13px] text-stone-500 mt-0.5 line-clamp-1">
-                    {option.description}
-                  </p>
-                </div>
+        {/* 滚动容器 */}
+        <div
+          ref={scrollContainerRef}
+          onScroll={updateScrollButtons}
+          className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth pb-2 -mx-4 px-4"
+          style={{ scrollSnapType: "x mandatory" }}
+        >
+          {upgradeOptions.map((option) => {
+            const added = isSelected(option.id);
+            const hasImages = option.images.length > 0;
+            const displayImage = hasImages ? option.images[0] : null;
 
-                {/* 价格 */}
-                <span className="text-[15px] font-semibold text-sakura-600 flex-shrink-0">
-                  +¥{(option.price / 100).toLocaleString()}
-                </span>
-
-                {/* 添加按钮 */}
-                <button
-                  onClick={(e) => handleToggle(option, e)}
+            return (
+              <div
+                key={option.id}
+                className="flex-shrink-0 w-[220px] md:w-[260px]"
+                style={{ scrollSnapAlign: "start" }}
+              >
+                <div
                   className={`
-                    w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0
+                    group relative bg-white rounded-xl overflow-hidden cursor-pointer
+                    transition-all duration-300
                     ${added
-                      ? "bg-sakura-500 text-white hover:bg-sakura-600 shadow-sm"
-                      : "bg-stone-100 text-stone-500 hover:bg-sakura-100 hover:text-sakura-600"
+                      ? "ring-2 ring-sakura-400 shadow-lg shadow-sakura-100"
+                      : "border border-gray-200 hover:shadow-lg hover:-translate-y-1"
                     }
                   `}
                 >
-                  {added ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                </button>
+                  {/* 图片区域 */}
+                  <div
+                    className="relative aspect-[4/3] bg-wabi-100 overflow-hidden"
+                    onClick={(e) => hasImages && openGallery(option.images, 0, e)}
+                  >
+                    {displayImage ? (
+                      <Image
+                        src={displayImage}
+                        alt={option.name}
+                        fill
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        sizes="(max-width: 768px) 220px, 260px"
+                        unoptimized
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-[48px]">{option.icon}</span>
+                      </div>
+                    )}
 
-                {/* 展开箭头 - 独立在最右侧 */}
-                <ChevronDown
-                  className={`
-                    w-4 h-4 text-stone-400 transition-transform duration-300 flex-shrink-0
-                    ${expanded ? "rotate-180" : ""}
-                    group-hover:text-stone-500
-                  `}
-                />
-              </div>
+                    {/* 人気 徽章 */}
+                    {option.popular && (
+                      <div className="absolute top-3 left-3 flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-sakura-500 to-sakura-600 text-white text-[11px] font-medium rounded-full shadow-lg">
+                        <Sparkles className="w-3 h-3" />
+                        <span>人気 No.1</span>
+                      </div>
+                    )}
 
-              {/* ========================================
-                  展开内容 - 与卡片融合
-              ======================================== */}
-              <div
-                className={`
-                  overflow-hidden transition-all duration-300 ease-in-out
-                  ${expanded ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0"}
-                `}
-              >
-                <div className="px-4 pb-4 pt-1 space-y-3">
-                  {/* 图片画廊 */}
-                  {hasImages && (
-                    <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
-                      {option.images.map((img, i) => (
-                        <button
-                          key={i}
-                          onClick={(e) => openGallery(option.images, i, e)}
-                          className="relative flex-shrink-0 w-24 h-16 rounded-lg overflow-hidden bg-wabi-100 hover:ring-2 hover:ring-sakura-300 transition-all"
-                        >
-                          <Image
-                            src={img}
-                            alt={`${option.name} ${i + 1}`}
-                            fill
-                            className="object-cover"
-                            sizes="96px"
-                            unoptimized
-                          />
-                        </button>
-                      ))}
+                    {/* 已选标记 */}
+                    {added && (
+                      <div className="absolute top-3 right-3 w-7 h-7 rounded-full bg-sakura-500 flex items-center justify-center shadow-lg">
+                        <Check className="w-4 h-4 text-white" />
+                      </div>
+                    )}
+
+                    {/* 图片数量指示 */}
+                    {hasImages && option.images.length > 1 && (
+                      <div className="absolute bottom-2 right-2 px-2 py-0.5 bg-black/50 backdrop-blur-sm rounded text-[11px] text-white">
+                        1/{option.images.length}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 信息区域 */}
+                  <div className="p-4">
+                    {/* 标题 + 英文 */}
+                    <h4 className="text-[15px] font-semibold text-gray-900 mb-1">
+                      {option.name}
+                    </h4>
+                    {option.nameEn && option.nameEn !== option.name && (
+                      <p className="text-[12px] text-gray-400 mb-2">
+                        {option.nameEn}
+                      </p>
+                    )}
+
+                    {/* 描述 */}
+                    {option.description && (
+                      <p className="text-[13px] text-gray-500 line-clamp-2 mb-3">
+                        {option.description}
+                      </p>
+                    )}
+
+                    {/* 亮点标签 (最多显示2个) */}
+                    {option.highlights && option.highlights.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-3">
+                        {option.highlights.slice(0, 2).map((h, i) => (
+                          <span
+                            key={i}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 bg-wabi-100 text-[11px] text-gray-600 rounded"
+                          >
+                            <Check className="w-2.5 h-2.5 text-sakura-500" />
+                            {h}
+                          </span>
+                        ))}
+                        {option.highlights.length > 2 && (
+                          <span className="px-2 py-0.5 text-[11px] text-gray-400">
+                            +{option.highlights.length - 2}
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* 价格 + 添加按钮 */}
+                    <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                      <span className="text-[16px] font-semibold text-sakura-600">
+                        +¥{(option.price / 100).toLocaleString()}
+                      </span>
+                      <button
+                        onClick={(e) => handleToggle(option, e)}
+                        className={`
+                          flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium
+                          transition-all duration-200
+                          ${added
+                            ? "bg-sakura-500 text-white hover:bg-sakura-600"
+                            : "bg-gray-100 text-gray-700 hover:bg-sakura-50 hover:text-sakura-600"
+                          }
+                        `}
+                      >
+                        {added ? (
+                          <>
+                            <Check className="w-3.5 h-3.5" />
+                            已添加
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="w-3.5 h-3.5" />
+                            添加
+                          </>
+                        )}
+                      </button>
                     </div>
-                  )}
-
-                  {/* 详细描述 */}
-                  <p className="text-[13px] text-stone-500 leading-relaxed">
-                    {option.detailedDescription}
-                  </p>
-
-                  {/* 亮点标签 */}
-                  {option.highlights && (
-                    <div className="flex flex-wrap gap-1.5">
-                      {option.highlights.map((h, i) => (
-                        <span
-                          key={i}
-                          className={`
-                            inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px]
-                            ${added
-                              ? "bg-sakura-100/80 text-sakura-700"
-                              : "bg-wabi-100 text-stone-600"
-                            }
-                          `}
-                        >
-                          <Check className="w-3 h-3" />
-                          {h}
-                        </span>
-                      ))}
-                    </div>
-                  )}
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
       {/* 底部说明 */}
-      <p className="text-center text-[12px] text-wabi-400 pt-2">
+      <p className="text-center text-[12px] text-wabi-400">
         增值服务将在预订确认时一并结算
       </p>
 
