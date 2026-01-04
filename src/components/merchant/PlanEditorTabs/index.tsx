@@ -13,7 +13,7 @@ export interface TabItem {
 export const TABS: TabItem[] = [
   { id: "basic", label: "基本信息", icon: <FileText className="w-4 h-4" /> },
   { id: "pricing", label: "价格设置", icon: <CircleDollarSign className="w-4 h-4" /> },
-  { id: "components", label: "服务组件", icon: <Puzzle className="w-4 h-4" /> },
+  { id: "components", label: "包含服务", icon: <Puzzle className="w-4 h-4" /> },
   { id: "upgrades", label: "升级服务", icon: <Sparkles className="w-4 h-4" /> },
   { id: "tags", label: "分类标签", icon: <Tags className="w-4 h-4" /> },
   { id: "advanced", label: "高级设置", icon: <Settings className="w-4 h-4" /> },

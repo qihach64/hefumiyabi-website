@@ -109,7 +109,7 @@ const OUTFIT_CATEGORY_ORDER = [
   "FOOTWEAR",
 ];
 
-const ADDON_CONFIG = { label: "增值服务", icon: "✨" };
+// ADDON 类型组件在独立的 UpgradesTab 管理
 const HOTMAP_ELIGIBLE_TYPES = ["OUTFIT"];
 
 // ==================== 主组件 ====================
@@ -184,8 +184,8 @@ export default function PlanComponentEditor({
           const data = await response.json();
           const components: MerchantComponentData[] = data.components || [];
 
+          // 只显示 OUTFIT 类型组件（增值服务在独立的 UpgradesTab 管理）
           const outfitComponents = components.filter((c) => c.type === "OUTFIT");
-          const addonComponents = components.filter((c) => c.type === "ADDON");
 
           const outfitGrouped = outfitComponents.reduce((acc, comp) => {
             const category = comp.outfitCategory || "OTHER";
@@ -206,15 +206,6 @@ export default function PlanComponentEditor({
                 components: outfitGrouped[categoryKey],
               });
             }
-          }
-
-          if (addonComponents.length > 0) {
-            cats.push({
-              key: "ADDON",
-              label: ADDON_CONFIG.label,
-              icon: ADDON_CONFIG.icon,
-              components: addonComponents,
-            });
           }
 
           setCategories(cats);
@@ -888,9 +879,7 @@ export default function PlanComponentEditor({
                     <div>
                       <h3 className="text-[13px] font-semibold text-gray-900">{selectedComponent.name}</h3>
                       <p className="text-[11px] text-gray-500">
-                        {selectedComponent.type === "ADDON"
-                          ? ADDON_CONFIG.label
-                          : (selectedComponent.outfitCategory && OUTFIT_CATEGORY_CONFIG[selectedComponent.outfitCategory]?.label) || "组件"}
+                        {(selectedComponent.outfitCategory && OUTFIT_CATEGORY_CONFIG[selectedComponent.outfitCategory]?.label) || "组件"}
                       </p>
                     </div>
                   </div>
