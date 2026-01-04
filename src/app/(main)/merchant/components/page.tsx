@@ -60,9 +60,15 @@ export default async function MerchantComponentsPage() {
     icon: mc.template.icon,
     basePrice: mc.template.basePrice,
     description: mc.template.description,
-    // 商户自定义内容
+    // 商户自定义内容（如果有自定义则使用自定义，否则使用默认）
     images: mc.images.length > 0 ? mc.images : mc.template.defaultImages,
     highlights: mc.highlights.length > 0 ? mc.highlights : mc.template.defaultHighlights,
+    // 标记是否有自定义内容
+    hasCustomImages: mc.images.length > 0,
+    hasCustomHighlights: mc.highlights.length > 0,
+    // 保存默认值用于恢复
+    defaultImages: mc.template.defaultImages,
+    defaultHighlights: mc.template.defaultHighlights,
     // 商户配置
     price: mc.price,
     isEnabled: mc.isEnabled,

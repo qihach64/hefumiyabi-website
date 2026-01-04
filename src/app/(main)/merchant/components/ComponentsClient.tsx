@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowLeft,
   Settings,
@@ -11,8 +12,11 @@ import {
   ToggleRight,
   AlertCircle,
   Info,
+  ImageIcon,
+  Pencil,
 } from "lucide-react";
 import { Badge } from "@/components/ui";
+import ComponentEditModal from "./ComponentEditModal";
 
 // v10.1 商户组件数据结构
 interface MerchantComponentData {
@@ -33,6 +37,11 @@ interface MerchantComponentData {
   price: number | null;
   isEnabled: boolean;
   effectivePrice: number;
+  // 用于区分默认值
+  hasCustomImages?: boolean;
+  hasCustomHighlights?: boolean;
+  defaultImages?: string[];
+  defaultHighlights?: string[];
 }
 
 interface ComponentsClientProps {
@@ -56,6 +65,7 @@ function ComponentRow({
   onEditSave,
   onPriceChange,
   onToggle,
+  onOpenEditModal,
   isSaving,
 }: {
   component: MerchantComponentData;
@@ -66,11 +76,13 @@ function ComponentRow({
   onEditSave: (id: string) => void;
   onPriceChange: (value: string) => void;
   onToggle: (id: string, newEnabled: boolean) => void;
+  onOpenEditModal: (component: MerchantComponentData) => void;
   isSaving: boolean;
 }) {
   const isEditing = editingId === component.id;
   const typeInfo = TYPE_LABELS[component.type] || { label: "其他", color: "bg-gray-100 text-gray-700" };
   const hasCustomPrice = component.price !== null;
+  const hasCustomImages = component.hasCustomImages;
 
   return (
     <div
@@ -80,7 +92,7 @@ function ComponentRow({
         ${isEditing ? "ring-2 ring-sakura-400" : ""}
       `}
     >
-      {/* 左侧：图标 + 名称 */}
+      {/* 左侧：图标/图片 + 名称 */}
       <div className="flex items-center gap-3 flex-1 min-w-0">
         {/* 启用/禁用开关 */}
         <button
@@ -95,9 +107,38 @@ function ComponentRow({
           )}
         </button>
 
-        {/* 图标 */}
-        <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-          <span className="text-xl">{component.icon || "?"}</span>
+        {/* 图片预览 或 图标 */}
+        <div
+          className="relative w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0 overflow-hidden cursor-pointer group"
+          onClick={() => onOpenEditModal(component)}
+        >
+          {component.images.length > 0 ? (
+            <>
+              <Image
+                src={component.images[0]}
+                alt={component.name}
+                fill
+                className="object-cover"
+              />
+              {/* 自定义标记 */}
+              {hasCustomImages && (
+                <div className="absolute top-0 right-0 w-3 h-3 bg-sakura-500 rounded-bl-lg flex items-center justify-center">
+                  <Check className="w-2 h-2 text-white" />
+                </div>
+              )}
+              {/* 编辑遮罩 */}
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <Pencil className="w-4 h-4 text-white" />
+              </div>
+            </>
+          ) : (
+            <>
+              <span className="text-xl">{component.icon || "?"}</span>
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <ImageIcon className="w-4 h-4 text-white" />
+              </div>
+            </>
+          )}
         </div>
 
         {/* 名称信息 */}
@@ -109,10 +150,23 @@ function ComponentRow({
             <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${typeInfo.color}`}>
               {typeInfo.label}
             </span>
+            {hasCustomImages && (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-sakura-50 text-sakura-600">
+                已自定义
+              </span>
+            )}
           </div>
-          {component.nameJa && (
-            <span className="text-xs text-gray-500">{component.nameJa}</span>
-          )}
+          <div className="flex items-center gap-2">
+            {component.nameJa && (
+              <span className="text-xs text-gray-500">{component.nameJa}</span>
+            )}
+            <button
+              onClick={() => onOpenEditModal(component)}
+              className="text-xs text-sakura-500 hover:text-sakura-700 underline"
+            >
+              编辑图片/亮点
+            </button>
+          </div>
         </div>
       </div>
 
@@ -197,6 +251,7 @@ export default function ComponentsClient({
   const [editPrice, setEditPrice] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [editModalComponent, setEditModalComponent] = useState<MerchantComponentData | null>(null);
 
   // 按类型分组
   const groupedComponents = components.reduce((acc, component) => {
@@ -305,6 +360,45 @@ export default function ComponentsClient({
     }
   }, []);
 
+  // 保存组件图片/亮点
+  const handleSaveComponentDetails = useCallback(async (data: {
+    id: string;
+    images: string[];
+    highlights: string[];
+  }) => {
+    const response = await fetch("/api/merchant/component-overrides", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: data.id,
+        images: data.images,
+        highlights: data.highlights,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("保存失败，请重试");
+    }
+
+    // 更新本地状态
+    setComponents(prev =>
+      prev.map(c =>
+        c.id === data.id
+          ? {
+              ...c,
+              images: data.images,
+              highlights: data.highlights,
+              hasCustomImages: data.images.length > 0,
+              hasCustomHighlights: data.highlights.length > 0,
+            }
+          : c
+      )
+    );
+
+    setSaveMessage({ type: "success", text: "组件信息已更新" });
+    setTimeout(() => setSaveMessage(null), 3000);
+  }, []);
+
   // 统计
   const enabledCount = components.filter(c => c.isEnabled).length;
   const customPriceCount = components.filter(c => c.price !== null).length;
@@ -410,6 +504,7 @@ export default function ComponentsClient({
                       onEditSave={handleEditSave}
                       onPriceChange={setEditPrice}
                       onToggle={handleToggle}
+                      onOpenEditModal={setEditModalComponent}
                       isSaving={isSaving}
                     />
                   ))}
@@ -434,6 +529,15 @@ export default function ComponentsClient({
           </div>
         )}
       </div>
+
+      {/* 组件编辑弹窗 */}
+      {editModalComponent && (
+        <ComponentEditModal
+          component={editModalComponent}
+          onClose={() => setEditModalComponent(null)}
+          onSave={handleSaveComponentDetails}
+        />
+      )}
     </div>
   );
 }
