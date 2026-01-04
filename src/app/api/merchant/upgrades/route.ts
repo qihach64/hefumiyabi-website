@@ -39,7 +39,7 @@ export async function GET() {
     const existingMerchantComponents = await prisma.merchantComponent.findMany({
       where: {
         merchantId: merchant.id,
-        templateId: { not: null },
+        NOT: { templateId: null },
         template: {
           type: "ADDON",
         },
@@ -76,7 +76,7 @@ export async function GET() {
         OR: [
           // 平台模板（ADDON 类型）
           {
-            templateId: { not: null },
+            NOT: { templateId: null },
             template: {
               type: "ADDON",
               isActive: true,
