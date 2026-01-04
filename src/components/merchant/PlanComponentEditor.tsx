@@ -21,8 +21,11 @@ import {
   PanelLeftOpen,
   PanelRightClose,
   PanelRightOpen,
+  Loader2,
+  ImageIcon,
 } from "lucide-react";
 import EditorHotspot from "@/components/shared/EditorHotspot";
+import ImageUploader from "@/components/ImageUploader";
 
 // ==================== 类型定义 (v10.2) ====================
 
@@ -154,6 +157,10 @@ export default function PlanComponentEditor({
   const [placingComponentId, setPlacingComponentId] = useState<string | null>(null);
   const [draggingComponentId, setDraggingComponentId] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+
+  // 组件图片编辑状态
+  const [componentImages, setComponentImages] = useState<Record<string, string[]>>({});
+  const [isSavingImages, setIsSavingImages] = useState(false);
 
   // Refs
   const canvasContainerRef = useRef<HTMLDivElement>(null);
@@ -503,6 +510,70 @@ export default function PlanComponentEditor({
       );
     },
     [configs, setConfigs]
+  );
+
+  // ==================== 组件图片管理 ====================
+
+  // 获取组件当前图片（优先使用本地编辑状态，否则使用原始数据）
+  const getComponentImages = useCallback(
+    (componentId: string): string[] => {
+      if (componentImages[componentId] !== undefined) {
+        return componentImages[componentId];
+      }
+      const component = getAllComponents().find((c) => c.id === componentId);
+      return component?.images || [];
+    },
+    [componentImages, getAllComponents]
+  );
+
+  // 保存组件图片到服务器
+  const saveComponentImages = useCallback(
+    async (componentId: string, images: string[]) => {
+      setIsSavingImages(true);
+      try {
+        const response = await fetch("/api/merchant/component-overrides", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: componentId, images }),
+        });
+
+        if (!response.ok) {
+          throw new Error("保存失败");
+        }
+
+        // 更新本地分类数据中的图片
+        setCategories((prev) =>
+          prev.map((cat) => ({
+            ...cat,
+            components: cat.components.map((c) =>
+              c.id === componentId ? { ...c, images } : c
+            ),
+          }))
+        );
+
+        // 清除本地编辑状态（已同步到服务器）
+        setComponentImages((prev) => {
+          const { [componentId]: _, ...rest } = prev;
+          return rest;
+        });
+      } catch (error) {
+        console.error("保存组件图片失败:", error);
+        alert("保存图片失败，请重试");
+      } finally {
+        setIsSavingImages(false);
+      }
+    },
+    []
+  );
+
+  // 处理图片变化（本地状态更新 + 自动保存）
+  const handleComponentImagesChange = useCallback(
+    (componentId: string, images: string[]) => {
+      setComponentImages((prev) => ({ ...prev, [componentId]: images }));
+      // 自动保存
+      saveComponentImages(componentId, images);
+    },
+    [saveComponentImages]
   );
 
   // ==================== 面板拖拽调整 ====================
@@ -1047,6 +1118,36 @@ export default function PlanComponentEditor({
                     </div>
                   </div>
                 )}
+
+                {/* 自定义图片 */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
+                      <ImageIcon className="w-3 h-3" />
+                      自定义图片
+                    </h4>
+                    {isSavingImages && (
+                      <span className="flex items-center gap-1 text-xs text-sakura-500">
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        保存中...
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-400 mb-3">
+                    上传您自己的组件展示图片，替换平台默认图片
+                  </p>
+                  <ImageUploader
+                    category="component"
+                    entityId={selectedComponent.id}
+                    purpose="gallery"
+                    multiple={true}
+                    maxFiles={5}
+                    value={getComponentImages(selectedComponent.id)}
+                    onChange={(urls) => handleComponentImagesChange(selectedComponent.id, urls)}
+                    aspectRatio="4:3"
+                    className="w-full"
+                  />
+                </div>
 
                 {/* 操作按钮 */}
                 <div className="pt-4 border-t border-gray-100">
