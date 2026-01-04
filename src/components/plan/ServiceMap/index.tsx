@@ -105,6 +105,8 @@ export default function ServiceMap({
   const [showGallery, setShowGallery] = useState(false);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [galleryIndex, setGalleryIndex] = useState(0);
+  // 详情区图片轮播索引
+  const [detailImageIndex, setDetailImageIndex] = useState(0);
 
   // Refs for scroll-into-view
   const itemRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
@@ -165,6 +167,7 @@ export default function ServiceMap({
     setSelectedItemId(hotspot.id);
     setActiveTab("detail"); // 自动切换到详情 Tab
     setShowMobileDetail(true);
+    setDetailImageIndex(0); // 重置图片索引
     // 滚动到对应组件
     const itemEl = itemRefs.current.get(hotspot.id);
     if (itemEl) {
@@ -177,6 +180,7 @@ export default function ServiceMap({
     setSelectedItemId(item.id);
     setActiveTab("detail"); // 自动切换到详情 Tab
     setShowMobileDetail(true);
+    setDetailImageIndex(0); // 重置图片索引
   }, []);
 
   // 打开图片画廊
@@ -409,40 +413,90 @@ export default function ServiceMap({
 
                     {/* 详情内容 */}
                     <div className="flex-1 overflow-y-auto p-5 space-y-5">
-                      {/* 图片画廊 */}
+                      {/* 图片轮播 */}
                       {selectedItem.images && selectedItem.images.length > 0 && (
                         <div>
                           <h4 className="text-[12px] font-semibold text-gray-400 uppercase tracking-[0.25em] mb-3">
                             实物展示
                           </h4>
-                          <div className="grid grid-cols-2 gap-2">
-                            {selectedItem.images.slice(0, 4).map((img, i) => (
-                              <button
-                                key={i}
-                                onClick={() => openGallery(selectedItem.images!, i)}
-                                className="relative aspect-[4/3] rounded-lg overflow-hidden bg-gray-100 hover:ring-2 hover:ring-sakura-400 transition-all group"
-                              >
-                                <Image
-                                  src={img}
-                                  alt={`${selectedItem.name} 图片 ${i + 1}`}
-                                  fill
-                                  className="object-cover group-hover:scale-105 transition-transform duration-300"
-                                  sizes="150px"
-                                  unoptimized
-                                />
-                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-                                  <div className="w-8 h-8 rounded-full bg-white/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <Plus className="w-4 h-4 text-gray-700" />
-                                  </div>
+                          <div className="space-y-3">
+                            {/* 主图区域 */}
+                            <div
+                              className="relative aspect-[4/3] rounded-xl overflow-hidden bg-gray-100 group cursor-pointer"
+                              onClick={() => openGallery(selectedItem.images!, detailImageIndex)}
+                            >
+                              <Image
+                                src={selectedItem.images[detailImageIndex] || selectedItem.images[0]}
+                                alt={`${selectedItem.name} 图片 ${detailImageIndex + 1}`}
+                                fill
+                                className="object-cover group-hover:scale-105 transition-transform duration-500"
+                                sizes="320px"
+                                unoptimized
+                              />
+                              {/* 左右切换箭头 */}
+                              {selectedItem.images.length > 1 && (
+                                <>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setDetailImageIndex(i => (i - 1 + selectedItem.images!.length) % selectedItem.images!.length);
+                                    }}
+                                    className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white"
+                                  >
+                                    <ChevronRight className="w-4 h-4 text-gray-700 rotate-180" />
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setDetailImageIndex(i => (i + 1) % selectedItem.images!.length);
+                                    }}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white"
+                                  >
+                                    <ChevronRight className="w-4 h-4 text-gray-700" />
+                                  </button>
+                                </>
+                              )}
+                              {/* 放大提示 */}
+                              <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/50 rounded-lg text-[11px] text-white flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Plus className="w-3 h-3" />
+                                点击放大
+                              </div>
+                              {/* 图片计数 */}
+                              {selectedItem.images.length > 1 && (
+                                <div className="absolute bottom-2 left-2 px-2 py-0.5 bg-black/50 rounded-full text-[11px] text-white">
+                                  {detailImageIndex + 1} / {selectedItem.images.length}
                                 </div>
-                              </button>
-                            ))}
+                              )}
+                            </div>
+
+                            {/* 缩略图指示器 */}
+                            {selectedItem.images.length > 1 && (
+                              <div className="flex justify-center gap-2">
+                                {selectedItem.images.map((img, i) => (
+                                  <button
+                                    key={i}
+                                    onClick={() => setDetailImageIndex(i)}
+                                    className={`
+                                      relative w-10 h-10 rounded-lg overflow-hidden transition-all
+                                      ${detailImageIndex === i
+                                        ? "ring-2 ring-sakura-500 ring-offset-1"
+                                        : "ring-1 ring-gray-200 hover:ring-sakura-300 opacity-70 hover:opacity-100"
+                                      }
+                                    `}
+                                  >
+                                    <Image
+                                      src={img}
+                                      alt={`缩略图 ${i + 1}`}
+                                      fill
+                                      className="object-cover"
+                                      sizes="40px"
+                                      unoptimized
+                                    />
+                                  </button>
+                                ))}
+                              </div>
+                            )}
                           </div>
-                          {selectedItem.images.length > 4 && (
-                            <p className="text-[12px] text-gray-400 mt-2 text-center">
-                              +{selectedItem.images.length - 4} 更多图片
-                            </p>
-                          )}
                         </div>
                       )}
 
@@ -624,28 +678,65 @@ export default function ServiceMap({
 
               {/* 内容 */}
               <div className="px-5 pb-5 space-y-4 overflow-y-auto max-h-[45vh]">
-                {/* 图片画廊 - 移动端 */}
+                {/* 图片轮播 - 移动端 */}
                 {selectedItem.images && selectedItem.images.length > 0 && (
-                  <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
-                    {selectedItem.images.slice(0, 4).map((img, i) => (
-                      <button
-                        key={i}
-                        onClick={() => {
-                          setShowMobileDetail(false);
-                          openGallery(selectedItem.images!, i);
-                        }}
-                        className="relative flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden bg-gray-100"
-                      >
-                        <Image
-                          src={img}
-                          alt={`${selectedItem.name} 图片 ${i + 1}`}
-                          fill
-                          className="object-cover"
-                          sizes="80px"
-                          unoptimized
-                        />
-                      </button>
-                    ))}
+                  <div className="space-y-2">
+                    {/* 主图 */}
+                    <div
+                      className="relative aspect-[4/3] rounded-xl overflow-hidden bg-gray-100"
+                      onClick={() => {
+                        setShowMobileDetail(false);
+                        openGallery(selectedItem.images!, detailImageIndex);
+                      }}
+                    >
+                      <Image
+                        src={selectedItem.images[detailImageIndex] || selectedItem.images[0]}
+                        alt={`${selectedItem.name} 图片 ${detailImageIndex + 1}`}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, 320px"
+                        unoptimized
+                      />
+                      {/* 图片计数 */}
+                      {selectedItem.images.length > 1 && (
+                        <div className="absolute bottom-2 left-2 px-2 py-0.5 bg-black/50 rounded-full text-[11px] text-white">
+                          {detailImageIndex + 1} / {selectedItem.images.length}
+                        </div>
+                      )}
+                      {/* 放大提示 */}
+                      <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/50 rounded-lg text-[11px] text-white flex items-center gap-1">
+                        <Plus className="w-3 h-3" />
+                        放大
+                      </div>
+                    </div>
+
+                    {/* 缩略图行 */}
+                    {selectedItem.images.length > 1 && (
+                      <div className="flex gap-2 overflow-x-auto pb-1">
+                        {selectedItem.images.map((img, i) => (
+                          <button
+                            key={i}
+                            onClick={() => setDetailImageIndex(i)}
+                            className={`
+                              relative flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden transition-all
+                              ${detailImageIndex === i
+                                ? "ring-2 ring-sakura-500"
+                                : "ring-1 ring-gray-200 opacity-70"
+                              }
+                            `}
+                          >
+                            <Image
+                              src={img}
+                              alt={`缩略图 ${i + 1}`}
+                              fill
+                              className="object-cover"
+                              sizes="48px"
+                              unoptimized
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
 

@@ -19,21 +19,20 @@ import {
   GripVertical,
   PanelLeftClose,
   PanelLeftOpen,
-  PanelRightClose,
-  PanelRightOpen,
   Loader2,
   ImageIcon,
+  Plus,
+  Trash2,
+  Edit3,
 } from "lucide-react";
 import EditorHotspot from "@/components/shared/EditorHotspot";
 import ImageUploader from "@/components/ImageUploader";
 
 // ==================== 类型定义 (v10.2) ====================
 
-// 商户组件实例（从 API 获取）
 interface MerchantComponentData {
   id: string;
   templateId: string;
-  // 模板信息
   code: string;
   name: string;
   nameJa: string | null;
@@ -41,31 +40,28 @@ interface MerchantComponentData {
   icon: string | null;
   basePrice: number;
   description: string | null;
-  outfitCategory: string | null; // v10.2: OUTFIT 分类
-  // 商户自定义内容
+  outfitCategory: string | null;
   images: string[];
   highlights: string[];
-  // 商户配置
   price: number | null;
   isEnabled: boolean;
   effectivePrice: number;
 }
 
 interface ComponentCategory {
-  key: string; // 分类 key (type 或 outfitCategory)
+  key: string;
   label: string;
   icon: string;
   components: MerchantComponentData[];
 }
 
-// PlanComponent 配置（v10.1 - 使用 merchantComponentId）
 export interface ComponentConfig {
   merchantComponentId: string;
   hotmapX?: number | null;
   hotmapY?: number | null;
   hotmapLabelPosition?: string;
-  hotmapLabelOffsetX?: number; // 标签 X 偏移（像素）
-  hotmapLabelOffsetY?: number; // 标签 Y 偏移（像素）
+  hotmapLabelOffsetX?: number;
+  hotmapLabelOffsetY?: number;
   hotmapOrder?: number;
 }
 
@@ -87,13 +83,14 @@ interface PlanComponentEditorProps {
   onConfigChange?: (configs: ComponentConfig[]) => void;
   themeId?: string | null;
   mapTemplate?: MapTemplateData | null;
-  customMapImageUrl?: string; // 自定义热点图背景（优先于 mapTemplate.imageUrl）
+  customMapImageUrl?: string;
+  onCustomMapImageChange?: (url: string) => void;
+  planId?: string;
   className?: string;
 }
 
 // ==================== 类型分类配置 ====================
 
-// v10.2: OUTFIT 分类配置
 const OUTFIT_CATEGORY_CONFIG: Record<string, { label: string; icon: string }> = {
   MAIN_GARMENT: { label: "主体服装", icon: "👘" },
   INNERWEAR: { label: "内搭层", icon: "👕" },
@@ -103,7 +100,6 @@ const OUTFIT_CATEGORY_CONFIG: Record<string, { label: string; icon: string }> = 
   FOOTWEAR: { label: "足部穿着", icon: "👡" },
 };
 
-// OUTFIT 分类顺序
 const OUTFIT_CATEGORY_ORDER = [
   "MAIN_GARMENT",
   "OBI_SET",
@@ -113,10 +109,7 @@ const OUTFIT_CATEGORY_ORDER = [
   "FOOTWEAR",
 ];
 
-// ADDON 类型配置
 const ADDON_CONFIG = { label: "增值服务", icon: "✨" };
-
-// 可放置到热图的类型
 const HOTMAP_ELIGIBLE_TYPES = ["OUTFIT"];
 
 // ==================== 主组件 ====================
@@ -129,6 +122,8 @@ export default function PlanComponentEditor({
   themeId,
   mapTemplate,
   customMapImageUrl,
+  onCustomMapImageChange,
+  planId,
   className = "",
 }: PlanComponentEditorProps) {
   // 数据状态
@@ -142,18 +137,21 @@ export default function PlanComponentEditor({
   const [canvasZoom, setCanvasZoom] = useState(1);
 
   // 面板状态
-  const [leftPanelWidth, setLeftPanelWidth] = useState(256); // 默认 256px
-  const [rightPanelWidth, setRightPanelWidth] = useState(280); // 默认 280px
+  const [leftPanelWidth, setLeftPanelWidth] = useState(240);
+  const [rightPanelWidth, setRightPanelWidth] = useState(280);
   const [isLeftCollapsed, setIsLeftCollapsed] = useState(false);
-  const [isRightCollapsed, setIsRightCollapsed] = useState(false);
+  const [isRightCollapsed, setIsRightCollapsed] = useState(true); // 默认收起
   const [isResizingLeft, setIsResizingLeft] = useState(false);
   const [isResizingRight, setIsResizingRight] = useState(false);
 
+  // 弹窗状态
+  const [showBackgroundDialog, setShowBackgroundDialog] = useState(false);
+
   // 面板宽度限制
   const LEFT_MIN_WIDTH = 200;
-  const LEFT_MAX_WIDTH = 360;
+  const LEFT_MAX_WIDTH = 320;
   const RIGHT_MIN_WIDTH = 240;
-  const RIGHT_MAX_WIDTH = 400;
+  const RIGHT_MAX_WIDTH = 360;
 
   // 编辑状态
   const [placingComponentId, setPlacingComponentId] = useState<string | null>(null);
@@ -163,6 +161,8 @@ export default function PlanComponentEditor({
   // 组件图片编辑状态
   const [componentImages, setComponentImages] = useState<Record<string, string[]>>({});
   const [isSavingImages, setIsSavingImages] = useState(false);
+  const [activeImageIndex, setActiveImageIndex] = useState(0); // 当前查看的主图索引
+  const [uploadingFiles, setUploadingFiles] = useState<{ id: string; name: string; progress: number }[]>([]); // 上传中的文件
 
   // Refs
   const canvasContainerRef = useRef<HTMLDivElement>(null);
@@ -179,30 +179,23 @@ export default function PlanComponentEditor({
   useEffect(() => {
     async function fetchComponents() {
       try {
-        // 获取商户的组件实例
         const response = await fetch("/api/merchant/component-overrides");
         if (response.ok) {
           const data = await response.json();
           const components: MerchantComponentData[] = data.components || [];
 
-          // v10.2: 按 outfitCategory 分组 OUTFIT，ADDON 单独一组
           const outfitComponents = components.filter((c) => c.type === "OUTFIT");
           const addonComponents = components.filter((c) => c.type === "ADDON");
 
-          // OUTFIT 按 outfitCategory 分组
           const outfitGrouped = outfitComponents.reduce((acc, comp) => {
             const category = comp.outfitCategory || "OTHER";
-            if (!acc[category]) {
-              acc[category] = [];
-            }
+            if (!acc[category]) acc[category] = [];
             acc[category].push(comp);
             return acc;
           }, {} as Record<string, MerchantComponentData[]>);
 
-          // 构建分类数组
           const cats: ComponentCategory[] = [];
 
-          // 按顺序添加 OUTFIT 分类
           for (const categoryKey of OUTFIT_CATEGORY_ORDER) {
             if (outfitGrouped[categoryKey]?.length > 0) {
               const config = OUTFIT_CATEGORY_CONFIG[categoryKey];
@@ -215,7 +208,6 @@ export default function PlanComponentEditor({
             }
           }
 
-          // 添加 ADDON 分类
           if (addonComponents.length > 0) {
             cats.push({
               key: "ADDON",
@@ -226,7 +218,6 @@ export default function PlanComponentEditor({
           }
 
           setCategories(cats);
-          // 默认展开所有分类
           setExpandedCategories(new Set(cats.map((c) => c.key)));
         }
       } catch (error) {
@@ -244,10 +235,8 @@ export default function PlanComponentEditor({
     return categories.flatMap((cat) => cat.components);
   }, [categories]);
 
-  // 过滤后的分类（搜索）
   const filteredCategories = useMemo(() => {
     if (!searchQuery.trim()) return categories;
-
     const query = searchQuery.toLowerCase();
     return categories
       .map((cat) => ({
@@ -256,14 +245,12 @@ export default function PlanComponentEditor({
           (c) =>
             c.name.toLowerCase().includes(query) ||
             c.nameJa?.toLowerCase().includes(query) ||
-            c.code.toLowerCase().includes(query) ||
-            c.description?.toLowerCase().includes(query)
+            c.code.toLowerCase().includes(query)
         ),
       }))
       .filter((cat) => cat.components.length > 0);
   }, [categories, searchQuery]);
 
-  // 已放置的组件
   const placedComponents = useMemo(() => {
     return configs.filter(
       (c) =>
@@ -273,14 +260,11 @@ export default function PlanComponentEditor({
     );
   }, [configs, selectedMerchantComponentIds]);
 
-  // 统计
-  const stats = useMemo(() => {
-    const totalSelected = selectedMerchantComponentIds.length;
-    const totalPlaced = placedComponents.length;
-    return { totalSelected, totalPlaced };
-  }, [selectedMerchantComponentIds, placedComponents]);
+  const stats = useMemo(() => ({
+    totalSelected: selectedMerchantComponentIds.length,
+    totalPlaced: placedComponents.length,
+  }), [selectedMerchantComponentIds, placedComponents]);
 
-  // 当前选中的组件详情
   const selectedComponent = useMemo(() => {
     if (!selectedComponentId) return null;
     return getAllComponents().find((c) => c.id === selectedComponentId) || null;
@@ -293,9 +277,7 @@ export default function PlanComponentEditor({
 
   // ==================== 辅助函数 ====================
 
-  const calculateLabelPosition = (x: number): string => {
-    return x > 0.5 ? "left" : "right";
-  };
+  const calculateLabelPosition = (x: number): string => x > 0.5 ? "left" : "right";
 
   const getRelativePosition = useCallback(
     (e: React.MouseEvent | MouseEvent): { x: number; y: number } | null => {
@@ -320,11 +302,8 @@ export default function PlanComponentEditor({
   const toggleCategory = useCallback((type: string) => {
     setExpandedCategories((prev) => {
       const newSet = new Set(prev);
-      if (newSet.has(type)) {
-        newSet.delete(type);
-      } else {
-        newSet.add(type);
-      }
+      if (newSet.has(type)) newSet.delete(type);
+      else newSet.add(type);
       return newSet;
     });
   }, []);
@@ -334,22 +313,15 @@ export default function PlanComponentEditor({
       const isSelected = selectedMerchantComponentIds.includes(merchantComponentId);
       const component = getAllComponents().find((c) => c.id === merchantComponentId);
       const canPlaceOnHotmap = component && HOTMAP_ELIGIBLE_TYPES.includes(component.type);
-      const hasMap = !!mapTemplate;
+      const hasMap = !!mapTemplate || !!customMapImageUrl;
 
       if (isSelected) {
-        // 取消选择
         onChange(selectedMerchantComponentIds.filter((id) => id !== merchantComponentId));
         setConfigs(configs.filter((c) => c.merchantComponentId !== merchantComponentId));
-        if (placingComponentId === merchantComponentId) {
-          setPlacingComponentId(null);
-        }
-        if (selectedComponentId === merchantComponentId) {
-          setSelectedComponentId(null);
-        }
+        if (placingComponentId === merchantComponentId) setPlacingComponentId(null);
+        if (selectedComponentId === merchantComponentId) setSelectedComponentId(null);
       } else {
-        // 选择组件
         onChange([...selectedMerchantComponentIds, merchantComponentId]);
-
         const newConfig: ComponentConfig = {
           merchantComponentId,
           hotmapX: null,
@@ -358,42 +330,21 @@ export default function PlanComponentEditor({
           hotmapOrder: configs.length,
         };
         setConfigs([...configs, newConfig]);
-
-        // 如果有热图且组件可放置，进入放置模式
         if (hasMap && canPlaceOnHotmap) {
           setPlacingComponentId(merchantComponentId);
         }
       }
-
-      // 选中以显示属性面板，并强制展开右侧面板
       setSelectedComponentId(merchantComponentId);
-      if (isRightCollapsed) {
-        setIsRightCollapsed(false);
-      }
     },
-    [
-      selectedMerchantComponentIds,
-      onChange,
-      configs,
-      setConfigs,
-      placingComponentId,
-      selectedComponentId,
-      getAllComponents,
-      mapTemplate,
-      isRightCollapsed,
-    ]
+    [selectedMerchantComponentIds, onChange, configs, setConfigs, placingComponentId, selectedComponentId, getAllComponents, mapTemplate, customMapImageUrl]
   );
 
-  // 从画布选中组件
-  // source: 'hotspot' - 点击热点圆点（只选中，不展开面板，方便调整位置）
-  // source: 'label' - 点击标签卡片（选中并展开面板查看详情）
-  const handleCanvasComponentClick = useCallback((merchantComponentId: string, source: "hotspot" | "label") => {
-    setSelectedComponentId(merchantComponentId);
-    // 只有点击标签时才展开右侧面板
-    if (source === "label" && isRightCollapsed) {
-      setIsRightCollapsed(false);
-    }
-  }, [isRightCollapsed]);
+  // 点击热点 - 选中并展开右侧详情面板
+  const handleHotspotSelect = useCallback((componentId: string) => {
+    setSelectedComponentId(componentId);
+    setIsRightCollapsed(false);
+    setActiveImageIndex(0); // 重置图片索引
+  }, []);
 
   // ==================== 放置逻辑 ====================
 
@@ -405,7 +356,6 @@ export default function PlanComponentEditor({
       if (!pos) return;
 
       const labelPosition = calculateLabelPosition(pos.x);
-
       setConfigs(
         configs.map((c) =>
           c.merchantComponentId === placingComponentId
@@ -417,7 +367,6 @@ export default function PlanComponentEditor({
       if (!selectedMerchantComponentIds.includes(placingComponentId)) {
         onChange([...selectedMerchantComponentIds, placingComponentId]);
       }
-
       setPlacingComponentId(null);
     },
     [placingComponentId, getRelativePosition, configs, setConfigs, selectedMerchantComponentIds, onChange]
@@ -437,10 +386,7 @@ export default function PlanComponentEditor({
       if (!pos) return;
 
       setDraggingComponentId(merchantComponentId);
-      setDragOffset({
-        x: pos.x - config.hotmapX,
-        y: pos.y - config.hotmapY,
-      });
+      setDragOffset({ x: pos.x - config.hotmapX, y: pos.y - config.hotmapY });
     },
     [configs, getRelativePosition]
   );
@@ -448,7 +394,6 @@ export default function PlanComponentEditor({
   const handleDragMove = useCallback(
     (e: MouseEvent) => {
       if (!draggingComponentId) return;
-
       const pos = getRelativePosition(e);
       if (!pos) return;
 
@@ -467,9 +412,7 @@ export default function PlanComponentEditor({
     [draggingComponentId, dragOffset, getRelativePosition, configs, setConfigs]
   );
 
-  const handleDragEnd = useCallback(() => {
-    setDraggingComponentId(null);
-  }, []);
+  const handleDragEnd = useCallback(() => setDraggingComponentId(null), []);
 
   useEffect(() => {
     if (draggingComponentId) {
@@ -482,31 +425,24 @@ export default function PlanComponentEditor({
     }
   }, [draggingComponentId, handleDragMove, handleDragEnd]);
 
-  // 移除组件
   const removeComponent = useCallback(
     (merchantComponentId: string) => {
       onChange(selectedMerchantComponentIds.filter((id) => id !== merchantComponentId));
       setConfigs(configs.filter((c) => c.merchantComponentId !== merchantComponentId));
       if (selectedComponentId === merchantComponentId) {
         setSelectedComponentId(null);
+        setIsRightCollapsed(true);
       }
     },
     [selectedMerchantComponentIds, onChange, configs, setConfigs, selectedComponentId]
   );
 
-  // 更新标签偏移位置
   const handleLabelOffsetChange = useCallback(
     (merchantComponentId: string, offsetX: number, offsetY: number) => {
       setConfigs(
         configs.map((c) =>
           c.merchantComponentId === merchantComponentId
-            ? {
-                ...c,
-                hotmapLabelOffsetX: offsetX,
-                hotmapLabelOffsetY: offsetY,
-                // 同时更新 labelPosition 以便兼容旧逻辑
-                hotmapLabelPosition: offsetX < 0 ? "left" : "right",
-              }
+            ? { ...c, hotmapLabelOffsetX: offsetX, hotmapLabelOffsetY: offsetY, hotmapLabelPosition: offsetX < 0 ? "left" : "right" }
             : c
         )
       );
@@ -516,69 +452,50 @@ export default function PlanComponentEditor({
 
   // ==================== 组件图片管理 ====================
 
-  // 获取组件当前图片（优先使用本地编辑状态，否则使用原始数据）
   const getComponentImages = useCallback(
     (componentId: string): string[] => {
-      if (componentImages[componentId] !== undefined) {
-        return componentImages[componentId];
-      }
+      if (componentImages[componentId] !== undefined) return componentImages[componentId];
       const component = getAllComponents().find((c) => c.id === componentId);
       return component?.images || [];
     },
     [componentImages, getAllComponents]
   );
 
-  // 保存组件图片到服务器
-  const saveComponentImages = useCallback(
-    async (componentId: string, images: string[]) => {
-      setIsSavingImages(true);
-      try {
-        const response = await fetch("/api/merchant/component-overrides", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: componentId, images }),
-        });
+  const saveComponentImages = useCallback(async (componentId: string, images: string[]) => {
+    setIsSavingImages(true);
+    try {
+      const response = await fetch("/api/merchant/component-overrides", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: componentId, images }),
+      });
+      if (!response.ok) throw new Error("保存失败");
+      setCategories((prev) =>
+        prev.map((cat) => ({
+          ...cat,
+          components: cat.components.map((c) => (c.id === componentId ? { ...c, images } : c)),
+        }))
+      );
+      setComponentImages((prev) => {
+        const { [componentId]: _, ...rest } = prev;
+        return rest;
+      });
+    } catch (error) {
+      console.error("保存组件图片失败:", error);
+    } finally {
+      setIsSavingImages(false);
+    }
+  }, []);
 
-        if (!response.ok) {
-          throw new Error("保存失败");
-        }
-
-        // 更新本地分类数据中的图片
-        setCategories((prev) =>
-          prev.map((cat) => ({
-            ...cat,
-            components: cat.components.map((c) =>
-              c.id === componentId ? { ...c, images } : c
-            ),
-          }))
-        );
-
-        // 清除本地编辑状态（已同步到服务器）
-        setComponentImages((prev) => {
-          const { [componentId]: _, ...rest } = prev;
-          return rest;
-        });
-      } catch (error) {
-        console.error("保存组件图片失败:", error);
-        alert("保存图片失败，请重试");
-      } finally {
-        setIsSavingImages(false);
-      }
-    },
-    []
-  );
-
-  // 处理图片变化（本地状态更新 + 自动保存）
   const handleComponentImagesChange = useCallback(
     (componentId: string, images: string[]) => {
       setComponentImages((prev) => ({ ...prev, [componentId]: images }));
-      // 自动保存
       saveComponentImages(componentId, images);
     },
     [saveComponentImages]
   );
 
-  // ==================== 面板拖拽调整 ====================
+  // ==================== 面板拖拽 ====================
 
   const handleLeftResizeStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -594,18 +511,16 @@ export default function PlanComponentEditor({
     (e: MouseEvent) => {
       if (!mainContainerRef.current) return;
       const rect = mainContainerRef.current.getBoundingClientRect();
-
       if (isResizingLeft) {
         const newWidth = e.clientX - rect.left;
         setLeftPanelWidth(Math.max(LEFT_MIN_WIDTH, Math.min(LEFT_MAX_WIDTH, newWidth)));
       }
-
       if (isResizingRight) {
         const newWidth = rect.right - e.clientX;
         setRightPanelWidth(Math.max(RIGHT_MIN_WIDTH, Math.min(RIGHT_MAX_WIDTH, newWidth)));
       }
     },
-    [isResizingLeft, isResizingRight, LEFT_MIN_WIDTH, LEFT_MAX_WIDTH, RIGHT_MIN_WIDTH, RIGHT_MAX_WIDTH]
+    [isResizingLeft, isResizingRight]
   );
 
   const handleResizeEnd = useCallback(() => {
@@ -647,124 +562,100 @@ export default function PlanComponentEditor({
     );
   }
 
-  // 使用自定义背景图优先，否则使用模板背景图
   const effectiveMapImageUrl = customMapImageUrl || mapTemplate?.imageUrl;
   const hasMapTemplate = !!effectiveMapImageUrl;
 
   return (
-    <div className={`bg-white rounded-2xl border border-gray-200 overflow-hidden ${className}`}>
-      {/* 工具栏 */}
-      <div className="h-12 px-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+    <div className={`bg-white rounded-2xl border border-gray-200 overflow-hidden h-full flex flex-col ${className}`}>
+      {/* ==================== 工具栏 ==================== */}
+      <div className="h-11 px-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
+        <div className="flex items-center gap-2">
           {/* 左侧面板切换 */}
           <button
             type="button"
             onClick={() => setIsLeftCollapsed(!isLeftCollapsed)}
             className={`p-1.5 rounded transition-colors ${
-              isLeftCollapsed
-                ? "text-sakura-600 bg-sakura-50 hover:bg-sakura-100"
-                : "text-gray-500 hover:text-gray-700 hover:bg-gray-200"
+              isLeftCollapsed ? "text-sakura-600 bg-sakura-50" : "text-gray-500 hover:bg-gray-200"
             }`}
             title={isLeftCollapsed ? "展开组件库" : "收起组件库"}
           >
-            {isLeftCollapsed ? (
-              <PanelLeftOpen className="w-4 h-4" />
-            ) : (
-              <PanelLeftClose className="w-4 h-4" />
-            )}
+            {isLeftCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
           </button>
 
-          <div className="flex items-center gap-2 text-gray-700">
+          <div className="flex items-center gap-1.5 text-gray-700">
             <Layers className="w-4 h-4" />
-            <span className="text-sm font-medium">套餐组件编辑器</span>
+            <span className="text-[13px] font-medium">组件编辑器</span>
           </div>
+
           <div className="h-4 w-px bg-gray-300" />
-          <div className="flex items-center gap-2 text-xs">
-            <span className="px-2 py-0.5 bg-sakura-100 text-sakura-600 rounded">
+
+          <div className="flex items-center gap-1.5 text-[12px]">
+            <span className="px-1.5 py-0.5 bg-sakura-100 text-sakura-600 rounded">
               {stats.totalSelected} 已选
             </span>
             {hasMapTemplate && (
-              <span className="px-2 py-0.5 bg-blue-100 text-blue-600 rounded">
+              <span className="px-1.5 py-0.5 bg-blue-100 text-blue-600 rounded">
                 {stats.totalPlaced} 已放置
               </span>
             )}
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* 缩放控制 */}
-          {hasMapTemplate && (
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={handleZoomOut}
-                className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors"
-                title="缩小"
-              >
-                <ZoomOut className="w-4 h-4" />
-              </button>
-              <span className="px-2 text-xs text-gray-500 min-w-[48px] text-center">
-                {Math.round(canvasZoom * 100)}%
-              </span>
-              <button
-                type="button"
-                onClick={handleZoomIn}
-                className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors"
-                title="放大"
-              >
-                <ZoomIn className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={handleZoomReset}
-                className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors"
-                title="重置"
-              >
-                <Maximize2 className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-
-          {/* 右侧面板切换 */}
-          <div className="h-4 w-px bg-gray-300" />
+        <div className="flex items-center gap-1">
+          {/* 背景设置按钮 */}
           <button
             type="button"
-            onClick={() => setIsRightCollapsed(!isRightCollapsed)}
-            className={`p-1.5 rounded transition-colors ${
-              isRightCollapsed
-                ? "text-sakura-600 bg-sakura-50 hover:bg-sakura-100"
-                : "text-gray-500 hover:text-gray-700 hover:bg-gray-200"
-            }`}
-            title={isRightCollapsed ? "展开属性面板" : "收起属性面板"}
+            onClick={() => setShowBackgroundDialog(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-[12px] text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-lg transition-colors"
+            title="设置背景图"
           >
-            {isRightCollapsed ? (
-              <PanelRightOpen className="w-4 h-4" />
-            ) : (
-              <PanelRightClose className="w-4 h-4" />
-            )}
+            <ImageIcon className="w-3.5 h-3.5" />
+            <span>背景</span>
           </button>
+
+          {/* 缩放控制 */}
+          {hasMapTemplate && (
+            <>
+              <div className="h-4 w-px bg-gray-300 mx-1" />
+              <div className="flex items-center gap-0.5">
+                <button type="button" onClick={handleZoomOut} className="p-1.5 text-gray-500 hover:bg-gray-200 rounded" title="缩小">
+                  <ZoomOut className="w-4 h-4" />
+                </button>
+                <span className="px-1.5 text-[11px] text-gray-500 min-w-[40px] text-center">
+                  {Math.round(canvasZoom * 100)}%
+                </span>
+                <button type="button" onClick={handleZoomIn} className="p-1.5 text-gray-500 hover:bg-gray-200 rounded" title="放大">
+                  <ZoomIn className="w-4 h-4" />
+                </button>
+                <button type="button" onClick={handleZoomReset} className="p-1.5 text-gray-500 hover:bg-gray-200 rounded" title="重置">
+                  <Maximize2 className="w-4 h-4" />
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
-      {/* 三栏式主体 */}
-      <div ref={mainContainerRef} className="flex h-[650px]">
-        {/* ==================== 左侧：组件库 ==================== */}
+      {/* ==================== 三栏主体 ==================== */}
+      <div ref={mainContainerRef} className="flex flex-1 min-h-0 relative">
+
+        {/* ========== 左侧：组件库 ========== */}
         <div
-          className={`flex-shrink-0 border-r border-gray-200 bg-gray-50 flex flex-col transition-all duration-300 ${
+          className={`flex-shrink-0 border-r border-gray-200 bg-gray-50 flex flex-col transition-all duration-200 ${
             isLeftCollapsed ? "w-0 overflow-hidden border-r-0" : ""
           }`}
           style={{ width: isLeftCollapsed ? 0 : leftPanelWidth }}
         >
           {/* 搜索框 */}
-          <div className="p-3 border-b border-gray-200">
+          <div className="p-2 border-b border-gray-200">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="搜索组件..."
-                className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-sakura-400 focus:ring-1 focus:ring-sakura-400"
+                className="w-full pl-8 pr-3 py-1.5 bg-white border border-gray-200 rounded-lg text-[13px] text-gray-700 placeholder-gray-400 focus:outline-none focus:border-sakura-400"
               />
             </div>
           </div>
@@ -772,7 +663,7 @@ export default function PlanComponentEditor({
           {/* 组件列表 */}
           <div className="flex-1 overflow-y-auto">
             {filteredCategories.length === 0 ? (
-              <div className="p-4 text-center text-gray-500 text-sm">
+              <div className="p-4 text-center text-gray-500 text-[13px]">
                 {searchQuery ? "未找到匹配的组件" : "暂无可用组件"}
               </div>
             ) : (
@@ -784,92 +675,52 @@ export default function PlanComponentEditor({
 
                 return (
                   <div key={category.key} className="border-b border-gray-100">
-                    {/* 分类标题 */}
                     <button
                       type="button"
                       onClick={() => toggleCategory(category.key)}
-                      className="w-full px-3 py-2.5 flex items-center justify-between hover:bg-gray-100 transition-colors"
+                      className="w-full px-3 py-2 flex items-center justify-between hover:bg-gray-100 transition-colors"
                     >
                       <div className="flex items-center gap-2">
-                        {isExpanded ? (
-                          <ChevronDown className="w-4 h-4 text-gray-400" />
-                        ) : (
-                          <ChevronRight className="w-4 h-4 text-gray-400" />
-                        )}
-                        <span className="text-sm">{category.icon}</span>
-                        <span className="text-sm font-medium text-gray-700">{category.label}</span>
+                        {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-gray-400" /> : <ChevronRight className="w-3.5 h-3.5 text-gray-400" />}
+                        <span className="text-[13px]">{category.icon}</span>
+                        <span className="text-[13px] font-medium text-gray-700">{category.label}</span>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5">
                         {selectedCount > 0 && (
                           <span className="text-[10px] px-1.5 py-0.5 bg-sakura-100 text-sakura-600 rounded">
                             {selectedCount}
                           </span>
                         )}
-                        <span className="text-[10px] text-gray-400">
-                          {category.components.length}
-                        </span>
+                        <span className="text-[10px] text-gray-400">{category.components.length}</span>
                       </div>
                     </button>
 
-                    {/* 组件列表 */}
                     {isExpanded && (
-                      <div className="pb-2 bg-white">
+                      <div className="pb-1 bg-white">
                         {category.components.map((component) => {
                           const isSelected = selectedMerchantComponentIds.includes(component.id);
                           const isPlacing = placingComponentId === component.id;
                           const isActive = selectedComponentId === component.id;
-                          const canPlace = HOTMAP_ELIGIBLE_TYPES.includes(component.type);
 
                           return (
                             <div
                               key={component.id}
                               onClick={() => handleComponentClick(component.id)}
                               className={`
-                                mx-2 mb-1 px-3 py-2 rounded-lg cursor-pointer transition-all
-                                ${isActive
-                                  ? "bg-sakura-50 border border-sakura-300"
-                                  : isSelected
-                                    ? "bg-gray-50 border border-gray-200"
-                                    : "hover:bg-gray-50 border border-transparent"
-                                }
+                                mx-1.5 mb-0.5 px-2.5 py-1.5 rounded-lg cursor-pointer transition-all text-[13px]
+                                ${isActive ? "bg-sakura-50 border border-sakura-300" : isSelected ? "bg-gray-50 border border-gray-200" : "hover:bg-gray-50 border border-transparent"}
                                 ${isPlacing ? "ring-2 ring-sakura-400 animate-pulse" : ""}
                                 ${!component.isEnabled ? "opacity-50" : ""}
                               `}
                             >
                               <div className="flex items-center gap-2">
-                                {/* 选中状态 */}
-                                <div
-                                  className={`
-                                    w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0
-                                    ${isSelected
-                                      ? "bg-sakura-500 border-sakura-500"
-                                      : "border-gray-300"
-                                    }
-                                  `}
-                                >
-                                  {isSelected && <Check className="w-2.5 h-2.5 text-white" />}
+                                <div className={`w-3.5 h-3.5 rounded border-2 flex items-center justify-center flex-shrink-0 ${isSelected ? "bg-sakura-500 border-sakura-500" : "border-gray-300"}`}>
+                                  {isSelected && <Check className="w-2 h-2 text-white" />}
                                 </div>
-
-                                {/* 图标 */}
-                                <span className="text-base flex-shrink-0">
-                                  {component.icon || "📦"}
+                                <span className="flex-shrink-0">{component.icon || "📦"}</span>
+                                <span className={`truncate ${isSelected ? "text-gray-900 font-medium" : "text-gray-700"}`}>
+                                  {component.name}
                                 </span>
-
-                                {/* 名称 */}
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-1">
-                                    <span
-                                      className={`text-sm truncate ${isSelected ? "text-gray-900 font-medium" : "text-gray-700"}`}
-                                    >
-                                      {component.name}
-                                    </span>
-                                    {!canPlace && (
-                                      <span className="text-[9px] px-1 py-0.5 bg-amber-100 text-amber-600 rounded">
-                                        增值
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
                               </div>
                             </div>
                           );
@@ -887,32 +738,38 @@ export default function PlanComponentEditor({
         {!isLeftCollapsed && (
           <div
             onMouseDown={handleLeftResizeStart}
-            className={`
-              w-1.5 flex-shrink-0 cursor-col-resize group
-              transition-colors duration-150
-              ${isResizingLeft ? "bg-sakura-400" : "bg-gray-200 hover:bg-sakura-300"}
-            `}
-          >
-            <div className="h-full w-full flex items-center justify-center">
-              <div className={`w-0.5 h-8 rounded-full transition-colors ${isResizingLeft ? "bg-sakura-600" : "bg-gray-400 group-hover:bg-sakura-500"}`} />
-            </div>
-          </div>
+            className={`w-1 flex-shrink-0 cursor-col-resize transition-colors ${isResizingLeft ? "bg-sakura-400" : "bg-gray-200 hover:bg-sakura-300"}`}
+          />
         )}
 
-        {/* ==================== 中间：画布区 ==================== */}
+        {/* ========== 左侧收起时的悬浮添加按钮 ========== */}
+        {isLeftCollapsed && (
+          <button
+            type="button"
+            onClick={() => setIsLeftCollapsed(false)}
+            className="absolute left-3 top-3 z-20 flex items-center gap-1.5 px-3 py-2 bg-sakura-500 hover:bg-sakura-600 text-white text-[13px] font-medium rounded-lg shadow-lg transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            添加组件
+          </button>
+        )}
+
+        {/* ========== 中间：画布区 ========== */}
         <div
           ref={canvasContainerRef}
-          className="flex-1 min-w-0 bg-gray-100 overflow-auto"
+          className="flex-1 min-w-0 bg-gray-100 overflow-auto relative"
+          onClick={handleCanvasClick}
         >
           {hasMapTemplate ? (
-            <div className="p-6 min-h-full">
+            <div className="p-4 min-h-full flex flex-col items-center">
               {/* 放置提示 */}
               {placingComponentId && (
-                <div className="mb-4 px-4 py-2 bg-sakura-500 text-white text-sm rounded-lg shadow-lg text-center">
+                <div className="mb-3 px-4 py-2 bg-sakura-500 text-white text-[13px] rounded-lg shadow-lg text-center">
                   点击下方图片放置「{getAllComponents().find((c) => c.id === placingComponentId)?.name}」
                   <button
                     type="button"
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       setPlacingComponentId(null);
                       removeComponent(placingComponentId);
                     }}
@@ -923,22 +780,14 @@ export default function PlanComponentEditor({
                 </div>
               )}
 
-              {/* 画布容器 */}
+              {/* 画布 */}
               <div
                 ref={imageContainerRef}
-                onClick={placingComponentId ? handleCanvasClick : undefined}
-                className={`
-                  relative rounded-xl overflow-hidden shadow-lg border-2 mx-auto
-                  transition-all duration-300
-                  ${placingComponentId ? "cursor-crosshair border-sakura-400" : "border-gray-200"}
-                  ${draggingComponentId ? "cursor-grabbing" : ""}
-                `}
-                style={{
-                  width: `${450 * canvasZoom}px`,
-                  height: `${600 * canvasZoom}px`,
-                }}
+                className={`relative rounded-xl overflow-hidden shadow-lg border-2 transition-all ${
+                  placingComponentId ? "cursor-crosshair border-sakura-400" : "border-gray-200"
+                } ${draggingComponentId ? "cursor-grabbing" : ""}`}
+                style={{ width: `${450 * canvasZoom}px`, height: `${600 * canvasZoom}px` }}
               >
-                {/* 背景图片（优先使用自定义背景，否则使用模板背景） */}
                 <Image
                   src={effectiveMapImageUrl!}
                   alt="套餐展示图"
@@ -948,7 +797,6 @@ export default function PlanComponentEditor({
                   draggable={false}
                 />
 
-                {/* 放置模式网格辅助线 */}
                 {placingComponentId && (
                   <div className="absolute inset-0 pointer-events-none">
                     <div className="absolute inset-0 bg-sakura-500/5" />
@@ -960,7 +808,6 @@ export default function PlanComponentEditor({
                 {/* 热点 */}
                 {placedComponents.map((config) => {
                   if (config.hotmapX == null || config.hotmapY == null) return null;
-
                   const component = getAllComponents().find((c) => c.id === config.merchantComponentId);
                   const isDragging = draggingComponentId === config.merchantComponentId;
                   const isActive = selectedComponentId === config.merchantComponentId;
@@ -972,9 +819,7 @@ export default function PlanComponentEditor({
                         id: config.merchantComponentId,
                         x: config.hotmapX,
                         y: config.hotmapY,
-                        labelPosition:
-                          (config.hotmapLabelPosition as "left" | "right" | "top" | "bottom") ||
-                          "right",
+                        labelPosition: (config.hotmapLabelPosition as "left" | "right" | "top" | "bottom") || "right",
                         labelOffsetX: config.hotmapLabelOffsetX,
                         labelOffsetY: config.hotmapLabelOffsetY,
                         name: component?.name ?? "加载中...",
@@ -984,7 +829,7 @@ export default function PlanComponentEditor({
                       isEditable
                       isDragging={isDragging}
                       isSelected={isActive}
-                      onClick={(source) => handleCanvasComponentClick(config.merchantComponentId, source)}
+                      onClick={() => handleHotspotSelect(config.merchantComponentId)}
                       onDragStart={(e) => handleDragStart(e, config.merchantComponentId)}
                       onRemove={() => removeComponent(config.merchantComponentId)}
                       onLabelOffsetChange={(offsetX, offsetY) => handleLabelOffsetChange(config.merchantComponentId, offsetX, offsetY)}
@@ -993,20 +838,24 @@ export default function PlanComponentEditor({
                 })}
               </div>
 
-              {/* 画布底部提示 */}
-              <div className="mt-4 text-center text-xs text-gray-500">
-                拖拽热点调整位置 · 拖拽标签调整方向 · 点击标签查看详情
+              <div className="mt-3 text-center text-[12px] text-gray-500">
+                拖拽热点调整位置 · 点击热点编辑详情
               </div>
             </div>
           ) : (
-            /* 无热图模板时的空状态 */
             <div className="h-full flex items-center justify-center">
               <div className="text-center text-gray-500">
-                <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gray-200 flex items-center justify-center">
-                  <Package className="w-10 h-10 text-gray-400" />
+                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gray-200 flex items-center justify-center">
+                  <Package className="w-8 h-8 text-gray-400" />
                 </div>
-                <p className="text-sm mb-2">未配置热图模板</p>
-                <p className="text-xs text-gray-400">在左侧选择组件即可添加到套餐</p>
+                <p className="text-[13px] mb-2">未配置热图背景</p>
+                <button
+                  type="button"
+                  onClick={() => setShowBackgroundDialog(true)}
+                  className="text-[13px] text-sakura-600 hover:text-sakura-700 underline"
+                >
+                  点击上传背景图
+                </button>
               </div>
             </div>
           )}
@@ -1016,40 +865,29 @@ export default function PlanComponentEditor({
         {!isRightCollapsed && (
           <div
             onMouseDown={handleRightResizeStart}
-            className={`
-              w-1.5 flex-shrink-0 cursor-col-resize group
-              transition-colors duration-150
-              ${isResizingRight ? "bg-sakura-400" : "bg-gray-200 hover:bg-sakura-300"}
-            `}
-          >
-            <div className="h-full w-full flex items-center justify-center">
-              <div className={`w-0.5 h-8 rounded-full transition-colors ${isResizingRight ? "bg-sakura-600" : "bg-gray-400 group-hover:bg-sakura-500"}`} />
-            </div>
-          </div>
+            className={`w-1 flex-shrink-0 cursor-col-resize transition-colors ${isResizingRight ? "bg-sakura-400" : "bg-gray-200 hover:bg-sakura-300"}`}
+          />
         )}
 
-        {/* ==================== 右侧：属性面板 ==================== */}
+        {/* ========== 右侧：属性面板（按需显示） ========== */}
         <div
-          className={`flex-shrink-0 border-l border-gray-200 bg-white flex flex-col transition-all duration-300 ${
+          className={`flex-shrink-0 border-l border-gray-200 bg-white flex flex-col transition-all duration-200 ${
             isRightCollapsed ? "w-0 overflow-hidden border-l-0" : ""
           }`}
           style={{ width: isRightCollapsed ? 0 : rightPanelWidth }}
         >
-          {selectedComponent ? (
-            /* 选中组件时显示组件详情 */
+          {selectedComponent && (
             <>
               {/* 头部 */}
-              <div className="p-4 border-b border-gray-100">
+              <div className="p-3 border-b border-gray-100 flex-shrink-0">
                 <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-xl">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-lg">
                       {selectedComponent.icon || "📦"}
                     </div>
                     <div>
-                      <h3 className="text-sm font-semibold text-gray-900">
-                        {selectedComponent.name}
-                      </h3>
-                      <p className="text-xs text-gray-500">
+                      <h3 className="text-[13px] font-semibold text-gray-900">{selectedComponent.name}</h3>
+                      <p className="text-[11px] text-gray-500">
                         {selectedComponent.type === "ADDON"
                           ? ADDON_CONFIG.label
                           : (selectedComponent.outfitCategory && OUTFIT_CATEGORY_CONFIG[selectedComponent.outfitCategory]?.label) || "组件"}
@@ -1058,7 +896,7 @@ export default function PlanComponentEditor({
                   </div>
                   <button
                     type="button"
-                    onClick={() => setSelectedComponentId(null)}
+                    onClick={() => setIsRightCollapsed(true)}
                     className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
                   >
                     <X className="w-4 h-4" />
@@ -1067,28 +905,26 @@ export default function PlanComponentEditor({
               </div>
 
               {/* 内容 */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-5">
+              <div className="flex-1 overflow-y-auto p-3 space-y-4">
                 {/* 状态 */}
                 <div>
-                  <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
-                    状态
-                  </h4>
-                  <div className="space-y-2">
+                  <h4 className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2">状态</h4>
+                  <div className="space-y-1.5">
                     {selectedMerchantComponentIds.includes(selectedComponent.id) ? (
-                      <div className="flex items-center gap-2 text-sm text-emerald-600">
+                      <div className="flex items-center gap-2 text-[13px] text-emerald-600">
                         <Check className="w-4 h-4" />
                         已添加到套餐
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <div className="flex items-center gap-2 text-[13px] text-gray-500">
                         <Info className="w-4 h-4" />
                         未添加到套餐
                       </div>
                     )}
                     {selectedConfig?.hotmapX != null && (
-                      <div className="flex items-center gap-2 text-xs text-blue-600">
+                      <div className="flex items-center gap-2 text-[11px] text-blue-600">
                         <Layers className="w-3 h-3" />
-                        已放置到热图 ({Math.round((selectedConfig.hotmapX || 0) * 100)}%, {Math.round((selectedConfig.hotmapY || 0) * 100)}%)
+                        已放置 ({Math.round((selectedConfig.hotmapX || 0) * 100)}%, {Math.round((selectedConfig.hotmapY || 0) * 100)}%)
                       </div>
                     )}
                   </div>
@@ -1097,24 +933,18 @@ export default function PlanComponentEditor({
                 {/* 描述 */}
                 {selectedComponent.description && (
                   <div>
-                    <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
-                      描述
-                    </h4>
-                    <p className="text-sm text-gray-600 leading-relaxed">
-                      {selectedComponent.description}
-                    </p>
+                    <h4 className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2">描述</h4>
+                    <p className="text-[13px] text-gray-600 leading-relaxed">{selectedComponent.description}</p>
                   </div>
                 )}
 
                 {/* 亮点 */}
-                {selectedComponent.highlights && selectedComponent.highlights.length > 0 && (
+                {selectedComponent.highlights?.length > 0 && (
                   <div>
-                    <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
-                      特点
-                    </h4>
-                    <div className="space-y-1.5">
+                    <h4 className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2">特点</h4>
+                    <div className="space-y-1">
                       {selectedComponent.highlights.map((h, i) => (
-                        <div key={i} className="flex items-start gap-2 text-sm text-gray-600">
+                        <div key={i} className="flex items-start gap-2 text-[13px] text-gray-600">
                           <ChevronRight className="w-3 h-3 text-sakura-500 mt-0.5 flex-shrink-0" />
                           {h}
                         </div>
@@ -1123,43 +953,284 @@ export default function PlanComponentEditor({
                   </div>
                 )}
 
-                {/* 自定义图片 */}
+                {/* 自定义图片 - 主图 + 缩略图模式 */}
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-[11px] font-medium text-gray-500 uppercase tracking-wide flex items-center gap-1">
                       <ImageIcon className="w-3 h-3" />
-                      自定义图片
+                      组件图片
                     </h4>
-                    {isSavingImages && (
-                      <span className="flex items-center gap-1 text-xs text-sakura-500">
+                    {(isSavingImages || uploadingFiles.length > 0) && (
+                      <span className="flex items-center gap-1 text-[11px] text-sakura-500">
                         <Loader2 className="w-3 h-3 animate-spin" />
-                        保存中...
+                        {uploadingFiles.length > 0 ? `上传中 (${uploadingFiles.length})` : "保存中"}
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-gray-400 mb-3">
-                    上传您自己的组件展示图片，替换平台默认图片
-                  </p>
-                  <ImageUploader
-                    category="component"
-                    entityId={selectedComponent.id}
-                    purpose="gallery"
-                    multiple={true}
-                    maxFiles={5}
-                    value={getComponentImages(selectedComponent.id)}
-                    onChange={(urls) => handleComponentImagesChange(selectedComponent.id, urls)}
-                    aspectRatio="4:3"
-                    className="w-full"
-                  />
+
+                  {(() => {
+                    const images = getComponentImages(selectedComponent.id);
+                    const currentIndex = Math.min(activeImageIndex, Math.max(0, images.length - 1));
+                    const totalSlots = images.length + uploadingFiles.length;
+
+                    // 批量上传处理函数
+                    const handleBatchUpload = async (files: File[]) => {
+                      if (files.length === 0) return;
+
+                      const maxToUpload = 5 - images.length;
+                      const filesToUpload = files.slice(0, maxToUpload);
+
+                      // 为每个文件创建上传任务
+                      const uploadTasks = filesToUpload.map((file) => ({
+                        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+                        name: file.name,
+                        file,
+                        progress: 0,
+                      }));
+
+                      // 添加到上传队列
+                      setUploadingFiles(prev => [...prev, ...uploadTasks.map(t => ({ id: t.id, name: t.name, progress: 0 }))]);
+
+                      // 并行上传所有文件
+                      const results = await Promise.allSettled(
+                        uploadTasks.map(async (task) => {
+                          try {
+                            // 更新进度: 开始
+                            setUploadingFiles(prev => prev.map(f => f.id === task.id ? { ...f, progress: 10 } : f));
+
+                            // 1. 获取预签名 URL
+                            const presignResponse = await fetch("/api/upload/presign", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                fileType: task.file.type,
+                                fileSize: task.file.size,
+                                category: "component",
+                                entityId: selectedComponent.id,
+                                purpose: "gallery",
+                              }),
+                            });
+
+                            if (!presignResponse.ok) throw new Error("获取上传凭证失败");
+
+                            setUploadingFiles(prev => prev.map(f => f.id === task.id ? { ...f, progress: 30 } : f));
+
+                            const { presignedUrl, publicUrl } = await presignResponse.json();
+
+                            // 2. 上传到 S3
+                            setUploadingFiles(prev => prev.map(f => f.id === task.id ? { ...f, progress: 50 } : f));
+
+                            await fetch(presignedUrl, {
+                              method: "PUT",
+                              body: task.file,
+                              headers: { "Content-Type": task.file.type },
+                            });
+
+                            setUploadingFiles(prev => prev.map(f => f.id === task.id ? { ...f, progress: 100 } : f));
+
+                            return { taskId: task.id, publicUrl };
+                          } catch (err) {
+                            console.error(`上传失败 (${task.name}):`, err);
+                            throw err;
+                          }
+                        })
+                      );
+
+                      // 收集成功上传的 URLs
+                      const successUrls: string[] = [];
+                      const completedIds: string[] = [];
+
+                      results.forEach((result, i) => {
+                        if (result.status === "fulfilled") {
+                          successUrls.push(result.value.publicUrl);
+                          completedIds.push(result.value.taskId);
+                        } else {
+                          completedIds.push(uploadTasks[i].id);
+                        }
+                      });
+
+                      // 移除已完成的上传任务
+                      setUploadingFiles(prev => prev.filter(f => !completedIds.includes(f.id)));
+
+                      // 更新图片列表
+                      if (successUrls.length > 0) {
+                        const newImages = [...images, ...successUrls];
+                        handleComponentImagesChange(selectedComponent.id, newImages);
+                      }
+                    };
+
+                    // 删除图片
+                    const handleDeleteImage = (index: number) => {
+                      const newImages = images.filter((_, i) => i !== index);
+                      handleComponentImagesChange(selectedComponent.id, newImages);
+                      if (currentIndex >= newImages.length) {
+                        setActiveImageIndex(Math.max(0, newImages.length - 1));
+                      }
+                    };
+
+                    return (
+                      <div className="space-y-3">
+                        {/* 主图区域 */}
+                        {images.length > 0 ? (
+                          <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-gray-100 group">
+                            <Image
+                              src={images[currentIndex]}
+                              alt={`${selectedComponent.name} 图片 ${currentIndex + 1}`}
+                              fill
+                              className="object-cover"
+                              sizes="280px"
+                              unoptimized
+                            />
+                            {/* 左右切换箭头 */}
+                            {images.length > 1 && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => setActiveImageIndex(i => (i - 1 + images.length) % images.length)}
+                                  className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/90 shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white"
+                                >
+                                  <ChevronLeft className="w-4 h-4 text-gray-700" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setActiveImageIndex(i => (i + 1) % images.length)}
+                                  className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/90 shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white"
+                                >
+                                  <ChevronRight className="w-4 h-4 text-gray-700" />
+                                </button>
+                              </>
+                            )}
+                            {/* 图片计数 */}
+                            <div className="absolute bottom-2 left-2 px-2 py-0.5 bg-black/50 rounded-full text-[11px] text-white">
+                              {currentIndex + 1} / {images.length}
+                            </div>
+                            {/* 删除当前图片 */}
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteImage(currentIndex)}
+                              className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/50 hover:bg-red-500 shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
+                              title="删除图片"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 text-white" />
+                            </button>
+                          </div>
+                        ) : uploadingFiles.length > 0 ? (
+                          /* 上传中占位 */
+                          <div className="aspect-[4/3] rounded-xl bg-gray-50 border border-gray-200 flex flex-col items-center justify-center">
+                            <Loader2 className="w-8 h-8 text-sakura-400 animate-spin mb-2" />
+                            <p className="text-[12px] text-gray-500">正在上传 {uploadingFiles.length} 张图片...</p>
+                          </div>
+                        ) : (
+                          /* 空状态 - 可拖拽上传 */
+                          <label className="aspect-[4/3] rounded-xl bg-gray-50 border-2 border-dashed border-gray-200 hover:border-sakura-400 flex flex-col items-center justify-center cursor-pointer transition-colors">
+                            <ImageIcon className="w-10 h-10 text-gray-300 mb-2" />
+                            <p className="text-[13px] text-gray-500 font-medium">点击上传图片</p>
+                            <p className="text-[11px] text-gray-400 mt-1">支持批量上传，最多 5 张</p>
+                            <input
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp"
+                              multiple
+                              className="hidden"
+                              onChange={(e) => {
+                                const files = Array.from(e.target.files || []);
+                                handleBatchUpload(files);
+                                e.target.value = "";
+                              }}
+                            />
+                          </label>
+                        )}
+
+                        {/* 缩略图行 + 上传中指示器 + 添加按钮 */}
+                        <div className="flex gap-2 overflow-x-auto pb-1">
+                          {/* 已上传的图片缩略图 */}
+                          {images.map((img, i) => (
+                            <div
+                              key={`img-${i}`}
+                              className="relative flex-shrink-0 group/thumb"
+                            >
+                              <button
+                                type="button"
+                                onClick={() => setActiveImageIndex(i)}
+                                className={`
+                                  relative w-12 h-12 rounded-lg overflow-hidden transition-all
+                                  ${currentIndex === i
+                                    ? "ring-2 ring-sakura-500 ring-offset-1"
+                                    : "ring-1 ring-gray-200 hover:ring-sakura-300"
+                                  }
+                                `}
+                              >
+                                <Image
+                                  src={img}
+                                  alt={`缩略图 ${i + 1}`}
+                                  fill
+                                  className="object-cover"
+                                  sizes="48px"
+                                  unoptimized
+                                />
+                              </button>
+                              {/* 删除按钮 */}
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteImage(i)}
+                                className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover/thumb:opacity-100 transition-opacity shadow-sm hover:bg-red-600"
+                                title="删除"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ))}
+
+                          {/* 上传中的占位符 */}
+                          {uploadingFiles.map((file) => (
+                            <div
+                              key={file.id}
+                              className="relative flex-shrink-0 w-12 h-12 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden"
+                            >
+                              {/* 进度条背景 */}
+                              <div
+                                className="absolute bottom-0 left-0 right-0 bg-sakura-400 transition-all duration-300"
+                                style={{ height: `${file.progress}%` }}
+                              />
+                              {/* 加载图标 */}
+                              <Loader2 className="w-5 h-5 text-sakura-500 animate-spin relative z-10" />
+                            </div>
+                          ))}
+
+                          {/* 添加更多图片按钮 */}
+                          {totalSlots < 5 && (
+                            <label className="flex-shrink-0 w-12 h-12 rounded-lg border-2 border-dashed border-gray-300 hover:border-sakura-400 hover:bg-sakura-50 flex items-center justify-center cursor-pointer transition-colors">
+                              <Plus className="w-5 h-5 text-gray-400" />
+                              <input
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp"
+                                multiple
+                                className="hidden"
+                                onChange={(e) => {
+                                  const files = Array.from(e.target.files || []);
+                                  handleBatchUpload(files);
+                                  e.target.value = "";
+                                }}
+                              />
+                            </label>
+                          )}
+                        </div>
+
+                        {/* 图片数量提示 */}
+                        <p className="text-[11px] text-gray-400 text-center">
+                          {images.length}/5 张 · 点击缩略图预览 · 悬停显示删除
+                        </p>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* 操作按钮 */}
-                <div className="pt-4 border-t border-gray-100">
+                <div className="pt-3 border-t border-gray-100">
                   {selectedMerchantComponentIds.includes(selectedComponent.id) ? (
                     <button
                       type="button"
                       onClick={() => removeComponent(selectedComponent.id)}
-                      className="w-full py-2 px-4 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm border border-red-200"
+                      className="w-full py-2 px-3 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-[13px] border border-red-200"
                     >
                       从套餐中移除
                     </button>
@@ -1167,7 +1238,7 @@ export default function PlanComponentEditor({
                     <button
                       type="button"
                       onClick={() => handleComponentClick(selectedComponent.id)}
-                      className="w-full py-2 px-4 bg-sakura-500 text-white rounded-lg hover:bg-sakura-600 transition-colors text-sm"
+                      className="w-full py-2 px-3 bg-sakura-500 text-white rounded-lg hover:bg-sakura-600 transition-colors text-[13px]"
                     >
                       添加到套餐
                     </button>
@@ -1175,85 +1246,91 @@ export default function PlanComponentEditor({
                 </div>
               </div>
             </>
-          ) : (
-            /* 未选中组件时显示套餐概览 */
-            <>
-              <div className="p-4 border-b border-gray-100">
-                <div className="flex items-center gap-2">
-                  <Settings className="w-4 h-4 text-gray-400" />
-                  <h3 className="text-sm font-semibold text-gray-900">套餐配置</h3>
-                </div>
-              </div>
-
-              <div className="flex-1 overflow-y-auto p-4 space-y-5">
-                {/* 统计 */}
-                <div>
-                  <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">
-                    当前配置
-                  </h4>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-100">
-                      <div className="text-2xl font-bold text-sakura-500">{stats.totalSelected}</div>
-                      <div className="text-xs text-gray-500">已选组件</div>
-                    </div>
-                    {hasMapTemplate && (
-                      <div className="p-3 bg-gray-50 rounded-lg border border-gray-100">
-                        <div className="text-2xl font-bold text-blue-500">{stats.totalPlaced}</div>
-                        <div className="text-xs text-gray-500">已放置</div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* 已选组件列表 */}
-                {selectedMerchantComponentIds.length > 0 && (
-                  <div>
-                    <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">
-                      已选组件
-                    </h4>
-                    <div className="space-y-1.5">
-                      {selectedMerchantComponentIds.map((id) => {
-                        const component = getAllComponents().find((c) => c.id === id);
-                        const config = getConfig(id);
-                        if (!component) return null;
-
-                        return (
-                          <div
-                            key={id}
-                            onClick={() => setSelectedComponentId(id)}
-                            className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors border border-gray-100"
-                          >
-                            <GripVertical className="w-3 h-3 text-gray-300" />
-                            <span className="text-sm">{component.icon}</span>
-                            <span className="text-sm text-gray-700 flex-1 truncate">
-                              {component.name}
-                            </span>
-                            {config?.hotmapX != null && (
-                              <Layers className="w-3 h-3 text-blue-500" />
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* 使用提示 */}
-                <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
-                  <div className="flex items-start gap-2">
-                    <Info className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
-                    <div className="text-xs text-blue-700 space-y-1">
-                      <p>· 在左侧组件库点击添加组件</p>
-                      <p>· 点击画布上的组件查看详情</p>
-                      <p>· 拖拽调整组件在热图上的位置</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </>
           )}
         </div>
       </div>
+
+      {/* ==================== 背景设置 Dialog ==================== */}
+      {showBackgroundDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* 遮罩 */}
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowBackgroundDialog(false)} />
+
+          {/* 弹窗内容 */}
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+            {/* 头部 */}
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ImageIcon className="w-5 h-5 text-gray-500" />
+                <h3 className="text-[16px] font-semibold text-gray-900">设置热点图背景</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowBackgroundDialog(false)}
+                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* 内容 */}
+            <div className="p-5">
+              <p className="text-[13px] text-gray-500 mb-4">
+                上传自定义图片作为热点图背景，建议尺寸 450×600 像素（3:4 比例）
+              </p>
+
+              {/* 当前背景预览 */}
+              {customMapImageUrl && (
+                <div className="mb-4 p-3 bg-gray-50 rounded-xl border border-gray-200">
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-16 h-[85px] rounded-lg overflow-hidden border border-gray-200 bg-gray-100 flex-shrink-0">
+                      <img src={customMapImageUrl} alt="当前背景" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-[13px] text-gray-700 font-medium mb-1">当前背景</p>
+                      <button
+                        type="button"
+                        onClick={() => onCustomMapImageChange?.("")}
+                        className="text-[12px] text-red-500 hover:text-red-600 flex items-center gap-1"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        移除背景
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 上传组件 */}
+              <ImageUploader
+                category="plan"
+                entityId={planId || "new"}
+                purpose="gallery"
+                multiple={false}
+                maxFiles={1}
+                value={customMapImageUrl ? [customMapImageUrl] : []}
+                onChange={(urls) => {
+                  onCustomMapImageChange?.(urls[0] || "");
+                  if (urls[0]) setShowBackgroundDialog(false);
+                }}
+                aspectRatio="3:4"
+                className="w-full"
+              />
+            </div>
+
+            {/* 底部 */}
+            <div className="px-5 py-4 border-t border-gray-100 bg-gray-50 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowBackgroundDialog(false)}
+                className="px-4 py-2 text-[13px] text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                关闭
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
