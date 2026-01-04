@@ -6,6 +6,7 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
+  ChevronLeft,
   Search,
   Info,
   Layers,
@@ -16,6 +17,10 @@ import {
   Settings,
   X,
   GripVertical,
+  PanelLeftClose,
+  PanelLeftOpen,
+  PanelRightClose,
+  PanelRightOpen,
 } from "lucide-react";
 import EditorHotspot from "@/components/shared/EditorHotspot";
 
@@ -129,6 +134,20 @@ export default function PlanComponentEditor({
   const [selectedComponentId, setSelectedComponentId] = useState<string | null>(null);
   const [canvasZoom, setCanvasZoom] = useState(1);
 
+  // 面板状态
+  const [leftPanelWidth, setLeftPanelWidth] = useState(256); // 默认 256px
+  const [rightPanelWidth, setRightPanelWidth] = useState(280); // 默认 280px
+  const [isLeftCollapsed, setIsLeftCollapsed] = useState(false);
+  const [isRightCollapsed, setIsRightCollapsed] = useState(false);
+  const [isResizingLeft, setIsResizingLeft] = useState(false);
+  const [isResizingRight, setIsResizingRight] = useState(false);
+
+  // 面板宽度限制
+  const LEFT_MIN_WIDTH = 200;
+  const LEFT_MAX_WIDTH = 360;
+  const RIGHT_MIN_WIDTH = 240;
+  const RIGHT_MAX_WIDTH = 400;
+
   // 编辑状态
   const [placingComponentId, setPlacingComponentId] = useState<string | null>(null);
   const [draggingComponentId, setDraggingComponentId] = useState<string | null>(null);
@@ -137,6 +156,7 @@ export default function PlanComponentEditor({
   // Refs
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const imageContainerRef = useRef<HTMLDivElement>(null);
+  const mainContainerRef = useRef<HTMLDivElement>(null);
 
   // 内部配置状态
   const [internalConfigs, setInternalConfigs] = useState<ComponentConfig[]>([]);
@@ -453,6 +473,56 @@ export default function PlanComponentEditor({
     [selectedMerchantComponentIds, onChange, configs, setConfigs, selectedComponentId]
   );
 
+  // ==================== 面板拖拽调整 ====================
+
+  const handleLeftResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizingLeft(true);
+  }, []);
+
+  const handleRightResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizingRight(true);
+  }, []);
+
+  const handleResizeMove = useCallback(
+    (e: MouseEvent) => {
+      if (!mainContainerRef.current) return;
+      const rect = mainContainerRef.current.getBoundingClientRect();
+
+      if (isResizingLeft) {
+        const newWidth = e.clientX - rect.left;
+        setLeftPanelWidth(Math.max(LEFT_MIN_WIDTH, Math.min(LEFT_MAX_WIDTH, newWidth)));
+      }
+
+      if (isResizingRight) {
+        const newWidth = rect.right - e.clientX;
+        setRightPanelWidth(Math.max(RIGHT_MIN_WIDTH, Math.min(RIGHT_MAX_WIDTH, newWidth)));
+      }
+    },
+    [isResizingLeft, isResizingRight, LEFT_MIN_WIDTH, LEFT_MAX_WIDTH, RIGHT_MIN_WIDTH, RIGHT_MAX_WIDTH]
+  );
+
+  const handleResizeEnd = useCallback(() => {
+    setIsResizingLeft(false);
+    setIsResizingRight(false);
+  }, []);
+
+  useEffect(() => {
+    if (isResizingLeft || isResizingRight) {
+      window.addEventListener("mousemove", handleResizeMove);
+      window.addEventListener("mouseup", handleResizeEnd);
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+      return () => {
+        window.removeEventListener("mousemove", handleResizeMove);
+        window.removeEventListener("mouseup", handleResizeEnd);
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+      };
+    }
+  }, [isResizingLeft, isResizingRight, handleResizeMove, handleResizeEnd]);
+
   // ==================== 缩放控制 ====================
 
   const handleZoomIn = () => setCanvasZoom((z) => Math.min(z + 0.25, 2));
@@ -479,6 +549,24 @@ export default function PlanComponentEditor({
       {/* 工具栏 */}
       <div className="h-12 px-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
         <div className="flex items-center gap-3">
+          {/* 左侧面板切换 */}
+          <button
+            type="button"
+            onClick={() => setIsLeftCollapsed(!isLeftCollapsed)}
+            className={`p-1.5 rounded transition-colors ${
+              isLeftCollapsed
+                ? "text-sakura-600 bg-sakura-50 hover:bg-sakura-100"
+                : "text-gray-500 hover:text-gray-700 hover:bg-gray-200"
+            }`}
+            title={isLeftCollapsed ? "展开组件库" : "收起组件库"}
+          >
+            {isLeftCollapsed ? (
+              <PanelLeftOpen className="w-4 h-4" />
+            ) : (
+              <PanelLeftClose className="w-4 h-4" />
+            )}
+          </button>
+
           <div className="flex items-center gap-2 text-gray-700">
             <Layers className="w-4 h-4" />
             <span className="text-sm font-medium">套餐组件编辑器</span>
@@ -496,44 +584,70 @@ export default function PlanComponentEditor({
           </div>
         </div>
 
-        {/* 缩放控制 */}
-        {hasMapTemplate && (
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={handleZoomOut}
-              className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors"
-              title="缩小"
-            >
-              <ZoomOut className="w-4 h-4" />
-            </button>
-            <span className="px-2 text-xs text-gray-500 min-w-[48px] text-center">
-              {Math.round(canvasZoom * 100)}%
-            </span>
-            <button
-              type="button"
-              onClick={handleZoomIn}
-              className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors"
-              title="放大"
-            >
-              <ZoomIn className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              onClick={handleZoomReset}
-              className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors"
-              title="重置"
-            >
-              <Maximize2 className="w-4 h-4" />
-            </button>
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          {/* 缩放控制 */}
+          {hasMapTemplate && (
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={handleZoomOut}
+                className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors"
+                title="缩小"
+              >
+                <ZoomOut className="w-4 h-4" />
+              </button>
+              <span className="px-2 text-xs text-gray-500 min-w-[48px] text-center">
+                {Math.round(canvasZoom * 100)}%
+              </span>
+              <button
+                type="button"
+                onClick={handleZoomIn}
+                className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors"
+                title="放大"
+              >
+                <ZoomIn className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={handleZoomReset}
+                className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors"
+                title="重置"
+              >
+                <Maximize2 className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          {/* 右侧面板切换 */}
+          <div className="h-4 w-px bg-gray-300" />
+          <button
+            type="button"
+            onClick={() => setIsRightCollapsed(!isRightCollapsed)}
+            className={`p-1.5 rounded transition-colors ${
+              isRightCollapsed
+                ? "text-sakura-600 bg-sakura-50 hover:bg-sakura-100"
+                : "text-gray-500 hover:text-gray-700 hover:bg-gray-200"
+            }`}
+            title={isRightCollapsed ? "展开属性面板" : "收起属性面板"}
+          >
+            {isRightCollapsed ? (
+              <PanelRightOpen className="w-4 h-4" />
+            ) : (
+              <PanelRightClose className="w-4 h-4" />
+            )}
+          </button>
+        </div>
       </div>
 
       {/* 三栏式主体 */}
-      <div className="flex h-[650px]">
+      <div ref={mainContainerRef} className="flex h-[650px]">
         {/* ==================== 左侧：组件库 ==================== */}
-        <div className="w-64 flex-shrink-0 border-r border-gray-200 bg-gray-50 flex flex-col">
+        <div
+          className={`flex-shrink-0 border-r border-gray-200 bg-gray-50 flex flex-col transition-all duration-300 ${
+            isLeftCollapsed ? "w-0 overflow-hidden border-r-0" : ""
+          }`}
+          style={{ width: isLeftCollapsed ? 0 : leftPanelWidth }}
+        >
           {/* 搜索框 */}
           <div className="p-3 border-b border-gray-200">
             <div className="relative">
@@ -662,6 +776,22 @@ export default function PlanComponentEditor({
           </div>
         </div>
 
+        {/* 左侧拖拽手柄 */}
+        {!isLeftCollapsed && (
+          <div
+            onMouseDown={handleLeftResizeStart}
+            className={`
+              w-1.5 flex-shrink-0 cursor-col-resize group
+              transition-colors duration-150
+              ${isResizingLeft ? "bg-sakura-400" : "bg-gray-200 hover:bg-sakura-300"}
+            `}
+          >
+            <div className="h-full w-full flex items-center justify-center">
+              <div className={`w-0.5 h-8 rounded-full transition-colors ${isResizingLeft ? "bg-sakura-600" : "bg-gray-400 group-hover:bg-sakura-500"}`} />
+            </div>
+          </div>
+        )}
+
         {/* ==================== 中间：画布区 ==================== */}
         <div
           ref={canvasContainerRef}
@@ -772,8 +902,29 @@ export default function PlanComponentEditor({
           )}
         </div>
 
+        {/* 右侧拖拽手柄 */}
+        {!isRightCollapsed && (
+          <div
+            onMouseDown={handleRightResizeStart}
+            className={`
+              w-1.5 flex-shrink-0 cursor-col-resize group
+              transition-colors duration-150
+              ${isResizingRight ? "bg-sakura-400" : "bg-gray-200 hover:bg-sakura-300"}
+            `}
+          >
+            <div className="h-full w-full flex items-center justify-center">
+              <div className={`w-0.5 h-8 rounded-full transition-colors ${isResizingRight ? "bg-sakura-600" : "bg-gray-400 group-hover:bg-sakura-500"}`} />
+            </div>
+          </div>
+        )}
+
         {/* ==================== 右侧：属性面板 ==================== */}
-        <div className="w-72 flex-shrink-0 border-l border-gray-200 bg-white flex flex-col">
+        <div
+          className={`flex-shrink-0 border-l border-gray-200 bg-white flex flex-col transition-all duration-300 ${
+            isRightCollapsed ? "w-0 overflow-hidden border-l-0" : ""
+          }`}
+          style={{ width: isRightCollapsed ? 0 : rightPanelWidth }}
+        >
           {selectedComponent ? (
             /* 选中组件时显示组件详情 */
             <>
