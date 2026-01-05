@@ -34,7 +34,6 @@ export default async function WishlistPage() {
           originalPrice: true,
           imageUrl: true,
           images: true,
-          category: true,
           isActive: true,
           pricingUnit: true,
           unitLabel: true,

@@ -29,7 +29,6 @@ export async function GET(request: NextRequest) {
               originalPrice: true,
               imageUrl: true,
               images: true,
-              category: true,
               isActive: true,
             },
           },
@@ -59,7 +58,6 @@ export async function GET(request: NextRequest) {
             select: {
               id: true,
               name: true,
-              category: true,
               isAvailable: true,
               images: {
                 select: {

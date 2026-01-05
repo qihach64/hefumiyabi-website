@@ -76,7 +76,6 @@ export async function POST(request: NextRequest) {
             originalPrice: true,
             imageUrl: true,
             images: true,
-            category: true,
             isActive: true,
           },
         },

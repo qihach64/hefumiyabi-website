@@ -16,7 +16,6 @@ export async function GET(request: NextRequest) {
     const tags = await prisma.tag.findMany({
       where: categoryId ? { categoryId } : undefined,
       include: {
-        category: true,
         _count: {
           select: { plans: true },
         },
@@ -104,7 +103,6 @@ export async function POST(request: NextRequest) {
         order: order ?? 0,
       },
       include: {
-        category: true,
         _count: {
           select: { plans: true },
         },

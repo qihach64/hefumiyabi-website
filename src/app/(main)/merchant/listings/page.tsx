@@ -36,7 +36,6 @@ export default async function MerchantListingsPage() {
       id: true,
       slug: true,
       name: true,
-      category: true,
       price: true,
       originalPrice: true,
       imageUrl: true,

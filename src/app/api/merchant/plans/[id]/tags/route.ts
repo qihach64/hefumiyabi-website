@@ -35,7 +35,6 @@ export async function GET(
           include: {
             tag: {
               include: {
-                category: true,
               },
             },
           },
@@ -220,7 +219,6 @@ export async function PUT(
           include: {
             tag: {
               include: {
-                category: true,
               },
             },
           },

@@ -18,7 +18,6 @@ export async function GET(
         name: true,
         description: true,
         price: true,
-        category: true,
       },
     });
 
@@ -33,7 +32,6 @@ export async function GET(
           name: true,
           description: true,
           price: true,
-          category: true,
         },
       });
     }

@@ -18,7 +18,6 @@ export async function GET(
     const tag = await prisma.tag.findUnique({
       where: { id },
       include: {
-        category: true,
         _count: {
           select: { plans: true },
         },
@@ -107,7 +106,6 @@ export async function PUT(
         ...(isActive !== undefined && { isActive }),
       },
       include: {
-        category: true,
         _count: {
           select: { plans: true },
         },

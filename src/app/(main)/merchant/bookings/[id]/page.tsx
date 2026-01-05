@@ -64,7 +64,6 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
               name: true,
               nameEn: true,
               imageUrl: true,
-              category: true,
             },
           },
         },
