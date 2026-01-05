@@ -110,47 +110,55 @@ interface PlanUpgrade {
   };
 }
 
-interface PlanEditFormProps {
-  plan: {
-    id: string;
-    slug: string;
-    name: string;
-    nameEn?: string | null;
-    description: string;
-    highlights?: string | null;
-    category: string;
-    price: number;
-    originalPrice?: number | null;
-    depositAmount?: number;
-    pricingUnit?: string | null;
-    unitLabel?: string | null;
-    unitDescription?: string | null;
-    minQuantity?: number | null;
-    maxQuantity?: number | null;
-    duration?: number;
-    planComponents?: PlanComponent[];
-    planUpgrades?: PlanUpgrade[];
-    imageUrl?: string | null;
-    images?: string[];
-    customMapImageUrl?: string | null;
-    storeName?: string | null;
-    region?: string | null;
-    themeId?: string | null;
-    planTags?: { tag: Tag }[];
-    isActive: boolean;
-    isFeatured: boolean;
-    isCampaign: boolean;
-    isLimited?: boolean;
-    maxBookings?: number | null;
-    availableFrom?: string | null;
-    availableUntil?: string | null;
-    status?: string;
-  };
+// Plan 数据类型（编辑模式时传入）
+interface PlanData {
+  id: string;
+  slug: string;
+  name: string;
+  nameEn?: string | null;
+  description: string;
+  highlights?: string | null;
+  price: number;
+  originalPrice?: number | null;
+  depositAmount?: number;
+  pricingUnit?: string | null;
+  unitLabel?: string | null;
+  unitDescription?: string | null;
+  minQuantity?: number | null;
+  maxQuantity?: number | null;
+  duration?: number;
+  planComponents?: PlanComponent[];
+  planUpgrades?: PlanUpgrade[];
+  imageUrl?: string | null;
+  images?: string[];
+  customMapImageUrl?: string | null;
+  storeName?: string | null;
+  region?: string | null;
+  themeId?: string | null;
+  planTags?: { tag: Tag }[];
+  isActive: boolean;
+  isFeatured: boolean;
+  isCampaign: boolean;
+  isLimited?: boolean;
+  maxBookings?: number | null;
+  availableFrom?: string | null;
+  availableUntil?: string | null;
+  status?: string;
+}
+
+interface PlanFormProps {
+  /** 编辑模式：传入现有套餐数据；新建模式：不传或传 undefined */
+  plan?: PlanData;
   mapTemplate?: MapTemplateData | null;
 }
 
-export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
+export default function PlanForm({ plan, mapTemplate }: PlanFormProps) {
   const router = useRouter();
+
+  // 模式判断：有 plan.id 为编辑模式，否则为新建模式
+  const isCreateMode = !plan?.id;
+  // 用于草稿存储的 ID（新建时使用临时 ID）
+  const draftId = plan?.id || "new-plan-draft";
 
   // UI 状态
   const [activeTab, setActiveTab] = useState<TabId>("basic");
@@ -169,43 +177,48 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
   const [themes, setThemes] = useState<Theme[]>([]);
   const [tagCategories, setTagCategories] = useState<TagCategory[]>([]);
 
-  // 表单数据
-  const [formData, setFormData] = useState<PlanFormData>(() => ({
-    name: plan.name,
-    description: plan.description,
-    highlights: plan.highlights || "",
-    price: plan.price / 100,
-    originalPrice: plan.originalPrice ? plan.originalPrice / 100 : "",
-    depositAmount: plan.depositAmount ? plan.depositAmount / 100 : "",
-    pricingUnit: (plan.pricingUnit as "person" | "group") || "person",
-    unitLabel: plan.unitLabel || "人",
-    unitDescription: plan.unitDescription || "",
-    minQuantity: plan.minQuantity || 1,
-    maxQuantity: plan.maxQuantity || 10,
-    duration: plan.duration || 4,
-    imageUrl: plan.imageUrl || "",
-    images: plan.images || [],
-    customMapImageUrl: plan.customMapImageUrl || "",
-    storeName: plan.storeName || "",
-    region: plan.region || "",
-    themeId: plan.themeId || null,
-    selectedTagIds: plan.planTags?.map((pt) => pt.tag.id) || [],
-    category: plan.category,
-    isLimited: plan.isLimited || false,
-    maxBookings: plan.maxBookings || null,
-    availableFrom: plan.availableFrom || null,
-    availableUntil: plan.availableUntil || null,
-    isFeatured: plan.isFeatured,
-    isActive: plan.isActive,
-  }));
+  // 表单数据：编辑模式使用现有数据，新建模式使用默认值
+  const [formData, setFormData] = useState<PlanFormData>(() => {
+    if (plan) {
+      return {
+        name: plan.name,
+        description: plan.description,
+        highlights: plan.highlights || "",
+        price: plan.price / 100,
+        originalPrice: plan.originalPrice ? plan.originalPrice / 100 : "",
+        depositAmount: plan.depositAmount ? plan.depositAmount / 100 : "",
+        pricingUnit: (plan.pricingUnit as "person" | "group") || "person",
+        unitLabel: plan.unitLabel || "人",
+        unitDescription: plan.unitDescription || "",
+        minQuantity: plan.minQuantity || 1,
+        maxQuantity: plan.maxQuantity || 10,
+        duration: plan.duration || 4,
+        imageUrl: plan.imageUrl || "",
+        images: plan.images || [],
+        customMapImageUrl: plan.customMapImageUrl || "",
+        storeName: plan.storeName || "",
+        region: plan.region || "",
+        themeId: plan.themeId || null,
+        selectedTagIds: plan.planTags?.map((pt) => pt.tag.id) || [],
+        isLimited: plan.isLimited || false,
+        maxBookings: plan.maxBookings || null,
+        availableFrom: plan.availableFrom || null,
+        availableUntil: plan.availableUntil || null,
+        isFeatured: plan.isFeatured,
+        isActive: plan.isActive,
+      };
+    }
+    // 新建模式：使用默认值
+    return { ...defaultFormData };
+  });
 
   // 组件配置
   const [selectedMerchantComponentIds, setSelectedMerchantComponentIds] = useState<
     string[]
-  >(plan.planComponents?.map((pc) => pc.merchantComponentId) || []);
+  >(plan?.planComponents?.map((pc) => pc.merchantComponentId) || []);
 
   const [componentConfigs, setComponentConfigs] = useState<ComponentConfig[]>(
-    plan.planComponents?.map((pc) => ({
+    plan?.planComponents?.map((pc) => ({
       merchantComponentId: pc.merchantComponentId,
       hotmapX: pc.hotmapX ?? null,
       hotmapY: pc.hotmapY ?? null,
@@ -218,7 +231,7 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
 
   // 升级服务配置
   const [upgradeConfigs, setUpgradeConfigs] = useState<UpgradeConfig[]>(
-    plan.planUpgrades?.map((pu) => ({
+    plan?.planUpgrades?.map((pu) => ({
       merchantComponentId: pu.merchantComponentId,
       priceOverride: pu.priceOverride,
       isPopular: pu.isPopular,
@@ -226,9 +239,9 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
     })) || []
   );
 
-  // 当 plan.planComponents 变化时（如 router.refresh() 后），同步更新状态
+  // 当 plan.planComponents 变化时（如 router.refresh() 后），同步更新状态（仅编辑模式）
   useEffect(() => {
-    if (plan.planComponents) {
+    if (plan?.planComponents) {
       setComponentConfigs(
         plan.planComponents.map((pc) => ({
           merchantComponentId: pc.merchantComponentId,
@@ -244,11 +257,11 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
         plan.planComponents.map((pc) => pc.merchantComponentId)
       );
     }
-  }, [plan.planComponents]);
+  }, [plan?.planComponents]);
 
-  // 当 plan.planUpgrades 变化时，同步更新状态
+  // 当 plan.planUpgrades 变化时，同步更新状态（仅编辑模式）
   useEffect(() => {
-    if (plan.planUpgrades) {
+    if (plan?.planUpgrades) {
       setUpgradeConfigs(
         plan.planUpgrades.map((pu) => ({
           merchantComponentId: pu.merchantComponentId,
@@ -258,7 +271,7 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
         }))
       );
     }
-  }, [plan.planUpgrades]);
+  }, [plan?.planUpgrades]);
 
   // 自动保存定时器
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -291,19 +304,19 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
 
   // 检查草稿恢复
   useEffect(() => {
-    if (hasDraft(plan.id)) {
-      const draft = getDraft(plan.id);
+    if (hasDraft(draftId)) {
+      const draft = getDraft(draftId);
       if (draft) {
         const draftTime = new Date(draft.lastSaved);
         // 如果草稿比较新，提示恢复
         setShowDraftRecovery(true);
       }
     }
-  }, [plan.id, hasDraft, getDraft]);
+  }, [draftId, hasDraft, getDraft]);
 
   // 恢复草稿
   const recoverDraft = () => {
-    const draft = getDraft(plan.id);
+    const draft = getDraft(draftId);
     if (draft) {
       setFormData(draft.formData);
       setComponentConfigs(draft.componentConfigs);
@@ -316,7 +329,7 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
 
   // 丢弃草稿
   const discardDraft = () => {
-    clearDraft(plan.id);
+    clearDraft(draftId);
     setShowDraftRecovery(false);
   };
 
@@ -327,10 +340,10 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
     }
 
     autoSaveTimerRef.current = setTimeout(() => {
-      saveDraft(plan.id, formData, componentConfigs, selectedMerchantComponentIds, upgradeConfigs);
+      saveDraft(draftId, formData, componentConfigs, selectedMerchantComponentIds, upgradeConfigs);
       setLastSavedTime(new Date());
     }, 3000);
-  }, [plan.id, formData, componentConfigs, selectedMerchantComponentIds, upgradeConfigs, saveDraft]);
+  }, [draftId, formData, componentConfigs, selectedMerchantComponentIds, upgradeConfigs, saveDraft]);
 
   // 表单变化时触发自动保存
   useEffect(() => {
@@ -353,7 +366,7 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
   // 获取已选标签的完整信息
   const getSelectedTags = (): Tag[] => {
     const allTags = [
-      ...(plan.planTags?.map((pt) => pt.tag) || []),
+      ...(plan?.planTags?.map((pt) => pt.tag) || []),
       ...tagCategories.flatMap((cat) => cat.tags),
     ];
     const uniqueTags = allTags.reduce((acc, tag) => {
@@ -370,13 +383,22 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
     return themes.find((t) => t.id === formData.themeId) || null;
   };
 
-  // 保存草稿到服务器
+  // 保存草稿到服务器（仅编辑模式支持）
   const handleSaveDraft = async () => {
+    if (isCreateMode) {
+      // 新建模式：仅保存到 localStorage
+      saveDraft(draftId, formData, componentConfigs, selectedMerchantComponentIds, upgradeConfigs);
+      setLastSavedTime(new Date());
+      setSuccess("草稿已保存到本地");
+      setTimeout(() => setSuccess(null), 3000);
+      return;
+    }
+
     setIsSavingDraft(true);
     setError(null);
 
     try {
-      const response = await fetch(`/api/merchant/plans/${plan.id}`, {
+      const response = await fetch(`/api/merchant/plans/${plan!.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -390,9 +412,8 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
         throw new Error(data.message || "保存草稿失败");
       }
 
-      clearDraft(plan.id);
+      clearDraft(draftId);
       setSuccess("草稿已保存");
-      // 刷新页面数据以显示最新保存的状态
       router.refresh();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
@@ -402,10 +423,10 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
     }
   };
 
-  // 发布套餐
+  // 发布/创建套餐
   const handlePublish = async () => {
     // 先保存草稿到 localStorage，确保修改不会丢失
-    saveDraft(plan.id, formData, componentConfigs, selectedMerchantComponentIds, upgradeConfigs);
+    saveDraft(draftId, formData, componentConfigs, selectedMerchantComponentIds, upgradeConfigs);
     setLastSavedTime(new Date());
 
     // 验证必填字段
@@ -429,8 +450,14 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
     setError(null);
 
     try {
-      const response = await fetch(`/api/merchant/plans/${plan.id}`, {
-        method: "PATCH",
+      // 新建模式使用 POST，编辑模式使用 PATCH
+      const url = isCreateMode
+        ? "/api/merchant/plans"
+        : `/api/merchant/plans/${plan!.id}`;
+      const method = isCreateMode ? "POST" : "PATCH";
+
+      const response = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...buildSubmitData(),
@@ -440,16 +467,23 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.message || "发布失败");
+        throw new Error(data.message || (isCreateMode ? "创建失败" : "发布失败"));
       }
 
-      clearDraft(plan.id);
-      setSuccess("套餐已发布！");
-      // 刷新页面数据以显示最新保存的状态
-      router.refresh();
-      setTimeout(() => setSuccess(null), 3000);
+      clearDraft(draftId);
+
+      if (isCreateMode) {
+        setSuccess("套餐创建成功！");
+        // 新建成功后跳转到列表页
+        router.push("/merchant/listings");
+        router.refresh();
+      } else {
+        setSuccess("套餐已发布！");
+        router.refresh();
+        setTimeout(() => setSuccess(null), 3000);
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "发布失败，请重试");
+      setError(err instanceof Error ? err.message : (isCreateMode ? "创建失败，请重试" : "发布失败，请重试"));
     } finally {
       setIsLoading(false);
     }
@@ -615,7 +649,7 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
                   ) : (
                     <Send className="w-4 h-4 mr-1.5" />
                   )}
-                  <span className="text-[13px]">发布</span>
+                  <span className="text-[13px]">{isCreateMode ? "发布套餐" : "发布"}</span>
                 </Button>
               </div>
             </div>
@@ -642,7 +676,7 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
               onCustomMapImageChange={(url) => handleFormChange("customMapImageUrl", url)}
               onComponentIdsChange={setSelectedMerchantComponentIds}
               onComponentConfigsChange={setComponentConfigs}
-              planId={plan.id}
+              planId={plan?.id}
             />
           )}
 
@@ -669,7 +703,7 @@ export default function PlanEditForm({ plan, mapTemplate }: PlanEditFormProps) {
                 selectedTags={getSelectedTags()}
                 theme={getCurrentTheme()}
                 store={formData.storeName ? { id: "preview", name: formData.storeName } : null}
-                isCampaign={plan.isCampaign}
+                isCampaign={plan?.isCampaign || false}
               />
             </div>
           )}

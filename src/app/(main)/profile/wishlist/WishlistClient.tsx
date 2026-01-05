@@ -6,7 +6,6 @@ import Link from "next/link";
 import { Heart, Trash2, ExternalLink, ChevronDown, ChevronRight, X } from "lucide-react";
 import { toast } from "sonner";
 import { useFavoritesStore } from "@/store/favorites";
-import type { PlanCategory } from "@prisma/client";
 
 interface Plan {
   id: string;
@@ -16,7 +15,6 @@ interface Plan {
   originalPrice: number | null;
   imageUrl: string | null;
   images: string[];
-  category: PlanCategory;
   isActive: boolean;
   pricingUnit: string;
   unitLabel: string;

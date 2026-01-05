@@ -35,6 +35,7 @@ interface Theme {
   id: string;
   slug: string;
   name: string;
+  color?: string | null;
 }
 
 interface Store {
@@ -60,6 +61,14 @@ interface PlanUpgrade {
     price: number;
     images: string[];
     highlights: string[];
+    // 自定义服务字段
+    isCustom?: boolean;
+    customName?: string | null;
+    customNameEn?: string | null;
+    customDescription?: string | null;
+    customIcon?: string | null;
+    customBasePrice?: number | null;
+    // 平台模板（自定义服务时为 null）
     template: {
       id: string;
       code: string;
@@ -67,7 +76,7 @@ interface PlanUpgrade {
       nameEn: string | null;
       description: string | null;
       icon: string | null;
-    };
+    } | null;
   };
 }
 

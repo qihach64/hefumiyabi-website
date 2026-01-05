@@ -165,6 +165,14 @@ export default function UpgradesTab({
 
   // 自动保存到组件库
   const saveToLibrary = useCallback(async (id: string, images: string[], highlights: string[]) => {
+    console.log("[UpgradesTab] saveToLibrary 调用:", {
+      id,
+      images,
+      imagesCount: images.length,
+      highlights,
+      highlightsCount: highlights.length,
+    });
+
     try {
       const res = await fetch(`/api/merchant/upgrades/${id}`, {
         method: "PATCH",
@@ -172,12 +180,20 @@ export default function UpgradesTab({
         body: JSON.stringify({ images, highlights }),
       });
 
+      console.log("[UpgradesTab] API 响应状态:", res.status);
+
       if (!res.ok) {
         const errorData = await res.json();
+        console.log("[UpgradesTab] API 错误:", errorData);
         throw new Error(errorData.message || "保存失败");
       }
 
       const { upgrade } = await res.json();
+      console.log("[UpgradesTab] API 返回数据:", {
+        id: upgrade.id,
+        images: upgrade.images,
+        highlights: upgrade.highlights,
+      });
 
       // 更新本地数据
       setAvailableUpgrades((prev) =>
@@ -191,6 +207,7 @@ export default function UpgradesTab({
       setSaveMessage({ type: "success", text: "已自动保存" });
       setTimeout(() => setSaveMessage(null), 2000);
     } catch (err) {
+      console.error("[UpgradesTab] 保存失败:", err);
       setSaveMessage({ type: "error", text: err instanceof Error ? err.message : "保存失败" });
     }
   }, []);
@@ -227,7 +244,7 @@ export default function UpgradesTab({
     previousSelectedIdRef.current = selectedId;
   }, [selectedId, availableUpgrades, saveToLibrary]);
 
-  // 追踪编辑状态变化
+  // 追踪编辑状态变化，并使用防抖自动保存
   useEffect(() => {
     if (selectedId) {
       pendingChangesRef.current = {
@@ -235,8 +252,28 @@ export default function UpgradesTab({
         images: editImages,
         highlights: editHighlights,
       };
+
+      // 防抖保存：1.5秒后自动保存
+      const debounceTimer = setTimeout(() => {
+        const upgrade = availableUpgrades.find((u) => u.id === selectedId);
+        if (upgrade) {
+          const imagesChanged = JSON.stringify(editImages) !== JSON.stringify(upgrade.images);
+          const highlightsChanged = JSON.stringify(editHighlights) !== JSON.stringify(upgrade.highlights);
+
+          if (imagesChanged || highlightsChanged) {
+            console.log("[UpgradesTab] 防抖保存触发:", {
+              id: selectedId,
+              imagesCount: editImages.length,
+              highlightsCount: editHighlights.length,
+            });
+            saveToLibrary(selectedId, editImages, editHighlights);
+          }
+        }
+      }, 1500);
+
+      return () => clearTimeout(debounceTimer);
     }
-  }, [selectedId, editImages, editHighlights]);
+  }, [selectedId, editImages, editHighlights, availableUpgrades, saveToLibrary]);
 
   // ==================== 计算属性 ====================
 

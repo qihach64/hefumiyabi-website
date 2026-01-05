@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Shield, Users, Store, BarChart3, Settings } from "lucide-react";
+import { Shield, Users, Store, BarChart3, Settings, Package } from "lucide-react";
 
 export default async function AdminLayout({
   children,
@@ -31,6 +31,11 @@ export default async function AdminLayout({
       href: "/admin/merchants",
       icon: Store,
       label: "商家审核",
+    },
+    {
+      href: "/admin/services",
+      icon: Package,
+      label: "服务审核",
     },
     {
       href: "/admin/users",

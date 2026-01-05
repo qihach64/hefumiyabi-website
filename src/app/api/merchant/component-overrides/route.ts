@@ -22,7 +22,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Merchant not found' }, { status: 404 });
     }
 
-    // 获取商户的所有组件实例（包含模板信息）
+    // 获取商户的所有组件实例（包含模板信息，支持自定义服务）
     const merchantComponents = await prisma.merchantComponent.findMany({
       where: { merchantId: merchant.id },
       include: {
@@ -43,34 +43,45 @@ export async function GET() {
         },
       },
       orderBy: [
-        { template: { type: 'asc' } },
-        { template: { outfitCategory: 'asc' } }, // v10.2: 按 OUTFIT 分类排序
-        { template: { displayOrder: 'asc' } },
+        { isCustom: 'asc' }, // 平台服务排在前面
+        { createdAt: 'asc' },
       ],
     });
 
-    // 构建响应：组件实例 + 模板信息
-    const components = merchantComponents.map(mc => ({
-      id: mc.id,
-      templateId: mc.templateId,
-      // 模板信息（平台定义）
-      code: mc.template.code,
-      name: mc.template.name,
-      nameJa: mc.template.nameJa,
-      type: mc.template.type,
-      icon: mc.template.icon,
-      basePrice: mc.template.basePrice,
-      description: mc.template.description,
-      outfitCategory: mc.template.outfitCategory, // v10.2: OUTFIT 分类
-      // 商户自定义内容
-      images: mc.images.length > 0 ? mc.images : mc.template.defaultImages,
-      highlights: mc.highlights.length > 0 ? mc.highlights : mc.template.defaultHighlights,
-      // 商户配置
-      price: mc.price,
-      isEnabled: mc.isEnabled,
-      // 有效价格 = 商户价格 ?? 平台建议价
-      effectivePrice: mc.price ?? mc.template.basePrice,
-    }));
+    // 构建响应：组件实例 + 模板信息（支持自定义服务）
+    const components = merchantComponents.map(mc => {
+      const template = mc.template;
+      const isCustom = mc.isCustom && !template;
+
+      return {
+        id: mc.id,
+        templateId: mc.templateId,
+        isCustom: mc.isCustom,
+        // 模板信息（平台定义）或自定义服务字段
+        code: template?.code || `custom-${mc.id}`,
+        name: template?.name || mc.customName || "未命名服务",
+        nameJa: template?.nameJa || mc.customNameEn || null,
+        type: template?.type || (mc.customBasePrice && mc.customBasePrice > 0 ? "ADDON" : "BASE"),
+        icon: template?.icon || mc.customIcon || "📦",
+        basePrice: template?.basePrice || mc.customBasePrice || 0,
+        description: template?.description || mc.customDescription || null,
+        outfitCategory: template?.outfitCategory || null,
+        // 商户自定义内容
+        images: mc.images.length > 0 ? mc.images : (template?.defaultImages ?? []),
+        highlights: mc.highlights.length > 0 ? mc.highlights : (template?.defaultHighlights ?? []),
+        // 商户配置
+        price: mc.price,
+        isEnabled: mc.isEnabled,
+        // 有效价格 = 商户价格 ?? 平台建议价 ?? 自定义价格
+        effectivePrice: mc.price ?? template?.basePrice ?? mc.customBasePrice ?? 0,
+        // 自定义服务额外字段
+        customName: mc.customName,
+        customDescription: mc.customDescription,
+        customIcon: mc.customIcon,
+        customBasePrice: mc.customBasePrice,
+        approvalStatus: mc.approvalStatus,
+      };
+    });
 
     // 按类型分组
     const grouped = components.reduce((acc, component) => {

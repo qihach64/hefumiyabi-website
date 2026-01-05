@@ -18,6 +18,14 @@ interface PlanUpgrade {
     price: number;
     images: string[];
     highlights: string[];
+    // 自定义服务字段
+    isCustom?: boolean;
+    customName?: string | null;
+    customNameEn?: string | null;
+    customDescription?: string | null;
+    customIcon?: string | null;
+    customBasePrice?: number | null;
+    // 平台模板（自定义服务时为 null）
     template: {
       id: string;
       code: string;
@@ -25,7 +33,7 @@ interface PlanUpgrade {
       nameEn: string | null;
       description: string | null;
       icon: string | null;
-    };
+    } | null;
   };
 }
 
@@ -66,17 +74,28 @@ export default function UpgradeServices({
   const upgradeOptions: UpgradeOption[] = useMemo(() => {
     if (!planUpgrades || planUpgrades.length === 0) return [];
 
-    return planUpgrades.map((pu) => ({
-      id: pu.merchantComponentId,
-      name: pu.merchantComponent.template.name,
-      nameEn: pu.merchantComponent.template.nameEn || pu.merchantComponent.template.name,
-      description: pu.merchantComponent.template.description || "",
-      price: pu.priceOverride ?? pu.merchantComponent.price,
-      icon: pu.merchantComponent.template.icon || "🎁",
-      popular: pu.isPopular,
-      highlights: pu.merchantComponent.highlights || [],
-      images: pu.merchantComponent.images || [],
-    }));
+    return planUpgrades.map((pu) => {
+      const mc = pu.merchantComponent;
+      const template = mc.template;
+
+      // 自定义服务使用 custom* 字段，平台服务使用 template 字段
+      const name = template?.name || mc.customName || "未命名服务";
+      const nameEn = template?.nameEn || mc.customNameEn || name;
+      const description = template?.description || mc.customDescription || "";
+      const icon = template?.icon || mc.customIcon || "✨";
+
+      return {
+        id: pu.merchantComponentId,
+        name,
+        nameEn,
+        description,
+        price: pu.priceOverride ?? mc.price ?? mc.customBasePrice ?? 0,
+        icon,
+        popular: pu.isPopular,
+        highlights: mc.highlights || [],
+        images: mc.images || [],
+      };
+    });
   }, [planUpgrades]);
 
   const isSelected = (id: string) => selectedUpgrades.some((u) => u.id === id);

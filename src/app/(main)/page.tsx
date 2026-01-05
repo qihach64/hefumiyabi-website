@@ -72,7 +72,8 @@ export default async function HomePage({
       planComponents: {
         include: {
           merchantComponent: {
-            include: {
+            select: {
+              customName: true,
               template: {
                 select: {
                   id: true,
@@ -135,7 +136,7 @@ export default async function HomePage({
         duration: plan.duration,
         isCampaign: !!plan.originalPrice && plan.originalPrice > plan.price,
         includes: plan.planComponents
-          .map(pc => pc.merchantComponent.template.name),
+          .map(pc => pc.merchantComponent.template?.name || pc.merchantComponent.customName || "服务"),
         planTags: plan.planTags,
       })),
     };
@@ -198,7 +199,7 @@ export default async function HomePage({
     category: plan.category,
     duration: plan.duration,
     includes: plan.planComponents
-      .map(pc => pc.merchantComponent.template.name),
+      .map(pc => pc.merchantComponent.template?.name || pc.merchantComponent.customName || "服务"),
     imageUrl: plan.imageUrl,
     merchantName: plan.merchant?.businessName || plan.storeName || "",
     region: plan.region || "",

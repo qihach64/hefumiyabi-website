@@ -1,9 +1,7 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
-import PlanCreateForm from "@/components/merchant/PlanCreateForm";
+import PlanForm from "@/components/merchant/PlanEditForm";
 
 export default async function NewListingPage() {
   // 验证登录
@@ -21,29 +19,42 @@ export default async function NewListingPage() {
     redirect("/merchant/dashboard");
   }
 
+  // 获取默认地图模板（新建套餐时也可以使用热点图编辑）
+  const mapTemplate = await prisma.mapTemplate.findFirst({
+    where: { isDefault: true, isActive: true },
+    include: {
+      hotspots: {
+        include: {
+          component: {
+            select: {
+              id: true,
+              name: true,
+              icon: true,
+            },
+          },
+        },
+        orderBy: { displayOrder: "asc" },
+      },
+    },
+  });
+
+  const mapTemplateData = mapTemplate
+    ? {
+        id: mapTemplate.id,
+        imageUrl: mapTemplate.imageUrl,
+        hotspots: mapTemplate.hotspots.map((h) => ({
+          componentId: h.componentId,
+          x: h.x,
+          y: h.y,
+          labelPosition: h.labelPosition,
+        })),
+      }
+    : null;
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="container py-8 max-w-5xl">
-        {/* 返回按钮 */}
-        <Link
-          href="/merchant/listings"
-          className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          返回套餐列表
-        </Link>
-
-        {/* 标题 */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            发布新套餐
-          </h1>
-          <p className="text-gray-600">创建和服租赁体验套餐</p>
-        </div>
-
-        {/* 创建表单 */}
-        <PlanCreateForm />
-      </div>
+      {/* 新建模式：不传 plan 参数 */}
+      <PlanForm mapTemplate={mapTemplateData} />
     </div>
   );
 }

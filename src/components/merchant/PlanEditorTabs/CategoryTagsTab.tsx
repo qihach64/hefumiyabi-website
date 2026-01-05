@@ -31,16 +31,6 @@ interface Theme {
   color: string | null;
 }
 
-// 分类中文名映射
-const CATEGORY_NAMES: Record<string, string> = {
-  LADIES: "女士套餐",
-  MENS: "男士套餐",
-  COUPLE: "情侣套餐",
-  FAMILY: "家庭套餐",
-  GROUP: "团体套餐",
-  SPECIAL: "特色套餐",
-};
-
 interface CategoryTagsTabProps {
   formData: PlanFormData;
   onFormChange: <K extends keyof PlanFormData>(field: K, value: PlanFormData[K]) => void;
@@ -116,17 +106,6 @@ export default function CategoryTagsTab({
 
   return (
     <div className="space-y-8">
-      {/* 套餐分类（只读） */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          套餐分类
-          <span className="text-gray-400 text-xs ml-2">创建后不可修改</span>
-        </label>
-        <div className="px-4 py-3 bg-gray-50 rounded-xl border border-gray-200 text-gray-600">
-          {CATEGORY_NAMES[formData.category] || formData.category || "未设置"}
-        </div>
-      </div>
-
       {/* 套餐主题 */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-3">套餐主题</label>

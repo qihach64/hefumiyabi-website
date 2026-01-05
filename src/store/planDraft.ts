@@ -36,9 +36,6 @@ export interface PlanFormData {
   themeId: string | null;
   selectedTagIds: string[];
 
-  // 分类（只读）
-  category: string;
-
   // 限量和时间限制
   isLimited: boolean;
   maxBookings: number | null;
@@ -100,7 +97,6 @@ export const defaultFormData: PlanFormData = {
   region: "",
   themeId: null,
   selectedTagIds: [],
-  category: "",
   isLimited: false,
   maxBookings: null,
   availableFrom: null,

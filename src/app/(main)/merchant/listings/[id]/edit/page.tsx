@@ -3,7 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import prisma from "@/lib/prisma";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import PlanEditForm from "@/components/merchant/PlanEditForm";
+import PlanForm from "@/components/merchant/PlanEditForm";
 
 interface EditListingPageProps {
   params: {
@@ -197,7 +197,7 @@ export default async function EditListingPage({ params }: EditListingPageProps) 
         </div>
 
         {/* 编辑表单 - 包含统一的组件选择、升级配置和热点编辑 */}
-        <PlanEditForm plan={plan} mapTemplate={mapTemplateData} />
+        <PlanForm plan={plan} mapTemplate={mapTemplateData} />
       </div>
     </div>
   );

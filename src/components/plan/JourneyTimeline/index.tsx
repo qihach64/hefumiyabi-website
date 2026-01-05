@@ -22,6 +22,11 @@ interface FAQ {
   a: string;
 }
 
+interface InlineNotice {
+  type: "info" | "warning";
+  content: string;
+}
+
 interface JourneyStep {
   id: string;
   time: string;
@@ -31,10 +36,11 @@ interface JourneyStep {
   icon: "arrival" | "styling" | "hairstyle" | "photo" | "stroll" | "return";
   highlight?: string;
   faqs?: FAQ[];
+  inlineNotice?: InlineNotice; // 内联提示（融合须知信息）
 }
 
-interface BookingNote {
-  type: "success" | "warning" | "info";
+interface CancelPolicy {
+  type: "success" | "warning";
   content: string;
 }
 
@@ -42,8 +48,8 @@ interface JourneyTimelineProps {
   duration?: number; // 小时
   // Mock data - 后期对接真实数据
   journeySteps?: JourneyStep[];
-  bookingNotes?: BookingNote[];
-  cancelPolicy?: string;
+  cancelPolicies?: CancelPolicy[];
+  footerNote?: string; // 底部补充说明
 }
 
 // 图标映射
@@ -66,6 +72,10 @@ const DEFAULT_JOURNEY: JourneyStep[] = [
     description: "准时到店，工作人员会引导您开始体验",
     icon: "arrival",
     highlight: "距离最近车站步行 5 分钟",
+    inlineNotice: {
+      type: "info",
+      content: "身高限制 145-180cm｜鞋码 22-27cm",
+    },
     faqs: [
       { q: "可以提前到吗？", a: "可以提前 10 分钟到，但可能需要等待前一批客人完成" },
       { q: "迟到怎么办？", a: "请提前联系我们，迟到 30 分钟以上可能影响您的体验时间" },
@@ -118,25 +128,27 @@ const DEFAULT_JOURNEY: JourneyStep[] = [
     description: "返回店铺归还和服和配饰",
     icon: "return",
     highlight: "请于 18:00 前归还",
+    inlineNotice: {
+      type: "warning",
+      content: "超时归还收取 ¥1,000/小时 延时费",
+    },
     faqs: [
       { q: "归还时需要换回自己的衣服吗？", a: "是的，我们提供更衣室" },
-      { q: "迟归会怎样？", a: "超时归还收取 ¥1,000/小时 的延时费" },
     ],
   },
 ];
 
-// 默认预订须知
-const DEFAULT_NOTES: BookingNote[] = [
-  { type: "success", content: "前一天 18:00 前可免费取消" },
-  { type: "warning", content: "当天取消收取 50% 费用" },
-  { type: "info", content: "身高限制: 145-180cm｜鞋码限制: 22-27cm" },
+// 默认取消政策
+const DEFAULT_CANCEL_POLICIES = [
+  { type: "success" as const, content: "前一天 18:00 前可免费取消" },
+  { type: "warning" as const, content: "当天取消收取 50% 费用" },
 ];
 
 export default function JourneyTimeline({
   duration = 8,
   journeySteps = DEFAULT_JOURNEY,
-  bookingNotes = DEFAULT_NOTES,
-  cancelPolicy = "预订后可随时联系客服修改日期",
+  cancelPolicies = DEFAULT_CANCEL_POLICIES,
+  footerNote = "预订后可随时联系客服修改日期",
 }: JourneyTimelineProps) {
   const [expandedStep, setExpandedStep] = useState<string | null>(null);
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
@@ -235,6 +247,25 @@ export default function JourneyTimeline({
                         📍 {step.highlight}
                       </p>
                     )}
+                    {/* 内联须知提示 */}
+                    {step.inlineNotice && (
+                      <div
+                        className={`
+                          mt-2 flex items-center gap-2 px-3 py-2 rounded-lg text-[12px]
+                          ${step.inlineNotice.type === "warning"
+                            ? "bg-amber-50 text-amber-700"
+                            : "bg-blue-50 text-blue-700"
+                          }
+                        `}
+                      >
+                        {step.inlineNotice.type === "warning" ? (
+                          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                        ) : (
+                          <HelpCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                        )}
+                        <span>{step.inlineNotice.content}</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* 展开指示 */}
@@ -302,81 +333,44 @@ export default function JourneyTimeline({
             );
           })}
         </div>
-      </div>
 
-      {/* 预订须知 - 整合预订流程 */}
-      <div className="bg-white rounded-xl border border-wabi-200 overflow-hidden">
-        {/* 标题 */}
-        <div className="px-5 py-4 border-b border-wabi-100 bg-wabi-50/50">
-          <h4 className="text-[16px] font-semibold text-gray-900">
-            预订须知
-          </h4>
-        </div>
-
-        <div className="p-5 space-y-5">
-          {/* 预订流程 - 紧凑横向布局 */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[13px] font-medium text-gray-700">预订流程</span>
-              <span className="text-[11px] text-sakura-600 font-medium">约 2 分钟完成</span>
+        {/* 取消政策脚注 - 融合在时间轴底部 */}
+        {(cancelPolicies.length > 0 || footerNote) && (
+          <div className="px-5 py-4 border-t border-wabi-100 bg-wabi-50/30">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-6 h-px bg-gradient-to-r from-sakura-400 to-transparent" />
+              <span className="text-[11px] uppercase tracking-[0.15em] text-wabi-400 font-medium">
+                Cancellation Policy
+              </span>
             </div>
-            <div className="flex items-center justify-between bg-wabi-50 rounded-lg p-3">
-              {[
-                { num: 1, label: "选择日期" },
-                { num: 2, label: "填写信息" },
-                { num: 3, label: "完成预订" },
-              ].map((step, idx) => (
-                <div key={step.num} className="flex items-center">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-sakura-100 border border-sakura-300 flex items-center justify-center text-sakura-700 font-bold text-[11px]">
-                      {step.num}
-                    </div>
-                    <span className="text-[12px] text-gray-600">{step.label}</span>
-                  </div>
-                  {idx < 2 && (
-                    <div className="w-6 h-px bg-sakura-200 mx-2" />
+            <div className="flex flex-wrap gap-3">
+              {cancelPolicies.map((policy, idx) => (
+                <div
+                  key={idx}
+                  className={`
+                    flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px]
+                    ${policy.type === "success"
+                      ? "bg-green-50 text-green-700"
+                      : "bg-amber-50 text-amber-700"
+                    }
+                  `}
+                >
+                  {policy.type === "success" ? (
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                  ) : (
+                    <XCircle className="w-3.5 h-3.5" />
                   )}
+                  <span>{policy.content}</span>
                 </div>
               ))}
             </div>
-          </div>
-
-          {/* 须知列表 */}
-          <div className="space-y-2">
-            {bookingNotes.map((note, idx) => {
-              const icons = {
-                success: CheckCircle2,
-                warning: AlertCircle,
-                info: HelpCircle,
-              };
-              const colors = {
-                success: "text-green-600 bg-green-50",
-                warning: "text-amber-600 bg-amber-50",
-                info: "text-blue-600 bg-blue-50",
-              };
-              const Icon = icons[note.type];
-
-              return (
-                <div
-                  key={idx}
-                  className={`flex items-start gap-2.5 p-2.5 rounded-lg ${colors[note.type].split(" ")[1]}`}
-                >
-                  <Icon className={`w-4 h-4 flex-shrink-0 mt-0.5 ${colors[note.type].split(" ")[0]}`} />
-                  <span className="text-[13px] text-gray-700">{note.content}</span>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* 取消政策 */}
-          {cancelPolicy && (
-            <div className="pt-3 border-t border-wabi-100">
-              <p className="text-[12px] text-wabi-500">
-                💡 {cancelPolicy}
+            {footerNote && (
+              <p className="mt-3 text-[12px] text-wabi-500">
+                💡 {footerNote}
               </p>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

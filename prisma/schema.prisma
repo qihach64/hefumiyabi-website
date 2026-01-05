@@ -253,7 +253,6 @@ model RentalPlan {
   // 多语言翻译 JSON: { "en": { "name": "...", "description": "..." }, "ja": { ... } }
   translations  Json?
 
-  category      PlanCategory
   price         Int
   originalPrice Int?
   depositAmount Int           @default(0)
@@ -280,11 +279,6 @@ model RentalPlan {
   merchantId String?
   merchant   Merchant? @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   createdBy  String?       // 创建者 User ID
-
-  // 店铺和地区信息
-  storeName String?
-  region    String?
-  tags      String[]      @default([])  // 保留旧字段，后续可移除
 
   // 活动关联
   campaignId String?
@@ -361,7 +355,6 @@ model Listing {
   name           String
   nameEn         String?
   description    String
-  category       PlanCategory
   price          Int
   originalPrice  Int?
   depositAmount  Int           @default(0)
@@ -383,7 +376,6 @@ model Listing {
   @@index([merchantId])
   @@index([storeId])
   @@index([status])
-  @@index([category])
   @@map("listings")
 }
 
@@ -656,15 +648,6 @@ enum Season {
   AUTUMN
   WINTER
   ALL_SEASON
-}
-
-enum PlanCategory {
-  LADIES
-  MENS
-  COUPLE
-  FAMILY
-  GROUP
-  SPECIAL
 }
 
 enum PlanStatus {

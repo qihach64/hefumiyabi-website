@@ -65,6 +65,14 @@ export default async function PlanDetailPage({
               price: true,
               images: true,
               highlights: true,
+              // 自定义服务字段
+              isCustom: true,
+              customName: true,
+              customNameEn: true,
+              customDescription: true,
+              customIcon: true,
+              customBasePrice: true,
+              // 平台模板（自定义服务时为 null）
               template: {
                 select: {
                   id: true,
@@ -224,7 +232,8 @@ export default async function PlanDetailPage({
         planComponents: {
           include: {
             merchantComponent: {
-              include: {
+              select: {
+                customName: true,
                 template: {
                   select: {
                     name: true,
@@ -251,7 +260,9 @@ export default async function PlanDetailPage({
       imageUrl: p.imageUrl,
       isCampaign: p.isCampaign,
       includes: p.planComponents.length > 0
-        ? p.planComponents.map((pc) => pc.merchantComponent.template.name)
+        ? p.planComponents.map((pc) =>
+            pc.merchantComponent.template?.name || pc.merchantComponent.customName || "服务"
+          )
         : p.includes,
       merchantName: p.merchant?.businessName || p.storeName || "",
       region: p.region || "",

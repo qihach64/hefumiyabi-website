@@ -1,7 +1,15 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { MapPin, Phone, Clock, Copy, ExternalLink, Check } from "lucide-react";
+import {
+  MapPin,
+  Phone,
+  Clock,
+  Copy,
+  Navigation,
+  Check,
+  Train,
+} from "lucide-react";
 import { toast } from "sonner";
 
 interface StoreLocationCardProps {
@@ -34,21 +42,24 @@ export default function StoreLocationCard({ store }: StoreLocationCardProps) {
   }, [mapLoaded]);
 
   // 构建 Google Maps Embed URL（免费版，无需 API Key）
+  // 使用经纬度定位 + 地址作为标记名称
   const getMapEmbedUrl = useCallback(() => {
-    if (store.latitude && store.longitude) {
-      // 优先使用经纬度
-      return `https://maps.google.com/maps?q=${store.latitude},${store.longitude}&z=16&output=embed`;
+    if (store.latitude && store.longitude && store.address) {
+      // 使用 place 模式：经纬度定位，地址作为标签
+      return `https://maps.google.com/maps?q=${encodeURIComponent(store.name + ' ' + store.address)}&ll=${store.latitude},${store.longitude}&z=17&output=embed`;
     } else if (store.address) {
-      // 备选使用地址搜索
-      return `https://maps.google.com/maps?q=${encodeURIComponent(store.address)}&output=embed`;
+      return `https://maps.google.com/maps?q=${encodeURIComponent(store.address)}&z=16&output=embed`;
+    } else if (store.latitude && store.longitude) {
+      return `https://maps.google.com/maps?q=${store.latitude},${store.longitude}&z=16&output=embed`;
     }
     return null;
-  }, [store.latitude, store.longitude, store.address]);
+  }, [store.latitude, store.longitude, store.address, store.name]);
 
   // 构建 Google Maps 导航链接
+  // 优先使用经纬度（导航更精确）
   const getGoogleMapsLink = useCallback(() => {
     if (store.latitude && store.longitude) {
-      return `https://www.google.com/maps/search/?api=1&query=${store.latitude},${store.longitude}`;
+      return `https://www.google.com/maps/dir/?api=1&destination=${store.latitude},${store.longitude}`;
     } else if (store.address) {
       return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(store.address)}`;
     }
@@ -76,11 +87,9 @@ export default function StoreLocationCard({ store }: StoreLocationCardProps) {
   // 解析营业时间
   const formatOpeningHours = () => {
     if (!store.openingHours) return null;
-    // 假设 openingHours 是简单字符串或 JSON
     if (typeof store.openingHours === "string") {
       return store.openingHours;
     }
-    // 如果是 JSON 对象，提取默认时间
     const hours = store.openingHours as Record<string, string>;
     return hours.default || hours.weekday || "10:00 - 18:00";
   };
@@ -89,35 +98,24 @@ export default function StoreLocationCard({ store }: StoreLocationCardProps) {
   const mapsLink = getGoogleMapsLink();
   const openingHoursText = formatOpeningHours();
 
-  // 如果没有地址信息，不显示组件
   if (!store.address && !store.latitude) {
     return null;
   }
 
   return (
-    <section className="bg-white rounded-xl border border-wabi-200 overflow-hidden">
-      {/* 标题区域 */}
-      <div className="px-6 pt-6 pb-4">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-px bg-gradient-to-r from-sakura-400 to-transparent" />
-          <span className="text-[12px] uppercase tracking-[0.25em] text-sakura-500 font-medium">
-            Store Location
-          </span>
-        </div>
-        <h3 className="text-[18px] font-semibold text-gray-900 flex items-center gap-2">
-          <MapPin className="w-4 h-4 text-sakura-500" />
-          {store.name}
-          {store.city && (
-            <span className="text-[14px] font-normal text-gray-500">
-              · {store.city}
-            </span>
-          )}
-        </h3>
+    <section className="space-y-6">
+      {/* 区块标题 */}
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-px bg-gradient-to-r from-sakura-400 to-transparent" />
+        <span className="text-[12px] uppercase tracking-[0.25em] text-sakura-500 font-medium">
+          Store Location
+        </span>
       </div>
 
-      {/* 地图区域 */}
-      <div className="px-6">
-        <div className="relative aspect-[16/9] md:aspect-[2/1] rounded-xl overflow-hidden bg-wabi-100">
+      {/* 主内容区 - 地图叠加信息卡片 */}
+      <div className="relative rounded-xl overflow-hidden">
+        {/* 地图背景 */}
+        <div className="relative aspect-[16/9] md:aspect-[21/9] bg-wabi-100">
           {/* Google Maps iframe */}
           {mapUrl && !showFallback && (
             <iframe
@@ -135,119 +133,141 @@ export default function StoreLocationCard({ store }: StoreLocationCardProps) {
             />
           )}
 
-          {/* 加载状态 - Skeleton */}
+          {/* 加载状态 */}
           {!mapLoaded && !showFallback && (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="animate-pulse flex flex-col items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-wabi-200" />
-                <div className="h-3 w-24 bg-wabi-200 rounded" />
+                <MapPin className="w-8 h-8 text-wabi-300" />
+                <div className="h-2 w-20 bg-wabi-200 rounded" />
               </div>
             </div>
           )}
 
-          {/* Fallback - 精美地址卡片 */}
-          {showFallback && (
-            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-sakura-50 to-wabi-50 p-6">
-              <div className="text-center max-w-sm">
-                {/* 日本地图装饰 */}
-                <div className="text-[48px] mb-4 opacity-30">🗾</div>
-
-                {/* 店铺名称 */}
-                <h4 className="text-[16px] font-semibold text-gray-900 mb-3 flex items-center justify-center gap-2">
-                  <span className="text-sakura-500">✦</span>
-                  {store.name}
-                </h4>
-
-                {/* 地址 */}
-                <div className="space-y-1 mb-4">
-                  <p className="text-[14px] text-gray-700 leading-relaxed">
-                    {store.address}
-                  </p>
-                  {store.addressEn && (
-                    <p className="text-[12px] text-gray-500">
-                      {store.addressEn}
-                    </p>
-                  )}
+          {/* 自定义标记 - 地图中心点 */}
+          {mapLoaded && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="relative -mt-6">
+                {/* 阴影 */}
+                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-2 bg-black/20 rounded-full blur-sm" />
+                {/* Pin */}
+                <div className="w-8 h-8 bg-sakura-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
+                  <MapPin className="w-4 h-4 text-white" />
                 </div>
+                {/* 尖角 */}
+                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-r-[6px] border-t-[8px] border-l-transparent border-r-transparent border-t-sakura-500" />
+              </div>
+            </div>
+          )}
 
-                {/* 复制地址按钮 */}
-                <button
-                  onClick={handleCopyAddress}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white border border-wabi-200 text-[13px] text-gray-600 hover:border-sakura-300 hover:text-sakura-600 transition-all duration-300"
-                >
-                  {copied ? (
-                    <>
-                      <Check className="w-3.5 h-3.5" />
-                      已复制
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3.5 h-3.5" />
-                      复制地址
-                    </>
-                  )}
-                </button>
+          {/* Fallback - 优雅的静态展示 */}
+          {showFallback && (
+            <div className="absolute inset-0 bg-gradient-to-br from-wabi-50 via-sakura-50/30 to-wabi-100">
+              {/* 装饰性网格线 */}
+              <div
+                className="absolute inset-0 opacity-[0.03]"
+                style={{
+                  backgroundImage: `
+                    linear-gradient(to right, currentColor 1px, transparent 1px),
+                    linear-gradient(to bottom, currentColor 1px, transparent 1px)
+                  `,
+                  backgroundSize: "40px 40px",
+                }}
+              />
+              {/* 中心装饰 */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="relative">
+                  <div className="absolute -inset-8 bg-sakura-100/50 rounded-full blur-2xl" />
+                  <MapPin className="relative w-12 h-12 text-sakura-400" />
+                </div>
               </div>
             </div>
           )}
         </div>
-      </div>
 
-      {/* 店铺信息区域 */}
-      <div className="px-6 py-4 space-y-3">
-        {/* 地址 */}
-        {store.address && (
-          <div className="flex items-start gap-3">
-            <MapPin className="w-4 h-4 text-sakura-500 mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="text-[14px] text-gray-700 leading-relaxed">
-                {store.address}
-              </p>
-              {store.addressEn && (
-                <p className="text-[12px] text-gray-500 mt-0.5">
-                  {store.addressEn}
-                </p>
+        {/* 浮动信息卡片 - 毛玻璃效果 */}
+        <div className="absolute top-4 left-4 right-4 md:left-6 md:right-auto md:max-w-sm">
+          <div className="bg-white/95 backdrop-blur-md rounded-xl border border-white/50 shadow-lg p-4">
+            {/* 店铺名称 */}
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <div>
+                <h3 className="text-[16px] font-semibold text-gray-900 flex items-center gap-2">
+                  {store.name}
+                </h3>
+                {store.city && (
+                  <span className="text-[12px] text-gray-500">{store.city}</span>
+                )}
+              </div>
+              {/* 快速导航按钮 */}
+              {mapsLink && (
+                <a
+                  href={mapsLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-shrink-0 w-10 h-10 rounded-full bg-sakura-500 hover:bg-sakura-600 text-white flex items-center justify-center transition-all duration-300 hover:scale-105 hover:shadow-md"
+                  title="导航"
+                >
+                  <Navigation className="w-4 h-4" />
+                </a>
               )}
             </div>
-          </div>
-        )}
 
-        {/* 电话 */}
-        {store.phone && (
-          <div className="flex items-center gap-3">
-            <Phone className="w-4 h-4 text-sakura-500 flex-shrink-0" />
-            <a
-              href={`tel:${store.phone}`}
-              className="text-[14px] text-gray-700 hover:text-sakura-600 transition-colors"
-            >
-              {store.phone}
-            </a>
-          </div>
-        )}
+            {/* 信息列表 - 紧凑布局 */}
+            <div className="space-y-2 text-[13px]">
+              {/* 地址 */}
+              {store.address && (
+                <button
+                  onClick={handleCopyAddress}
+                  className="w-full flex items-start gap-2.5 text-left group"
+                >
+                  <MapPin className="w-4 h-4 text-sakura-500 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-gray-700 leading-snug group-hover:text-sakura-600 transition-colors">
+                      {store.address}
+                    </p>
+                    {store.addressEn && (
+                      <p className="text-[11px] text-gray-400 mt-0.5 truncate">
+                        {store.addressEn}
+                      </p>
+                    )}
+                  </div>
+                  <span className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {copied ? (
+                      <Check className="w-4 h-4 text-green-500" />
+                    ) : (
+                      <Copy className="w-4 h-4 text-gray-400" />
+                    )}
+                  </span>
+                </button>
+              )}
 
-        {/* 营业时间 */}
-        {openingHoursText && (
-          <div className="flex items-center gap-3">
-            <Clock className="w-4 h-4 text-sakura-500 flex-shrink-0" />
-            <span className="text-[14px] text-gray-700">{openingHoursText}</span>
-          </div>
-        )}
-      </div>
+              {/* 营业时间 & 电话 - 横向排列 */}
+              <div className="flex items-center gap-4 pt-1">
+                {openingHoursText && (
+                  <div className="flex items-center gap-1.5 text-gray-600">
+                    <Clock className="w-3.5 h-3.5 text-sakura-400" />
+                    <span>{openingHoursText}</span>
+                  </div>
+                )}
+                {store.phone && (
+                  <a
+                    href={`tel:${store.phone}`}
+                    className="flex items-center gap-1.5 text-gray-600 hover:text-sakura-600 transition-colors"
+                  >
+                    <Phone className="w-3.5 h-3.5 text-sakura-400" />
+                    <span>{store.phone}</span>
+                  </a>
+                )}
+              </div>
 
-      {/* 导航按钮 */}
-      {mapsLink && (
-        <div className="px-6 pb-6">
-          <a
-            href={mapsLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 w-full py-3 rounded-lg bg-sakura-600 hover:bg-sakura-700 text-white text-[14px] font-medium transition-all duration-300 hover:shadow-lg"
-          >
-            <ExternalLink className="w-4 h-4" />
-            在 Google Maps 中打开
-          </a>
+              {/* 交通提示 */}
+              <div className="flex items-center gap-1.5 pt-1 text-[12px] text-wabi-500">
+                <Train className="w-3.5 h-3.5" />
+                <span>距离最近车站步行约 5 分钟</span>
+              </div>
+            </div>
+          </div>
         </div>
-      )}
+      </div>
     </section>
   );
 }

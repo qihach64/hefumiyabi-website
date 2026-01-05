@@ -43,14 +43,17 @@ export async function PATCH(
       );
     }
 
-    // 获取要更新的 MerchantComponent
+    // 获取要更新的 MerchantComponent（支持平台模板和自定义服务）
     const merchantComponent = await prisma.merchantComponent.findFirst({
       where: {
         id,
         merchantId: merchant.id,
-        template: {
-          type: "ADDON",
-        },
+        OR: [
+          // 平台模板的 ADDON 类型
+          { template: { type: "ADDON" } },
+          // 自定义服务（无模板）
+          { isCustom: true, templateId: null },
+        ],
       },
       include: {
         template: true,
@@ -66,9 +69,17 @@ export async function PATCH(
 
     // 解析请求体
     const body = await request.json();
+    console.log("[PATCH upgrades] 收到请求:", {
+      id,
+      body,
+      imagesCount: body.images?.length,
+      highlightsCount: body.highlights?.length,
+    });
+
     const validationResult = updateMerchantComponentSchema.safeParse(body);
 
     if (!validationResult.success) {
+      console.log("[PATCH upgrades] 验证失败:", validationResult.error.flatten());
       return NextResponse.json(
         {
           message: "请求参数错误",
@@ -79,6 +90,10 @@ export async function PATCH(
     }
 
     const data = validationResult.data;
+    console.log("[PATCH upgrades] 验证通过的数据:", {
+      images: data.images,
+      highlights: data.highlights,
+    });
 
     // 构建更新数据
     const updateData: {
@@ -104,6 +119,8 @@ export async function PATCH(
       updateData.isEnabled = data.isEnabled;
     }
 
+    console.log("[PATCH upgrades] 更新数据:", updateData);
+
     // 更新 MerchantComponent
     const updated = await prisma.merchantComponent.update({
       where: { id },
@@ -126,31 +143,42 @@ export async function PATCH(
       },
     });
 
-    // 返回更新后的数据（格式与 GET 一致）
+    // 返回更新后的数据（格式与 GET 一致，支持自定义服务）
+    const template = updated.template;
+    const isCustom = updated.isCustom && !template;
+
     const response = {
       id: updated.id,
       merchantId: updated.merchantId,
       templateId: updated.templateId,
       isEnabled: updated.isEnabled,
-      price: updated.price ?? updated.template.basePrice,
+      isCustom: updated.isCustom,
+      price: updated.price ?? (isCustom ? updated.customBasePrice : template?.basePrice) ?? 0,
       images:
         updated.images.length > 0
           ? updated.images
-          : updated.template.defaultImages,
+          : (isCustom ? [] : template?.defaultImages ?? []),
       highlights:
         updated.highlights.length > 0
           ? updated.highlights
-          : updated.template.defaultHighlights,
-      template: {
-        id: updated.template.id,
-        code: updated.template.code,
-        name: updated.template.name,
-        nameJa: updated.template.nameJa,
-        nameEn: updated.template.nameEn,
-        description: updated.template.description,
-        icon: updated.template.icon,
-        basePrice: updated.template.basePrice,
-      },
+          : (isCustom ? [] : template?.defaultHighlights ?? []),
+      // 自定义服务字段
+      customName: updated.customName,
+      customNameEn: updated.customNameEn,
+      customDescription: updated.customDescription,
+      customIcon: updated.customIcon,
+      customBasePrice: updated.customBasePrice,
+      // 平台模板（自定义服务时为 null）
+      template: template ? {
+        id: template.id,
+        code: template.code,
+        name: template.name,
+        nameJa: template.nameJa,
+        nameEn: template.nameEn,
+        description: template.description,
+        icon: template.icon,
+        basePrice: template.basePrice,
+      } : null,
     };
 
     return NextResponse.json({ upgrade: response });
@@ -191,14 +219,17 @@ export async function GET(
       );
     }
 
-    // 获取 MerchantComponent
+    // 获取 MerchantComponent（支持平台模板和自定义服务）
     const merchantComponent = await prisma.merchantComponent.findFirst({
       where: {
         id,
         merchantId: merchant.id,
-        template: {
-          type: "ADDON",
-        },
+        OR: [
+          // 平台模板的 ADDON 类型
+          { template: { type: "ADDON" } },
+          // 自定义服务（无模板）
+          { isCustom: true, templateId: null },
+        ],
       },
       include: {
         template: {
@@ -225,13 +256,17 @@ export async function GET(
       );
     }
 
-    // 返回数据
+    // 返回数据（支持自定义服务）
+    const template = merchantComponent.template;
+    const isCustom = merchantComponent.isCustom && !template;
+
     const response = {
       id: merchantComponent.id,
       merchantId: merchantComponent.merchantId,
       templateId: merchantComponent.templateId,
       isEnabled: merchantComponent.isEnabled,
-      price: merchantComponent.price ?? merchantComponent.template.basePrice,
+      isCustom: merchantComponent.isCustom,
+      price: merchantComponent.price ?? (isCustom ? merchantComponent.customBasePrice : template?.basePrice) ?? 0,
       // 原始数据（用于编辑时判断是否自定义）
       rawImages: merchantComponent.images,
       rawHighlights: merchantComponent.highlights,
@@ -240,23 +275,30 @@ export async function GET(
       images:
         merchantComponent.images.length > 0
           ? merchantComponent.images
-          : merchantComponent.template.defaultImages,
+          : (isCustom ? [] : template?.defaultImages ?? []),
       highlights:
         merchantComponent.highlights.length > 0
           ? merchantComponent.highlights
-          : merchantComponent.template.defaultHighlights,
-      template: {
-        id: merchantComponent.template.id,
-        code: merchantComponent.template.code,
-        name: merchantComponent.template.name,
-        nameJa: merchantComponent.template.nameJa,
-        nameEn: merchantComponent.template.nameEn,
-        description: merchantComponent.template.description,
-        icon: merchantComponent.template.icon,
-        basePrice: merchantComponent.template.basePrice,
-        defaultImages: merchantComponent.template.defaultImages,
-        defaultHighlights: merchantComponent.template.defaultHighlights,
-      },
+          : (isCustom ? [] : template?.defaultHighlights ?? []),
+      // 自定义服务字段
+      customName: merchantComponent.customName,
+      customNameEn: merchantComponent.customNameEn,
+      customDescription: merchantComponent.customDescription,
+      customIcon: merchantComponent.customIcon,
+      customBasePrice: merchantComponent.customBasePrice,
+      // 平台模板（自定义服务时为 null）
+      template: template ? {
+        id: template.id,
+        code: template.code,
+        name: template.name,
+        nameJa: template.nameJa,
+        nameEn: template.nameEn,
+        description: template.description,
+        icon: template.icon,
+        basePrice: template.basePrice,
+        defaultImages: template.defaultImages,
+        defaultHighlights: template.defaultHighlights,
+      } : null,
     };
 
     return NextResponse.json({ upgrade: response });

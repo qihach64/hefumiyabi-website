@@ -132,7 +132,8 @@ export default async function PlansPage({
       planComponents: {
         include: {
           merchantComponent: {
-            include: {
+            select: {
+              customName: true,
               template: {
                 select: {
                   id: true,
@@ -173,7 +174,7 @@ export default async function PlansPage({
     duration: plan.duration,
     isCampaign: !!plan.originalPrice && plan.originalPrice > plan.price,
     includes: plan.planComponents
-      .map(pc => pc.merchantComponent.template.name),
+      .map(pc => pc.merchantComponent.template?.name || pc.merchantComponent.customName || "服务"),
     planTags: plan.planTags.map(pt => ({ tag: pt.tag })),
     themeId: plan.themeId || undefined,
     themeName: plan.theme?.name || undefined,
