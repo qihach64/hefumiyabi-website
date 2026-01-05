@@ -280,6 +280,11 @@ model RentalPlan {
   merchant   Merchant? @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   createdBy  String?       // 创建者 User ID
 
+  // 店铺和地区信息
+  storeName String?
+  region    String?
+  tags      String[]      @default([])  // 保留旧字段，后续可移除
+
   // 活动关联
   campaignId String?
   campaign   Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
