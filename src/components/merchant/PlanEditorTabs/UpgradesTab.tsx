@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import Image from "next/image";
 import {
   Check,
@@ -130,12 +130,15 @@ export default function UpgradesTab({
   const [editHighlights, setEditHighlights] = useState<string[]>([]);
   const [newHighlight, setNewHighlight] = useState("");
   const [showImageUploader, setShowImageUploader] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // 图片拖拽排序
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  // 自动保存追踪
+  const previousSelectedIdRef = useRef<string | null>(null);
+  const pendingChangesRef = useRef<{ id: string; images: string[]; highlights: string[] } | null>(null);
 
   // ==================== 数据加载 ====================
 
@@ -156,8 +159,59 @@ export default function UpgradesTab({
     fetchUpgrades();
   }, [fetchUpgrades]);
 
-  // 当选中项变化时，同步编辑状态
+  // 自动保存到组件库
+  const saveToLibrary = useCallback(async (id: string, images: string[], highlights: string[]) => {
+    try {
+      const res = await fetch(`/api/merchant/upgrades/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ images, highlights }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "保存失败");
+      }
+
+      const { upgrade } = await res.json();
+
+      // 更新本地数据
+      setAvailableUpgrades((prev) =>
+        prev.map((u) =>
+          u.id === id
+            ? { ...u, images: upgrade.images, highlights: upgrade.highlights }
+            : u
+        )
+      );
+
+      setSaveMessage({ type: "success", text: "已自动保存" });
+      setTimeout(() => setSaveMessage(null), 2000);
+    } catch (err) {
+      setSaveMessage({ type: "error", text: err instanceof Error ? err.message : "保存失败" });
+    }
+  }, []);
+
+  // 当选中项变化时，保存前一个的修改，然后加载新的
   useEffect(() => {
+    const prevId = previousSelectedIdRef.current;
+
+    // 如果有前一个选中项，检查是否有未保存的修改
+    if (prevId && pendingChangesRef.current && pendingChangesRef.current.id === prevId) {
+      const prevUpgrade = availableUpgrades.find((u) => u.id === prevId);
+      if (prevUpgrade) {
+        const { images, highlights } = pendingChangesRef.current;
+        const imagesChanged = JSON.stringify(images) !== JSON.stringify(prevUpgrade.images);
+        const highlightsChanged = JSON.stringify(highlights) !== JSON.stringify(prevUpgrade.highlights);
+
+        if (imagesChanged || highlightsChanged) {
+          // 静默保存修改
+          saveToLibrary(prevId, images, highlights);
+        }
+      }
+      pendingChangesRef.current = null;
+    }
+
+    // 加载新选中项的数据
     if (selectedId) {
       const upgrade = availableUpgrades.find((u) => u.id === selectedId);
       if (upgrade) {
@@ -165,7 +219,20 @@ export default function UpgradesTab({
         setEditHighlights(upgrade.highlights || []);
       }
     }
-  }, [selectedId, availableUpgrades]);
+
+    previousSelectedIdRef.current = selectedId;
+  }, [selectedId, availableUpgrades, saveToLibrary]);
+
+  // 追踪编辑状态变化
+  useEffect(() => {
+    if (selectedId) {
+      pendingChangesRef.current = {
+        id: selectedId,
+        images: editImages,
+        highlights: editHighlights,
+      };
+    }
+  }, [selectedId, editImages, editHighlights]);
 
   // ==================== 计算属性 ====================
 
@@ -263,47 +330,6 @@ export default function UpgradesTab({
   };
 
   // ==================== 库编辑逻辑 ====================
-
-  const handleSaveToLibrary = async () => {
-    if (!selectedId) return;
-
-    setIsSaving(true);
-    setSaveMessage(null);
-
-    try {
-      const res = await fetch(`/api/merchant/upgrades/${selectedId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          images: editImages,
-          highlights: editHighlights,
-        }),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || "保存失败");
-      }
-
-      const { upgrade } = await res.json();
-
-      // 更新本地数据
-      setAvailableUpgrades((prev) =>
-        prev.map((u) =>
-          u.id === selectedId
-            ? { ...u, images: upgrade.images, highlights: upgrade.highlights }
-            : u
-        )
-      );
-
-      setSaveMessage({ type: "success", text: "已保存到组件库" });
-      setTimeout(() => setSaveMessage(null), 3000);
-    } catch (err) {
-      setSaveMessage({ type: "error", text: err instanceof Error ? err.message : "保存失败" });
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   // 图片排序
   const handleImageDragStart = (index: number) => setDraggedIndex(index);
@@ -891,44 +917,24 @@ export default function UpgradesTab({
                 </div>
               </div>
 
-              {/* 底部操作栏 */}
-              <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
-                {saveMessage && (
+              {/* 底部状态栏 */}
+              <div className="px-6 py-3 border-t border-gray-200 bg-gray-50">
+                {saveMessage ? (
                   <div
-                    className={`mb-3 px-4 py-2 rounded-lg text-[13px] flex items-center gap-2 ${
+                    className={`px-3 py-1.5 rounded-lg text-[12px] flex items-center gap-2 ${
                       saveMessage.type === "success"
-                        ? "bg-green-50 border border-green-200 text-green-700"
-                        : "bg-red-50 border border-red-200 text-red-700"
+                        ? "bg-green-50 text-green-600"
+                        : "bg-red-50 text-red-600"
                     }`}
                   >
-                    {saveMessage.type === "success" ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                    {saveMessage.type === "success" ? <Check className="w-3.5 h-3.5" /> : <X className="w-3.5 h-3.5" />}
                     {saveMessage.text}
                   </div>
-                )}
-
-                <div className="flex items-center justify-between">
+                ) : (
                   <p className="text-[11px] text-gray-400">
-                    「套餐专属配置」随套餐保存，「服务详情」保存到组件库
+                    「套餐专属配置」随套餐保存・「服务详情」切换时自动保存
                   </p>
-                  <Button
-                    type="button"
-                    variant="primary"
-                    onClick={handleSaveToLibrary}
-                    disabled={isSaving}
-                  >
-                    {isSaving ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-1.5" />
-                        保存中...
-                      </>
-                    ) : (
-                      <>
-                        <Check className="w-4 h-4 mr-1.5" />
-                        保存到组件库
-                      </>
-                    )}
-                  </Button>
-                </div>
+                )}
               </div>
             </>
           ) : (

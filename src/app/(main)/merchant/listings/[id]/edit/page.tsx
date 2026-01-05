@@ -84,6 +84,31 @@ export default async function EditListingPage({ params }: EditListingPageProps) 
           },
         },
       },
+      // v10.2: PlanUpgrade -> MerchantComponent (升级服务)
+      planUpgrades: {
+        select: {
+          id: true,
+          merchantComponentId: true,
+          priceOverride: true,
+          isPopular: true,
+          displayOrder: true,
+          merchantComponent: {
+            select: {
+              id: true,
+              price: true,
+              template: {
+                select: {
+                  id: true,
+                  code: true,
+                  name: true,
+                  icon: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: { displayOrder: "asc" },
+      },
     },
   });
 
