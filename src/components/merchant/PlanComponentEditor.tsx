@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import EditorHotspot from "@/components/shared/EditorHotspot";
 import ImageUploader from "@/components/ImageUploader";
+import CreateCustomServiceModal from "@/components/merchant/CreateCustomServiceModal";
 
 // ==================== 类型定义 (v10.2) ====================
 
@@ -146,6 +147,7 @@ export default function PlanComponentEditor({
 
   // 弹窗状态
   const [showBackgroundDialog, setShowBackgroundDialog] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   // 面板宽度限制
   const LEFT_MIN_WIDTH = 200;
@@ -176,49 +178,50 @@ export default function PlanComponentEditor({
 
   // ==================== 数据加载 ====================
 
-  useEffect(() => {
-    async function fetchComponents() {
-      try {
-        const response = await fetch("/api/merchant/component-overrides");
-        if (response.ok) {
-          const data = await response.json();
-          const components: MerchantComponentData[] = data.components || [];
+  const fetchComponents = useCallback(async () => {
+    try {
+      const response = await fetch("/api/merchant/component-overrides");
+      if (response.ok) {
+        const data = await response.json();
+        const components: MerchantComponentData[] = data.components || [];
 
-          // 只显示 OUTFIT 类型组件（增值服务在独立的 UpgradesTab 管理）
-          const outfitComponents = components.filter((c) => c.type === "OUTFIT");
+        // 只显示 OUTFIT 类型组件（增值服务在独立的 UpgradesTab 管理）
+        const outfitComponents = components.filter((c) => c.type === "OUTFIT");
 
-          const outfitGrouped = outfitComponents.reduce((acc, comp) => {
-            const category = comp.outfitCategory || "OTHER";
-            if (!acc[category]) acc[category] = [];
-            acc[category].push(comp);
-            return acc;
-          }, {} as Record<string, MerchantComponentData[]>);
+        const outfitGrouped = outfitComponents.reduce((acc, comp) => {
+          const category = comp.outfitCategory || "OTHER";
+          if (!acc[category]) acc[category] = [];
+          acc[category].push(comp);
+          return acc;
+        }, {} as Record<string, MerchantComponentData[]>);
 
-          const cats: ComponentCategory[] = [];
+        const cats: ComponentCategory[] = [];
 
-          for (const categoryKey of OUTFIT_CATEGORY_ORDER) {
-            if (outfitGrouped[categoryKey]?.length > 0) {
-              const config = OUTFIT_CATEGORY_CONFIG[categoryKey];
-              cats.push({
-                key: categoryKey,
-                label: config?.label || categoryKey,
-                icon: config?.icon || "📦",
-                components: outfitGrouped[categoryKey],
-              });
-            }
+        for (const categoryKey of OUTFIT_CATEGORY_ORDER) {
+          if (outfitGrouped[categoryKey]?.length > 0) {
+            const config = OUTFIT_CATEGORY_CONFIG[categoryKey];
+            cats.push({
+              key: categoryKey,
+              label: config?.label || categoryKey,
+              icon: config?.icon || "📦",
+              components: outfitGrouped[categoryKey],
+            });
           }
-
-          setCategories(cats);
-          setExpandedCategories(new Set(cats.map((c) => c.key)));
         }
-      } catch (error) {
-        console.error("Failed to fetch merchant components:", error);
-      } finally {
-        setIsLoading(false);
+
+        setCategories(cats);
+        setExpandedCategories(new Set(cats.map((c) => c.key)));
       }
+    } catch (error) {
+      console.error("Failed to fetch merchant components:", error);
+    } finally {
+      setIsLoading(false);
     }
-    fetchComponents();
   }, []);
+
+  useEffect(() => {
+    fetchComponents();
+  }, [fetchComponents]);
 
   // ==================== 计算属性 ====================
 
@@ -723,7 +726,29 @@ export default function PlanComponentEditor({
               })
             )}
           </div>
+
+          {/* 底部：创建自定义服务 */}
+          <div className="p-2 border-t border-gray-200">
+            <button
+              type="button"
+              onClick={() => setShowCreateModal(true)}
+              className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-dashed border-gray-300 rounded-lg text-[12px] text-gray-600 hover:border-sakura-400 hover:text-sakura-600 hover:bg-sakura-50/30 transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              创建自定义服务
+            </button>
+          </div>
         </div>
+
+        {/* 创建自定义服务模态框 */}
+        <CreateCustomServiceModal
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={() => {
+            fetchComponents(); // 刷新列表
+          }}
+          serviceType="BASE"
+        />
 
         {/* 左侧拖拽手柄 */}
         {!isLeftCollapsed && (

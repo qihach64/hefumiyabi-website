@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui";
 import ImageUploader from "@/components/ImageUploader";
+import CreateCustomServiceModal from "@/components/merchant/CreateCustomServiceModal";
 
 // ==================== 类型定义 ====================
 
@@ -131,6 +132,9 @@ export default function UpgradesTab({
   const [newHighlight, setNewHighlight] = useState("");
   const [showImageUploader, setShowImageUploader] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  // 创建自定义服务模态框
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   // 图片拖拽排序
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -589,6 +593,7 @@ export default function UpgradesTab({
           <div className="p-3 border-t border-gray-200">
             <button
               type="button"
+              onClick={() => setShowCreateModal(true)}
               className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-dashed border-gray-300 rounded-xl text-[13px] text-gray-600 hover:border-sakura-400 hover:text-sakura-600 hover:bg-sakura-50/30 transition-colors"
             >
               <Plus className="w-4 h-4" />
@@ -596,6 +601,18 @@ export default function UpgradesTab({
             </button>
           </div>
         </div>
+
+        {/* 创建自定义服务模态框 */}
+        <CreateCustomServiceModal
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={() => {
+            fetchUpgrades(); // 刷新列表
+            setSaveMessage({ type: "success", text: "自定义服务已提交审核" });
+            setTimeout(() => setSaveMessage(null), 3000);
+          }}
+          serviceType="ADDON"
+        />
 
         {/* ========== 右侧：配置面板 ========== */}
         <div className="flex-1 flex flex-col min-w-0 bg-white">
