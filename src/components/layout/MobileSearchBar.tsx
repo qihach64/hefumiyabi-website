@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Search, MapPin, X, Calendar, Palette, Sparkles } from "lucide-react";
 import { useSearchState } from "@/contexts/SearchStateContext";
 import { useSearchBar } from "@/contexts/SearchBarContext";
@@ -19,8 +19,12 @@ interface Theme {
 function MobileSearchBarInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const { searchState, setLocation, setDate, startSearch } = useSearchState();
   const { isHeroVisible } = useSearchBar();
+
+  // 搜索栏只在首页显示
+  const shouldHide = pathname !== '/';
   const [isMobileModalOpen, setIsMobileModalOpen] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [allLocations, setAllLocations] = useState<string[]>([]);
@@ -163,6 +167,11 @@ function MobileSearchBarInner() {
     await fetchLocations();
     setIsMobileModalOpen(true);
   };
+
+  // 非首页不渲染
+  if (shouldHide) {
+    return null;
+  }
 
   return (
     <>
