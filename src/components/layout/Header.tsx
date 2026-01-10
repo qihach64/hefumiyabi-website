@@ -32,10 +32,8 @@ export default function Header() {
   const { data: session } = useSession();
   const { isSearchBarExpanded, isHeroVisible, hideSearchBar } = useSearchBar();
 
-  // 基于路径判断是否应该隐藏搜索栏（详情页等）
-  // 这样在页面初次渲染时就能正确隐藏，不会闪烁
-  const isPlanDetailPage = pathname?.match(/^\/plans\/[^/]+$/) !== null;
-  const shouldHideSearchBar = hideSearchBar || isPlanDetailPage;
+  // 搜索栏只在首页显示
+  const shouldHideSearchBar = hideSearchBar || pathname !== '/';
   const [merchant, setMerchant] = useState<any>(null);
   const [isScrolled, setIsScrolled] = useState(false);
 
