@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - Kimono AI 客服</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-purple-50 to-purple-100 min-h-screen flex items-center justify-center">
+    <div x-data="loginApp()" class="w-full max-w-md px-4">
+        <!-- Login Card -->
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+            <!-- Header -->
+            <div class="bg-purple-600 px-4 sm:px-6 py-6 sm:py-8 text-center">
+                <div class="w-12 h-12 sm:w-16 sm:h-16 bg-white/20 rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                    <svg class="w-7 h-7 sm:w-10 sm:h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+                    </svg>
+                </div>
+                <h1 class="text-xl sm:text-2xl font-bold text-white">Kimono AI 客服</h1>
+                <p class="text-purple-200 mt-1 text-sm sm:text-base">和服租赁智能客服系统</p>
+            </div>
+
+            <!-- Tab Buttons -->
+            <div class="flex border-b border-gray-200">
+                <button
+                    @click="activeTab = 'login'"
+                    :class="activeTab === 'login' ? 'border-purple-600 text-purple-600' : 'border-transparent text-gray-500'"
+                    class="flex-1 py-3 px-4 text-center font-medium border-b-2 transition"
+                >
+                    登录
+                </button>
+                <button
+                    @click="activeTab = 'register'"
+                    :class="activeTab === 'register' ? 'border-purple-600 text-purple-600' : 'border-transparent text-gray-500'"
+                    class="flex-1 py-3 px-4 text-center font-medium border-b-2 transition"
+                >
+                    注册商家
+                </button>
+            </div>
+
+            <!-- Login Form -->
+            <div x-show="activeTab === 'login'" class="p-4 sm:p-6">
+                <form @submit.prevent="login">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">商家 ID</label>
+                            <input
+                                type="text"
+                                x-model="loginForm.tenant_id"
+                                placeholder="例如: tenant_abc123"
+                                required
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            >
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">用户名</label>
+                            <input
+                                type="text"
+                                x-model="loginForm.username"
+                                placeholder="请输入用户名"
+                                required
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            >
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">密码</label>
+                            <input
+                                type="password"
+                                x-model="loginForm.password"
+                                placeholder="请输入密码"
+                                required
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Error Message -->
+                    <div x-show="errorMessage" x-cloak class="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                        <span x-text="errorMessage"></span>
+                    </div>
+
+                    <button
+                        type="submit"
+                        :disabled="isLoading"
+                        class="w-full mt-6 bg-purple-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-purple-700 transition disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center"
+                    >
+                        <span x-show="!isLoading">登录</span>
+                        <svg x-show="isLoading" x-cloak class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </button>
+                </form>
+
+                <div class="mt-6 text-center">
+                    <a href="/" class="text-sm text-gray-500 hover:text-purple-600">
+                        以访客身份使用
+                    </a>
+                </div>
+            </div>
+
+            <!-- Register Form -->
+            <div x-show="activeTab === 'register'" x-cloak class="p-4 sm:p-6">
+                <form @submit.prevent="register">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">商家名称</label>
+                            <input
+                                type="text"
+                                x-model="registerForm.name"
+                                placeholder="例如: 京都和服店"
+                                required
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            >
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">管理员用户名</label>
+                            <input
+                                type="text"
+                                x-model="registerForm.admin_username"
+                                placeholder="请输入管理员用户名"
+                                required
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            >
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">管理员密码</label>
+                            <input
+                                type="password"
+                                x-model="registerForm.admin_password"
+                                placeholder="请输入密码（至少6位）"
+                                required
+                                minlength="6"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            >
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">确认密码</label>
+                            <input
+                                type="password"
+                                x-model="registerForm.confirm_password"
+                                placeholder="请再次输入密码"
+                                required
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            >
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">显示名称（可选）</label>
+                            <input
+                                type="text"
+                                x-model="registerForm.admin_display_name"
+                                placeholder="例如: 店长"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            >
+                        </div>
+
+                        <!-- 导入通用模板选项 -->
+                        <div class="mt-2 p-3 bg-purple-50 rounded-lg border border-purple-200">
+                            <label class="flex items-start cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    x-model="registerForm.copy_templates"
+                                    class="mt-1 w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                                >
+                                <div class="ml-3">
+                                    <span class="text-sm font-medium text-gray-700">导入通用问答模板</span>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        系统将自动导入 785 条和服相关的常见问答，帮助您快速启动客服服务。
+                                        您可以在后台自由编辑或删除这些模板。
+                                    </p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Error Message -->
+                    <div x-show="errorMessage" x-cloak class="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                        <span x-text="errorMessage"></span>
+                    </div>
+
+                    <!-- Success Message with Tenant ID -->
+                    <div x-show="registeredTenant" x-cloak class="mt-4 p-3 sm:p-4 bg-green-50 border-2 border-green-300 rounded-lg">
+                        <div class="flex items-center mb-2 sm:mb-3">
+                            <svg class="w-5 h-5 sm:w-6 sm:h-6 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span class="text-green-700 font-medium text-sm sm:text-base">注册成功！</span>
+                        </div>
+                        <div class="bg-white p-2 sm:p-3 rounded border border-green-200 mb-2 sm:mb-3">
+                            <p class="text-xs sm:text-sm text-gray-600 mb-2">请牢记以下信息用于登录：</p>
+                            <div class="space-y-2">
+                                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                                    <span class="text-xs sm:text-sm text-gray-500">商家 ID:</span>
+                                    <code class="bg-purple-100 text-purple-700 px-2 py-1 rounded font-mono text-xs sm:text-sm select-all break-all" x-text="registeredTenant?.id"></code>
+                                </div>
+                                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                                    <span class="text-xs sm:text-sm text-gray-500">商家名称:</span>
+                                    <span class="text-gray-700 text-sm" x-text="registeredTenant?.name"></span>
+                                </div>
+                                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                                    <span class="text-xs sm:text-sm text-gray-500">用户名:</span>
+                                    <span class="text-gray-700 text-sm" x-text="registeredTenant?.username"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500 mb-2 sm:mb-3">提示：点击商家ID可以选中复制</p>
+                        <button
+                            @click="goToWorkspace()"
+                            class="w-full bg-green-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-700 transition text-sm sm:text-base"
+                        >
+                            我已记录，进入工作台
+                        </button>
+                    </div>
+
+                    <button
+                        x-show="!registeredTenant"
+                        type="submit"
+                        :disabled="isLoading"
+                        class="w-full mt-6 bg-purple-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-purple-700 transition disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center"
+                    >
+                        <span x-show="!isLoading">注册商家</span>
+                        <svg x-show="isLoading" x-cloak class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <p class="text-center text-gray-500 text-sm mt-6">
+            Kimono AI 客服系统 &copy; 2024
+        </p>
+    </div>
+
+    <script>
+        function loginApp() {
+            return {
+                activeTab: 'login',
+                isLoading: false,
+                errorMessage: '',
+                successMessage: '',
+                registeredTenant: null,
+                loginForm: {
+                    tenant_id: '',
+                    username: '',
+                    password: ''
+                },
+                registerForm: {
+                    name: '',
+                    admin_username: '',
+                    admin_password: '',
+                    confirm_password: '',
+                    admin_display_name: '',
+                    copy_templates: true  // 默认勾选导入通用模板
+                },
+
+                async login() {
+                    this.errorMessage = '';
+                    this.isLoading = true;
+
+                    try {
+                        const response = await fetch('/api/v1/auth/login', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(this.loginForm)
+                        });
+
+                        const data = await response.json();
+
+                        if (!response.ok) {
+                            throw new Error(data.detail || '登录失败');
+                        }
+
+                        // Save tokens and user info
+                        localStorage.setItem('access_token', data.access_token);
+                        localStorage.setItem('refresh_token', data.refresh_token);
+                        localStorage.setItem('tenant_id', this.loginForm.tenant_id);
+
+                        // Fetch user info
+                        await this.fetchUserInfo(data.access_token);
+
+                        // Redirect to main page
+                        window.location.href = '/';
+
+                    } catch (error) {
+                        this.errorMessage = error.message;
+                    } finally {
+                        this.isLoading = false;
+                    }
+                },
+
+                async register() {
+                    this.errorMessage = '';
+                    this.successMessage = '';
+                    this.registeredTenant = null;
+
+                    // Validate passwords match
+                    if (this.registerForm.admin_password !== this.registerForm.confirm_password) {
+                        this.errorMessage = '两次输入的密码不一致';
+                        return;
+                    }
+
+                    this.isLoading = true;
+
+                    try {
+                        const response = await fetch('/api/v1/auth/register/tenant', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                name: this.registerForm.name,
+                                admin_username: this.registerForm.admin_username,
+                                admin_password: this.registerForm.admin_password,
+                                admin_display_name: this.registerForm.admin_display_name || null,
+                                copy_templates: this.registerForm.copy_templates
+                            })
+                        });
+
+                        const data = await response.json();
+
+                        if (!response.ok) {
+                            throw new Error(data.detail || '注册失败');
+                        }
+
+                        // Save tokens
+                        localStorage.setItem('access_token', data.tokens.access_token);
+                        localStorage.setItem('refresh_token', data.tokens.refresh_token);
+                        localStorage.setItem('tenant_id', data.tenant.id);
+                        localStorage.setItem('user_info', JSON.stringify({
+                            id: data.admin_user.id,
+                            username: data.admin_user.username,
+                            display_name: data.admin_user.display_name,
+                            role: data.admin_user.role,
+                            tenant_name: data.tenant.name
+                        }));
+
+                        // Show registration success with tenant info (no auto redirect)
+                        this.registeredTenant = {
+                            id: data.tenant.id,
+                            name: data.tenant.name,
+                            username: data.admin_user.username
+                        };
+
+                    } catch (error) {
+                        this.errorMessage = error.message;
+                    } finally {
+                        this.isLoading = false;
+                    }
+                },
+
+                goToWorkspace() {
+                    window.location.href = '/';
+                },
+
+                async fetchUserInfo(token) {
+                    try {
+                        const response = await fetch('/api/v1/auth/me', {
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+
+                        if (response.ok) {
+                            const user = await response.json();
+                            localStorage.setItem('user_info', JSON.stringify(user));
+                        }
+                    } catch (e) {
+                        console.error('Failed to fetch user info:', e);
+                    }
+                }
+            };
+        }
+    </script>
+</body>
+</html>
