@@ -160,11 +160,12 @@ apps/web/src/
 │   │   ├── DateTimePicker/
 │   │   └── PriceDisplay/
 │   ├── hooks/
+│   │   ├── useSearchState.ts              # nuqs 封装，替代 SearchStateContext
 │   │   ├── useMediaQuery.ts
 │   │   ├── useDebounce.ts
 │   │   └── useLocalStorage.ts
-│   ├── contexts/
-│   │   └── SearchStateContext.tsx
+│   ├── contexts/                          # 仅保留真正需要的全局 Context
+│   │   └── (按需添加)
 │   ├── lib/
 │   │   ├── prisma.ts
 │   │   ├── utils.ts
@@ -292,9 +293,177 @@ export const aiChatbotApi = {
 
 ---
 
-## 5. 数据库清理
+## 5. 状态管理架构
 
-### 5.1 删除模型
+### 5.1 分层状态管理
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         状态管理分层架构                                  │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │ 服务端状态 (tRPC + React Query)                                  │   │
+│  │ • 套餐列表、详情                                                  │   │
+│  │ • 预约数据                                                       │   │
+│  │ • 用户信息                                                       │   │
+│  │ • 商户数据                                                       │   │
+│  │ 特点：自动缓存、后台刷新、乐观更新、类型安全                        │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │ URL 状态 (nuqs)                                                  │   │
+│  │ • 搜索参数 (location, date, theme)                               │   │
+│  │ • 筛选条件                                                       │   │
+│  │ • 分页                                                           │   │
+│  │ 特点：可分享、可书签、浏览器历史正常、SSR 友好                      │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │ 客户端持久状态 (Zustand + persist)                               │   │
+│  │ • 购物车                                                         │   │
+│  │ • 收藏                                                           │   │
+│  │ • 草稿                                                           │   │
+│  │ • AI 试穿缓存                                                     │   │
+│  │ 特点：离线可用、跨页面持久                                         │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │ 表单状态 (React Hook Form + Zod)                                 │   │
+│  │ • 预约表单                                                       │   │
+│  │ • 商户套餐编辑表单                                                │   │
+│  │ • 用户资料表单                                                    │   │
+│  │ 特点：声明式验证、性能优化、类型安全                                │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │ 组件本地状态 (useState / useReducer)                             │   │
+│  │ • Modal 开关                                                     │   │
+│  │ • 临时 UI 状态                                                    │   │
+│  │ 特点：简单、无需共享                                              │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### 5.2 工具选择
+
+| 状态类型 | 工具 | 说明 |
+|----------|------|------|
+| 服务端数据 | **tRPC + React Query** | 内置于 tRPC，自动缓存和类型安全 |
+| URL 参数 | **nuqs** | 类型安全的 URL 状态管理，替代手动 searchParams |
+| 客户端持久 | **Zustand** | 保持现有，轻量且足够 |
+| 表单 | **React Hook Form + Zod** | 复杂表单的最佳实践 |
+| 组件状态 | **useState** | 简单场景足够 |
+
+### 5.3 需要迁移的状态
+
+| 当前 | 迁移到 | 理由 |
+|------|--------|------|
+| `SearchStateContext` | **nuqs** | URL 作为唯一真相来源，消除双向同步问题 |
+| `SearchBarContext` | **Zustand** 或组件内 | 简单 UI 状态不需要 Context |
+| `SearchLoadingContext` | **删除** | tRPC 自带 loading 状态 |
+| 直接 `fetch` 调用 | **tRPC** | 类型安全 + 自动缓存 |
+| 表单 `useState` | **React Hook Form** | 复杂表单更好管理 |
+
+### 5.4 URL 状态示例 (nuqs)
+
+```typescript
+// shared/hooks/useSearchState.ts
+import { useQueryState, parseAsString } from 'nuqs';
+
+export function useSearchState() {
+  const [location, setLocation] = useQueryState('location', parseAsString);
+  const [date, setDate] = useQueryState('date', parseAsString);
+  const [theme, setTheme] = useQueryState('theme', parseAsString);
+
+  return {
+    location,
+    date,
+    theme,
+    setLocation,
+    setDate,
+    setTheme,
+  };
+}
+
+// 使用
+function SearchBar() {
+  const { location, setLocation } = useSearchState();
+
+  return (
+    <input
+      value={location || ''}
+      onChange={(e) => setLocation(e.target.value)}
+    />
+  );
+}
+// URL 自动更新: ?location=京都
+```
+
+### 5.5 Zustand 优化规范
+
+```typescript
+// ✅ 正确：使用选择器，精确订阅
+const items = useCartStore((state) => state.items);
+const addItem = useCartStore((state) => state.addItem);
+
+// ✅ 正确：多个字段使用 shallow 比较
+import { shallow } from 'zustand/shallow';
+const { items, totalPrice } = useCartStore(
+  (state) => ({
+    items: state.items,
+    totalPrice: state.items.reduce((sum, i) => sum + i.price * i.quantity, 0)
+  }),
+  shallow
+);
+
+// ❌ 错误：解构整个 store (任何变化都会重渲染)
+const { items, addItem, removeItem, ... } = useCartStore();
+```
+
+### 5.6 表单状态示例 (React Hook Form)
+
+```typescript
+// features/guest/booking/components/BookingForm.tsx
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+
+const bookingSchema = z.object({
+  visitDate: z.string().min(1, '请选择日期'),
+  visitTime: z.string().min(1, '请选择时间'),
+  guestName: z.string().min(1, '请输入姓名'),
+  guestPhone: z.string().regex(/^1[3-9]\d{9}$/, '请输入有效手机号'),
+  guestEmail: z.string().email().optional(),
+});
+
+type BookingFormData = z.infer<typeof bookingSchema>;
+
+function BookingForm() {
+  const { register, handleSubmit, formState: { errors } } = useForm<BookingFormData>({
+    resolver: zodResolver(bookingSchema),
+  });
+
+  const onSubmit = (data: BookingFormData) => {
+    // 提交预约
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <input {...register('guestName')} />
+      {errors.guestName && <span>{errors.guestName.message}</span>}
+      {/* ... */}
+    </form>
+  );
+}
+```
+
+---
+
+## 6. 数据库清理
+
+### 6.1 删除模型
 
 ```prisma
 // 删除整个模型
@@ -302,7 +471,7 @@ model CampaignPlan { ... }  // 删除
 model Listing { ... }        // 删除，统一用 RentalPlan
 ```
 
-### 5.2 删除字段
+### 6.2 删除字段
 
 ```prisma
 model CartItem {
@@ -320,7 +489,7 @@ model RentalPlan {
 }
 ```
 
-### 5.3 迁移步骤
+### 6.3 迁移步骤
 
 ```bash
 # 1. 备份数据库
@@ -337,9 +506,9 @@ pnpm prisma studio
 
 ---
 
-## 6. AI 模块整合
+## 7. AI 模块整合
 
-### 6.1 AI 试穿 (packages/virtual-tryon)
+### 7.1 AI 试穿 (packages/virtual-tryon)
 
 从同事仓库整合:
 
@@ -362,7 +531,7 @@ packages:
 }
 ```
 
-### 6.2 AI 客服 (apps/ai-chatbot)
+### 7.2 AI 客服 (apps/ai-chatbot)
 
 从 PR #5 整合:
 
@@ -382,7 +551,7 @@ CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
 ---
 
-## 7. 实施阶段
+## 8. 实施阶段
 
 | 阶段 | 内容 | 预估 | 产出 |
 |------|------|------|------|
@@ -400,7 +569,7 @@ CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
 ---
 
-## 8. Git 策略
+## 9. Git 策略
 
 ```bash
 # 创建重构分支
@@ -415,7 +584,7 @@ git merge refactor/monorepo
 
 ---
 
-## 9. 待清理清单
+## 10. 待清理清单
 
 重构过程中发现的遗留问题，记录在此，后续统一处理:
 
@@ -423,7 +592,7 @@ git merge refactor/monorepo
 
 ---
 
-## 10. 决策记录
+## 11. 决策记录
 
 | 决策项 | 选择 | 理由 |
 |--------|------|------|
@@ -434,3 +603,8 @@ git merge refactor/monorepo
 | 类型定义 | Prisma + 前端扩展 | 基础用生成类型，扩展手动定义 |
 | 共享代码规则 | 2+ 功能使用 → shared/ | 避免过度抽象 |
 | 数据库 | 清理后保持 Supabase | 成本驱动，未来迁移 AWS |
+| 服务端状态 | tRPC + React Query | 类型安全、自动缓存、内置于 tRPC |
+| URL 状态 | nuqs | 替代 Context，URL 作为唯一真相来源 |
+| 客户端状态 | Zustand (保持) | 轻量、够用、已有代码 |
+| 表单状态 | React Hook Form + Zod | 复杂表单最佳实践 |
+| 不使用 Redux | - | 项目规模不需要，工具组合已足够 |
