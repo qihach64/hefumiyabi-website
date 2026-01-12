@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Noto_Sans_SC, Noto_Serif_SC, Shippori_Mincho } from "next/font/google";
+import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { Toaster } from "sonner";
 import "./globals.css";
 import SessionProvider from "@/components/providers/SessionProvider";
@@ -43,7 +44,9 @@ export default function RootLayout({
     <html lang="zh-CN" suppressHydrationWarning>
       <body className={`${notoSansSC.variable} ${notoSerifSC.variable} ${shipporiMincho.variable} font-sans antialiased`}>
         <SessionProvider>
-          <TRPCProvider>{children}</TRPCProvider>
+          <NuqsAdapter>
+            <TRPCProvider>{children}</TRPCProvider>
+          </NuqsAdapter>
         </SessionProvider>
         <Toaster
           position="top-center"
