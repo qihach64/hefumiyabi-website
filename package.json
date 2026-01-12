@@ -43,6 +43,7 @@
     "next": "15.5.7",
     "next-auth": "5.0.0-beta.29",
     "nodemailer": "^7.0.9",
+    "nuqs": "^2.8.6",
     "prisma": "^6.17.1",
     "react": "19.1.0",
     "react-dom": "19.1.0",
