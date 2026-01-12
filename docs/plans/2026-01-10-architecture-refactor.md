@@ -678,59 +678,171 @@ pnpm dev
 
 ## 7. AI 模块整合
 
-> **策略**: AI 试穿代码直接整合到主项目；AI 客服保持独立仓库，通过 REST API 调用。
+> **决策**: AI 试穿源码内联（技术栈一致）；AI 客服 REST + OpenAPI 类型生成（保持 Python 独立服务）。
 
-### 7.1 AI 试穿 (整合到 features/guest/virtual-tryon/)
+### 7.1 AI 试穿：源码内联
 
-从同事仓库复制代码到主项目:
+**来源**: `packages/virtual-tryon/` (commit a0eae8b)
 
-```bash
-# 1. 复制试穿相关代码到 features 目录
-cp -r ../hefumiyabi-ai/packages/virtual-tryon/src/* src/features/guest/virtual-tryon/
+**策略**: 复制源码到主项目，重构为 FSD 结构。
 
-# 2. 目录结构
+```
 src/features/guest/virtual-tryon/
 ├── components/
+│   ├── TryOnCanvas.tsx
 │   ├── TryOnUploader.tsx
 │   ├── TryOnResult.tsx
+│   ├── KimonoSelector.tsx
 │   └── index.ts
 ├── hooks/
-│   └── useTryOn.ts
+│   ├── useTryOn.ts
+│   └── useTryOnHistory.ts
 ├── services/
-│   └── tryonService.ts        # Replicate / Gemini API 调用
+│   └── tryonService.ts        # Gemini API 调用
+├── types.ts
 └── index.ts
-
-# 3. 更新导入路径
-# 旧: import { ... } from '@hefumiyabi/virtual-tryon'
-# 新: import { ... } from '@/features/guest/virtual-tryon'
 ```
 
-### 7.2 AI 客服 (独立仓库 + REST API)
+**重构要点**:
+- 删除现有 `src/components/virtual-tryon/` 草稿代码
+- 从 `packages/virtual-tryon/` 迁移核心逻辑
+- 适配主项目的 API route (`/api/virtual-tryon`)
+- 使用 tRPC 替代直接 fetch
 
-保持独立仓库，部署到 AWS:
+### 7.2 AI 客服：REST + OpenAPI 类型生成
+
+**来源**: PR #5 (Python FastAPI, 114 文件, RAG + 知识库)
+
+**策略**: 保持 Python 独立服务，通过 OpenAPI 生成 TypeScript 客户端。
+
+#### 架构图
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Python FastAPI (AI Chatbot)                    AWS ECS     │
+│                                                             │
+│  GET  /openapi.json  ← OpenAPI schema                       │
+│  POST /chat          ← 对话接口                              │
+│  POST /chat/stream   ← 流式响应 (SSE)                        │
+│  GET  /health        ← 健康检查                              │
+└─────────────────────────────────────────────────────────────┘
+           │
+           │ 构建时：openapi-typescript 生成类型
+           ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Kimono One (Next.js)                           Vercel      │
+│                                                             │
+│  src/shared/api/                                            │
+│  ├── generated/                                             │
+│  │   └── chatbot.d.ts      ← 自动生成的类型                  │
+│  └── chatbot.ts            ← 封装客户端                      │
+│                                                             │
+│  src/features/guest/chat/                                   │
+│  └── components/                                            │
+│      └── ChatWidget.tsx    ← UI 组件                        │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### 类型生成流程
 
 ```bash
-# AI 客服仓库保持独立
-# 部署: AWS Lambda / ECS
+# 1. 安装依赖
+pnpm add -D openapi-typescript
 
-# 主项目通过 REST API 调用
-# src/shared/api/ai-chatbot.ts
+# 2. 生成类型 (添加到 package.json scripts)
+"generate:chatbot-types": "openapi-typescript $AI_CHATBOT_URL/openapi.json -o src/shared/api/generated/chatbot.d.ts"
+
+# 3. CI/CD 中自动更新
+pnpm generate:chatbot-types
 ```
 
-```typescript
-// shared/api/ai-chatbot.ts
-const AI_CHATBOT_URL = process.env.NEXT_PUBLIC_AI_CHATBOT_URL;
+#### 封装客户端
 
-export const aiChatbotApi = {
+```typescript
+// src/shared/api/chatbot.ts
+import type { paths } from './generated/chatbot';
+import createClient from 'openapi-fetch';
+
+const client = createClient<paths>({
+  baseUrl: process.env.NEXT_PUBLIC_AI_CHATBOT_URL,
+});
+
+export const chatbotApi = {
+  // 普通对话
   async chat(message: string, sessionId: string) {
-    const res = await fetch(`${AI_CHATBOT_URL}/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message, sessionId }),
+    const { data, error } = await client.POST('/chat', {
+      body: { message, session_id: sessionId },
     });
-    return res.json();
+    if (error) throw new Error(error.detail);
+    return data;
+  },
+
+  // 流式对话 (SSE)
+  async *chatStream(message: string, sessionId: string) {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_AI_CHATBOT_URL}/chat/stream`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, session_id: sessionId }),
+      }
+    );
+    const reader = response.body?.getReader();
+    const decoder = new TextDecoder();
+
+    while (reader) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      yield decoder.decode(value);
+    }
   },
 };
+```
+
+#### 前端使用
+
+```typescript
+// src/features/guest/chat/components/ChatWidget.tsx
+import { chatbotApi } from '@/shared/api/chatbot';
+
+function ChatWidget() {
+  const [messages, setMessages] = useState<Message[]>([]);
+
+  const sendMessage = async (text: string) => {
+    // 类型安全，有自动补全
+    const response = await chatbotApi.chat(text, sessionId);
+    setMessages(prev => [...prev, { role: 'assistant', content: response.message }]);
+  };
+
+  // 或使用流式
+  const sendMessageStream = async (text: string) => {
+    let content = '';
+    for await (const chunk of chatbotApi.chatStream(text, sessionId)) {
+      content += chunk;
+      setMessages(prev => [...prev.slice(0, -1), { role: 'assistant', content }]);
+    }
+  };
+}
+```
+
+#### Python 端要求
+
+```python
+# FastAPI 自动生成 OpenAPI，确保类型完整
+from pydantic import BaseModel
+
+class ChatRequest(BaseModel):
+    message: str
+    session_id: str
+
+class ChatResponse(BaseModel):
+    message: str
+    sources: list[str] | None = None  # RAG 来源
+
+@app.post("/chat", response_model=ChatResponse)
+async def chat(request: ChatRequest) -> ChatResponse:
+    # RAG 处理...
+    return ChatResponse(message=result, sources=sources)
 ```
 
 ---
@@ -836,3 +948,5 @@ git push origin backup/pre-refactor-2026-01-11
 | 不使用 Redux | - | 项目规模不需要，工具组合已足够 |
 | **iOS App** | **暂不考虑** | 优先完成 Web 重构，后续通过服务层支持 REST API |
 | **时间规划** | **3 周** | 包含缓冲时间，审核反馈调整 |
+| **AI 试穿** | **源码内联** | 技术栈一致 (TypeScript)，无网络延迟，单一部署 |
+| **AI 客服** | **REST + OpenAPI 类型生成** | Python 独立服务，复杂度高 (RAG/知识库)，类型安全 |
