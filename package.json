@@ -28,6 +28,10 @@
     "@prisma/client": "^6.17.1",
     "@supabase/supabase-js": "^2.81.1",
     "@tanstack/react-query": "^5.90.3",
+    "@trpc/client": "^11.8.1",
+    "@trpc/next": "^11.8.1",
+    "@trpc/react-query": "^11.8.1",
+    "@trpc/server": "^11.8.1",
     "@upstash/redis": "^1.35.6",
     "bcryptjs": "^3.0.2",
     "class-variance-authority": "^0.7.1",
@@ -45,6 +49,7 @@
     "react-hook-form": "^7.65.0",
     "replicate": "^1.3.1",
     "sonner": "^2.0.7",
+    "superjson": "^2.2.6",
     "tailwind-merge": "^3.3.1",
     "zod": "^4.1.12",
     "zustand": "^5.0.8"
