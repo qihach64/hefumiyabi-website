@@ -3,6 +3,7 @@ import { Noto_Sans_SC, Noto_Serif_SC, Shippori_Mincho } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
 import SessionProvider from "@/components/providers/SessionProvider";
+import { TRPCProvider } from "@/shared/api";
 
 const notoSansSC = Noto_Sans_SC({
   subsets: ["latin"],
@@ -41,7 +42,9 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" suppressHydrationWarning>
       <body className={`${notoSansSC.variable} ${notoSerifSC.variable} ${shipporiMincho.variable} font-sans antialiased`}>
-        <SessionProvider>{children}</SessionProvider>
+        <SessionProvider>
+          <TRPCProvider>{children}</TRPCProvider>
+        </SessionProvider>
         <Toaster
           position="top-center"
           toastOptions={{
