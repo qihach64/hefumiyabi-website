@@ -1,3 +1,5 @@
+'use client';
+
 import { useQueryState, parseAsString, parseAsInteger } from 'nuqs';
 
 export function useSearchState() {

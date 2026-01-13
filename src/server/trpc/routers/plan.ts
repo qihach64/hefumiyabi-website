@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { TRPCError } from '@trpc/server';
 import { router, publicProcedure } from '../trpc';
 import { planService } from '@/server/services/plan.service';
 
@@ -20,7 +21,11 @@ export const planRouter = router({
   getById: publicProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ input }) => {
-      return planService.getById(input.id);
+      const plan = await planService.getById(input.id);
+      if (!plan) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Plan not found' });
+      }
+      return plan;
     }),
 
   featured: publicProcedure

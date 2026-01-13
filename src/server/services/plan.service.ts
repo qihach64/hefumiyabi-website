@@ -21,21 +21,24 @@ export const planService = {
       where.theme = { slug: theme };
     }
 
-    if (storeId) {
-      where.planStores = { some: { storeId } };
-    }
+    // Build planStores filter (combine storeId and location if both provided)
+    if (storeId || location) {
+      const storeFilter: Prisma.PlanStoreWhereInput = {};
 
-    if (location) {
-      where.planStores = {
-        some: {
-          store: {
-            OR: [
-              { city: { contains: location, mode: 'insensitive' } },
-              { name: { contains: location, mode: 'insensitive' } },
-            ],
-          },
-        },
-      };
+      if (storeId) {
+        storeFilter.storeId = storeId;
+      }
+
+      if (location) {
+        storeFilter.store = {
+          OR: [
+            { city: { contains: location, mode: 'insensitive' } },
+            { name: { contains: location, mode: 'insensitive' } },
+          ],
+        };
+      }
+
+      where.planStores = { some: storeFilter };
     }
 
     const [plans, total] = await Promise.all([
