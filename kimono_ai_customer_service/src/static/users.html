@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户管理 - Kimono AI 客服</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div x-data="usersApp()" x-init="init()" class="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+        <!-- Header -->
+        <header class="bg-white rounded-xl shadow-sm p-3 sm:p-4 mb-4 sm:mb-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2 sm:space-x-3">
+                    <a href="/" class="p-1.5 sm:p-2 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition" title="返回首页">
+                        <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
+                    </a>
+                    <div class="w-8 h-8 sm:w-10 sm:h-10 bg-purple-600 rounded-lg flex items-center justify-center">
+                        <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-lg sm:text-xl font-bold text-gray-800">用户管理</h1>
+                        <p class="hidden sm:block text-sm text-gray-500">管理客服人员账户</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2 sm:space-x-4">
+                    <!-- User Info -->
+                    <template x-if="isLoggedIn">
+                        <div class="flex items-center space-x-2 sm:space-x-3">
+                            <!-- 桌面端：显示完整信息 -->
+                            <div class="hidden sm:block text-right">
+                                <p class="text-sm font-medium text-gray-700" x-text="userInfo?.display_name || userInfo?.username"></p>
+                                <p class="text-xs text-gray-500" x-text="userInfo?.role === 'tenant_admin' ? '管理员' : '客服'"></p>
+                            </div>
+                            <!-- 移动端：显示头像 -->
+                            <div class="sm:hidden w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-white text-sm font-medium"
+                                 x-text="(userInfo?.display_name || userInfo?.username || 'U').charAt(0).toUpperCase()">
+                            </div>
+                            <button
+                                @click="logout"
+                                class="px-2 sm:px-3 py-1.5 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                                title="退出登录"
+                            >
+                                退出
+                            </button>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </header>
+
+        <!-- Not Logged In or Not Admin -->
+        <template x-if="!isLoggedIn || !isAdmin">
+            <div class="bg-white rounded-xl shadow-sm p-8 text-center">
+                <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
+                </div>
+                <h2 class="text-xl font-semibold text-gray-700 mb-2">访问受限</h2>
+                <p class="text-gray-500 mb-4" x-text="!isLoggedIn ? '请先登录管理员账户' : '仅管理员可以访问此页面'"></p>
+                <a href="/static/login.html" class="inline-block px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
+                    前往登录
+                </a>
+            </div>
+        </template>
+
+        <!-- Main Content (Admin Only) -->
+        <template x-if="isLoggedIn && isAdmin">
+            <div>
+                <!-- Stats & Actions Bar -->
+                <div class="bg-white rounded-xl shadow-sm p-3 sm:p-4 mb-4 sm:mb-6">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+                        <div class="flex items-center space-x-4 sm:space-x-6">
+                            <div class="text-center">
+                                <p class="text-xl sm:text-2xl font-bold text-purple-600" x-text="users.length"></p>
+                                <p class="text-xs text-gray-500">总用户</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-xl sm:text-2xl font-bold text-green-600" x-text="users.filter(u => u.is_active).length"></p>
+                                <p class="text-xs text-gray-500">活跃</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-xl sm:text-2xl font-bold text-gray-400" x-text="users.filter(u => !u.is_active).length"></p>
+                                <p class="text-xs text-gray-500">禁用</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2 sm:space-x-3 w-full sm:w-auto">
+                            <label class="flex items-center space-x-1.5 sm:space-x-2 text-xs sm:text-sm text-gray-600">
+                                <input type="checkbox" x-model="showInactive" @change="loadUsers" class="rounded text-purple-600 focus:ring-purple-500">
+                                <span>显示禁用</span>
+                            </label>
+                            <button
+                                @click="openAddModal"
+                                class="flex items-center space-x-1 sm:space-x-2 px-3 sm:px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm sm:text-base"
+                            >
+                                <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                </svg>
+                                <span>添加</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+                <div x-show="isLoading" class="bg-white rounded-xl shadow-sm p-8 text-center">
+                    <svg class="w-10 h-10 text-purple-600 animate-spin mx-auto mb-4" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <p class="text-gray-500">加载中...</p>
+                </div>
+
+                <!-- Error Message -->
+                <div x-show="errorMessage" x-cloak class="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+                    <div class="flex items-center space-x-2 text-red-700">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span x-text="errorMessage"></span>
+                    </div>
+                </div>
+
+                <!-- Success Message -->
+                <div x-show="successMessage" x-cloak class="bg-green-50 border border-green-200 rounded-xl p-4 mb-6">
+                    <div class="flex items-center space-x-2 text-green-700">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span x-text="successMessage"></span>
+                    </div>
+                </div>
+
+                <!-- Users Table -->
+                <div x-show="!isLoading" class="bg-white rounded-xl shadow-sm overflow-hidden">
+                    <!-- Empty State -->
+                    <div x-show="users.length === 0" class="p-8 text-center">
+                        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-700 mb-2">暂无用户</h3>
+                        <p class="text-gray-500 mb-4">点击上方按钮添加客服人员</p>
+                    </div>
+
+                    <!-- 桌面端表格 -->
+                    <div x-show="users.length > 0" class="hidden sm:block overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50 border-b border-gray-200">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">用户</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">角色</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">最后登录</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">创建时间</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                <template x-for="user in users" :key="user.id">
+                                    <tr :class="!user.is_active ? 'bg-gray-50' : ''">
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center">
+                                                <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-medium"
+                                                     :class="user.role === 'tenant_admin' ? 'bg-purple-600' : 'bg-blue-500'"
+                                                     x-text="(user.display_name || user.username).charAt(0).toUpperCase()">
+                                                </div>
+                                                <div class="ml-3">
+                                                    <p class="text-sm font-medium text-gray-900" x-text="user.display_name || user.username"></p>
+                                                    <p class="text-xs text-gray-500" x-text="'@' + user.username"></p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full"
+                                                  :class="user.role === 'tenant_admin' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'"
+                                                  x-text="user.role === 'tenant_admin' ? '管理员' : '客服'">
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full"
+                                                  :class="user.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'"
+                                                  x-text="user.is_active ? '活跃' : '已禁用'">
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="formatDate(user.last_login)"></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="formatDate(user.created_at)"></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                                            <div class="flex items-center justify-end space-x-2">
+                                                <button @click="openEditModal(user)" class="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="编辑">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                    </svg>
+                                                </button>
+                                                <button @click="toggleUserActive(user)" :disabled="user.id === userInfo?.id" :class="user.id === userInfo?.id ? 'opacity-30 cursor-not-allowed' : 'hover:bg-yellow-50'" class="p-1.5 text-gray-400 hover:text-yellow-600 rounded-lg transition" :title="user.is_active ? '禁用' : '启用'">
+                                                    <svg x-show="user.is_active" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
+                                                    </svg>
+                                                    <svg x-show="!user.is_active" x-cloak class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                    </svg>
+                                                </button>
+                                                <button @click="openResetPasswordModal(user)" class="p-1.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition" title="重置密码">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 移动端卡片列表 -->
+                    <div x-show="users.length > 0" class="sm:hidden divide-y divide-gray-200">
+                        <template x-for="user in users" :key="'mobile-' + user.id">
+                            <div class="p-3" :class="!user.is_active ? 'bg-gray-50' : ''">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-medium text-sm"
+                                             :class="user.role === 'tenant_admin' ? 'bg-purple-600' : 'bg-blue-500'"
+                                             x-text="(user.display_name || user.username).charAt(0).toUpperCase()">
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-900" x-text="user.display_name || user.username"></p>
+                                            <p class="text-xs text-gray-500" x-text="'@' + user.username"></p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-1">
+                                        <button @click="openEditModal(user)" class="p-1.5 text-gray-400 hover:text-blue-600 rounded-lg">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                            </svg>
+                                        </button>
+                                        <button @click="toggleUserActive(user)" :disabled="user.id === userInfo?.id" :class="user.id === userInfo?.id ? 'opacity-30' : ''" class="p-1.5 text-gray-400 hover:text-yellow-600 rounded-lg">
+                                            <svg x-show="user.is_active" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
+                                            </svg>
+                                            <svg x-show="!user.is_active" x-cloak class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                        </button>
+                                        <button @click="openResetPasswordModal(user)" class="p-1.5 text-gray-400 hover:text-purple-600 rounded-lg">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="mt-2 flex items-center space-x-2">
+                                    <span class="px-2 py-0.5 text-xs font-medium rounded-full"
+                                          :class="user.role === 'tenant_admin' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'"
+                                          x-text="user.role === 'tenant_admin' ? '管理员' : '客服'">
+                                    </span>
+                                    <span class="px-2 py-0.5 text-xs font-medium rounded-full"
+                                          :class="user.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'"
+                                          x-text="user.is_active ? '活跃' : '禁用'">
+                                    </span>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <!-- Add User Modal -->
+        <div
+            x-show="showAddModal"
+            x-cloak
+            class="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50"
+            @click.self="closeAddModal"
+        >
+            <div class="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl max-w-md w-full sm:mx-4 max-h-[90vh] overflow-hidden flex flex-col" @click.stop>
+                <div class="bg-purple-600 text-white px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between flex-shrink-0">
+                    <h2 class="text-base sm:text-lg font-semibold">添加用户</h2>
+                    <button @click="closeAddModal" class="p-1 hover:bg-purple-700 rounded-lg transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <form @submit.prevent="addUser" class="p-6 space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">用户名 <span class="text-red-500">*</span></label>
+                        <input
+                            type="text"
+                            x-model="addForm.username"
+                            placeholder="请输入用户名"
+                            required
+                            minlength="3"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        >
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">显示名称</label>
+                        <input
+                            type="text"
+                            x-model="addForm.display_name"
+                            placeholder="例如: 客服小张"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        >
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">密码 <span class="text-red-500">*</span></label>
+                        <input
+                            type="password"
+                            x-model="addForm.password"
+                            placeholder="请输入密码（至少6位）"
+                            required
+                            minlength="6"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        >
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">角色 <span class="text-red-500">*</span></label>
+                        <select
+                            x-model="addForm.role"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        >
+                            <option value="staff">客服</option>
+                            <option value="tenant_admin">管理员</option>
+                        </select>
+                    </div>
+
+                    <div x-show="addError" class="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                        <span x-text="addError"></span>
+                    </div>
+
+                    <div class="flex justify-end space-x-3 pt-4">
+                        <button
+                            type="button"
+                            @click="closeAddModal"
+                            class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition"
+                        >
+                            取消
+                        </button>
+                        <button
+                            type="submit"
+                            :disabled="addLoading"
+                            class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center space-x-2"
+                        >
+                            <span x-show="!addLoading">添加</span>
+                            <svg x-show="addLoading" x-cloak class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Edit User Modal -->
+        <div
+            x-show="showEditModal"
+            x-cloak
+            class="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50"
+            @click.self="closeEditModal"
+        >
+            <div class="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl max-w-md w-full sm:mx-4 max-h-[90vh] overflow-hidden flex flex-col" @click.stop>
+                <div class="bg-blue-600 text-white px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between flex-shrink-0">
+                    <h2 class="text-base sm:text-lg font-semibold">编辑用户</h2>
+                    <button @click="closeEditModal" class="p-1 hover:bg-blue-700 rounded-lg transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <form @submit.prevent="updateUser" class="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">用户名</label>
+                        <input
+                            type="text"
+                            :value="editForm.username"
+                            disabled
+                            class="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-100 text-gray-500"
+                        >
+                        <p class="text-xs text-gray-500 mt-1">用户名不可修改</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">显示名称</label>
+                        <input
+                            type="text"
+                            x-model="editForm.display_name"
+                            placeholder="例如: 客服小张"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">角色</label>
+                        <select
+                            x-model="editForm.role"
+                            :disabled="editForm.id === userInfo?.id"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                        >
+                            <option value="staff">客服</option>
+                            <option value="tenant_admin">管理员</option>
+                        </select>
+                        <p x-show="editForm.id === userInfo?.id" class="text-xs text-gray-500 mt-1">不能修改自己的角色</p>
+                    </div>
+
+                    <div x-show="editError" class="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                        <span x-text="editError"></span>
+                    </div>
+
+                    <div class="flex justify-end space-x-3 pt-4">
+                        <button
+                            type="button"
+                            @click="closeEditModal"
+                            class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition"
+                        >
+                            取消
+                        </button>
+                        <button
+                            type="submit"
+                            :disabled="editLoading"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center space-x-2"
+                        >
+                            <span x-show="!editLoading">保存</span>
+                            <svg x-show="editLoading" x-cloak class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Reset Password Modal -->
+        <div
+            x-show="showResetPasswordModal"
+            x-cloak
+            class="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50"
+            @click.self="closeResetPasswordModal"
+        >
+            <div class="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl max-w-md w-full sm:mx-4 max-h-[90vh] overflow-hidden flex flex-col" @click.stop>
+                <div class="bg-purple-600 text-white px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between flex-shrink-0">
+                    <h2 class="text-base sm:text-lg font-semibold">重置密码</h2>
+                    <button @click="closeResetPasswordModal" class="p-1 hover:bg-purple-700 rounded-lg transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <form @submit.prevent="resetPassword" class="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1">
+                    <div class="bg-gray-50 rounded-lg p-3">
+                        <p class="text-sm text-gray-600">正在为用户 <span class="font-medium text-gray-800" x-text="resetPasswordForm.display_name || resetPasswordForm.username"></span> 重置密码</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">新密码 <span class="text-red-500">*</span></label>
+                        <input
+                            type="password"
+                            x-model="resetPasswordForm.password"
+                            placeholder="请输入新密码（至少6位）"
+                            required
+                            minlength="6"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        >
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">确认密码 <span class="text-red-500">*</span></label>
+                        <input
+                            type="password"
+                            x-model="resetPasswordForm.confirm_password"
+                            placeholder="请再次输入新密码"
+                            required
+                            minlength="6"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        >
+                    </div>
+
+                    <div x-show="resetPasswordError" class="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                        <span x-text="resetPasswordError"></span>
+                    </div>
+
+                    <div class="flex justify-end space-x-3 pt-4">
+                        <button
+                            type="button"
+                            @click="closeResetPasswordModal"
+                            class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition"
+                        >
+                            取消
+                        </button>
+                        <button
+                            type="submit"
+                            :disabled="resetPasswordLoading"
+                            class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center space-x-2"
+                        >
+                            <span x-show="!resetPasswordLoading">重置</span>
+                            <svg x-show="resetPasswordLoading" x-cloak class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function usersApp() {
+            return {
+                // Auth state
+                isLoggedIn: false,
+                isAdmin: false,
+                userInfo: null,
+                accessToken: null,
+
+                // Data state
+                users: [],
+                isLoading: true,
+                errorMessage: '',
+                successMessage: '',
+                showInactive: true,
+
+                // Add modal state
+                showAddModal: false,
+                addForm: {
+                    username: '',
+                    display_name: '',
+                    password: '',
+                    role: 'staff'
+                },
+                addError: '',
+                addLoading: false,
+
+                // Edit modal state
+                showEditModal: false,
+                editForm: {
+                    id: '',
+                    username: '',
+                    display_name: '',
+                    role: ''
+                },
+                editError: '',
+                editLoading: false,
+
+                // Reset password modal state
+                showResetPasswordModal: false,
+                resetPasswordForm: {
+                    id: '',
+                    username: '',
+                    display_name: '',
+                    password: '',
+                    confirm_password: ''
+                },
+                resetPasswordError: '',
+                resetPasswordLoading: false,
+
+                init() {
+                    this.checkAuthStatus();
+                    if (this.isLoggedIn && this.isAdmin) {
+                        this.loadUsers();
+                    }
+                },
+
+                checkAuthStatus() {
+                    this.accessToken = localStorage.getItem('access_token');
+                    const userInfoStr = localStorage.getItem('user_info');
+
+                    if (this.accessToken && userInfoStr) {
+                        try {
+                            this.userInfo = JSON.parse(userInfoStr);
+                            this.isLoggedIn = true;
+                            this.isAdmin = this.userInfo.role === 'tenant_admin';
+                        } catch (e) {
+                            this.logout();
+                        }
+                    }
+                },
+
+                logout() {
+                    localStorage.removeItem('access_token');
+                    localStorage.removeItem('refresh_token');
+                    localStorage.removeItem('tenant_id');
+                    localStorage.removeItem('user_info');
+                    window.location.href = '/static/login.html';
+                },
+
+                getAuthHeaders() {
+                    return {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${this.accessToken}`
+                    };
+                },
+
+                async loadUsers() {
+                    this.isLoading = true;
+                    this.errorMessage = '';
+
+                    try {
+                        const response = await fetch(`/api/v1/auth/users?include_inactive=${this.showInactive}`, {
+                            headers: this.getAuthHeaders()
+                        });
+
+                        if (!response.ok) {
+                            if (response.status === 401) {
+                                this.logout();
+                                return;
+                            }
+                            throw new Error('获取用户列表失败');
+                        }
+
+                        this.users = await response.json();
+                    } catch (error) {
+                        this.errorMessage = error.message;
+                    } finally {
+                        this.isLoading = false;
+                    }
+                },
+
+                // Add user functions
+                openAddModal() {
+                    this.addForm = {
+                        username: '',
+                        display_name: '',
+                        password: '',
+                        role: 'staff'
+                    };
+                    this.addError = '';
+                    this.showAddModal = true;
+                },
+
+                closeAddModal() {
+                    this.showAddModal = false;
+                },
+
+                async addUser() {
+                    this.addError = '';
+                    this.addLoading = true;
+
+                    try {
+                        const response = await fetch('/api/v1/auth/register/user', {
+                            method: 'POST',
+                            headers: this.getAuthHeaders(),
+                            body: JSON.stringify(this.addForm)
+                        });
+
+                        const data = await response.json();
+
+                        if (!response.ok) {
+                            throw new Error(data.detail || '添加用户失败');
+                        }
+
+                        this.successMessage = `用户 ${data.display_name || data.username} 添加成功`;
+                        this.closeAddModal();
+                        await this.loadUsers();
+
+                        // Clear success message after 3 seconds
+                        setTimeout(() => {
+                            this.successMessage = '';
+                        }, 3000);
+
+                    } catch (error) {
+                        this.addError = error.message;
+                    } finally {
+                        this.addLoading = false;
+                    }
+                },
+
+                // Edit user functions
+                openEditModal(user) {
+                    this.editForm = {
+                        id: user.id,
+                        username: user.username,
+                        display_name: user.display_name,
+                        role: user.role
+                    };
+                    this.editError = '';
+                    this.showEditModal = true;
+                },
+
+                closeEditModal() {
+                    this.showEditModal = false;
+                },
+
+                async updateUser() {
+                    this.editError = '';
+                    this.editLoading = true;
+
+                    try {
+                        const updateData = {
+                            display_name: this.editForm.display_name
+                        };
+
+                        // Only include role if not editing self
+                        if (this.editForm.id !== this.userInfo?.id) {
+                            updateData.role = this.editForm.role;
+                        }
+
+                        const response = await fetch(`/api/v1/auth/users/${this.editForm.id}`, {
+                            method: 'PATCH',
+                            headers: this.getAuthHeaders(),
+                            body: JSON.stringify(updateData)
+                        });
+
+                        const data = await response.json();
+
+                        if (!response.ok) {
+                            throw new Error(data.detail || '更新用户失败');
+                        }
+
+                        this.successMessage = `用户 ${data.display_name || data.username} 更新成功`;
+                        this.closeEditModal();
+                        await this.loadUsers();
+
+                        setTimeout(() => {
+                            this.successMessage = '';
+                        }, 3000);
+
+                    } catch (error) {
+                        this.editError = error.message;
+                    } finally {
+                        this.editLoading = false;
+                    }
+                },
+
+                // Toggle active status
+                async toggleUserActive(user) {
+                    if (user.id === this.userInfo?.id) return;
+
+                    const action = user.is_active ? '禁用' : '启用';
+                    if (!confirm(`确定要${action}用户 ${user.display_name || user.username} 吗？`)) {
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch(`/api/v1/auth/users/${user.id}`, {
+                            method: 'PATCH',
+                            headers: this.getAuthHeaders(),
+                            body: JSON.stringify({
+                                is_active: !user.is_active
+                            })
+                        });
+
+                        const data = await response.json();
+
+                        if (!response.ok) {
+                            throw new Error(data.detail || `${action}用户失败`);
+                        }
+
+                        this.successMessage = `用户 ${data.display_name || data.username} 已${action}`;
+                        await this.loadUsers();
+
+                        setTimeout(() => {
+                            this.successMessage = '';
+                        }, 3000);
+
+                    } catch (error) {
+                        this.errorMessage = error.message;
+                        setTimeout(() => {
+                            this.errorMessage = '';
+                        }, 3000);
+                    }
+                },
+
+                // Reset password functions
+                openResetPasswordModal(user) {
+                    this.resetPasswordForm = {
+                        id: user.id,
+                        username: user.username,
+                        display_name: user.display_name,
+                        password: '',
+                        confirm_password: ''
+                    };
+                    this.resetPasswordError = '';
+                    this.showResetPasswordModal = true;
+                },
+
+                closeResetPasswordModal() {
+                    this.showResetPasswordModal = false;
+                },
+
+                async resetPassword() {
+                    this.resetPasswordError = '';
+
+                    if (this.resetPasswordForm.password !== this.resetPasswordForm.confirm_password) {
+                        this.resetPasswordError = '两次输入的密码不一致';
+                        return;
+                    }
+
+                    this.resetPasswordLoading = true;
+
+                    try {
+                        const response = await fetch(`/api/v1/auth/users/${this.resetPasswordForm.id}`, {
+                            method: 'PATCH',
+                            headers: this.getAuthHeaders(),
+                            body: JSON.stringify({
+                                password: this.resetPasswordForm.password
+                            })
+                        });
+
+                        const data = await response.json();
+
+                        if (!response.ok) {
+                            throw new Error(data.detail || '重置密码失败');
+                        }
+
+                        this.successMessage = `用户 ${data.display_name || data.username} 的密码已重置`;
+                        this.closeResetPasswordModal();
+
+                        setTimeout(() => {
+                            this.successMessage = '';
+                        }, 3000);
+
+                    } catch (error) {
+                        this.resetPasswordError = error.message;
+                    } finally {
+                        this.resetPasswordLoading = false;
+                    }
+                },
+
+                // Utility functions
+                formatDate(dateStr) {
+                    if (!dateStr) return '从未';
+                    const date = new Date(dateStr);
+                    return date.toLocaleString('zh-CN', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                }
+            };
+        }
+    </script>
+</body>
+</html>
