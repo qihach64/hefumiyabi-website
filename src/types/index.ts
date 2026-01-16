@@ -59,6 +59,7 @@ export interface Theme {
   name: string;
   icon: string | null;
   color: string | null;
+  coverImage?: string | null;
   description?: string | null;
 }
 
