@@ -9,3 +9,8 @@ export { LocationDropdown, useLocationDropdown } from './LocationDropdown';
 export { DateDropdown, useDateDropdown } from './DateDropdown';
 export { GuestsDropdown } from './GuestsDropdown';
 export type { GuestsDetail } from './GuestsDropdown';
+
+// Filters
+export { SearchFilterSidebar } from './SearchFilterSidebar';
+export { CategoryFilter } from './CategoryFilter';
+export { SortSelector } from './SortSelector';
