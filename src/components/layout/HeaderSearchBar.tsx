@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useTransition, useCallback, useMemo, Suspense, memo } from "react";
 import { Search, MapPin, X, Calendar, Palette, ChevronDown, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useSearchState } from "@/contexts/SearchStateContext";
+import { useSearchState } from "@/shared/hooks";
 import { useSearchBar } from "@/contexts/SearchBarContext";
 import { getThemeIcon } from "@/lib/themeIcons";
 import type { Theme } from "@/types";
@@ -14,9 +14,21 @@ const HeaderSearchBarInner = memo(function HeaderSearchBarInner() {
   console.log('[HeaderSearchBar] 🔧 Render');
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { searchState, setLocation, setDate, setTheme, startSearch, isSearching } = useSearchState();
+  const {
+    location: urlLocation,
+    setLocation: setUrlLocation,
+    date: urlDate,
+    setDate: setUrlDate,
+    theme: themeSlug,
+    setTheme: setThemeSlug,
+  } = useSearchState();
   const { isSearchBarExpanded, expandManually, hideThemeSelector } = useSearchBar();
   const [isPending, startTransition] = useTransition();
+
+  // 本地状态
+  const [localLocation, setLocalLocation] = useState(urlLocation || "");
+  const [localDate, setLocalDate] = useState(urlDate || "");
+  const [selectedTheme, setSelectedTheme] = useState<Theme | null>(null);
 
   // 自动补全相关
   const [allLocations, setAllLocations] = useState<string[]>([]);
@@ -79,6 +91,24 @@ const HeaderSearchBarInner = memo(function HeaderSearchBarInner() {
         console.error('Failed to fetch themes:', error);
       });
   }, []);
+
+  // 同步 URL 状态到本地
+  useEffect(() => {
+    setLocalLocation(urlLocation || "");
+  }, [urlLocation]);
+
+  useEffect(() => {
+    setLocalDate(urlDate || "");
+  }, [urlDate]);
+
+  useEffect(() => {
+    if (themeSlug && themes.length > 0) {
+      const found = themes.find(t => t.slug === themeSlug);
+      setSelectedTheme(found || null);
+    } else {
+      setSelectedTheme(null);
+    }
+  }, [themeSlug, themes]);
 
   // 点击外部关闭下拉菜单
   useEffect(() => {
@@ -167,12 +197,12 @@ const HeaderSearchBarInner = memo(function HeaderSearchBarInner() {
 
   // 主题选择 - 只更新状态，不立即跳转
   const handleThemeSelect = useCallback((theme: Theme | null) => {
-    setTheme(theme);
+    setSelectedTheme(theme);
     setShowThemeDropdown(false);
-  }, [setTheme]);
+  }, []);
 
   const handleLocationChange = (value: string) => {
-    setLocation(value);
+    setLocalLocation(value);
     if (value.trim() === '') {
       setFilteredLocations(allLocations.slice(0, 10));
     } else {
@@ -187,7 +217,7 @@ const HeaderSearchBarInner = memo(function HeaderSearchBarInner() {
   };
 
   const handleLocationSelect = (selectedLocation: string) => {
-    setLocation(selectedLocation);
+    setLocalLocation(selectedLocation);
     setShowLocationDropdown(false);
 
     // 自动切换到日期选择器
@@ -198,11 +228,11 @@ const HeaderSearchBarInner = memo(function HeaderSearchBarInner() {
 
   const handleLocationFocus = () => {
     if (allLocations.length > 0) {
-      if (searchState.location.trim() === '') {
+      if (localLocation.trim() === '') {
         setFilteredLocations(allLocations.slice(0, 10));
       } else {
         const filtered = allLocations.filter((loc) =>
-          loc.toLowerCase().includes(searchState.location.toLowerCase())
+          loc.toLowerCase().includes(localLocation.toLowerCase())
         );
         setFilteredLocations(filtered.slice(0, 10));
       }
@@ -324,7 +354,7 @@ const HeaderSearchBarInner = memo(function HeaderSearchBarInner() {
 
   const handleDateSelect = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
-    setDate(dateStr);
+    setLocalDate(dateStr);
     setShowDateDropdown(false);
   };
 
@@ -338,14 +368,13 @@ const HeaderSearchBarInner = memo(function HeaderSearchBarInner() {
 
   const handleSearch = () => {
     const params = new URLSearchParams();
-    if (searchState.location) params.set("location", searchState.location);
-    if (searchState.date) params.set("date", searchState.date);
-    if (searchState.theme) params.set("theme", searchState.theme.slug);
+    if (localLocation) params.set("location", localLocation);
+    if (localDate) params.set("date", localDate);
+    if (selectedTheme) params.set("theme", selectedTheme.slug);
 
     const queryString = params.toString();
     const url = queryString ? `/plans?${queryString}` : '/plans';
 
-    startSearch(searchState.theme);
     closeAllDropdowns();
 
     startTransition(() => {
@@ -366,7 +395,7 @@ const HeaderSearchBarInner = memo(function HeaderSearchBarInner() {
       >
         <MapPin className="w-3.5 h-3.5 md:w-4 md:h-4 text-sakura-500 flex-shrink-0" />
         <span className="text-xs md:text-sm font-medium text-gray-700 truncate max-w-[60px] md:max-w-[80px]">
-          {searchState.location || '目的地'}
+          {localLocation || '目的地'}
         </span>
       </button>
       <div className="w-px h-5 md:h-6 bg-gray-300 flex-shrink-0"></div>
@@ -377,8 +406,8 @@ const HeaderSearchBarInner = memo(function HeaderSearchBarInner() {
       >
         <Calendar className="w-3.5 h-3.5 md:w-4 md:h-4 text-sakura-500 flex-shrink-0" />
         <span className="text-xs md:text-sm font-medium text-gray-700 truncate max-w-[50px] md:max-w-[70px]">
-          {searchState.date
-            ? new Date(searchState.date + 'T00:00:00').toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })
+          {localDate
+            ? new Date(localDate + 'T00:00:00').toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })
             : '日期'}
         </span>
       </button>
@@ -392,13 +421,13 @@ const HeaderSearchBarInner = memo(function HeaderSearchBarInner() {
           >
             <Palette className="w-3.5 h-3.5 md:w-4 md:h-4 text-sakura-500 flex-shrink-0" />
             <span className="text-xs md:text-sm font-medium text-gray-700 truncate max-w-[50px] md:max-w-[70px]">
-              {searchState.theme ? (
+              {selectedTheme ? (
                 <span className="flex items-center gap-1">
                   {(() => {
-                    const IconComponent = getThemeIcon(searchState.theme.icon);
+                    const IconComponent = getThemeIcon(selectedTheme.icon);
                     return <IconComponent className="w-3.5 h-3.5 md:w-4 md:h-4" />;
                   })()}
-                  <span className="truncate">{searchState.theme.name}</span>
+                  <span className="truncate">{selectedTheme.name}</span>
                 </span>
               ) : '主题'}
             </span>
@@ -439,16 +468,16 @@ const HeaderSearchBarInner = memo(function HeaderSearchBarInner() {
               ref={locationInputRef}
               type="text"
               placeholder="东京、京都..."
-              value={searchState.location}
+              value={localLocation}
               onChange={(e) => handleLocationChange(e.target.value)}
               onFocus={handleLocationFocus}
               className="w-full text-xs xl:text-sm text-gray-900 placeholder-gray-400 bg-transparent border-none outline-none focus:ring-0 cursor-text pr-5 truncate"
             />
-            {searchState.location && (
+            {localLocation && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  setLocation('');
+                  setLocalLocation('');
                   setShowLocationDropdown(false);
                 }}
                 className="absolute right-0 p-0.5 hover:bg-gray-200 rounded-full transition-colors flex-shrink-0"
@@ -520,17 +549,17 @@ const HeaderSearchBarInner = memo(function HeaderSearchBarInner() {
             <span className="truncate">到店日期</span>
           </label>
           <div className="flex items-center gap-1.5">
-            <span className={`text-xs xl:text-sm truncate ${searchState.date ? 'text-gray-900' : 'text-gray-400'}`}>
-              {searchState.date ? new Date(searchState.date + 'T00:00:00').toLocaleDateString('zh-CN', {
+            <span className={`text-xs xl:text-sm truncate ${localDate ? 'text-gray-900' : 'text-gray-400'}`}>
+              {localDate ? new Date(localDate + 'T00:00:00').toLocaleDateString('zh-CN', {
                 month: 'long',
                 day: 'numeric'
               }) : '选择日期'}
             </span>
-            {searchState.date ? (
+            {localDate ? (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  setDate('');
+                  setLocalDate('');
                 }}
                 className="p-0.5 hover:bg-gray-200 rounded-full transition-colors flex-shrink-0"
                 aria-label="清空日期"
@@ -587,7 +616,7 @@ const HeaderSearchBarInner = memo(function HeaderSearchBarInner() {
                 <div className="grid grid-cols-7 gap-1">
                   {calendarData.days.map((day, index) => {
                     const dateStr = day.date.toISOString().split('T')[0];
-                    const isSelected = searchState.date === dateStr;
+                    const isSelected = localDate === dateStr;
 
                     return (
                       <button
@@ -664,20 +693,20 @@ const HeaderSearchBarInner = memo(function HeaderSearchBarInner() {
                 <span className="truncate">主题</span>
               </label>
               <div className="flex items-center gap-1.5">
-                <span className={`text-xs xl:text-sm truncate ${searchState.theme ? 'text-gray-900' : 'text-gray-400'}`}>
-                  {searchState.theme ? (
+                <span className={`text-xs xl:text-sm truncate ${selectedTheme ? 'text-gray-900' : 'text-gray-400'}`}>
+                  {selectedTheme ? (
                     <span className="flex items-center gap-1">
                       {(() => {
-                        const IconComponent = getThemeIcon(searchState.theme.icon);
+                        const IconComponent = getThemeIcon(selectedTheme.icon);
                         return <IconComponent className="w-3.5 h-3.5 xl:w-4 xl:h-4 flex-shrink-0" />;
                       })()}
-                      <span className="truncate">{searchState.theme.name}</span>
+                      <span className="truncate">{selectedTheme.name}</span>
                     </span>
                   ) : (
                     '选择主题'
                   )}
                 </span>
-                {searchState.theme ? (
+                {selectedTheme ? (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -714,7 +743,7 @@ const HeaderSearchBarInner = memo(function HeaderSearchBarInner() {
                     ) : (
                       <div className="grid grid-cols-2 gap-2">
                         {themes.map((theme) => {
-                          const isSelected = searchState.theme?.id === theme.id;
+                          const isSelected = selectedTheme?.id === theme.id;
                           const IconComponent = getThemeIcon(theme.icon);
                           return (
                             <button
@@ -747,7 +776,7 @@ const HeaderSearchBarInner = memo(function HeaderSearchBarInner() {
                     )}
                   </div>
                   {/* 清除选择 */}
-                  {searchState.theme && (
+                  {selectedTheme && (
                     <div className="px-4 pb-3 pt-1 border-t border-gray-100">
                       <button
                         onClick={() => handleThemeSelect(null)}
@@ -766,11 +795,11 @@ const HeaderSearchBarInner = memo(function HeaderSearchBarInner() {
         {/* 搜索按钮 - 展开模式显示文字 */}
         <button
           onClick={handleSearch}
-          disabled={isPending || isSearching}
+          disabled={isPending}
           className="flex-shrink-0 h-9 xl:h-11 px-3 xl:px-5 flex items-center justify-center gap-1.5 xl:gap-2 bg-sakura-500 hover:bg-sakura-600 disabled:bg-sakura-400 rounded-full shadow-md hover:shadow-lg active:scale-95 disabled:active:scale-100 transition-all duration-200 cursor-pointer"
           aria-label="搜索"
         >
-          {isPending || isSearching ? (
+          {isPending ? (
             <Loader2 className="w-4 h-4 xl:w-5 xl:h-5 text-white animate-spin" />
           ) : (
             <Search className="w-4 h-4 xl:w-5 xl:h-5 text-white" />

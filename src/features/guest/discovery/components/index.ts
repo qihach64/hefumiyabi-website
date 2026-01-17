@@ -18,3 +18,5 @@ export { HeroSearchBar } from './HeroSearchBar';
 export { SearchFilterSidebar } from './SearchFilterSidebar';
 export { CategoryFilter } from './CategoryFilter';
 export { SortSelector } from './SortSelector';
+export { MobileFilterDrawer } from './MobileFilterDrawer';
+export { StoreFilter } from './StoreFilter';

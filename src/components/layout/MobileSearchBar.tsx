@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Search, MapPin, X, Calendar, Palette, Sparkles } from "lucide-react";
-import { useSearchState } from "@/contexts/SearchStateContext";
+import { useSearchState } from "@/shared/hooks";
 import { useSearchBar } from "@/contexts/SearchBarContext";
 import { getThemeIcon } from "@/lib/themeIcons";
 
@@ -20,8 +20,20 @@ function MobileSearchBarInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
-  const { searchState, setLocation, setDate, startSearch } = useSearchState();
+  const {
+    location: urlLocation,
+    setLocation: setUrlLocation,
+    date: urlDate,
+    setDate: setUrlDate,
+    theme: themeSlug,
+    setTheme: setThemeSlug,
+  } = useSearchState();
   const { isHeroVisible } = useSearchBar();
+
+  // 本地状态
+  const [localLocation, setLocalLocation] = useState(urlLocation || "");
+  const [localDate, setLocalDate] = useState(urlDate || "");
+  const [selectedTheme, setSelectedTheme] = useState<Theme | null>(null);
 
   // 搜索栏只在首页显示
   const shouldHide = pathname !== '/';
@@ -34,16 +46,34 @@ function MobileSearchBarInner() {
   const [themes, setThemes] = useState<Theme[]>([]);
   const [isLoadingThemes, setIsLoadingThemes] = useState(false);
 
+  // 同步 URL 状态到本地
+  useEffect(() => {
+    setLocalLocation(urlLocation || "");
+  }, [urlLocation]);
+
+  useEffect(() => {
+    setLocalDate(urlDate || "");
+  }, [urlDate]);
+
+  useEffect(() => {
+    if (themeSlug && themes.length > 0) {
+      const found = themes.find(t => t.slug === themeSlug);
+      setSelectedTheme(found || null);
+    } else {
+      setSelectedTheme(null);
+    }
+  }, [themeSlug, themes]);
+
   // 主题选择立即导航到 /plans
-  const handleThemeSelect = useCallback((theme: Theme | null) => {
+  const handleThemeSelect = useCallback(async (theme: Theme | null) => {
     const params = new URLSearchParams(searchParams.toString());
 
     // 保留当前的 location 和 date
-    if (searchState.location) {
-      params.set('location', searchState.location);
+    if (localLocation) {
+      params.set('location', localLocation);
     }
-    if (searchState.date) {
-      params.set('date', searchState.date);
+    if (localDate) {
+      params.set('date', localDate);
     }
 
     // 设置或清除主题
@@ -59,10 +89,10 @@ function MobileSearchBarInner() {
     // 关闭模态框
     setIsMobileModalOpen(false);
 
-    // 设置全局加载状态并导航
-    startSearch(theme);
+    // 更新本地状态并导航
+    setSelectedTheme(theme);
     router.push(url);
-  }, [searchParams, searchState.location, searchState.date, startSearch, router]);
+  }, [searchParams, localLocation, localDate, router]);
 
   // 获取主题列表
   useEffect(() => {
@@ -97,7 +127,7 @@ function MobileSearchBarInner() {
   };
 
   const handleLocationChange = (value: string) => {
-    setLocation(value);
+    setLocalLocation(value);
     if (value.trim() === '') {
       setFilteredLocations(allLocations.slice(0, 10));
     } else {
@@ -111,11 +141,11 @@ function MobileSearchBarInner() {
 
   const handleLocationFocus = () => {
     if (allLocations.length > 0) {
-      if (searchState.location.trim() === '') {
+      if (localLocation.trim() === '') {
         setFilteredLocations(allLocations.slice(0, 10));
       } else {
         const filtered = allLocations.filter((loc) =>
-          loc.toLowerCase().includes(searchState.location.toLowerCase())
+          loc.toLowerCase().includes(localLocation.toLowerCase())
         );
         setFilteredLocations(filtered.slice(0, 10));
       }
@@ -125,9 +155,9 @@ function MobileSearchBarInner() {
 
   const handleSearch = () => {
     const params = new URLSearchParams();
-    if (searchState.location) params.set("location", searchState.location);
-    if (searchState.date) params.set("date", searchState.date);
-    if (searchState.theme) params.set("theme", searchState.theme.slug);
+    if (localLocation) params.set("location", localLocation);
+    if (localDate) params.set("date", localDate);
+    if (selectedTheme) params.set("theme", selectedTheme.slug);
 
     const queryString = params.toString();
 
@@ -139,19 +169,19 @@ function MobileSearchBarInner() {
   const getButtonText = () => {
     const parts: string[] = [];
 
-    if (searchState.location) {
-      parts.push(searchState.location);
+    if (localLocation) {
+      parts.push(localLocation);
     }
 
-    if (searchState.date) {
-      const dateObj = new Date(searchState.date + 'T00:00:00');
+    if (localDate) {
+      const dateObj = new Date(localDate + 'T00:00:00');
       const month = dateObj.getMonth() + 1;
       const day = dateObj.getDate();
       parts.push(`${month}月${day}日`);
     }
 
-    if (searchState.theme) {
-      parts.push(searchState.theme.name);
+    if (selectedTheme) {
+      parts.push(selectedTheme.name);
     }
 
     // 如果没有选择任何值，显示"开始搜索"
@@ -218,15 +248,15 @@ function MobileSearchBarInner() {
                 <input
                   type="text"
                   placeholder="东京、京都..."
-                  value={searchState.location}
+                  value={localLocation}
                   onChange={(e) => handleLocationChange(e.target.value)}
                   onFocus={handleLocationFocus}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-sakura-500 focus:ring-2 focus:ring-sakura-100 outline-none transition-all"
                 />
-                {searchState.location && (
+                {localLocation && (
                   <button
                     onClick={() => {
-                      setLocation('');
+                      setLocalLocation('');
                       setShowDropdown(false);
                     }}
                     className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-200 rounded-full transition-colors"
@@ -243,7 +273,7 @@ function MobileSearchBarInner() {
                     <button
                       key={index}
                       onClick={() => {
-                        setLocation(loc);
+                        setLocalLocation(loc);
                         setShowDropdown(false);
                       }}
                       className="w-full px-4 py-3 text-left flex items-center gap-3 hover:bg-sakura-50 active:bg-sakura-100 transition-colors border-b border-gray-100 last:border-b-0"
@@ -262,16 +292,16 @@ function MobileSearchBarInner() {
                 <Calendar className="w-4 h-4 text-sakura-500" />
                 到店日期
               </label>
-              {searchState.date ? (
+              {localDate ? (
                 <div className="relative">
                   <input
                     type="date"
-                    value={searchState.date}
-                    onChange={(e) => setDate(e.target.value)}
+                    value={localDate}
+                    onChange={(e) => setLocalDate(e.target.value)}
                     className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-xl focus:border-sakura-500 focus:ring-2 focus:ring-sakura-100 outline-none transition-all text-gray-900 [&::-webkit-calendar-picker-indicator]:hidden [&::-moz-calendar-picker-indicator]:hidden"
                   />
                   <button
-                    onClick={() => setDate('')}
+                    onClick={() => setLocalDate('')}
                     className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-200 rounded-full transition-colors"
                   >
                     <X className="w-4 h-4 text-gray-500" />
@@ -291,7 +321,7 @@ function MobileSearchBarInner() {
                     input.onchange = (event) => {
                       const target = event.target as HTMLInputElement;
                       if (target.value) {
-                        setDate(target.value);
+                        setLocalDate(target.value);
                       }
                       document.body.removeChild(input);
                     };
@@ -335,7 +365,7 @@ function MobileSearchBarInner() {
                     <button
                       onClick={() => handleThemeSelect(null)}
                       className={`px-3 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-1.5 ${
-                        !searchState.theme
+                        !selectedTheme
                           ? 'bg-sakura-500 text-white shadow-sm'
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
@@ -350,7 +380,7 @@ function MobileSearchBarInner() {
                           key={theme.id}
                           onClick={() => handleThemeSelect(theme)}
                           className={`px-3 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-1.5 ${
-                            searchState.theme?.id === theme.id
+                            selectedTheme?.id === theme.id
                               ? 'bg-sakura-500 text-white shadow-sm'
                               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                           }`}

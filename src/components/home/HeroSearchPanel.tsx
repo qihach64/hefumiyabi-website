@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { MapPin, Calendar, Search, ChevronLeft, ChevronRight, Sparkles, X } from "lucide-react";
 import { getThemeIcon } from "@/lib/themeIcons";
-import { useSearchState } from "@/contexts/SearchStateContext";
+import { useSearchState } from "@/shared/hooks";
 import { useLocationDropdown } from "@/components/search/LocationDropdown";
 import DateDropdown, { useDateDropdown } from "@/components/search/DateDropdown";
 
@@ -24,25 +24,63 @@ interface HeroSearchPanelProps {
 
 export default function HeroSearchPanel({ themes, variant = "dark", onDropdownOpenChange }: HeroSearchPanelProps) {
   const router = useRouter();
-  // 使用全局搜索状态，与 Header 搜索栏同步
-  const { searchState, setLocation, setDate, setTheme, startSearch } = useSearchState();
+  // 使用 nuqs-based 搜索状态
+  const {
+    location: urlLocation,
+    setLocation: setUrlLocation,
+    date: urlDate,
+    setDate: setUrlDate,
+    theme: themeSlug,
+    setTheme: setThemeSlug,
+  } = useSearchState();
+
+  // 本地状态 (用于输入控制)
+  const [location, setLocalLocation] = useState(urlLocation || "");
+  const [date, setLocalDate] = useState(urlDate || "");
+  const [selectedTheme, setSelectedTheme] = useState<Theme | null>(null);
+
   const themesScrollRef = useRef<HTMLDivElement>(null);
   const locationContainerRef = useRef<HTMLDivElement>(null);
   const locationDropdownRef = useRef<HTMLDivElement>(null);
   const dateContainerRef = useRef<HTMLDivElement>(null);
   const isLight = variant === "light";
 
-  // 从全局状态读取
-  const location = searchState.location;
-  const date = searchState.date;
-  const selectedTheme = searchState.theme;
+  // 同步 URL 主题到本地 Theme 对象
+  useEffect(() => {
+    if (themeSlug && themes.length > 0) {
+      const found = themes.find(t => t.slug === themeSlug);
+      setSelectedTheme(found || null);
+    } else {
+      setSelectedTheme(null);
+    }
+  }, [themeSlug, themes]);
+
+  // 同步 URL location 到本地
+  useEffect(() => {
+    setLocalLocation(urlLocation || "");
+  }, [urlLocation]);
+
+  // 同步 URL date 到本地
+  useEffect(() => {
+    setLocalDate(urlDate || "");
+  }, [urlDate]);
 
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
   // 设置主题的包装函数（用于主题选择按钮）
-  const setSelectedTheme = (theme: Theme | null) => {
-    setTheme(theme);
+  const handleThemeSelect = (theme: Theme | null) => {
+    setSelectedTheme(theme);
+  };
+
+  // 设置 location 的包装函数
+  const setLocation = (value: string) => {
+    setLocalLocation(value);
+  };
+
+  // 设置 date 的包装函数
+  const setDate = (value: string) => {
+    setLocalDate(value);
   };
 
   // 使用共享的 location dropdown hook
@@ -113,14 +151,19 @@ export default function HeroSearchPanel({ themes, variant = "dark", onDropdownOp
     }
   };
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
+    // 更新 URL 状态
+    await Promise.all([
+      setUrlLocation(location || null),
+      setUrlDate(date || null),
+      setThemeSlug(selectedTheme?.slug || null),
+    ]);
+
+    // 构建搜索参数并导航
     const params = new URLSearchParams();
     if (location) params.set("location", location);
     if (date) params.set("date", date);
     if (selectedTheme) params.set("theme", selectedTheme.slug);
-
-    // 设置全局搜索状态，让 /plans 页面的 ThemePills 立即显示选中状态
-    startSearch(selectedTheme);
 
     const queryString = params.toString();
     router.push(queryString ? `/plans?${queryString}` : "/plans");
@@ -358,7 +401,7 @@ export default function HeroSearchPanel({ themes, variant = "dark", onDropdownOp
           >
             {/* 全部选项 */}
             <button
-              onClick={() => setSelectedTheme(null)}
+              onClick={() => handleThemeSelect(null)}
               className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
                 !selectedTheme
                   ? "bg-sakura-500 text-white shadow-md"
@@ -378,7 +421,7 @@ export default function HeroSearchPanel({ themes, variant = "dark", onDropdownOp
               return (
                 <button
                   key={theme.id}
-                  onClick={() => setSelectedTheme(isSelected ? null : theme)}
+                  onClick={() => handleThemeSelect(isSelected ? null : theme)}
                   className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
                     isSelected
                       ? "bg-sakura-500 text-white shadow-md"
