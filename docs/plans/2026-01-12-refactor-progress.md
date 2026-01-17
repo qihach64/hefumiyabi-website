@@ -1,13 +1,13 @@
 # Architecture Refactor Progress
 
-> 最后更新: 2026-01-12
+> 最后更新: 2026-01-16
 
 ## 概览
 
 | 阶段 | 状态 | 进度 |
 |------|------|------|
 | Week 1: Foundation | ✅ 完成 | 100% |
-| Week 2: Feature Migration | 🔲 待开始 | 0% |
+| Week 2: Feature Migration | ✅ 完成 | 100% |
 | Week 3: AI + Cleanup | 🔲 待开始 | 0% |
 
 **当前分支:** `refactor/architecture`
@@ -132,21 +132,97 @@ src/
 
 ---
 
-## 下一步: Week 2
+## Week 2: Feature Migration ✅
+
+### 已完成任务
+
+| Task | 描述 | Commit | 状态 |
+|------|------|--------|------|
+| 2.1 | 创建 discovery 特性目录结构 | `fe7bc81` | ✅ |
+| 2.2 | 迁移 ClientThemePills | `4cb6793` | ✅ |
+| 2.3 | 迁移 ThemeImageSelector | `4cb6793` | ✅ |
+| 2.4 | 迁移 LocationDropdown | `4cb6793` | ✅ |
+| 2.5 | 迁移 DateDropdown | `4cb6793` | ✅ |
+| 2.6 | 迁移 GuestsDropdown | `4cb6793` | ✅ |
+| 2.7 | 迁移 SearchFilterSidebar | `ede4ba3` | ✅ |
+| 2.8 | 迁移 CategoryFilter | `ede4ba3` | ✅ |
+| 2.9 | 迁移 SortSelector | `ede4ba3` | ✅ |
+| 2.10 | 迁移 HeroSearchBar (nuqs) | `b53bfce` | ✅ |
+| 2.11 | 创建 usePlanList hook | `a7436d5` | ✅ |
+| 2.12 | 创建 usePlanDetail hook | `a7436d5` | ✅ |
+| 2.13 | 更新 HeaderSearchBar (nuqs) | `9e1c3e5` | ✅ |
+| 2.14 | 更新 MobileSearchBar (nuqs) | `9e1c3e5` | ✅ |
+| 2.15 | 更新 HeroSearchPanel (nuqs) | `9e1c3e5` | ✅ |
+| 2.16 | 移除 SearchStateProvider | `5d66a83` | ✅ |
+| 2.17 | 删除 SearchStateContext | `e4fd9c0` | ✅ |
+| 2.18 | 创建 plans 特性模块 | `e77319b` | ✅ |
+| 2.19 | 创建 booking 特性模块 | `e4fd9c0` | ✅ |
+| 2.20 | Week 2 Milestone 验证 | - | ✅ |
+
+### 技术决策
+
+| 决策 | 说明 |
+|------|------|
+| SearchLoadingContext 保留 | 仅用于 HomeClient loading 状态，非关键 |
+| 组件 Re-export 模式 | 特性模块 re-export 原始组件，避免大规模文件移动 |
+| Local State + Sync | 布局组件使用本地状态 + useEffect 同步 URL 状态 |
+
+### 迁移文件结构
+
+```
+src/features/guest/
+├── discovery/
+│   ├── components/
+│   │   ├── ClientThemePills.tsx
+│   │   ├── ThemeImageSelector.tsx
+│   │   ├── ThemeDropdown.tsx
+│   │   ├── LocationDropdown.tsx
+│   │   ├── DateDropdown.tsx
+│   │   ├── GuestsDropdown.tsx
+│   │   ├── HeroSearchBar.tsx
+│   │   ├── SearchFilterSidebar.tsx
+│   │   ├── CategoryFilter.tsx
+│   │   ├── SortSelector.tsx
+│   │   ├── MobileFilterDrawer.tsx
+│   │   ├── StoreFilter.tsx
+│   │   └── index.ts
+│   └── index.ts
+├── plans/
+│   ├── components/
+│   │   └── index.ts (re-exports)
+│   ├── hooks/
+│   │   ├── usePlanList.ts
+│   │   ├── usePlanDetail.ts
+│   │   └── index.ts
+│   └── index.ts
+└── booking/
+    ├── components/
+    │   └── index.ts (re-exports)
+    └── index.ts
+```
+
+### 删除文件
+
+- `src/contexts/SearchStateContext.tsx` - 已被 nuqs useSearchState 替代
+- `src/components/HeroSearchBar.tsx` - 迁移到 features/guest/discovery
+- `src/components/ClientThemePills.tsx` - 迁移到 features/guest/discovery
+
+---
+
+## 下一步: Week 3
 
 ### 待完成任务
 
-1. **guest/discovery** - 搜索栏、过滤器迁移
-2. **guest/plans** - 套餐列表、详情页迁移
-3. **guest/booking** - 购物车、预约流程迁移
-4. **guest/profile** - 用户中心迁移
-5. **删除旧 Context** - SearchStateContext 等
+1. **AI 试穿服务迁移** - 迁移到 features 结构
+2. **AI 客服集成** - REST + OpenAPI 类型生成
+3. **CampaignPlan 数据迁移** - 8 条记录迁移到 RentalPlan
+4. **清理旧代码** - 删除无用的 Listing 模型
+5. **完善测试覆盖** - 补充 Week 2 组件测试
 
 ### 注意事项
 
-- 需要先理解现有组件的依赖关系
-- 逐步迁移，每步验证功能正常
-- 保持 git 历史清晰，每个模块一个 commit
+- CampaignPlan 迁移需要更新 BookingItem 关联
+- AI 客服可能需要独立部署 (Python)
 
 ---
 
@@ -172,6 +248,22 @@ curl "http://localhost:3000/api/trpc/plan.featured"
 
 ## Commit 历史 (refactor/architecture)
 
+### Week 2 Commits
+```
+a7436d5 feat(plans): add usePlanList and usePlanDetail tRPC hooks
+e4fd9c0 feat(booking): add booking feature module, remove deprecated SearchStateContext
+e77319b feat(plans): create plans feature module with re-exports
+5d66a83 feat(discovery): remove SearchStateProvider from main layout
+508d0e7 feat(discovery): remove SearchStateContext from page components
+9e1c3e5 feat(discovery): migrate layout components to nuqs-based state management
+b53bfce feat(discovery): add HeroSearchBar and ThemeDropdown with nuqs integration
+ede4ba3 feat(discovery): add filter components with nuqs integration
+4cb6793 feat(discovery): migrate core search components to feature module
+fe7bc81 feat(week2): complete Batch 1 - foundation setup
+303e024 docs: add refactor progress tracking document
+```
+
+### Week 1 Commits
 ```
 1054ebd test: add unit tests for Week 1 tRPC and service code
 f22c272 fix: address code review feedback
