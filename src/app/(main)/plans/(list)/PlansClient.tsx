@@ -7,7 +7,6 @@ import ThemeImageSelector from "@/components/ThemeImageSelector";
 import SearchFilterSidebar from "@/components/search/SearchFilterSidebar";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { getThemeIcon } from "@/lib/themeIcons";
-import { useSearchState } from "@/contexts/SearchStateContext";
 import type { Theme } from "@/types";
 
 interface Tag {
@@ -76,8 +75,10 @@ function SearchClientInner({
 }: SearchClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isSearching, pendingTheme, startSearch, finishSearch } = useSearchState();
   const [isPending, startTransition] = useTransition();
+
+  // 本地 pending theme 状态 (用于即时 UI 反馈)
+  const [pendingTheme, setPendingTheme] = useState<Theme | null | undefined>(undefined);
 
   // 使用 URL 作为真正的数据源来检测外部导航
   const urlThemeSlug = searchParams.get('theme');
@@ -88,15 +89,15 @@ function SearchClientInner({
   const pendingThemeSlug = pendingTheme?.slug ?? (pendingTheme === null ? null : undefined);
   const isPendingComplete = pendingTheme !== undefined && pendingThemeSlug === (currentThemeSlug || null);
 
-  // 统一的加载状态：本地 transition + 全局 isSearching + URL 不匹配
-  const isLoading = isPending || isSearching || isUrlMismatch;
+  // 统一的加载状态：本地 transition + URL 不匹配
+  const isLoading = isPending || isUrlMismatch;
 
-  // 当 pendingTheme 与服务端数据匹配时（表示加载完成），重置全局搜索状态
+  // 当 pendingTheme 与服务端数据匹配时（表示加载完成），重置 pending 状态
   useEffect(() => {
     if (isPendingComplete) {
-      finishSearch();
+      setPendingTheme(undefined);
     }
-  }, [isPendingComplete, finishSearch]);
+  }, [isPendingComplete]);
 
   // 计算显示的主题：如果有 pendingTheme（正在切换），立即显示 pendingTheme；否则显示当前主题
   // pendingTheme !== undefined 表示有正在进行的切换
@@ -190,7 +191,8 @@ function SearchClientInner({
 
   // ========== 主题切换（需要服务端重新查询）==========
   const handleThemeChange = (theme: Theme | null) => {
-    startSearch(theme);
+    // 设置本地 pending 状态以实现即时 UI 反馈
+    setPendingTheme(theme);
 
     const params = new URLSearchParams(searchParams.toString());
     if (theme) {
@@ -436,7 +438,7 @@ function SearchClientInner({
                   )}
                   <button
                     onClick={() => {
-                      startSearch(null);
+                      setPendingTheme(null);
                       router.push('/plans');
                     }}
                     className="px-6 py-2.5 bg-sakura-500 text-white font-medium rounded-full hover:bg-sakura-600 transition-colors"
