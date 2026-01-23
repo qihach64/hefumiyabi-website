@@ -10,7 +10,7 @@
 
 ## 项目概述
 
-**江戸和装工房雅** - 和服租赁电商平台 (Next.js 15 + Prisma + PostgreSQL)
+**Kimono One** - 和服租赁电商平台 (Next.js 15 + Prisma + PostgreSQL)
 
 **核心功能:** 套餐浏览 → 加购物车 → 预约 → 到店体验
 

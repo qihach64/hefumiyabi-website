@@ -14,6 +14,8 @@ const mockSetMaxPrice = vi.fn();
 const mockSetSort = vi.fn();
 const mockSetCategory = vi.fn();
 const mockSetTags = vi.fn();
+const mockSetStoreId = vi.fn();
+const mockSetRegion = vi.fn();
 
 let mockLocationValue: string | null = null;
 let mockDateValue: string | null = null;
@@ -24,6 +26,8 @@ let mockMaxPriceValue: number | null = null;
 let mockSortValue: string = 'recommended';
 let mockCategoryValue: string | null = null;
 let mockTagsValue: string[] | null = null;
+let mockStoreIdValue: string | null = null;
+let mockRegionValue: string | null = null;
 
 vi.mock('nuqs', () => ({
   useQueryState: vi.fn((key: string, _parser: unknown) => {
@@ -46,6 +50,10 @@ vi.mock('nuqs', () => ({
         return [mockCategoryValue, mockSetCategory];
       case 'tags':
         return [mockTagsValue, mockSetTags];
+      case 'storeId':
+        return [mockStoreIdValue, mockSetStoreId];
+      case 'region':
+        return [mockRegionValue, mockSetRegion];
       default:
         return [null, vi.fn()];
     }
@@ -73,6 +81,8 @@ describe('useSearchState', () => {
     mockSortValue = 'recommended';
     mockCategoryValue = null;
     mockTagsValue = null;
+    mockStoreIdValue = null;
+    mockRegionValue = null;
   });
 
   it('returns all state values', () => {
@@ -87,6 +97,8 @@ describe('useSearchState', () => {
     expect(result.current.sort).toBe('recommended');
     expect(result.current.category).toBe(null);
     expect(result.current.tags).toBe(null);
+    expect(result.current.storeId).toBe(null);
+    expect(result.current.region).toBe(null);
   });
 
   it('returns all setter functions', () => {
@@ -101,6 +113,8 @@ describe('useSearchState', () => {
     expect(typeof result.current.setSort).toBe('function');
     expect(typeof result.current.setCategory).toBe('function');
     expect(typeof result.current.setTags).toBe('function');
+    expect(typeof result.current.setStoreId).toBe('function');
+    expect(typeof result.current.setRegion).toBe('function');
   });
 
   it('hasFilters is false when no filters are set', () => {
@@ -158,6 +172,20 @@ describe('useSearchState', () => {
     expect(result.current.hasFilters).toBe(true);
   });
 
+  it('hasFilters is true when storeId is set', () => {
+    mockStoreIdValue = 'store-1';
+    const { result } = renderHook(() => useSearchState());
+
+    expect(result.current.hasFilters).toBe(true);
+  });
+
+  it('hasFilters is true when region is set', () => {
+    mockRegionValue = '京都';
+    const { result } = renderHook(() => useSearchState());
+
+    expect(result.current.hasFilters).toBe(true);
+  });
+
   it('hasFilters ignores guests and sort values', () => {
     mockGuestsValue = 5;
     mockSortValue = 'price_asc';
@@ -184,6 +212,32 @@ describe('useSearchState', () => {
       expect(mockSetSort).toHaveBeenCalledWith(null);
       expect(mockSetCategory).toHaveBeenCalledWith(null);
       expect(mockSetTags).toHaveBeenCalledWith(null);
+      expect(mockSetStoreId).toHaveBeenCalledWith(null);
+      expect(mockSetRegion).toHaveBeenCalledWith(null);
+    });
+  });
+
+  describe('clearFilters', () => {
+    it('clears filter params but preserves search params (location, date, theme)', async () => {
+      const { result } = renderHook(() => useSearchState());
+
+      await act(async () => {
+        await result.current.clearFilters();
+      });
+
+      // 筛选参数应该被清除
+      expect(mockSetMinPrice).toHaveBeenCalledWith(null);
+      expect(mockSetMaxPrice).toHaveBeenCalledWith(null);
+      expect(mockSetSort).toHaveBeenCalledWith(null);
+      expect(mockSetCategory).toHaveBeenCalledWith(null);
+      expect(mockSetTags).toHaveBeenCalledWith(null);
+      expect(mockSetStoreId).toHaveBeenCalledWith(null);
+      expect(mockSetRegion).toHaveBeenCalledWith(null);
+
+      // 搜索参数应该保留 (不被调用)
+      expect(mockSetLocation).not.toHaveBeenCalled();
+      expect(mockSetDate).not.toHaveBeenCalled();
+      expect(mockSetTheme).not.toHaveBeenCalled();
     });
   });
 

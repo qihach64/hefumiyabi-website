@@ -1,12 +1,13 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState, useCallback, useMemo, useTransition, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Suspense, useState, useMemo, useTransition, useEffect } from "react";
 import PlanCard from "@/components/PlanCard";
 import ThemeImageSelector from "@/components/ThemeImageSelector";
 import SearchFilterSidebar from "@/components/search/SearchFilterSidebar";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { getThemeIcon } from "@/lib/themeIcons";
+import { useSearchState } from "@/shared/hooks";
 import type { Theme } from "@/types";
 
 interface Tag {
@@ -74,14 +75,26 @@ function SearchClientInner({
   sortBy: initialSortBy,
 }: SearchClientProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
+
+  // 使用 useSearchState 管理 URL 状态
+  const {
+    theme: urlThemeSlug,
+    setTheme: setUrlTheme,
+    tags: urlTags,
+    setTags: setUrlTags,
+    minPrice: urlMinPrice,
+    maxPrice: urlMaxPrice,
+    setPriceRange: setUrlPriceRange,
+    sort: urlSort,
+    setSort: setUrlSort,
+    clearFilters,
+  } = useSearchState();
 
   // 本地 pending theme 状态 (用于即时 UI 反馈)
   const [pendingTheme, setPendingTheme] = useState<Theme | null | undefined>(undefined);
 
   // 使用 URL 作为真正的数据源来检测外部导航
-  const urlThemeSlug = searchParams.get('theme');
   const currentThemeSlug = currentTheme?.slug;
   const isUrlMismatch = urlThemeSlug !== (currentThemeSlug || null);
 
@@ -103,11 +116,14 @@ function SearchClientInner({
   // pendingTheme !== undefined 表示有正在进行的切换
   const displayTheme = pendingTheme !== undefined ? pendingTheme : currentTheme;
 
-  // ========== 客户端筛选状态 ==========
-  // 这些状态用于前端即时过滤，不触发后端请求
-  const [selectedTags, setSelectedTags] = useState<string[]>(initialSelectedTags);
-  const [priceRange, setPriceRange] = useState<[number, number]>(initialPriceRange);
-  const [sortBy, setSortBy] = useState<string>(initialSortBy);
+  // ========== 客户端筛选状态 (从 URL 同步) ==========
+  // nuqs 自动同步 URL，这些值直接来自 URL 参数
+  const selectedTags = urlTags ?? initialSelectedTags;
+  const priceRange: [number, number] = [
+    urlMinPrice ?? initialPriceRange[0],
+    urlMaxPrice ?? initialPriceRange[1],
+  ];
+  const sortBy = urlSort ?? initialSortBy;
 
   // 移动端筛选抽屉状态
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
@@ -167,88 +183,50 @@ function SearchClientInner({
     return result;
   }, [allPlans, selectedTags, priceRange, sortBy, maxPrice]);
 
-  // ========== URL 同步（仅用于分享链接，不触发页面刷新）==========
-  const updateUrlSilently = useCallback(
-    (updates: Record<string, string | null>) => {
-      const params = new URLSearchParams(searchParams.toString());
-
-      Object.entries(updates).forEach(([key, value]) => {
-        if (value === null || value === "" || value === "0") {
-          params.delete(key);
-        } else {
-          params.set(key, value);
-        }
-      });
-
-      const queryString = params.toString();
-      const newUrl = queryString ? `/plans?${queryString}` : "/plans";
-
-      // 使用 replaceState 静默更新 URL，不触发页面刷新
-      window.history.replaceState(null, "", newUrl);
-    },
-    [searchParams]
-  );
-
   // ========== 主题切换（需要服务端重新查询）==========
-  const handleThemeChange = (theme: Theme | null) => {
+  const handleThemeChange = async (theme: Theme | null) => {
     // 设置本地 pending 状态以实现即时 UI 反馈
     setPendingTheme(theme);
 
-    const params = new URLSearchParams(searchParams.toString());
-    if (theme) {
-      params.set("theme", theme.slug);
-    } else {
-      params.delete("theme");
-    }
-    // 切换主题时重置筛选条件
-    params.delete("tags");
-    params.delete("minPrice");
-    params.delete("maxPrice");
-    params.delete("sort");
+    // 清空筛选条件 (nuqs 自动更新 URL)
+    await clearFilters();
 
-    setSelectedTags([]);
-    setPriceRange([0, maxPrice]);
-    setSortBy("recommended");
-
-    const queryString = params.toString();
-
+    // 设置主题并触发服务端重新查询
     startTransition(() => {
+      const params = new URLSearchParams();
+      if (theme) {
+        params.set("theme", theme.slug);
+      }
+      // 保留 location 和 date
+      if (searchLocation) params.set("location", searchLocation);
+      if (searchDate) params.set("date", searchDate);
+
+      const queryString = params.toString();
       router.push(queryString ? `/plans?${queryString}` : "/plans");
     });
   };
 
-  // ========== 标签变更（前端过滤）==========
+  // ========== 标签变更（前端过滤，URL 自动同步）==========
   const handleTagsChange = (tags: string[]) => {
-    setSelectedTags(tags);
-    updateUrlSilently({ tags: tags.length > 0 ? tags.join(",") : null });
+    setUrlTags(tags.length > 0 ? tags : null);
   };
 
-  // ========== 价格变更（前端过滤）==========
+  // ========== 价格变更（前端过滤，URL 自动同步）==========
   const handlePriceChange = (range: [number, number]) => {
-    setPriceRange(range);
-    updateUrlSilently({
-      minPrice: range[0] > 0 ? String(range[0]) : null,
-      maxPrice: range[1] < maxPrice ? String(range[1]) : null,
-    });
+    setUrlPriceRange([
+      range[0] > 0 ? range[0] : null,
+      range[1] < maxPrice ? range[1] : null,
+    ]);
   };
 
-  // ========== 排序变更（前端过滤）==========
+  // ========== 排序变更（前端过滤，URL 自动同步）==========
   const handleSortChange = (sort: string) => {
-    setSortBy(sort);
-    updateUrlSilently({ sort: sort === "recommended" ? null : sort });
+    setUrlSort(sort === "recommended" ? null : sort);
   };
 
   // ========== 重置所有筛选 ==========
   const handleReset = () => {
-    setSelectedTags([]);
-    setPriceRange([0, maxPrice]);
-    setSortBy("recommended");
-    updateUrlSilently({
-      tags: null,
-      minPrice: null,
-      maxPrice: null,
-      sort: null,
-    });
+    clearFilters();
   };
 
   // 计算活跃筛选数量

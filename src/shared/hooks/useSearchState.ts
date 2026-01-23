@@ -16,6 +16,10 @@ export function useSearchState() {
   const [category, setCategory] = useQueryState('category', parseAsString);
   const [tags, setTags] = useQueryState('tags', parseAsArrayOf(parseAsString, ','));
 
+  // Store/Region params (用于首页筛选)
+  const [storeId, setStoreId] = useQueryState('storeId', parseAsString);
+  const [region, setRegion] = useQueryState('region', parseAsString);
+
   const clearAll = async () => {
     await Promise.all([
       setLocation(null),
@@ -27,6 +31,21 @@ export function useSearchState() {
       setSort(null),
       setCategory(null),
       setTags(null),
+      setStoreId(null),
+      setRegion(null),
+    ]);
+  };
+
+  // 清除筛选条件但保留搜索条件 (location, date, theme)
+  const clearFilters = async () => {
+    await Promise.all([
+      setMinPrice(null),
+      setMaxPrice(null),
+      setSort(null),
+      setCategory(null),
+      setTags(null),
+      setStoreId(null),
+      setRegion(null),
     ]);
   };
 
@@ -49,6 +68,8 @@ export function useSearchState() {
     sort,
     category,
     tags,
+    storeId,
+    region,
     // Setters
     setLocation,
     setDate,
@@ -59,9 +80,12 @@ export function useSearchState() {
     setSort,
     setCategory,
     setTags,
+    setStoreId,
+    setRegion,
     // Utilities
     clearAll,
+    clearFilters,
     setPriceRange,
-    hasFilters: !!(location || date || theme || minPrice || maxPrice || tags?.length || category),
+    hasFilters: !!(location || date || theme || minPrice || maxPrice || tags?.length || category || storeId || region),
   };
 }

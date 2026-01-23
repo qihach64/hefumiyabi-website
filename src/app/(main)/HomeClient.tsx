@@ -12,6 +12,7 @@ import { Sparkles, MapPin, Store as StoreIcon, Tag, X, Filter, Users, Calendar, 
 import { Button, Badge } from "@/components/ui";
 import { useSearchLoading } from "@/contexts/SearchLoadingContext";
 import { useSearchBar } from "@/contexts/SearchBarContext";
+import { useSearchState } from "@/shared/hooks";
 
 // 类型定义 (从 PlansClient 复制)
 interface Store {
@@ -100,13 +101,28 @@ export default function HomeClient({
   stores,
   tagCategories,
 }: HomeClientProps) {
-  const searchParams = useSearchParams();
+  const searchParams = useSearchParams(); // 用于加载状态比较
   const { isSearching, searchTarget, stopSearch } = useSearchLoading();
   const { setIsHeroVisible } = useSearchBar();
 
-  // 搜索参数
-  const searchLocation = searchParams.get('location') || '';
-  const searchDate = searchParams.get('date') || '';
+  // 使用 useSearchState 管理 URL 状态
+  const {
+    location: searchLocation,
+    date: searchDate,
+    storeId: selectedStoreId,
+    setStoreId: setSelectedStoreId,
+    region: selectedRegion,
+    setRegion: setSelectedRegion,
+    tags: urlTags,
+    setTags: setUrlTags,
+    clearFilters: clearUrlFilters,
+  } = useSearchState();
+
+  // 标签使用 URL 状态，转换为 string[] (useSearchState tags 返回 string[] | null)
+  const selectedTagIds = urlTags ?? [];
+  const setSelectedTagIds = (tags: string[]) => {
+    setUrlTags(tags.length > 0 ? tags : null);
+  };
 
   // Convert themeSections to Hero format
   const heroThemes = useMemo(() =>
@@ -117,11 +133,6 @@ export default function HomeClient({
       icon: section.icon,
       color: section.color,
     })), [themeSections]);
-
-  // 过滤器状态
-  const [selectedStoreId, setSelectedStoreId] = useState<string>('');
-  const [selectedRegion, setSelectedRegion] = useState<string>('');
-  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
     new Set(tagCategories.map(c => c.id)) // 默认全部展开
   );
@@ -172,7 +183,7 @@ export default function HomeClient({
     };
   }, [searchParams, isSearching, searchTarget, stopSearch]);
 
-  // 判断是否处于"搜索模式"
+  // 判断是否处于"搜索模式" (useSearchState 返回 null 表示未设置)
   const isSearchMode = !!(searchLocation || searchDate || selectedStoreId || selectedRegion || selectedTagIds.length > 0);
 
   // 过滤套餐逻辑
@@ -246,11 +257,9 @@ export default function HomeClient({
     });
   };
 
-  // 清除所有筛选
+  // 清除所有筛选 (通过 nuqs 自动更新 URL)
   const clearFilters = () => {
-    setSelectedStoreId('');
-    setSelectedRegion('');
-    setSelectedTagIds([]);
+    clearUrlFilters();
   };
 
   // 过滤器侧边栏组件 - Zen 风格
@@ -296,10 +305,10 @@ export default function HomeClient({
             {isStoreExpanded && (
               <div className="flex flex-wrap gap-2 mb-4">
                 <button
-                  onClick={() => setSelectedStoreId('')}
+                  onClick={() => setSelectedStoreId(null)}
                   className={`
                     px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200
-                    ${selectedStoreId === ''
+                    ${!selectedStoreId
                       ? 'bg-sakura-100 text-sakura-700 ring-2 ring-sakura-300'
                       : 'bg-wabi-100 text-wabi-700 hover:bg-wabi-200'
                     }
@@ -349,10 +358,10 @@ export default function HomeClient({
             {isRegionExpanded && (
               <div className="flex flex-wrap gap-2 mb-4">
                 <button
-                  onClick={() => setSelectedRegion('')}
+                  onClick={() => setSelectedRegion(null)}
                   className={`
                     px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200
-                    ${selectedRegion === ''
+                    ${!selectedRegion
                       ? 'bg-sakura-100 text-sakura-700 ring-2 ring-sakura-300'
                       : 'bg-wabi-100 text-wabi-700 hover:bg-wabi-200'
                     }
@@ -491,9 +500,7 @@ export default function HomeClient({
                   // 应用筛选逻辑已在状态中，直接关闭即可
                 }}
                 onReset={() => {
-                  setSelectedStoreId('');
-                  setSelectedRegion('');
-                  setSelectedTagIds([]);
+                  clearFilters();
                 }}
                 activeFiltersCount={(selectedStoreId ? 1 : 0) + (selectedRegion ? 1 : 0) + selectedTagIds.length}
               >
