@@ -2,6 +2,12 @@
 
 > AI 工作上下文 - 精简版。详细文档见 `docs/`
 
+## 交互偏好
+
+- **语言:** 全程中文 (对话、代码注释、commit 信息、文档)
+- **风格:** 简洁直接，不啰嗦
+- **代码:** 变量名/函数名用英文，注释用中文
+
 ## 项目概述
 
 **江戸和装工房雅** - 和服租赁电商平台 (Next.js 15 + Prisma + PostgreSQL)
@@ -10,14 +16,14 @@
 
 ## Tech Stack
 
-| 类别 | 技术 |
-|------|------|
-| 框架 | Next.js 15.5 (App Router), React 19, TypeScript 5 |
-| 数据库 | PostgreSQL + Prisma 6.17 (Supabase 托管) |
-| 认证 | NextAuth.js 5.0 |
-| 状态 | Zustand (购物车), React Query (服务端), nuqs (URL) |
-| 样式 | Tailwind CSS 4, Lucide Icons |
-| 测试 | Vitest + @testing-library/react |
+| 类别   | 技术                                               |
+| ------ | -------------------------------------------------- |
+| 框架   | Next.js 15.5 (App Router), React 19, TypeScript 5  |
+| 数据库 | PostgreSQL + Prisma 6.17 (Supabase 托管)           |
+| 认证   | NextAuth.js 5.0                                    |
+| 状态   | Zustand (购物车), React Query (服务端), nuqs (URL) |
+| 样式   | Tailwind CSS 4, Lucide Icons                       |
+| 测试   | Vitest + @testing-library/react                    |
 
 ## 常用命令
 
@@ -66,34 +72,39 @@ src/
 │   ├── home/             # 首页组件
 │   └── plans/            # 套餐展示组件
 ├── contexts/             # React Context
-│   └── SearchLoadingContext.tsx
+│   ├── SearchBarContext.tsx      # 搜索栏 UI 状态
+│   └── SearchLoadingContext.tsx  # 搜索加载状态
 ├── store/                # Zustand stores
-│   └── cart.ts           # 购物车状态
+│   ├── cart.ts           # 购物车
+│   ├── favorites.ts      # 收藏
+│   ├── planDraft.ts      # 套餐草稿 (商家)
+│   ├── tryOn.ts          # AI 试穿缓存
+│   └── userPhoto.ts      # 用户照片
 └── lib/                  # 工具函数
 ```
 
 ### 路由结构
 
-| 路由 | 说明 |
-|------|------|
-| `/` | 首页，特色套餐展示 |
-| `/plans` | 套餐列表，支持筛选 |
-| `/plans/[id]` | 套餐详情，加购/预约 |
-| `/cart` | 购物车 |
-| `/booking` | 预约确认页 |
-| `/booking/success` | 预约成功 |
-| `/stores` | 店铺列表 |
-| `/merchant/*` | 商家后台 |
-| `/admin/*` | 管理后台 |
+| 路由               | 说明                |
+| ------------------ | ------------------- |
+| `/`                | 首页，特色套餐展示  |
+| `/plans`           | 套餐列表，支持筛选  |
+| `/plans/[id]`      | 套餐详情，加购/预约 |
+| `/cart`            | 购物车              |
+| `/booking`         | 预约确认页          |
+| `/booking/success` | 预约成功            |
+| `/stores`          | 店铺列表            |
+| `/merchant/*`      | 商家后台            |
+| `/admin/*`         | 管理后台            |
 
 ### 数据获取策略
 
-| 场景 | 方式 |
-|------|------|
-| 页面初始数据 | Server Component + Prisma |
-| URL 筛选状态 | nuqs (useSearchState hook) |
-| 购物车 | Zustand + localStorage |
-| 客户端数据刷新 | tRPC hooks (已准备) |
+| 场景           | 方式                       |
+| -------------- | -------------------------- |
+| 页面初始数据   | Server Component + Prisma  |
+| URL 筛选状态   | nuqs (useSearchState hook) |
+| 购物车         | Zustand + localStorage     |
+| 客户端数据刷新 | tRPC hooks (已准备)        |
 
 ### 核心数据模型
 
@@ -121,13 +132,22 @@ User ─── Booking ─── BookingItem ─── RentalPlan
 import { useSearchState } from '@/shared/hooks';
 
 const {
+  // 基础搜索参数
   location, setLocation,
   date, setDate,
   theme, setTheme,
-  // ... 更多筛选参数
+  guests, setGuests,
+  // 筛选参数
+  minPrice, maxPrice, setPriceRange,
+  sort, setSort,
+  category, setCategory,
+  tags, setTags,
+  // 工具方法
+  clearAll,      // 清空所有筛选
+  hasFilters,    // 是否有筛选条件
 } = useSearchState();
 
-// URL 自动同步: /plans?location=京都&theme=traditional
+// URL 自动同步: /plans?location=京都&theme=traditional&minPrice=5000
 ```
 
 ### 2. 购物车 (Zustand)
@@ -150,7 +170,23 @@ useCartStore.getState().addItem({
 const items = useCartStore((state) => state.items);
 ```
 
-### 3. 价格处理
+### 3. tRPC Hooks (服务端数据)
+
+```typescript
+import { usePlanList, usePlanDetail } from '@/features/guest/plans';
+
+// 套餐列表 (带筛选)
+const { data, isLoading } = usePlanList({
+  theme: 'traditional',
+  location: '京都',
+  limit: 20,
+});
+
+// 套餐详情
+const { data: plan } = usePlanDetail(planId);
+```
+
+### 4. 价格处理
 
 **所有价格以"分"存储** (避免浮点精度问题)
 
@@ -162,26 +198,35 @@ const displayPrice = (cents: number) => `¥${(cents / 100).toLocaleString()}`;
 const discount = ((originalPrice - price) / originalPrice) * 100;
 ```
 
-### 4. 组件开发位置
+### 5. 组件开发位置
 
-| 组件类型 | 位置 |
-|----------|------|
+| 组件类型  | 位置                                       |
+| --------- | ------------------------------------------ |
 | 搜索/筛选 | `src/features/guest/discovery/components/` |
-| 套餐相关 | `src/features/guest/plans/` |
-| 预约相关 | `src/features/guest/booking/` |
-| 布局组件 | `src/components/layout/` |
-| 通用 UI | `src/components/` |
+| 套餐相关  | `src/features/guest/plans/`                |
+| 预约相关  | `src/features/guest/booking/`              |
+| 布局组件  | `src/components/layout/`                   |
+| 通用 UI   | `src/components/`                          |
 
 ## API 路由
 
 ```
-/api/trpc/[trpc]     # tRPC 入口 (plan.list, plan.getById, plan.featured)
+# tRPC (类型安全)
+/api/trpc/[trpc]     # tRPC 入口 (plan.list, plan.getById, plan.featured, health.check)
+
+# REST API
 /api/bookings        # 预约 CRUD
-/api/plans/[id]      # 套餐详情 (REST)
+/api/plans/[id]      # 套餐详情
 /api/stores          # 店铺列表
 /api/themes          # 主题列表
 /api/locations       # 地点列表
 /api/tags            # 标签系统
+/api/favorites       # 收藏功能
+/api/chatbot         # AI 聊天机器人
+/api/virtual-tryon   # AI 试穿
+/api/upload          # 文件上传
+/api/merchant/*      # 商家后台 API
+/api/admin/*         # 管理后台 API
 ```
 
 ## 测试
@@ -229,21 +274,23 @@ REPLICATE_API_TOKEN="..."            # AI 试穿
 
 ## 文档索引
 
-| 需求 | 文档 |
-|------|------|
-| 新人入门 | `CONTRIBUTING.md` |
-| 开发环境 | `docs/guides/setup.md` |
-| 部署指南 | `docs/guides/deployment.md` |
-| 架构详解 | `docs/architecture/` |
-| 功能设计 | `docs/features/` |
-| 产品哲学 | `docs/architecture/product-philosophy.md` |
+| 需求       | 文档                                      |
+| ---------- | ----------------------------------------- |
+| 新人入门   | `CONTRIBUTING.md`                         |
+| 快速开始   | `docs/guides/quick-start.md`              |
+| 数据库设置 | `docs/guides/database-setup.md`           |
+| 部署指南   | `docs/guides/deployment.md`               |
+| 架构详解   | `docs/architecture/`                      |
+| 功能设计   | `docs/features/`                          |
+| 产品哲学   | `docs/architecture/product-philosophy.md` |
+| 重构计划   | `docs/plans/`                             |
 
 ## 代码规范
 
 - **TypeScript:** 严格模式，避免 `any`
 - **组件:** 优先 Server Component，需要交互时用 `'use client'`
 - **路径别名:** `@/` 指向 `src/`
-- **提交信息:** `feat|fix|docs|test|refactor(scope): 描述`
+- **提交信息:** `feat|fix|docs|test|refactor(scope): 中文描述`
 
 ## 常见任务
 
