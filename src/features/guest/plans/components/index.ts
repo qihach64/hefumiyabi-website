@@ -15,3 +15,6 @@ export { default as StoreLocationCard } from "@/components/plan/StoreLocationCar
 export { default as AITryOnSection } from "@/components/plan/AITryOnSection";
 export { default as RelatedPlans } from "@/components/plan/RelatedPlans";
 export { default as InteractiveKimonoMap } from "@/components/plan/InteractiveKimonoMap";
+
+// 预览组件 (新迁移)
+export { default as PlanCardPreview } from "./PlanCardPreview";

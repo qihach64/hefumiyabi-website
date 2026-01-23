@@ -7,7 +7,6 @@ interface BookingItem {
   storeId: string;
   type: string;
   planId?: string;
-  campaignPlanId?: string;
   quantity?: number;
   unitPrice: number;
   totalPrice: number;
@@ -158,7 +157,6 @@ export async function POST(request: Request) {
               storeId: item.storeId,
               type: item.type,
               planId: item.planId || null,
-              campaignPlanId: item.campaignPlanId || null,
               quantity: item.quantity || 1,
               unitPrice: item.unitPrice,
               totalPrice: item.totalPrice,

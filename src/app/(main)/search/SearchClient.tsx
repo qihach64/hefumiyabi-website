@@ -2,9 +2,9 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState, useCallback, useMemo, useTransition, useEffect, useRef } from "react";
-import PlanCard from "@/components/PlanCard";
+import { PlanCard } from "@/features/guest/plans";
 import ThemePills from "@/components/ThemePills";
-import SearchFilterSidebar from "@/components/search/SearchFilterSidebar";
+import { SearchFilterSidebar } from "@/features/guest/discovery";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { getThemeIcon } from "@/lib/themeIcons";
 

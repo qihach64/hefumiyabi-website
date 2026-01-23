@@ -40,7 +40,6 @@ export type ImageCategory =
   | 'kimono'
   | 'merchant'
   | 'user'
-  | 'campaign'
   | 'tryon'
   | 'component'
   | 'upgrade';
@@ -97,8 +96,6 @@ export function generateS3Key(
       return `originals/merchants/${entityId}/${purpose}-${timestamp}-${random}.${extension}`;
     case 'user':
       return `originals/users/${entityId}/${purpose}-${timestamp}-${random}.${extension}`;
-    case 'campaign':
-      return `originals/campaigns/${entityId}/${purpose}-${timestamp}-${random}.${extension}`;
     case 'tryon':
       return `originals/tryon/${entityId}/${timestamp}-${random}.${extension}`;
     case 'component':

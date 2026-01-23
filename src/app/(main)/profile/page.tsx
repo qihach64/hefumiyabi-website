@@ -42,24 +42,6 @@ export default async function ProfilePage() {
     }),
   ]);
 
-  // 获取每个 booking item 的 campaignPlan 信息（如果有）
-  if (user) {
-    for (const booking of user.bookings) {
-      for (const item of booking.items) {
-        if (item.campaignPlanId) {
-          const campaignPlan = await prisma.campaignPlan.findUnique({
-            where: { id: item.campaignPlanId },
-            select: {
-              name: true,
-              images: true,
-            },
-          });
-          (item as any).campaignPlan = campaignPlan;
-        }
-      }
-    }
-  }
-
   if (!user) {
     redirect("/login");
   }

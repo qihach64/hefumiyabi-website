@@ -405,7 +405,6 @@ model CartItem {
   cartId         String
   type           String
   planId         String?
-  campaignPlanId String?
   quantity       Int         @default(1)
   addOns         String[]
   notes          String?
@@ -454,7 +453,6 @@ model BookingItem {
   storeId        String
   type           String
   planId         String?
-  campaignPlanId String?
   quantity       Int             @default(1)
   unitPrice      Int
   totalPrice     Int
@@ -588,38 +586,11 @@ model Campaign {
   terms          String?
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
-  campaignPlans  CampaignPlan[]
-  rentalPlans    RentalPlan[]   // 新增：统一套餐系统
+  rentalPlans    RentalPlan[]
 
   @@index([isActive])
   @@index([startDate, endDate])
   @@map("campaigns")
-}
-
-model CampaignPlan {
-  id               String   @id @default(cuid())
-  campaignId       String
-  name             String
-  nameEn           String?
-  description      String
-  originalPrice    Int
-  campaignPrice    Int
-  duration         Int?
-  includes         String[]
-  applicableStores String[]
-  images           String[]
-  maxBookings      Int?
-  currentBookings  Int      @default(0)
-  isFeatured       Boolean  @default(false)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  region           String?
-  storeName        String?
-  tags             String[] @default([])
-  campaign         Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-
-  @@index([campaignId])
-  @@map("campaign_plans")
 }
 
 enum Role {

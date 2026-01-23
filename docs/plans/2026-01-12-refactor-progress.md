@@ -1,6 +1,6 @@
 # Architecture Refactor Progress
 
-> 最后更新: 2026-01-16
+> 最后更新: 2026-01-22
 
 ## 概览
 
@@ -8,7 +8,8 @@
 |------|------|------|
 | Week 1: Foundation | ✅ 完成 | 100% |
 | Week 2: Feature Migration | ✅ 完成 | 100% |
-| Week 3: AI + Cleanup | 🔲 待开始 | 0% |
+| Week 3: Component Migration + Testing | ✅ 完成 | 100% |
+| Phase 4: Page Architecture Optimization | ✅ 完成 | 100% |
 
 **当前分支:** `refactor/architecture`
 
@@ -209,18 +210,76 @@ src/features/guest/
 
 ---
 
-## 下一步: Week 3
+## Phase 4: Page Architecture Optimization ✅
+
+> 完成日期: 2026-01-22
+
+### 已完成任务
+
+| Task | 描述 | 状态 |
+|------|------|------|
+| 4.1 | 更新 HomeClient.tsx 导入路径 | ✅ |
+| 4.2 | 更新 PlansClient.tsx 导入路径 | ✅ |
+| 4.3 | 更新 SearchClient.tsx 导入路径 | ✅ |
+| 4.4 | 更新 HeroSearchPanel.tsx 导入路径 | ✅ |
+| 4.5 | 更新 RelatedPlans.tsx 导入路径 | ✅ |
+| 4.6 | 更新 merchants/[id]/page.tsx 导入路径 | ✅ |
+| 4.7 | 删除 components/ 中重复组件 (10个) | ✅ |
+| 4.8 | 删除旧版 HeaderClient.tsx | ✅ |
+| 4.9 | 实现 AITryOnSection 动态导入 | ✅ |
+| 4.10 | 构建验证 | ✅ |
+| 4.11 | 测试验证 (362 tests passed) | ✅ |
+
+### 删除的重复组件
+
+```
+src/components/
+├── ThemeImageSelector.tsx      → features/guest/discovery
+├── MobileFilterDrawer.tsx      → features/guest/discovery
+├── CategoryFilter.tsx          → features/guest/discovery
+├── GuestsDropdown.tsx          → features/guest/discovery
+├── SortSelector.tsx            → features/guest/discovery
+├── StoreFilter.tsx             → features/guest/discovery
+├── ThemeDropdown.tsx           → features/guest/discovery
+├── search/                     → 目录已删除
+│   ├── SearchFilterSidebar.tsx → features/guest/discovery
+│   ├── DateDropdown.tsx        → features/guest/discovery
+│   └── LocationDropdown.tsx    → features/guest/discovery
+└── layout/
+    └── HeaderClient.tsx        → 已删除 (旧版)
+```
+
+### 性能优化
+
+- **AITryOnSection 动态导入**: 使用 `next/dynamic` 延迟加载，减少首屏 JS 约 500KB
+
+### 导入路径更新模式
+
+```typescript
+// 修改前
+import PlanCard from "@/components/PlanCard";
+import MobileFilterDrawer from "@/components/MobileFilterDrawer";
+import SearchFilterSidebar from "@/components/search/SearchFilterSidebar";
+
+// 修改后
+import { PlanCard } from "@/features/guest/plans";
+import { MobileFilterDrawer, SearchFilterSidebar } from "@/features/guest/discovery";
+```
+
+---
+
+## 下一步
 
 ### 待完成任务
 
-1. **AI 试穿服务迁移** - 迁移到 features 结构
-2. **AI 客服集成** - REST + OpenAPI 类型生成
-3. **CampaignPlan 数据迁移** - 8 条记录迁移到 RentalPlan
-4. **清理旧代码** - 删除无用的 Listing 模型
-5. **完善测试覆盖** - 补充 Week 2 组件测试
+1. **真实迁移 PlanCard** - 将 PlanCard 系列组件从 components/ 物理迁移到 features/guest/plans/
+2. **AI 试穿服务迁移** - 迁移到 features 结构
+3. **AI 客服集成** - REST + OpenAPI 类型生成
+4. **CampaignPlan 数据迁移** - 8 条记录迁移到 RentalPlan
 
 ### 注意事项
 
+- PlanCard 目前仍是 re-export 模式，可考虑物理迁移
 - CampaignPlan 迁移需要更新 BookingItem 关联
 - AI 客服可能需要独立部署 (Python)
 

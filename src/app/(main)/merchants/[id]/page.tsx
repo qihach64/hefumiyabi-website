@@ -3,8 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { MapPin, Store, Star, CheckCircle, Award } from "lucide-react";
 import prisma from "@/lib/prisma";
-import PlanCard from "@/components/PlanCard";
-import PlanCardGrid from "@/components/PlanCard/PlanCardGrid";
+import { PlanCard, PlanCardGrid } from "@/features/guest/plans";
 import { Badge } from "@/components/ui";
 
 interface MerchantPageProps {

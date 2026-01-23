@@ -66,12 +66,6 @@ export default function Step4Confirm({ bookingData, onPrev }: Step4Props) {
             const planData = await planRes.json();
             setPlan(planData);
           }
-        } else if (bookingData.campaignPlanId) {
-          const planRes = await fetch(`/api/campaign-plans/${bookingData.campaignPlanId}`);
-          if (planRes.ok) {
-            const planData = await planRes.json();
-            setPlan(planData);
-          }
         }
 
         setLoading(false);
@@ -83,7 +77,7 @@ export default function Step4Confirm({ bookingData, onPrev }: Step4Props) {
     };
 
     fetchData();
-  }, [bookingData.storeId, bookingData.planId, bookingData.campaignPlanId]);
+  }, [bookingData.storeId, bookingData.planId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

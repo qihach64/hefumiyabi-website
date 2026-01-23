@@ -10,7 +10,7 @@ import {
   CheckSquare, Square, Tag, X, Loader2, PowerOff, Check
 } from "lucide-react";
 import { Button, Badge } from "@/components/ui";
-import PlanCardManagement from "@/components/PlanCard/PlanCardManagement";
+import { PlanCardManagement } from "@/features/merchant/plans";
 import PlanCardGrid from "@/components/PlanCard/PlanCardGrid";
 
 interface PlanTag {

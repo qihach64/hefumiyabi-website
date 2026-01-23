@@ -16,10 +16,10 @@ import type { SelectedUpgrade } from "@/components/PlanDetailClient";
 import ContactForm, {
   type ContactFormValues,
   type ContactFormErrors,
-} from "@/components/booking/ContactForm";
+} from "./ContactForm";
 import PriceBreakdown, {
   type UpgradeItem,
-} from "@/components/booking/PriceBreakdown";
+} from "./PriceBreakdown";
 
 interface InstantBookingModalProps {
   isOpen: boolean;

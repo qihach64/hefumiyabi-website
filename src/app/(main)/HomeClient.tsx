@@ -2,11 +2,9 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
-import PlanCard from "@/components/PlanCard";
-import PlanCardGrid from "@/components/PlanCard/PlanCardGrid";
+import { PlanCard, PlanCardGrid, FeaturedPlanCard } from "@/features/guest/plans";
+import { MobileFilterDrawer } from "@/features/guest/discovery";
 import ScrollableSection from "@/components/ScrollableSection";
-import FeaturedPlanCard from "@/components/PlanCard/FeaturedPlanCard";
-import MobileFilterDrawer from "@/components/MobileFilterDrawer";
 import HeroSection from "@/components/home/HeroSection";
 import { Sparkles, MapPin, Store as StoreIcon, Tag, X, Filter, Users, Calendar, Loader2, Plus, ArrowRight } from "lucide-react";
 import { Button, Badge } from "@/components/ui";

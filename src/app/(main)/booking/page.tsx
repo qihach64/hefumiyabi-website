@@ -16,8 +16,7 @@ import {
   AlertCircle,
   Loader2,
 } from "lucide-react";
-import ContactForm, { type ContactFormValues } from "@/components/booking/ContactForm";
-import PriceBreakdown from "@/components/booking/PriceBreakdown";
+import { ContactForm, PriceBreakdown, type ContactFormValues } from "@/features/guest/booking";
 
 // 格式化日期显示
 function formatDate(dateStr?: string) {
@@ -78,7 +77,7 @@ function BookingContent() {
               浏览套餐
             </Link>
             <Link
-              href="/campaigns"
+              href="/plans?sort=discount"
               className="inline-flex items-center justify-center border border-sakura-300 text-sakura-700 hover:bg-sakura-50 font-medium py-3 px-6 rounded-lg transition-colors"
             >
               查看优惠活动

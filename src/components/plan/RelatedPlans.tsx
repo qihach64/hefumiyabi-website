@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import PlanCard from "@/components/PlanCard";
+import { PlanCard } from "@/features/guest/plans";
 
 interface Tag {
   id: string;

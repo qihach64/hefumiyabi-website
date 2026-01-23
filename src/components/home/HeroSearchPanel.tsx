@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation";
 import { MapPin, Calendar, Search, ChevronLeft, ChevronRight, Sparkles, X } from "lucide-react";
 import { getThemeIcon } from "@/lib/themeIcons";
 import { useSearchState } from "@/shared/hooks";
-import { useLocationDropdown } from "@/components/search/LocationDropdown";
-import DateDropdown, { useDateDropdown } from "@/components/search/DateDropdown";
+import { useLocationDropdown, DateDropdown, useDateDropdown } from "@/features/guest/discovery";
 
 interface Theme {
   id: string;

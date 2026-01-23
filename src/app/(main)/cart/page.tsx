@@ -83,7 +83,7 @@ export default function CartPage() {
                 浏览套餐
               </Link>
               <Link
-                href="/campaigns"
+                href="/plans?sort=discount"
                 className="inline-flex items-center justify-center border border-sakura-600 text-sakura-600 hover:bg-sakura-50 font-semibold py-3 px-8 rounded-lg transition-all duration-300"
               >
                 查看优惠活动

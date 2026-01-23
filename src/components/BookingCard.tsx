@@ -16,10 +16,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui";
-import InstantBookingModal from "@/components/InstantBookingModal";
+import { InstantBookingModal, CollapsibleDateTimePicker } from "@/features/guest/booking";
 import { useCartStore, type CartItemInput } from "@/store/cart";
 import type { SelectedUpgrade } from "@/components/PlanDetailClient";
-import CollapsibleDateTimePicker from "@/components/booking/CollapsibleDateTimePicker";
 
 interface BookingCardProps {
   plan: {

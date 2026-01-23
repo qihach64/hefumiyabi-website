@@ -1,14 +1,25 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { Star, ChevronRight, Clock, MapPin } from "lucide-react";
 import BookingCard from "@/components/BookingCard";
-import MiniBookingBar from "@/components/MiniBookingBar";
+import { MiniBookingBar } from "@/features/guest/booking";
 import VisualHub from "@/components/plan/VisualHub";
 import ServiceMap from "@/components/plan/ServiceMap";
-import AITryOnSection from "@/components/plan/AITryOnSection";
 import UpgradeServices from "@/components/plan/UpgradeServices";
+
+// 动态导入 AITryOnSection (含 AI SDK ~500KB)
+const AITryOnSection = dynamic(
+  () => import("@/components/plan/AITryOnSection"),
+  {
+    loading: () => (
+      <div className="h-64 bg-gray-100 animate-pulse rounded-xl" />
+    ),
+    ssr: false,
+  }
+);
 import SocialProof from "@/components/plan/SocialProof";
 import JourneyTimeline from "@/components/plan/JourneyTimeline";
 import StoreLocationCard from "@/components/plan/StoreLocationCard";

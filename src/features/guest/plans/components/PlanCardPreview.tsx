@@ -1,6 +1,6 @@
 "use client";
 
-import PlanCard from "./index";
+import PlanCard from "@/components/PlanCard";
 
 interface Tag {
   id: string;
