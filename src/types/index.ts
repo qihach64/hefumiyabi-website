@@ -1,5 +1,8 @@
 import { Prisma } from "@prisma/client";
 
+// Re-export homepage types
+export * from "./homepage";
+
 // ============ Kimono Types ============
 export type KimonoWithImages = Prisma.KimonoGetPayload<{
   include: { images: true };

@@ -150,6 +150,11 @@ const {
 // URL 自动同步: /plans?location=京都&theme=traditional&minPrice=5000
 ```
 
+**重要规范**: 不要混用 `router.push()` 和 nuqs setters！
+- 同页面状态更新 → 用 nuqs setters
+- 跨页面导航 → 用 router.push() 构建完整 URL
+- 详见 `docs/guides/url-state-management.md`
+
 ### 2. 购物车 (Zustand)
 
 ```typescript

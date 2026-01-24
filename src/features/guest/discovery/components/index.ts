@@ -20,3 +20,4 @@ export { CategoryFilter } from './CategoryFilter';
 export { SortSelector } from './SortSelector';
 export { MobileFilterDrawer } from './MobileFilterDrawer';
 export { StoreFilter } from './StoreFilter';
+export { FilterSidebar } from './FilterSidebar';
