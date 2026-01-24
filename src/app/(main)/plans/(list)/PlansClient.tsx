@@ -1,7 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { Suspense, useState, useMemo, useTransition, useEffect } from "react";
+import { Suspense, useState, useMemo } from "react";
 import { PlanCard } from "@/features/guest/plans";
 import { ThemeImageSelector, SearchFilterSidebar } from "@/features/guest/discovery";
 import { Search, SlidersHorizontal, X } from "lucide-react";
@@ -38,7 +37,6 @@ interface Plan {
   imageUrl?: string;
   merchantName?: string;
   region?: string;
-  category?: string;
   duration?: number;
   isCampaign?: boolean;
   includes?: string[];
@@ -48,38 +46,24 @@ interface Plan {
   themeIcon?: string;
 }
 
-interface SearchClientProps {
+interface PlansClientProps {
   themes: Theme[];
-  plans: Plan[]; // 服务端已按主题/地点预过滤的所有套餐
-  currentTheme: Theme | null | undefined;
-  searchLocation: string;
-  searchDate: string;
+  plans: Plan[]; // 服务端提供的所有套餐，客户端负责筛选
   tagCategories: TagCategory[];
-  selectedTags: string[];
-  priceRange: [number, number];
   maxPrice: number;
-  sortBy: string;
 }
 
-function SearchClientInner({
+function PlansClientInner({
   themes,
-  plans: allPlans, // 重命名为 allPlans，表示这是服务端传来的完整列表
-  currentTheme,
-  searchLocation,
-  searchDate,
+  plans: serverPlans, // 服务端传来的完整套餐列表
   tagCategories,
-  selectedTags: initialSelectedTags,
-  priceRange: initialPriceRange,
   maxPrice,
-  sortBy: initialSortBy,
-}: SearchClientProps) {
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
-
+}: PlansClientProps) {
   // 使用 useSearchState 管理 URL 状态
   const {
     theme: urlThemeSlug,
     setTheme: setUrlTheme,
+    location: urlLocation,
     tags: urlTags,
     setTags: setUrlTags,
     minPrice: urlMinPrice,
@@ -88,41 +72,25 @@ function SearchClientInner({
     sort: urlSort,
     setSort: setUrlSort,
     clearFilters,
+    clearAll,
   } = useSearchState();
+
+  // 从 URL 派生当前主题
+  const currentTheme = useMemo(
+    () => (urlThemeSlug ? themes.find((t) => t.slug === urlThemeSlug) : null),
+    [urlThemeSlug, themes]
+  );
 
   // 本地 pending theme 状态 (用于即时 UI 反馈)
   const [pendingTheme, setPendingTheme] = useState<Theme | null | undefined>(undefined);
 
-  // 使用 URL 作为真正的数据源来检测外部导航
-  const currentThemeSlug = currentTheme?.slug;
-  const isUrlMismatch = urlThemeSlug !== (currentThemeSlug || null);
-
-  // 检查 pendingTheme 是否与服务端数据匹配（表示加载完成）
-  const pendingThemeSlug = pendingTheme?.slug ?? (pendingTheme === null ? null : undefined);
-  const isPendingComplete = pendingTheme !== undefined && pendingThemeSlug === (currentThemeSlug || null);
-
-  // 统一的加载状态：本地 transition + URL 不匹配
-  const isLoading = isPending || isUrlMismatch;
-
-  // 当 pendingTheme 与服务端数据匹配时（表示加载完成），重置 pending 状态
-  useEffect(() => {
-    if (isPendingComplete) {
-      setPendingTheme(undefined);
-    }
-  }, [isPendingComplete]);
-
   // 计算显示的主题：如果有 pendingTheme（正在切换），立即显示 pendingTheme；否则显示当前主题
-  // pendingTheme !== undefined 表示有正在进行的切换
   const displayTheme = pendingTheme !== undefined ? pendingTheme : currentTheme;
 
   // ========== 客户端筛选状态 (从 URL 同步) ==========
-  // nuqs 自动同步 URL，这些值直接来自 URL 参数
-  const selectedTags = urlTags ?? initialSelectedTags;
-  const priceRange: [number, number] = [
-    urlMinPrice ?? initialPriceRange[0],
-    urlMaxPrice ?? initialPriceRange[1],
-  ];
-  const sortBy = urlSort ?? initialSortBy;
+  const selectedTags = urlTags ?? [];
+  const priceRange: [number, number] = [urlMinPrice ?? 0, urlMaxPrice ?? maxPrice];
+  const sortBy = urlSort ?? "recommended";
 
   // 移动端筛选抽屉状态
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
@@ -131,18 +99,35 @@ function SearchClientInner({
 
   // ========== 前端过滤逻辑 ==========
   const filteredAndSortedPlans = useMemo(() => {
-    let result = [...allPlans];
+    let result = [...serverPlans];
 
-    // 1. 标签过滤 (AND 逻辑)
+    // 1. 主题过滤
+    if (urlThemeSlug) {
+      const themeId = themes.find((t) => t.slug === urlThemeSlug)?.id;
+      if (themeId) {
+        result = result.filter((plan) => plan.themeId === themeId);
+      }
+    }
+
+    // 2. 地区过滤
+    if (urlLocation) {
+      const locationLower = urlLocation.toLowerCase();
+      result = result.filter(
+        (plan) =>
+          plan.region?.toLowerCase().includes(locationLower) ||
+          plan.merchantName?.toLowerCase().includes(locationLower)
+      );
+    }
+
+    // 3. 标签过滤 (AND 逻辑)
     if (selectedTags.length > 0) {
       result = result.filter((plan) => {
         const planTagCodes = plan.planTags?.map((pt) => pt.tag.code) || [];
-        // 必须包含所有选中的标签
         return selectedTags.every((tagCode) => planTagCodes.includes(tagCode));
       });
     }
 
-    // 2. 价格过滤
+    // 4. 价格过滤
     if (priceRange[0] > 0 || priceRange[1] < maxPrice) {
       result = result.filter((plan) => {
         const price = plan.price;
@@ -152,7 +137,7 @@ function SearchClientInner({
       });
     }
 
-    // 3. 排序
+    // 5. 排序
     switch (sortBy) {
       case "price_asc":
         result.sort((a, b) => a.price - b.price);
@@ -161,7 +146,6 @@ function SearchClientInner({
         result.sort((a, b) => b.price - a.price);
         break;
       case "rating":
-        // 按 isCampaign 和原价折扣排序（作为"热门"的替代）
         result.sort((a, b) => {
           const aScore = (a.isCampaign ? 100 : 0) + (a.originalPrice ? 50 : 0);
           const bScore = (b.isCampaign ? 100 : 0) + (b.originalPrice ? 50 : 0);
@@ -170,7 +154,6 @@ function SearchClientInner({
         break;
       case "recommended":
       default:
-        // 默认排序：isCampaign > 折扣 > 价格
         result.sort((a, b) => {
           if (a.isCampaign !== b.isCampaign) return a.isCampaign ? -1 : 1;
           if (!!a.originalPrice !== !!b.originalPrice) return a.originalPrice ? -1 : 1;
@@ -180,29 +163,21 @@ function SearchClientInner({
     }
 
     return result;
-  }, [allPlans, selectedTags, priceRange, sortBy, maxPrice]);
+  }, [serverPlans, urlThemeSlug, urlLocation, selectedTags, priceRange, sortBy, maxPrice, themes]);
 
-  // ========== 主题切换（需要服务端重新查询）==========
+  // ========== 主题切换（客户端过滤，无需服务端重新查询）==========
   const handleThemeChange = async (theme: Theme | null) => {
     // 设置本地 pending 状态以实现即时 UI 反馈
     setPendingTheme(theme);
 
-    // 清空筛选条件 (nuqs 自动更新 URL)
-    await clearFilters();
+    // 使用 nuqs 同步更新主题和清除筛选条件
+    await Promise.all([
+      clearFilters(),
+      setUrlTheme(theme?.slug ?? null),
+    ]);
 
-    // 设置主题并触发服务端重新查询
-    startTransition(() => {
-      const params = new URLSearchParams();
-      if (theme) {
-        params.set("theme", theme.slug);
-      }
-      // 保留 location 和 date
-      if (searchLocation) params.set("location", searchLocation);
-      if (searchDate) params.set("date", searchDate);
-
-      const queryString = params.toString();
-      router.push(queryString ? `/plans?${queryString}` : "/plans");
-    });
+    // 重置 pending 状态
+    setPendingTheme(undefined);
   };
 
   // ========== 标签变更（前端过滤，URL 自动同步）==========
@@ -257,7 +232,7 @@ function SearchClientInner({
               themes={themes}
               selectedTheme={currentTheme || null}
               onSelect={handleThemeChange}
-              isPending={isLoading}
+              isPending={pendingTheme !== undefined}
               pendingTheme={pendingTheme}
             />
           </div>
@@ -319,15 +294,9 @@ function SearchClientInner({
 
                   {/* 套餐数量 */}
                   <p className="text-[14px] text-gray-500">
-                    {isLoading ? (
-                      <span className="h-4 w-20 bg-gray-200 rounded animate-pulse inline-block" />
-                    ) : (
-                      <>
-                        共 <span className="font-medium text-gray-700">{filteredAndSortedPlans.length}</span> 个套餐
-                        {activeFiltersCount > 0 && allPlans.length !== filteredAndSortedPlans.length && (
-                          <span className="text-gray-400 ml-1">· 已筛选</span>
-                        )}
-                      </>
+                    共 <span className="font-medium text-gray-700">{filteredAndSortedPlans.length}</span> 个套餐
+                    {activeFiltersCount > 0 && serverPlans.length !== filteredAndSortedPlans.length && (
+                      <span className="text-gray-400 ml-1">· 已筛选</span>
                     )}
                   </p>
                 </div>
@@ -383,17 +352,8 @@ function SearchClientInner({
 
           {/* 套餐列表 */}
           <div className="flex-1 min-w-0">
-            {/* 加载中骨架屏 - 统一使用 isLoading */}
-            {isLoading && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                {[...Array(9)].map((_, i) => (
-                  <PlanCardSkeleton key={i} />
-                ))}
-              </div>
-            )}
-
             {/* 无结果提示 */}
-            {!isLoading && filteredAndSortedPlans.length === 0 && (
+            {filteredAndSortedPlans.length === 0 ? (
               <div className="text-center py-20">
                 <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gray-100 flex items-center justify-center">
                   <Search className="w-10 h-10 text-gray-400" />
@@ -416,7 +376,7 @@ function SearchClientInner({
                   <button
                     onClick={() => {
                       setPendingTheme(null);
-                      router.push('/plans');
+                      clearAll();
                     }}
                     className="px-6 py-2.5 bg-sakura-500 text-white font-medium rounded-full hover:bg-sakura-600 transition-colors"
                   >
@@ -424,10 +384,8 @@ function SearchClientInner({
                   </button>
                 </div>
               </div>
-            )}
-
-            {/* 套餐网格 - 搜索页使用 3:4 比例 */}
-            {!isLoading && filteredAndSortedPlans.length > 0 && (
+            ) : (
+              /* 套餐网格 - 搜索页使用 3:4 比例 */
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
                 {filteredAndSortedPlans.map((plan) => (
                   <PlanCard
@@ -505,41 +463,7 @@ function SearchClientInner({
   );
 }
 
-// 套餐卡片骨架屏 - 匹配 soft variant PlanCard 样式
-function PlanCardSkeleton() {
-  return (
-    <div className="bg-white rounded-xl shadow-[0_2px_12px_-4px_rgba(0,0,0,0.08)] p-3">
-      {/* 图片骨架 - 3:4 比例，圆角 */}
-      <div className="aspect-[3/4] bg-gray-100 animate-pulse rounded-xl" />
-
-      {/* 内容骨架 */}
-      <div className="mt-3 space-y-2">
-        {/* 商家 + 地区 */}
-        <div className="h-3 w-1/3 bg-gray-100 rounded animate-pulse" />
-
-        {/* 标题 */}
-        <div className="h-5 w-4/5 bg-gray-100 rounded animate-pulse" />
-
-        {/* 分隔线 */}
-        <div className="h-px w-6 bg-gray-100 animate-pulse" />
-
-        {/* 价格 */}
-        <div className="h-5 w-24 bg-gray-100 rounded animate-pulse" />
-
-        {/* 包含物 */}
-        <div className="h-3 w-2/3 bg-gray-100 rounded animate-pulse" />
-
-        {/* 标签 */}
-        <div className="flex gap-1.5 pt-0.5">
-          <div className="h-5 w-14 bg-gray-100 rounded animate-pulse" />
-          <div className="h-5 w-12 bg-gray-100 rounded animate-pulse" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export default function SearchClient(props: SearchClientProps) {
+export default function PlansClient(props: PlansClientProps) {
   return (
     <Suspense
       fallback={
@@ -548,7 +472,7 @@ export default function SearchClient(props: SearchClientProps) {
         </div>
       }
     >
-      <SearchClientInner {...props} />
+      <PlansClientInner {...props} />
     </Suspense>
   );
 }

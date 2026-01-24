@@ -1,201 +1,99 @@
-import prisma from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
+import { Suspense } from "react";
+import { planService } from "@/server/services/plan.service";
 import PlansClient from "./PlansClient";
 
-// 禁用静态生成,在运行时动态渲染
-export const dynamic = 'force-dynamic';
+// ISR: 60 秒重新验证
+export const revalidate = 60;
 
-export default async function PlansPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}) {
-  const params = await searchParams;
-  const themeSlug = typeof params.theme === 'string' ? params.theme : '';
-  const searchLocation = typeof params.location === 'string' ? params.location : '';
-  const searchDate = typeof params.date === 'string' ? params.date : '';
+// 套餐页骨架屏
+function PlansPageSkeleton() {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* 头部区域骨架 */}
+      <div className="bg-gradient-to-b from-pink-50/30 to-transparent">
+        <div className="container">
+          {/* 主题选择器骨架 */}
+          <div className="pt-6 md:pt-8 pb-4">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="h-4 w-16 bg-gray-200 rounded animate-pulse" />
+              <div className="flex-1 h-px bg-gray-200" />
+            </div>
+            <div className="flex gap-3 overflow-hidden">
+              {[...Array(6)].map((_, i) => (
+                <div
+                  key={i}
+                  className="flex-shrink-0 w-24 h-32 bg-gray-200 rounded-2xl animate-pulse"
+                />
+              ))}
+            </div>
+          </div>
 
-  // 筛选参数（用于前端初始化状态，不用于后端过滤）
-  const tagsParam = typeof params.tags === 'string' ? params.tags : '';
-  const selectedTags = tagsParam ? tagsParam.split(',').filter(Boolean) : [];
-  const minPriceParam = typeof params.minPrice === 'string' ? parseInt(params.minPrice, 10) : 0;
-  const maxPriceParam = typeof params.maxPrice === 'string' ? parseInt(params.maxPrice, 10) : 0;
-  const sortBy = typeof params.sort === 'string' ? params.sort : 'recommended';
+          {/* 标题区骨架 */}
+          <div className="pb-6 md:pb-8">
+            <div className="flex items-start gap-4 mb-6">
+              <div className="w-14 h-14 bg-gray-200 rounded-2xl animate-pulse" />
+              <div className="flex-1 space-y-3">
+                <div className="h-8 w-48 bg-gray-200 rounded animate-pulse" />
+                <div className="h-4 w-64 bg-gray-200 rounded animate-pulse" />
+                <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+              </div>
+            </div>
+            <div className="h-px bg-gray-200" />
+          </div>
+        </div>
+      </div>
 
-  // 日本传统色系映射 (Override Database Colors)
-  const themeColorMap: Record<string, string> = {
-    'trendy-photo': '#F28B82',    // 薄红
-    'formal-ceremony': '#FFCC80', // 杏色
-    'together': '#80CBC4',        // 青磁
-    'seasonal': '#AED581',        // 萌黄
-    'casual-stroll': '#90CAF9',   // 勿忘草
-    'specialty': '#B39DDB',       // 藤紫
-  };
+      {/* 内容区骨架 */}
+      <div className="bg-white">
+        <div className="container py-6">
+          <div className="flex gap-8">
+            {/* 侧边栏骨架 */}
+            <div className="hidden lg:block w-72 flex-shrink-0 space-y-6">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="space-y-3">
+                  <div className="h-5 w-20 bg-gray-200 rounded animate-pulse" />
+                  <div className="space-y-2">
+                    {[...Array(4)].map((_, j) => (
+                      <div key={j} className="h-8 bg-gray-100 rounded animate-pulse" />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
 
-  // 获取所有活跃的 Theme
-  const themesRaw = await prisma.theme.findMany({
-    where: { isActive: true },
-    orderBy: { displayOrder: 'asc' },
-    select: {
-      id: true,
-      slug: true,
-      name: true,
-      icon: true,
-      color: true,
-      description: true,
-    },
-  });
+            {/* 套餐网格骨架 */}
+            <div className="flex-1 min-w-0">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
+                {[...Array(9)].map((_, i) => (
+                  <div key={i} className="bg-white rounded-xl shadow-sm p-3">
+                    <div className="aspect-[3/4] bg-gray-100 rounded-xl animate-pulse" />
+                    <div className="mt-3 space-y-2">
+                      <div className="h-3 w-1/3 bg-gray-100 rounded animate-pulse" />
+                      <div className="h-5 w-4/5 bg-gray-100 rounded animate-pulse" />
+                      <div className="h-5 w-24 bg-gray-100 rounded animate-pulse" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-  // 应用日本传统色系
-  const themes = themesRaw.map(theme => ({
-    ...theme,
-    color: themeColorMap[theme.slug] || theme.color,
-  }));
-
-  // 获取筛选用的标签分类
-  const tagCategories = await prisma.tagCategory.findMany({
-    where: {
-      isActive: true,
-      showInFilter: true,
-    },
-    include: {
-      tags: {
-        where: { isActive: true },
-        orderBy: { order: 'asc' },
-        select: {
-          id: true,
-          code: true,
-          name: true,
-          icon: true,
-          color: true,
-        },
-      },
-    },
-    orderBy: { filterOrder: 'asc' },
-  });
-
-  // 构建套餐查询条件
-  const whereConditions: Prisma.RentalPlanWhereInput = {
-    isActive: true,
-  };
-
-  // 如果选择了主题，按主题筛选
-  if (themeSlug) {
-    const selectedTheme = themes.find(t => t.slug === themeSlug);
-    if (selectedTheme) {
-      whereConditions.themeId = selectedTheme.id;
-    }
-  }
-
-  // 如果有地点搜索，预过滤地区
-  if (searchLocation) {
-    whereConditions.region = {
-      contains: searchLocation,
-      mode: 'insensitive',
-    };
-  }
-
-  // 注意：标签、价格、排序筛选在前端进行，服务端只做主题和地点过滤
-  // 这样可以实现即时过滤，不需要每次都请求后端
-
-  // 默认排序（服务端）
-  const orderBy: Prisma.RentalPlanOrderByWithRelationInput[] = [
-    { isFeatured: 'desc' },
-    { isCampaign: 'desc' },
-    { price: 'asc' },
-  ];
-
-  // 获取套餐
-  const plans = await prisma.rentalPlan.findMany({
-    where: whereConditions,
-    include: {
-      theme: true,
-      merchant: {
-        select: {
-          id: true,
-          businessName: true,
-        },
-      },
-      planTags: {
-        include: {
-          tag: {
-            select: {
-              id: true,
-              code: true,
-              name: true,
-              icon: true,
-              color: true,
-            },
-          },
-        },
-      },
-      planComponents: {
-        include: {
-          merchantComponent: {
-            select: {
-              customName: true,
-              template: {
-                select: {
-                  id: true,
-                  code: true,
-                  name: true,
-                  type: true,
-                  icon: true,
-                  displayOrder: true,
-                },
-              },
-            },
-          },
-        },
-        orderBy: { hotmapOrder: 'asc' },
-      },
-    },
-    orderBy,
-  });
-
-  // 获取价格范围（用于滑块）
-  const priceStats = await prisma.rentalPlan.aggregate({
-    where: { isActive: true },
-    _max: { price: true },
-  });
-  const globalMaxPrice = priceStats._max.price || 50000;
-
-  // 转换为客户端格式
-  const plansForClient = plans.map((plan) => ({
-    id: plan.id,
-    name: plan.name,
-    description: plan.description || undefined,
-    price: plan.price,
-    originalPrice: plan.originalPrice || undefined,
-    imageUrl: plan.imageUrl || undefined,
-    merchantName: plan.merchant?.businessName || plan.storeName || undefined,
-    region: plan.region || undefined,
-    category: plan.category,
-    duration: plan.duration,
-    isCampaign: !!plan.originalPrice && plan.originalPrice > plan.price,
-    includes: plan.planComponents
-      .map(pc => pc.merchantComponent.template?.name || pc.merchantComponent.customName || "服务"),
-    planTags: plan.planTags.map(pt => ({ tag: pt.tag })),
-    themeId: plan.themeId || undefined,
-    themeName: plan.theme?.name || undefined,
-    themeIcon: plan.theme?.icon || undefined,
-  }));
-
-  // 当前选中的主题
-  const currentTheme = themeSlug ? themes.find(t => t.slug === themeSlug) : null;
+export default async function PlansPage() {
+  const data = await planService.getPlansPageData();
 
   return (
-    <PlansClient
-      themes={themes}
-      plans={plansForClient}
-      currentTheme={currentTheme}
-      searchLocation={searchLocation}
-      searchDate={searchDate}
-      tagCategories={tagCategories}
-      selectedTags={selectedTags}
-      priceRange={[minPriceParam || 0, maxPriceParam || globalMaxPrice]}
-      maxPrice={globalMaxPrice}
-      sortBy={sortBy}
-    />
+    <Suspense fallback={<PlansPageSkeleton />}>
+      <PlansClient
+        themes={data.themes}
+        plans={data.plans}
+        tagCategories={data.tagCategories}
+        maxPrice={data.maxPrice}
+      />
+    </Suspense>
   );
 }
