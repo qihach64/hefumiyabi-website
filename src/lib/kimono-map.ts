@@ -1,6 +1,145 @@
 import prisma from "@/lib/prisma";
 import type { MapData, HotspotData } from "@/components/plan/InteractiveKimonoMap/types";
 
+// ============================================================
+// 类型定义：用于 buildMapDataFromPlan 辅助函数
+// ============================================================
+
+/**
+ * MapTemplate 数据结构（用于构建 mapData）
+ */
+export type MapTemplateData = {
+  imageUrl: string;
+  imageWidth: number | null;
+  imageHeight: number | null;
+};
+
+/**
+ * PlanComponent 数据结构（包含热点坐标和组件信息）
+ * 由 page.tsx 查询后传入
+ */
+export type PlanComponentForMap = {
+  id: string;
+  hotmapX: number | null;
+  hotmapY: number | null;
+  hotmapOrder: number | null;
+  hotmapLabelPosition: string | null;
+  hotmapLabelOffsetX: number | null;
+  hotmapLabelOffsetY: number | null;
+  merchantComponent: {
+    highlights: string[];
+    images: string[];
+    template: {
+      id: string;
+      code: string;
+      name: string;
+      nameJa: string | null;
+      nameEn: string | null;
+      description: string | null;
+      type: string;
+      icon: string | null;
+      outfitCategory: string | null;
+      defaultHighlights: string[];
+      defaultImages: string[];
+    } | null;
+  };
+};
+
+/**
+ * 带有效热点数据的 PlanComponent（类型守卫后的类型）
+ */
+type PlanComponentWithValidHotspot = PlanComponentForMap & {
+  hotmapX: number;
+  hotmapY: number;
+  merchantComponent: PlanComponentForMap["merchantComponent"] & {
+    template: NonNullable<PlanComponentForMap["merchantComponent"]["template"]>;
+  };
+};
+
+/**
+ * 类型守卫：检查 planComponent 是否有有效的热点数据
+ * - hotmapX 和 hotmapY 不为 null
+ * - template 不为 null（排除自定义组件）
+ */
+function hasValidHotspot(pc: PlanComponentForMap): pc is PlanComponentWithValidHotspot {
+  return (
+    pc.hotmapX != null &&
+    pc.hotmapY != null &&
+    pc.merchantComponent.template != null
+  );
+}
+
+/**
+ * 构建单个 hotspot 数据
+ */
+function buildHotspot(pc: PlanComponentWithValidHotspot, index: number): HotspotData {
+  const mc = pc.merchantComponent;
+  const tpl = mc.template;
+
+  return {
+    id: pc.id,
+    x: pc.hotmapX,
+    y: pc.hotmapY,
+    labelPosition: (pc.hotmapLabelPosition || "right") as "left" | "right" | "top" | "bottom",
+    labelOffsetX: pc.hotmapLabelOffsetX,
+    labelOffsetY: pc.hotmapLabelOffsetY,
+    displayOrder: pc.hotmapOrder ?? index,
+    component: {
+      id: tpl.id,
+      code: tpl.code,
+      name: tpl.name,
+      nameJa: tpl.nameJa,
+      nameEn: tpl.nameEn,
+      description: tpl.description,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      type: tpl.type as any,
+      icon: tpl.icon,
+      highlights: mc.highlights.length > 0 ? mc.highlights : tpl.defaultHighlights,
+      images: mc.images.length > 0 ? mc.images : tpl.defaultImages,
+      isBaseComponent: true,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      outfitCategory: tpl.outfitCategory as any,
+    },
+    isIncluded: true,
+  };
+}
+
+/**
+ * 从已查询的数据构建 mapData（纯数据转换，无数据库调用）
+ *
+ * @param planComponents - 已查询的 planComponents（含热点字段）
+ * @param mapTemplate - mapTemplate 数据（可为 null）
+ * @returns MapData 或 null
+ */
+export function buildMapDataFromPlan(
+  planComponents: PlanComponentForMap[],
+  mapTemplate: MapTemplateData | null
+): MapData | null {
+  if (!mapTemplate) return null;
+
+  const hotspots = planComponents
+    .filter(hasValidHotspot)
+    .map((pc, index) => buildHotspot(pc, index));
+
+  return {
+    imageUrl: mapTemplate.imageUrl,
+    imageWidth: mapTemplate.imageWidth,
+    imageHeight: mapTemplate.imageHeight,
+    hotspots,
+  };
+}
+
+/**
+ * 获取默认 mapTemplate（fallback 用）
+ */
+export async function getDefaultMapTemplate(): Promise<MapTemplateData | null> {
+  const template = await prisma.mapTemplate.findFirst({
+    where: { isDefault: true, isActive: true },
+    select: { imageUrl: true, imageWidth: true, imageHeight: true },
+  });
+  return template;
+}
+
 /**
  * 获取默认地图模板数据
  * 用于展示标准和服配件图
@@ -107,11 +246,12 @@ export async function getPlanMapData(planId: string): Promise<MapData | null> {
     if (!template) return null;
 
     // 只显示商户明确设置过位置的组件（hotmapX 和 hotmapY 都不为 null）
+    // 跳过自定义组件（template 为 null）
     const hotspots: HotspotData[] = plan.planComponents
-      .filter((pc) => pc.hotmapX != null && pc.hotmapY != null)
+      .filter((pc) => pc.hotmapX != null && pc.hotmapY != null && pc.merchantComponent.template != null)
       .map((pc, index) => {
         const mc = pc.merchantComponent;
-        const tpl = mc.template;
+        const tpl = mc.template!; // 已通过 filter 保证非空
 
         return {
           id: pc.id,

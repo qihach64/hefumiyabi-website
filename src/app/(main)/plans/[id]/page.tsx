@@ -1,7 +1,11 @@
 import { notFound } from "next/navigation";
 import prisma from "@/lib/prisma";
 import PlanDetailClient from "@/components/PlanDetailClient";
-import { getPlanMapData } from "@/lib/kimono-map";
+import {
+  buildMapDataFromPlan,
+  getDefaultMapTemplate,
+  type PlanComponentForMap,
+} from "@/lib/kimono-map";
 
 interface PlanDetailPageProps {
   params: Promise<{
@@ -36,7 +40,49 @@ export default async function PlanDetailPage({
           id: true,
           slug: true,
           name: true,
+          // mapData 优化：获取 mapTemplate
+          mapTemplate: {
+            select: {
+              imageUrl: true,
+              imageWidth: true,
+              imageHeight: true,
+            },
+          },
         },
+      },
+      // mapData 优化：获取 planComponents 的热点字段
+      planComponents: {
+        select: {
+          id: true,
+          hotmapOrder: true,
+          hotmapX: true,
+          hotmapY: true,
+          hotmapLabelPosition: true,
+          hotmapLabelOffsetX: true,
+          hotmapLabelOffsetY: true,
+          merchantComponent: {
+            select: {
+              highlights: true,
+              images: true,
+              template: {
+                select: {
+                  id: true,
+                  code: true,
+                  name: true,
+                  nameJa: true,
+                  nameEn: true,
+                  description: true,
+                  type: true,
+                  icon: true,
+                  outfitCategory: true,
+                  defaultHighlights: true,
+                  defaultImages: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: { hotmapOrder: "asc" },
       },
       planStores: {
         where: { isActive: true },
@@ -177,8 +223,16 @@ export default async function PlanDetailPage({
     store = defaultStore || { id: "default", name: plan.storeName || "店铺" };
   }
 
-  // Get plan-specific hotspot map data
-  const mapData = await getPlanMapData(id);
+  // 构建 mapData：优先使用 theme.mapTemplate，否则 fallback 到默认模板
+  // 注：fallback 查询仅在 theme 无 mapTemplate 时触发（边缘情况）
+  let mapTemplate = plan.theme?.mapTemplate ?? null;
+  if (!mapTemplate) {
+    mapTemplate = await getDefaultMapTemplate();
+  }
+  const mapData = buildMapDataFromPlan(
+    plan.planComponents as PlanComponentForMap[],
+    mapTemplate
+  );
 
   // Fetch related plans from the same theme (excluding current plan)
   let relatedPlans: {
