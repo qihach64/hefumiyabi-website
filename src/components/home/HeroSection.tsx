@@ -2,7 +2,6 @@
 
 import { useRef, useEffect, useState } from "react";
 import Image from "next/image";
-import { motion } from "framer-motion";
 import HeroSearchPanel from "./HeroSearchPanel";
 
 // Hero 背景图片
@@ -106,45 +105,30 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
 
       {/* Layer 3: 主内容区 */}
       <div className="relative z-10 h-full flex flex-col items-center justify-center px-4 -mt-16 md:-mt-24">
-        {/* 竖排装饰文字 - 左侧 */}
-        <motion.div
-          className="hidden lg:block absolute left-8 xl:left-16 top-1/2 -translate-y-1/2"
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 1, delay: 1.2 }}
-        >
+        {/* 竖排装饰文字 - 左侧 (CSS 动画替代 framer-motion) */}
+        <div className="hidden lg:block absolute left-8 xl:left-16 top-1/2 -translate-y-1/2 animate-hero-left">
           <div
             className="writing-vertical text-wabi-400/50 text-sm tracking-[0.5em] font-mincho select-none"
             style={{ writingMode: "vertical-rl" }}
           >
             京都・和服体験
           </div>
-        </motion.div>
+        </div>
 
-        {/* 竖排装饰文字 - 右侧 */}
-        <motion.div
-          className="hidden lg:block absolute right-8 xl:right-16 top-1/2 -translate-y-1/2"
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 1, delay: 1.2 }}
-        >
+        {/* 竖排装饰文字 - 右侧 (CSS 动画替代 framer-motion) */}
+        <div className="hidden lg:block absolute right-8 xl:right-16 top-1/2 -translate-y-1/2 animate-hero-right">
           <div
             className="writing-vertical text-wabi-400/50 text-sm tracking-[0.5em] font-mincho select-none"
             style={{ writingMode: "vertical-rl" }}
           >
             伝統と現代の融合
           </div>
-        </motion.div>
+        </div>
 
         {/* 主标题区域 - 上移以避免底部截断 */}
         <div className="text-center mb-6 md:mb-10 relative -mt-8 md:-mt-12">
-          {/* 主标题 */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            className="relative"
-          >
+          {/* 主标题 (CSS 动画替代 framer-motion) */}
+          <div className="relative animate-hero-title">
             {/* 主标题 - 优雅的深色 + 樱花色点缀 */}
             <h1 className="relative">
               <span
@@ -156,15 +140,10 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
                 一の着物
               </span>
             </h1>
-          </motion.div>
+          </div>
 
-          {/* 副标题 - 细腻的磨砂背景 */}
-          <motion.div
-            className="mt-6 md:mt-8"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.9 }}
-          >
+          {/* 副标题 - 细腻的磨砂背景 (CSS 动画替代 framer-motion) */}
+          <div className="mt-6 md:mt-8 animate-hero-subtitle">
             <span
               className="inline-flex items-center px-6 py-2.5 rounded-full backdrop-blur-md"
               style={{
@@ -178,18 +157,13 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
                 伝統の美、現代の心
               </p>
             </span>
-          </motion.div>
+          </div>
         </div>
 
-        {/* 搜索面板 - 亮色变体 */}
-        <motion.div
-          className="w-full max-w-4xl"
-          initial={{ opacity: 0, y: 30, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.8, delay: 1.1 }}
-        >
+        {/* 搜索面板 - 亮色变体 (CSS 动画替代 framer-motion) */}
+        <div className="w-full max-w-4xl animate-hero-search">
           <HeroSearchPanel themes={themes} variant="light" />
-        </motion.div>
+        </div>
       </div>
 
     </section>

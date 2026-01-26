@@ -42,6 +42,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN" suppressHydrationWarning>
+      <head>
+        {/* Hero 图片 preconnect 优化 - 提升 LCP */}
+        <link rel="preconnect" href="https://i0.wp.com" />
+        <link rel="dns-prefetch" href="https://i0.wp.com" />
+      </head>
       <body className={`${notoSansSC.variable} ${notoSerifSC.variable} ${shipporiMincho.variable} font-sans antialiased`}>
         <SessionProvider>
           <NuqsAdapter>

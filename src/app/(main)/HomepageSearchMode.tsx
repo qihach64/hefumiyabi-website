@@ -2,7 +2,9 @@
 
 import { useMemo } from "react";
 import { Filter } from "lucide-react";
-import { PlanCard, FeaturedPlanCard } from "@/features/guest/plans";
+// 直接导入避免 barrel export 拉入 AITryOnSection (含 framer-motion)
+import PlanCard from "@/components/PlanCard";
+import FeaturedPlanCard from "@/components/PlanCard/FeaturedPlanCard";
 import { FilterSidebar, MobileFilterDrawer } from "@/features/guest/discovery";
 import ScrollableSection from "@/components/ScrollableSection";
 import { Button } from "@/components/ui";

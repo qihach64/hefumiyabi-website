@@ -2,7 +2,9 @@
 
 import { useMemo } from "react";
 import { Sparkles, Store as StoreIcon, ArrowRight, Plus } from "lucide-react";
-import { PlanCard, FeaturedPlanCard } from "@/features/guest/plans";
+// 直接导入避免 barrel export 拉入 AITryOnSection (含 framer-motion)
+import PlanCard from "@/components/PlanCard";
+import FeaturedPlanCard from "@/components/PlanCard/FeaturedPlanCard";
 import ScrollableSection from "@/components/ScrollableSection";
 import HeroSection from "@/components/home/HeroSection";
 import type { ThemeSection } from "@/types/homepage";

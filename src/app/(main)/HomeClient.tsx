@@ -2,11 +2,11 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
+import dynamic from "next/dynamic";
 import { useSearchLoading } from "@/contexts/SearchLoadingContext";
 import { useSearchBar } from "@/contexts/SearchBarContext";
 import { useSearchState } from "@/shared/hooks";
 import { HomepageExploreMode } from "./HomepageExploreMode";
-import { HomepageSearchMode } from "./HomepageSearchMode";
 import type {
   ThemeSection,
   HomepagePlanCard,
@@ -14,6 +14,77 @@ import type {
   HomepageStore,
   HomepageTagCategory,
 } from "@/types/homepage";
+
+// 动态导入搜索模式组件 - 减少首屏 JS bundle (~50KB)
+const HomepageSearchMode = dynamic(
+  () => import("./HomepageSearchMode").then((mod) => ({ default: mod.HomepageSearchMode })),
+  {
+    ssr: false,
+    loading: () => <SearchModeSkeleton />,
+  }
+);
+
+// 搜索模式骨架屏
+function SearchModeSkeleton() {
+  return (
+    <section className="py-6 bg-background min-h-screen animate-pulse">
+      <div className="container">
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* 左侧筛选器骨架 */}
+          <div className="hidden lg:block lg:w-64 flex-shrink-0">
+            <div className="bg-white rounded-xl border border-wabi-200 p-6 space-y-6">
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 bg-gray-200 rounded" />
+                <div className="h-6 w-24 bg-gray-200 rounded" />
+              </div>
+              {[1, 2, 3].map((i) => (
+                <div key={i}>
+                  <div className="h-4 w-20 bg-gray-200 rounded mb-3" />
+                  <div className="flex flex-wrap gap-2">
+                    {[1, 2, 3].map((j) => (
+                      <div key={j} className="h-8 w-16 bg-gray-100 rounded-full" />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* 移动端筛选按钮骨架 */}
+          <div className="lg:hidden mb-6">
+            <div className="w-full h-12 bg-gray-100 rounded-xl" />
+          </div>
+          {/* 右侧内容骨架 */}
+          <div className="flex-1 min-w-0">
+            <div className="mb-6">
+              <div className="h-4 w-40 bg-gray-200 rounded" />
+            </div>
+            {[1, 2].map((section) => (
+              <div key={section} className="mb-8">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-8 h-8 bg-gray-200 rounded-full" />
+                  <div className="h-6 w-32 bg-gray-200 rounded" />
+                </div>
+                <div className="flex gap-4 overflow-hidden">
+                  {[1, 2, 3, 4].map((card) => (
+                    <div key={card} className="flex-shrink-0 w-[260px]">
+                      <div className="bg-white rounded-xl overflow-hidden">
+                        <div className="aspect-square bg-gray-200" />
+                        <div className="p-3 space-y-2">
+                          <div className="h-4 w-2/3 bg-gray-200 rounded" />
+                          <div className="h-5 w-20 bg-gray-200 rounded" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 interface HomeClientProps {
   themeSections: ThemeSection[];

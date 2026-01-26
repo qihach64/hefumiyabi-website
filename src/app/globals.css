@@ -425,3 +425,113 @@ body {
 [data-sonner-toast][data-type="success"] [data-icon] svg {
   color: var(--sakura-500) !important;
 }
+
+/* ================================
+   Hero 动画 - framer-motion 替代
+   性能优化：减少 ~50KB JS bundle
+   ================================ */
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fade-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fade-in-scale {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes bounce-arrow {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(8px);
+  }
+}
+
+/* Hero 动画工具类 - 保持原有时序 */
+.animate-hero-title {
+  animation: fade-in-up 0.8s ease-out 0.3s both;
+}
+
+.animate-hero-subtitle {
+  animation: fade-in-up 0.8s ease-out 0.9s both;
+}
+
+.animate-hero-search {
+  animation: fade-in-scale 0.8s ease-out 1.1s both;
+}
+
+.animate-hero-left {
+  animation: fade-in-left 1s ease-out 1.2s both;
+}
+
+.animate-hero-right {
+  animation: fade-in-right 1s ease-out 1.2s both;
+}
+
+.animate-scroll-indicator {
+  animation: fade-in 0.8s ease-out 1.5s both;
+}
+
+.animate-bounce-arrow {
+  animation: bounce-arrow 1.5s ease-in-out infinite;
+}
+
+/* 尊重用户偏好 - 减少动画 */
+@media (prefers-reduced-motion: reduce) {
+  .animate-hero-title,
+  .animate-hero-subtitle,
+  .animate-hero-search,
+  .animate-hero-left,
+  .animate-hero-right,
+  .animate-scroll-indicator,
+  .animate-bounce-arrow {
+    animation: none;
+    opacity: 1;
+  }
+}
