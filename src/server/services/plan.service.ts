@@ -6,6 +6,109 @@ import type {
   ThemeSection,
   GetHomepagePlansOptions,
 } from '@/types/homepage';
+import type { MapData, HotspotData } from '@/components/plan/InteractiveKimonoMap/types';
+
+// ============================================================
+// mapData 构建相关类型和辅助函数
+// ============================================================
+
+type MapTemplateData = {
+  imageUrl: string;
+  imageWidth: number | null;
+  imageHeight: number | null;
+};
+
+// planComponent 查询结果类型（用于 mapData 构建）
+type PlanComponentForMapData = {
+  id: string;
+  hotmapX: number | null;
+  hotmapY: number | null;
+  hotmapOrder: number | null;
+  hotmapLabelPosition: string | null;
+  hotmapLabelOffsetX: number | null;
+  hotmapLabelOffsetY: number | null;
+  merchantComponent: {
+    customName: string | null;
+    highlights: string[];
+    images: string[];
+    template: {
+      id: string;
+      code: string;
+      name: string;
+      nameJa: string | null;
+      nameEn: string | null;
+      description: string | null;
+      type: string;
+      icon: string | null;
+      outfitCategory: string | null;
+      defaultHighlights: string[];
+      defaultImages: string[];
+    } | null;
+  };
+};
+
+// 带有效热点的 planComponent（类型守卫后）
+type PlanComponentWithValidHotspot = PlanComponentForMapData & {
+  hotmapX: number;
+  hotmapY: number;
+  merchantComponent: PlanComponentForMapData['merchantComponent'] & {
+    template: NonNullable<PlanComponentForMapData['merchantComponent']['template']>;
+  };
+};
+
+// 类型守卫：检查是否有有效热点数据
+function hasValidHotspot(pc: PlanComponentForMapData): pc is PlanComponentWithValidHotspot {
+  return pc.hotmapX != null && pc.hotmapY != null && pc.merchantComponent.template != null;
+}
+
+// 构建单个 hotspot
+function buildHotspot(pc: PlanComponentWithValidHotspot, index: number): HotspotData {
+  const mc = pc.merchantComponent;
+  const tpl = mc.template;
+  return {
+    id: pc.id,
+    x: pc.hotmapX,
+    y: pc.hotmapY,
+    labelPosition: (pc.hotmapLabelPosition || 'right') as 'left' | 'right' | 'top' | 'bottom',
+    labelOffsetX: pc.hotmapLabelOffsetX,
+    labelOffsetY: pc.hotmapLabelOffsetY,
+    displayOrder: pc.hotmapOrder ?? index,
+    component: {
+      id: tpl.id,
+      code: tpl.code,
+      name: tpl.name,
+      nameJa: tpl.nameJa,
+      nameEn: tpl.nameEn,
+      description: tpl.description,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      type: tpl.type as any,
+      icon: tpl.icon,
+      highlights: mc.highlights.length > 0 ? mc.highlights : tpl.defaultHighlights,
+      images: mc.images.length > 0 ? mc.images : tpl.defaultImages,
+      isBaseComponent: true,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      outfitCategory: tpl.outfitCategory as any,
+    },
+    isIncluded: true,
+  };
+}
+
+// 构建 mapData（纯数据转换）
+function buildMapData(
+  planComponents: PlanComponentForMapData[],
+  mapTemplate: MapTemplateData | null
+): MapData | null {
+  if (!mapTemplate) return null;
+
+  const hotspots = planComponents.filter(hasValidHotspot).map((pc, index) => buildHotspot(pc, index));
+
+  return {
+    imageUrl: mapTemplate.imageUrl,
+    imageWidth: mapTemplate.imageWidth,
+    imageHeight: mapTemplate.imageHeight,
+    hotspots,
+  };
+}
 
 // /plans 页面数据类型
 export interface PlansPagePlanCard {
@@ -128,6 +231,7 @@ export interface PlanDetailData {
   components: PlanDetailComponentData[];
   upgrades: PlanDetailUpgradeData[];
   tags: PlanDetailTagData[];
+  mapData: MapData | null; // 优化：合并 mapData 查询
 }
 
 export interface RelatedPlanData {
@@ -218,7 +322,19 @@ export const planService = {
         isActive: true,
         isCampaign: true,
         theme: {
-          select: { id: true, slug: true, name: true },
+          select: {
+            id: true,
+            slug: true,
+            name: true,
+            // mapData 优化：获取 mapTemplate
+            mapTemplate: {
+              select: {
+                imageUrl: true,
+                imageWidth: true,
+                imageHeight: true,
+              },
+            },
+          },
         },
         campaign: {
           select: { id: true, slug: true, title: true, description: true },
@@ -246,11 +362,35 @@ export const planService = {
         },
         planComponents: {
           select: {
+            id: true,
             hotmapOrder: true,
+            // mapData 优化：热点坐标字段
+            hotmapX: true,
+            hotmapY: true,
+            hotmapLabelPosition: true,
+            hotmapLabelOffsetX: true,
+            hotmapLabelOffsetY: true,
             merchantComponent: {
               select: {
                 customName: true,
-                template: { select: { name: true, icon: true } },
+                // mapData 优化：完整 template 数据
+                highlights: true,
+                images: true,
+                template: {
+                  select: {
+                    id: true,
+                    code: true,
+                    name: true,
+                    nameJa: true,
+                    nameEn: true,
+                    description: true,
+                    type: true,
+                    icon: true,
+                    outfitCategory: true,
+                    defaultHighlights: true,
+                    defaultImages: true,
+                  },
+                },
               },
             },
           },
@@ -357,7 +497,30 @@ export const planService = {
         icon: pt.tag.icon || undefined,
         color: pt.tag.color || undefined,
       })),
+      // mapData 优化：直接在 service 层构建
+      mapData: await this.buildPlanMapData(plan.planComponents as PlanComponentForMapData[], plan.theme?.mapTemplate ?? null),
     };
+  },
+
+  /**
+   * 构建套餐的 mapData（内部方法）
+   * 优先使用 theme.mapTemplate，否则 fallback 到默认模板
+   */
+  async buildPlanMapData(
+    planComponents: PlanComponentForMapData[],
+    themeMapTemplate: MapTemplateData | null
+  ): Promise<MapData | null> {
+    let mapTemplate = themeMapTemplate;
+
+    // Fallback: 如果主题没有 mapTemplate，使用全局默认模板
+    if (!mapTemplate) {
+      mapTemplate = await prisma.mapTemplate.findFirst({
+        where: { isDefault: true, isActive: true },
+        select: { imageUrl: true, imageWidth: true, imageHeight: true },
+      });
+    }
+
+    return buildMapData(planComponents, mapTemplate);
   },
 
   // 保留原方法用于其他调用

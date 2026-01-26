@@ -1,6 +1,5 @@
 import { notFound } from 'next/navigation';
 import { planService } from '@/server/services/plan.service';
-import { getPlanMapData } from '@/lib/kimono-map';
 import { PlanDetailClient } from './PlanDetailClient';
 
 // 60 秒 ISR 缓存
@@ -25,17 +24,14 @@ export default async function PlanDetailPage({
     notFound();
   }
 
-  // 并行获取相关数据
-  const [relatedPlans, mapData] = await Promise.all([
-    planService.getRelatedPlans(plan.theme.id, id),
-    getPlanMapData(id),
-  ]);
+  // 串行获取相关套餐（页面底部，不影响首屏）
+  const relatedPlans = await planService.getRelatedPlans(plan.theme.id, id);
 
   return (
     <PlanDetailClient
       plan={plan}
       relatedPlans={relatedPlans}
-      mapData={mapData}
+      mapData={plan.mapData}
     />
   );
 }

@@ -107,11 +107,12 @@ export async function getPlanMapData(planId: string): Promise<MapData | null> {
     if (!template) return null;
 
     // 只显示商户明确设置过位置的组件（hotmapX 和 hotmapY 都不为 null）
+    // 跳过自定义组件（template 为 null）
     const hotspots: HotspotData[] = plan.planComponents
-      .filter((pc) => pc.hotmapX != null && pc.hotmapY != null)
+      .filter((pc) => pc.hotmapX != null && pc.hotmapY != null && pc.merchantComponent.template != null)
       .map((pc, index) => {
         const mc = pc.merchantComponent;
-        const tpl = mc.template;
+        const tpl = mc.template!; // 已通过 filter 保证非空
 
         return {
           id: pc.id,
