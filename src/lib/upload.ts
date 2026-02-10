@@ -34,21 +34,6 @@ export async function uploadToSupabase(
 }
 
 /**
- * 删除 Supabase Storage 中的图片
- * @param path 存储路径
- */
-export async function deleteFromSupabase(path: string): Promise<void> {
-  const { error } = await supabaseAdmin.storage
-    .from('tryon-results')
-    .remove([path]);
-
-  if (error) {
-    console.error('Supabase delete error:', error);
-    throw new Error(`删除失败: ${error.message}`);
-  }
-}
-
-/**
  * 生成存储路径
  * @param userId 用户 ID（或 'guest'）
  * @param fileExtension 文件扩展名（例如: 'jpg'）

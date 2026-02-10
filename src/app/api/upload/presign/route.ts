@@ -5,12 +5,11 @@ import {
   getPresignedUploadUrl,
   generateS3Key,
   getExtensionFromMimeType,
-  isAllowedImageType,
-  MAX_FILE_SIZE,
   ALLOWED_IMAGE_TYPES,
   type ImageCategory,
   type ImagePurpose,
   type AllowedImageType,
+  MAX_FILE_SIZE,
 } from '@/lib/aws';
 
 interface PresignRequest {
@@ -54,7 +53,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 验证文件类型
-    if (!isAllowedImageType(fileType)) {
+    if (!ALLOWED_IMAGE_TYPES.includes(fileType as AllowedImageType)) {
       return NextResponse.json(
         {
           error: `不支持的文件类型。支持: ${ALLOWED_IMAGE_TYPES.join(', ')}`,
@@ -131,8 +130,6 @@ async function checkPermission(
 
   switch (category) {
     case 'plan':
-    case 'kimono':
-    case 'campaign':
     case 'component':
     case 'upgrade': {
       // 需要管理员角色 或 拥有已审批的商家账户

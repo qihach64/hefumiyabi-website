@@ -98,18 +98,3 @@ export function getThemeIcon(icon: string | null | undefined): LucideIcon {
   return Sparkles;
 }
 
-/**
- * Check if the given string is a known Lucide icon name
- */
-export function isLucideIconName(icon: string | null | undefined): boolean {
-  if (!icon) return false;
-  return !!iconMap[icon];
-}
-
-/**
- * Check if the given string is an emoji
- */
-export function isEmoji(icon: string | null | undefined): boolean {
-  if (!icon) return false;
-  return /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u.test(icon);
-}

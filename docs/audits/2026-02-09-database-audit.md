@@ -222,18 +222,18 @@ const favoriteWithPlan = await prisma.favorite.findUnique({
 
 ### 5.1 级联删除规则汇总
 
-| 关系 | onDelete | 风险评估 |
-|------|----------|----------|
-| Account → User | Cascade ✅ | 合理 |
-| Session → User | Cascade ✅ | 合理 |
-| UserPreference → User | Cascade ✅ | 合理 |
-| Merchant → User | Cascade ⚠️ | 删除用户会级联删除商家及其所有数据 |
-| RentalPlan → Merchant | Cascade ⚠️ | 删除商家会级联删除所有套餐 |
-| Booking → User | 无设定 🔴 | 删除用户时会被 FK 约束阻止 |
-| Booking → Merchant | 无设定 🔴 | 删除商家时会被 FK 约束阻止 |
-| BookingItem → Plan | 无设定 🔴 | 删除套餐时会被 FK 约束阻止 |
-| BookingItem → Store | 无设定 🔴 | 删除店铺时会被 FK 约束阻止 |
-| Store → Merchant | 无设定 ⚠️ | 删除商家时会被阻止（与 RentalPlan 的 Cascade 矛盾） |
+| 关系                  | onDelete  | 风险评估                                            |
+| --------------------- | --------- | --------------------------------------------------- |
+| Account → User        | Cascade ✅ | 合理                                                |
+| Session → User        | Cascade ✅ | 合理                                                |
+| UserPreference → User | Cascade ✅ | 合理                                                |
+| Merchant → User       | Cascade ⚠️ | 删除用户会级联删除商家及其所有数据                  |
+| RentalPlan → Merchant | Cascade ⚠️ | 删除商家会级联删除所有套餐                          |
+| Booking → User        | 无设定 🔴  | 删除用户时会被 FK 约束阻止                          |
+| Booking → Merchant    | 无设定 🔴  | 删除商家时会被 FK 约束阻止                          |
+| BookingItem → Plan    | 无设定 🔴  | 删除套餐时会被 FK 约束阻止                          |
+| BookingItem → Store   | 无设定 🔴  | 删除店铺时会被 FK 约束阻止                          |
+| Store → Merchant      | 无设定 ⚠️  | 删除商家时会被阻止（与 RentalPlan 的 Cascade 矛盾） |
 
 ### 5.2 级联删除链问题 🔴 严重
 
@@ -323,16 +323,16 @@ tags String[] @default([])  // 保留旧字段，后续可移除
 
 ### 7.2 聚合缓存字段无更新逻辑 🟡 中等
 
-| 模型 | 缓存字段 | 是否有更新逻辑 |
-|------|----------|----------------|
-| Merchant | totalBookings | ❌ 未发现 |
-| Merchant | totalRevenue | ❌ 未发现 |
-| Merchant | reviewCount | ❌ 未发现 |
-| Merchant | rating | ❌ 未发现 |
-| Kimono | viewCount | ❌ 未发现 |
-| Kimono | bookingCount | ❌ 未发现 |
-| Tag | usageCount | ⚠️ 只增不减 |
-| RentalPlan | currentBookings | ❌ 未发现 |
+| 模型       | 缓存字段        | 是否有更新逻辑 |
+| ---------- | --------------- | -------------- |
+| Merchant   | totalBookings   | ❌ 未发现       |
+| Merchant   | totalRevenue    | ❌ 未发现       |
+| Merchant   | reviewCount     | ❌ 未发现       |
+| Merchant   | rating          | ❌ 未发现       |
+| Kimono     | viewCount       | ❌ 未发现       |
+| Kimono     | bookingCount    | ❌ 未发现       |
+| Tag        | usageCount      | ⚠️ 只增不减     |
+| RentalPlan | currentBookings | ❌ 未发现       |
 
 **问题:** 这些聚合缓存字段永远保持默认值 0，前端显示不准确。
 
@@ -384,19 +384,19 @@ model Account {
 
 ## 9. 审计字段完整性
 
-| 模型 | createdAt | updatedAt | 状态 |
-|------|-----------|-----------|------|
-| User | ✅ | ✅ | ✅ |
-| Merchant | ✅ | ✅ | ✅ |
-| Store | ✅ | ✅ | ✅ |
-| RentalPlan | ✅ | ✅ | ✅ |
-| Booking | ✅ | ✅ | ✅ |
-| BookingItem | ✅ | ❌ | ⚠️ |
-| BookingKimono | ❌ | ❌ | 🔴 |
-| CartItem | ✅ | ❌ | ⚠️ |
-| Favorite | ✅ | ❌ | ⚠️ |
-| Review | ✅ | ✅ | ✅ |
-| KimonoImage | ❌ | ❌ | 🟡 |
+| 模型          | createdAt | updatedAt | 状态 |
+| ------------- | --------- | --------- | ---- |
+| User          | ✅         | ✅         | ✅    |
+| Merchant      | ✅         | ✅         | ✅    |
+| Store         | ✅         | ✅         | ✅    |
+| RentalPlan    | ✅         | ✅         | ✅    |
+| Booking       | ✅         | ✅         | ✅    |
+| BookingItem   | ✅         | ❌         | ⚠️    |
+| BookingKimono | ❌         | ❌         | 🔴    |
+| CartItem      | ✅         | ❌         | ⚠️    |
+| Favorite      | ✅         | ❌         | ⚠️    |
+| Review        | ✅         | ✅         | ✅    |
+| KimonoImage   | ❌         | ❌         | 🟡    |
 
 **建议:** 为 `BookingKimono` 添加 `createdAt`。`BookingItem`、`CartItem`、`Favorite` 作为从属记录，缺少 `updatedAt` 可接受。
 
@@ -465,36 +465,36 @@ const where: any = {};
 
 ### 🔴 严重 — 立即处理
 
-| # | 问题 | 位置 | 建议 |
-|---|------|------|------|
-| 1 | Prisma 客户端重复实例 | `src/lib/db.ts` | 删除，统一为 `@/lib/prisma` |
-| 2 | BookingItem.bookingId 缺少索引 | `schema.prisma` | 添加 `@@index([bookingId])` |
-| 3 | Booking 创建缺少事务 | `api/bookings/route.ts` | 使用 `$transaction` 包裹 |
-| 4 | Admin API 缺少权限验证 | `api/admin/*` | 添加 auth + role 检查 |
-| 5 | 级联删除链矛盾 | `schema.prisma` | 统一 onDelete 策略 |
+| #   | 问题                           | 位置                    | 建议                        |
+| --- | ------------------------------ | ----------------------- | --------------------------- |
+| 1   | Prisma 客户端重复实例          | `src/lib/db.ts`         | 删除，统一为 `@/lib/prisma` |
+| 2   | BookingItem.bookingId 缺少索引 | `schema.prisma`         | 添加 `@@index([bookingId])` |
+| 3   | Booking 创建缺少事务           | `api/bookings/route.ts` | 使用 `$transaction` 包裹    |
+| 4   | Admin API 缺少权限验证         | `api/admin/*`           | 添加 auth + role 检查       |
+| 5   | 级联删除链矛盾                 | `schema.prisma`         | 统一 onDelete 策略          |
 
 ### 🟡 中等 — 下个迭代处理
 
-| # | 问题 | 位置 | 建议 |
-|---|------|------|------|
-| 6 | 聚合缓存字段无更新逻辑 | 多处 | 实现更新或移除字段 |
-| 7 | RentalPlan.tags 废弃字段 | `schema.prisma` | 移除 |
-| 8 | highlights 类型不匹配 | `schema.prisma` / service | 改为 `String[]` |
-| 9 | nameEn schema-代码不一致 | `merchant/plans` | 统一 |
-| 10 | usageCount 只增不减 | `merchant/plans/[id]` | 添加 decrement |
-| 11 | 多处缺失索引 | `schema.prisma` | 批量添加 |
-| 12 | Favorite 多态设计无约束 | `schema.prisma` | 添加应用层校验 |
-| 13 | plans/[id] 重复查询 | `api/plans/[id]` | 改用 `findFirst` + `OR` |
+| #   | 问题                     | 位置                      | 建议                    |
+| --- | ------------------------ | ------------------------- | ----------------------- |
+| 6   | 聚合缓存字段无更新逻辑   | 多处                      | 实现更新或移除字段      |
+| 7   | RentalPlan.tags 废弃字段 | `schema.prisma`           | 移除                    |
+| 8   | highlights 类型不匹配    | `schema.prisma` / service | 改为 `String[]`         |
+| 9   | nameEn schema-代码不一致 | `merchant/plans`          | 统一                    |
+| 10  | usageCount 只增不减      | `merchant/plans/[id]`     | 添加 decrement          |
+| 11  | 多处缺失索引             | `schema.prisma`           | 批量添加                |
+| 12  | Favorite 多态设计无约束  | `schema.prisma`           | 添加应用层校验          |
+| 13  | plans/[id] 重复查询      | `api/plans/[id]`          | 改用 `findFirst` + `OR` |
 
 ### 🟢 低优先级 — 有时间再处理
 
-| # | 问题 | 位置 | 建议 |
-|---|------|------|------|
-| 14 | User 冗余索引 | `schema.prisma` | 移除与 @unique 重复的 @@index |
-| 15 | @map 使用不一致 | `schema.prisma` | 新模型统一使用 @map |
-| 16 | 审计字段不完整 | `schema.prisma` | BookingKimono 添加 createdAt |
-| 17 | Cart.expiresAt 无清理 | 缺失 | 添加 cron 清理逻辑 |
-| 18 | BehaviorEvent 覆盖不全 | `schema.prisma` | 后续按需添加 |
+| #   | 问题                   | 位置            | 建议                          |
+| --- | ---------------------- | --------------- | ----------------------------- |
+| 14  | User 冗余索引          | `schema.prisma` | 移除与 @unique 重复的 @@index |
+| 15  | @map 使用不一致        | `schema.prisma` | 新模型统一使用 @map           |
+| 16  | 审计字段不完整         | `schema.prisma` | BookingKimono 添加 createdAt  |
+| 17  | Cart.expiresAt 无清理  | 缺失            | 添加 cron 清理逻辑            |
+| 18  | BehaviorEvent 覆盖不全 | `schema.prisma` | 后续按需添加                  |
 
 ---
 

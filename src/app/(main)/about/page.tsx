@@ -240,7 +240,7 @@ export default function AboutPage() {
                 立即预约
               </Button>
             </Link>
-            <Link href="/kimonos">
+            <Link href="/plans">
               <Button variant="outline" size="lg" className="border-2 border-white text-white hover:bg-white/10 w-full sm:w-auto min-w-[160px]">
                 浏览和服
               </Button>

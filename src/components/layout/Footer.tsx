@@ -18,8 +18,8 @@ export default function Footer() {
             <h4 className="font-semibold mb-4">快速链接</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/kimonos" className="text-muted-foreground hover:text-foreground">
-                  和服图库
+                <Link href="/plans" className="text-muted-foreground hover:text-foreground">
+                  和服套餐
                 </Link>
               </li>
               <li>

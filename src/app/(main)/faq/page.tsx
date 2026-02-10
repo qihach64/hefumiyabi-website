@@ -270,7 +270,7 @@ export default function FAQPage() {
             </Link>
 
             <Link
-              href="/kimonos"
+              href="/plans"
               className="p-6 rounded-xl border border-gray-200 bg-white hover:shadow-lg transition-all duration-300 text-center"
             >
               <div className="text-3xl mb-3">👘</div>

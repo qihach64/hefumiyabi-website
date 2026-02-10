@@ -1,8 +1,6 @@
 import {
   S3Client,
   PutObjectCommand,
-  DeleteObjectCommand,
-  GetObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
@@ -37,7 +35,6 @@ function getS3Client(): S3Client {
 // 图片分类和对应的存储路径
 export type ImageCategory =
   | 'plan'
-  | 'kimono'
   | 'merchant'
   | 'user'
   | 'tryon'
@@ -90,8 +87,6 @@ export function generateS3Key(
   switch (category) {
     case 'plan':
       return `originals/plans/${entityId}/${purpose}-${timestamp}-${random}.${extension}`;
-    case 'kimono':
-      return `originals/kimonos/${entityId}/${timestamp}-${random}.${extension}`;
     case 'merchant':
       return `originals/merchants/${entityId}/${purpose}-${timestamp}-${random}.${extension}`;
     case 'user':
@@ -146,120 +141,3 @@ export async function getPresignedUploadUrl(
   return { presignedUrl, publicUrl };
 }
 
-/**
- * 直接上传 Buffer 到 S3 (服务端使用)
- */
-export async function uploadToS3(
-  buffer: Buffer,
-  key: string,
-  contentType: string = 'image/jpeg'
-): Promise<string> {
-  const s3 = getS3Client();
-
-  await s3.send(
-    new PutObjectCommand({
-      Bucket: AWS_S3_BUCKET,
-      Key: key,
-      Body: buffer,
-      ContentType: contentType,
-      CacheControl: 'public, max-age=31536000',
-    })
-  );
-
-  // 返回公开 URL
-  return CLOUDFRONT_DOMAIN
-    ? `https://${CLOUDFRONT_DOMAIN}/${key}`
-    : `https://${AWS_S3_BUCKET}.s3.${AWS_REGION}.amazonaws.com/${key}`;
-}
-
-/**
- * 从 S3 删除图片
- */
-export async function deleteFromS3(key: string): Promise<void> {
-  const s3 = getS3Client();
-
-  await s3.send(
-    new DeleteObjectCommand({
-      Bucket: AWS_S3_BUCKET,
-      Key: key,
-    })
-  );
-}
-
-/**
- * 从 S3 获取图片 (服务端使用)
- */
-export async function getFromS3(key: string): Promise<Buffer> {
-  const s3 = getS3Client();
-
-  const response = await s3.send(
-    new GetObjectCommand({
-      Bucket: AWS_S3_BUCKET,
-      Key: key,
-    })
-  );
-
-  if (!response.Body) {
-    throw new Error('Empty response from S3');
-  }
-
-  // 转换 stream 为 buffer
-  const chunks: Uint8Array[] = [];
-  for await (const chunk of response.Body as AsyncIterable<Uint8Array>) {
-    chunks.push(chunk);
-  }
-  return Buffer.concat(chunks);
-}
-
-/**
- * 从原图 URL 生成处理后的变体 URL
- */
-export function getVariantUrl(originalUrl: string, variant: ImageVariant): string {
-  // 将 originals/ 替换为 processed/{variant}/
-  // 将扩展名替换为 .webp
-  return originalUrl
-    .replace('/originals/', `/processed/${variant}/`)
-    .replace(/\.(jpg|jpeg|png)$/i, '.webp');
-}
-
-/**
- * 获取所有变体 URL
- */
-export function getAllVariantUrls(originalUrl: string): Record<ImageVariant, string> {
-  return {
-    thumbnail: getVariantUrl(originalUrl, 'thumbnail'),
-    small: getVariantUrl(originalUrl, 'small'),
-    medium: getVariantUrl(originalUrl, 'medium'),
-    large: getVariantUrl(originalUrl, 'large'),
-  };
-}
-
-/**
- * 验证文件类型
- */
-export function isAllowedImageType(mimeType: string): mimeType is AllowedImageType {
-  return ALLOWED_IMAGE_TYPES.includes(mimeType as AllowedImageType);
-}
-
-/**
- * 从 URL 提取 S3 Key
- */
-export function extractKeyFromUrl(url: string): string | null {
-  try {
-    const urlObj = new URL(url);
-
-    // CloudFront URL: https://cdn.example.com/originals/plans/xxx.jpg
-    if (CLOUDFRONT_DOMAIN && urlObj.hostname === CLOUDFRONT_DOMAIN) {
-      return urlObj.pathname.slice(1); // 移除开头的 /
-    }
-
-    // S3 URL: https://bucket.s3.region.amazonaws.com/originals/plans/xxx.jpg
-    if (urlObj.hostname.includes('s3') && urlObj.hostname.includes('amazonaws.com')) {
-      return urlObj.pathname.slice(1);
-    }
-
-    return null;
-  } catch {
-    return null;
-  }
-}

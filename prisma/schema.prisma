@@ -5,7 +5,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  // directUrl = env("DIRECT_URL")  // 启用连接池后取消注释
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -30,9 +30,7 @@ model User {
   bookings      Booking[]
   cart          Cart?
   favorites     Favorite[]
-  reviews       Review[]
   sessions      Session[]
-  behaviors     UserBehavior[]
   preference    UserPreference?
   referrer      User?           @relation("Referrals", fields: [referredBy], references: [id])
   referrals     User[]          @relation("Referrals")
@@ -96,44 +94,6 @@ model UserPreference {
   @@map("user_preferences")
 }
 
-model Kimono {
-  id           String          @id @default(cuid())
-  code         String          @unique
-  name         String
-  nameEn       String?
-  description  String?
-  category     KimonoCategory
-  style        String
-  color        String[]
-  pattern      String[]
-  season       Season[]
-  size         String
-  isAvailable  Boolean         @default(true)
-  viewCount    Int             @default(0)
-  bookingCount Int             @default(0)
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
-  bookings     BookingKimono[]
-  favorites    Favorite[]
-  images       KimonoImage[]
-  stores       KimonoStore[]
-
-  @@index([category])
-  @@index([isAvailable])
-  @@map("kimonos")
-}
-
-model KimonoImage {
-  id       String  @id @default(cuid())
-  kimonoId String
-  url      String
-  alt      String?
-  order    Int     @default(0)
-  kimono   Kimono  @relation(fields: [kimonoId], references: [id], onDelete: Cascade)
-
-  @@map("kimono_images")
-}
-
 model Merchant {
   id             String           @id @default(cuid())
   ownerId        String           @unique
@@ -185,24 +145,11 @@ model Store {
   updatedAt    DateTime      @updatedAt
   merchant     Merchant?     @relation(fields: [merchantId], references: [id])
   bookingItems BookingItem[]
-  kimonos      KimonoStore[]
   listings     Listing[]
   planStores   PlanStore[]   // 店铺可售套餐 (1:N via junction)
 
   @@index([merchantId])
   @@map("stores")
-}
-
-model KimonoStore {
-  id       String @id @default(cuid())
-  kimonoId String
-  storeId  String
-  quantity Int    @default(1)
-  kimono   Kimono @relation(fields: [kimonoId], references: [id], onDelete: Cascade)
-  store    Store  @relation(fields: [storeId], references: [id], onDelete: Cascade)
-
-  @@unique([kimonoId, storeId])
-  @@map("kimono_stores")
 }
 
 // ============================================
@@ -466,72 +413,25 @@ model BookingItem {
   booking        Booking         @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   plan           RentalPlan?     @relation(fields: [planId], references: [id])
   store          Store           @relation(fields: [storeId], references: [id])
-  kimonos        BookingKimono[]
 
   @@index([storeId])
   @@map("booking_items")
 }
 
-model BookingKimono {
-  id            String      @id @default(cuid())
-  kimonoId      String
-  bookingItemId String
-  bookingItem   BookingItem @relation(fields: [bookingItemId], references: [id], onDelete: Cascade)
-  kimono        Kimono      @relation(fields: [kimonoId], references: [id])
-
-  @@map("booking_kimonos")
-}
-
 model Favorite {
   id        String   @id @default(cuid())
   userId    String
-  kimonoId  String?
-  planId    String?       // 套餐收藏
-  imageUrl  String?       // 收藏的具体图片 URL
+  planId    String?
+  imageUrl  String?
   createdAt DateTime @default(now())
 
-  kimono    Kimono?      @relation(fields: [kimonoId], references: [id], onDelete: Cascade)
   plan      RentalPlan?  @relation(fields: [planId], references: [id], onDelete: Cascade)
   user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, kimonoId])
   @@unique([userId, planId, imageUrl])
   @@index([userId])
   @@index([planId])
   @@map("favorites")
-}
-
-model Review {
-  id        String   @id @default(cuid())
-  userId    String
-  bookingId String?
-  rating    Int
-  comment   String
-  images    String[]
-  isPublic  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("reviews")
-}
-
-model UserBehavior {
-  id        String        @id @default(cuid())
-  userId    String?
-  event     BehaviorEvent
-  page      String?
-  kimonoId  String?
-  userAgent String?
-  ipAddress String?
-  metadata  Json?
-  createdAt DateTime      @default(now())
-  user      User?         @relation(fields: [userId], references: [id])
-
-  @@index([userId])
-  @@index([event])
-  @@index([createdAt])
-  @@map("user_behaviors")
 }
 
 model VirtualTryOn {
@@ -541,7 +441,6 @@ model VirtualTryOn {
 
   // 关联信息
   planId           String?
-  kimonoId         String?
 
   // 图片 URL（存储在 Supabase Storage）
   personImageUrl   String?      // 用户原始照片（可选，需用户同意）
@@ -616,12 +515,6 @@ enum Gender {
   OTHER
 }
 
-enum KimonoCategory {
-  WOMEN
-  MEN
-  CHILDREN
-}
-
 enum Season {
   SPRING
   SUMMER
@@ -652,14 +545,6 @@ enum PaymentStatus {
   REFUNDED
 }
 
-enum BehaviorEvent {
-  PAGE_VIEW
-  KIMONO_VIEW
-  KIMONO_FAVORITE
-  BOOKING_START
-  BOOKING_COMPLETE
-}
-
 enum TryOnStatus {
   PROCESSING
   COMPLETED
@@ -674,48 +559,6 @@ enum CampaignType {
   GROUP_BUY
   EARLY_BIRD
   SPECIAL
-}
-
-// 社交媒体帖子
-model SocialPost {
-  id          String         @id @default(cuid())
-  platform    SocialPlatform // Instagram, Facebook, 微博
-  postId      String         @unique // 原平台的帖子ID
-  postUrl     String         // 帖子链接
-
-  // 内容
-  content     String?        @db.Text // 帖子文字内容
-  images      String[]       // 图片URL数组
-
-  // 作者信息
-  authorName  String         // 发帖人名称
-  authorAvatar String?       // 发帖人头像
-
-  // 互动数据
-  likes       Int            @default(0)
-  comments    Int            @default(0)
-  shares      Int            @default(0)
-
-  // 元数据
-  postedAt    DateTime       // 发帖时间
-  scrapedAt   DateTime       @default(now()) // 爬取时间
-
-  // 是否在首页展示
-  isFeatured  Boolean        @default(false)
-  displayOrder Int?          // 展示顺序（数字越小越靠前）
-
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-
-  @@index([platform])
-  @@index([isFeatured, displayOrder])
-  @@map("social_posts")
-}
-
-enum SocialPlatform {
-  INSTAGRAM
-  FACEBOOK
-  WEIBO
 }
 
 model Payout {

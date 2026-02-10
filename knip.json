@@ -1,0 +1,18 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "src/app/**/{page,layout,loading,error,not-found,route,default}.{ts,tsx}"
+  ],
+  "project": ["src/**/*.{ts,tsx}"],
+  "ignore": [
+    "src/types/**",
+    "**/*.test.{ts,tsx}",
+    "**/__tests__/**"
+  ],
+  "next": {
+    "entry": [
+      "next.config.{js,ts,mjs}",
+      "src/app/**/{page,layout,loading,error,not-found,route,default}.{ts,tsx}"
+    ]
+  }
+}

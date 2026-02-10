@@ -267,7 +267,7 @@ export default async function StoresPage() {
               立即预约
             </Link>
             <Link
-              href="/kimonos"
+              href="/plans"
               className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border-2 border-primary-foreground/20 hover:bg-primary-foreground/10 h-11 px-8"
             >
               浏览和服

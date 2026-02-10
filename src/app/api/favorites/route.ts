@@ -10,78 +10,39 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const searchParams = request.nextUrl.searchParams;
-    const type = searchParams.get('type') || 'plan'; // 'plan' or 'kimono'
-
-    if (type === 'plan') {
-      const favorites = await prisma.favorite.findMany({
-        where: {
-          userId: session.user.id,
-          planId: { not: null },
-        },
-        include: {
-          plan: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-              price: true,
-              originalPrice: true,
-              imageUrl: true,
-              images: true,
-              isActive: true,
-            },
+    const favorites = await prisma.favorite.findMany({
+      where: {
+        userId: session.user.id,
+        planId: { not: null },
+      },
+      include: {
+        plan: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            price: true,
+            originalPrice: true,
+            imageUrl: true,
+            images: true,
+            isActive: true,
           },
         },
-        orderBy: {
-          createdAt: 'desc',
-        },
-      });
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
 
-      return NextResponse.json({
-        favorites: favorites.map((f) => ({
-          id: f.id,
-          planId: f.planId,
-          imageUrl: f.imageUrl,
-          createdAt: f.createdAt,
-          plan: f.plan,
-        })),
-      });
-    } else {
-      const favorites = await prisma.favorite.findMany({
-        where: {
-          userId: session.user.id,
-          kimonoId: { not: null },
-        },
-        include: {
-          kimono: {
-            select: {
-              id: true,
-              name: true,
-              isAvailable: true,
-              images: {
-                select: {
-                  url: true,
-                },
-                take: 1,
-              },
-            },
-          },
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-      });
-
-      return NextResponse.json({
-        favorites: favorites.map((f) => ({
-          id: f.id,
-          kimonoId: f.kimonoId,
-          createdAt: f.createdAt,
-          kimono: f.kimono,
-        })),
-      });
-    }
+    return NextResponse.json({
+      favorites: favorites.map((f) => ({
+        id: f.id,
+        planId: f.planId,
+        imageUrl: f.imageUrl,
+        createdAt: f.createdAt,
+        plan: f.plan,
+      })),
+    });
   } catch (error) {
     console.error('Error fetching favorites:', error);
     return NextResponse.json(
@@ -100,11 +61,11 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { planId, kimonoId, imageUrl } = body;
+    const { planId, imageUrl } = body;
 
-    if (!planId && !kimonoId) {
+    if (!planId) {
       return NextResponse.json(
-        { error: 'planId or kimonoId is required' },
+        { error: 'planId is required' },
         { status: 400 }
       );
     }
@@ -113,7 +74,8 @@ export async function POST(request: NextRequest) {
     const existing = await prisma.favorite.findFirst({
       where: {
         userId: session.user.id,
-        ...(planId ? { planId, imageUrl } : { kimonoId }),
+        planId,
+        imageUrl,
       },
     });
 
@@ -129,31 +91,26 @@ export async function POST(request: NextRequest) {
       data: {
         userId: session.user.id,
         planId,
-        kimonoId,
         imageUrl,
       },
     });
 
-    // 如果是套餐收藏，获取套餐信息
-    if (planId) {
-      const favoriteWithPlan = await prisma.favorite.findUnique({
-        where: { id: favorite.id },
-        include: {
-          plan: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-              price: true,
-              imageUrl: true,
-            },
+    // 获取套餐信息
+    const favoriteWithPlan = await prisma.favorite.findUnique({
+      where: { id: favorite.id },
+      include: {
+        plan: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            price: true,
+            imageUrl: true,
           },
         },
-      });
-      return NextResponse.json({ favorite: favoriteWithPlan }, { status: 201 });
-    }
-
-    return NextResponse.json({ favorite }, { status: 201 });
+      },
+    });
+    return NextResponse.json({ favorite: favoriteWithPlan }, { status: 201 });
   } catch (error) {
     console.error('Error adding favorite:', error);
     return NextResponse.json(
@@ -173,12 +130,11 @@ export async function DELETE(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const planId = searchParams.get('planId');
-    const kimonoId = searchParams.get('kimonoId');
     const imageUrl = searchParams.get('imageUrl');
 
-    if (!planId && !kimonoId) {
+    if (!planId) {
       return NextResponse.json(
-        { error: 'planId or kimonoId is required' },
+        { error: 'planId is required' },
         { status: 400 }
       );
     }
@@ -187,7 +143,8 @@ export async function DELETE(request: NextRequest) {
     const favorite = await prisma.favorite.findFirst({
       where: {
         userId: session.user.id,
-        ...(planId ? { planId, imageUrl } : { kimonoId }),
+        planId,
+        imageUrl,
       },
     });
 

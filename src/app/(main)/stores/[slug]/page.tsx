@@ -6,7 +6,6 @@ import {
   MapPin,
   Phone,
   Mail,
-  Clock,
   Navigation,
   ChevronRight,
 } from "lucide-react";
@@ -24,23 +23,6 @@ export default async function StorePage({ params }: StorePageProps) {
   const store = await prisma.store.findUnique({
     where: {
       slug,
-    },
-    include: {
-      kimonos: {
-        include: {
-          kimono: {
-            include: {
-              images: {
-                orderBy: {
-                  order: "asc",
-                },
-                take: 1,
-              },
-            },
-          },
-        },
-        take: 12,
-      },
     },
   });
 
@@ -184,62 +166,6 @@ export default async function StorePage({ params }: StorePageProps) {
                 </div>
               </div>
 
-              {/* 可用和服 */}
-              {store.kimonos.length > 0 && (
-                <div>
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-bold">本店和服</h2>
-                    <Link
-                      href={`/kimonos?store=${store.slug}`}
-                      className="text-sm text-primary hover:underline"
-                    >
-                      查看全部
-                    </Link>
-                  </div>
-                  <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
-                    {store.kimonos.map((kimonoStore) => {
-                      const kimono = kimonoStore.kimono;
-                      const mainImage = kimono.images[0];
-                      return (
-                        <Link
-                          key={kimono.id}
-                          href={`/kimonos/${kimono.id}`}
-                          className="group relative overflow-hidden rounded-lg border bg-card hover:shadow-lg transition-all duration-300"
-                        >
-                          <div className="relative aspect-square overflow-hidden bg-secondary">
-                            {mainImage ? (
-                              <Image
-                                src={mainImage.url}
-                                alt={mainImage.alt || kimono.name}
-                                fill
-                                className="object-cover group-hover:scale-105 transition-transform duration-300"
-                                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                              />
-                            ) : (
-                              <div className="flex h-full items-center justify-center text-muted-foreground text-sm">
-                                暂无图片
-                              </div>
-                            )}
-                            {!kimono.isAvailable && (
-                              <div className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-md font-semibold">
-                                已租出
-                              </div>
-                            )}
-                          </div>
-                          <div className="p-3">
-                            <h3 className="font-medium text-sm mb-1 group-hover:text-primary transition-colors line-clamp-1">
-                              {kimono.name}
-                            </h3>
-                            <p className="text-xs text-muted-foreground">
-                              库存: {kimonoStore.quantity} 件
-                            </p>
-                          </div>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* 右侧：地图和快捷操作 */}
