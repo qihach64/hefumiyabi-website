@@ -329,7 +329,6 @@ export async function PATCH(
           ...(validatedData.duration !== undefined && { duration: validatedData.duration }),
 
           // 图片
-          includes: [], // 已废弃，使用 PlanComponent
           imageUrl: validatedData.imageUrl || null,
           images: validatedData.images || [],
           customMapImageUrl: validatedData.customMapImageUrl || null, // 自定义热点图背景

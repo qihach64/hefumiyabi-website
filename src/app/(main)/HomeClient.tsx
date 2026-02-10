@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import { useSearchLoading } from "@/contexts/SearchLoadingContext";
 import { useSearchBar } from "@/contexts/SearchBarContext";
 import { useSearchState } from "@/shared/hooks";
+import { trpc } from "@/shared/api";
 import { HomepageExploreMode } from "./HomepageExploreMode";
 import type {
   ThemeSection,
@@ -88,7 +89,6 @@ function SearchModeSkeleton() {
 
 interface HomeClientProps {
   themeSections: ThemeSection[];
-  allPlans: HomepagePlanCard[];
   campaigns: HomepageCampaign[];
   stores: HomepageStore[];
   tagCategories: HomepageTagCategory[];
@@ -96,7 +96,6 @@ interface HomeClientProps {
 
 export default function HomeClient({
   themeSections,
-  allPlans,
   campaigns,
   stores,
   tagCategories,
@@ -124,6 +123,22 @@ export default function HomeClient({
     setUrlTags(tags.length > 0 ? tags : null);
   };
 
+  // 判断是否处于搜索模式
+  const isSearchMode = !!(
+    searchLocation ||
+    searchDate ||
+    selectedStoreId ||
+    selectedRegion ||
+    selectedTagIds.length > 0
+  );
+
+  // 按需加载 allPlans（仅搜索模式需要，加载后缓存）
+  const { data: fetchedPlans } = trpc.plan.searchAll.useQuery(undefined, {
+    enabled: isSearchMode,
+    staleTime: 5 * 60 * 1000, // 5 分钟缓存
+  });
+  const allPlans: HomepagePlanCard[] = fetchedPlans ?? [];
+
   // 移动端筛选器抽屉状态
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
@@ -140,7 +155,7 @@ export default function HomeClient({
 
     if (isSearching && searchTarget && currentParams === searchTarget) {
       const elapsedTime = Date.now() - loadingStartTimeRef.current;
-      const minDisplayTime = 500;
+      const minDisplayTime = 200;
       const remainingTime = Math.max(0, minDisplayTime - elapsedTime);
 
       if (stopTimeoutRef.current) {
@@ -160,15 +175,6 @@ export default function HomeClient({
       }
     };
   }, [searchParams, isSearching, searchTarget, stopSearch]);
-
-  // 判断是否处于搜索模式
-  const isSearchMode = !!(
-    searchLocation ||
-    searchDate ||
-    selectedStoreId ||
-    selectedRegion ||
-    selectedTagIds.length > 0
-  );
 
   // 使用 Map 优化 O(1) 店铺查找
   const storeMap = useMemo(
@@ -203,12 +209,12 @@ export default function HomeClient({
         return false;
       }
 
-      // 标签筛选
+      // 标签筛选（OR 逻辑：匹配任一标签即可）
       if (selectedTagIds.length > 0 && plan.planTags) {
-        const hasAllTags = selectedTagIds.every((tagId) =>
+        const hasAnyTag = selectedTagIds.some((tagId) =>
           plan.planTags.some((pt) => pt.tag.id === tagId)
         );
-        if (!hasAllTags) {
+        if (!hasAnyTag) {
           return false;
         }
       }

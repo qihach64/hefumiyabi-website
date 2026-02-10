@@ -45,8 +45,22 @@ export default async function MerchantListingsPage() {
       currentBookings: true,
       createdAt: true,
       duration: true,
-      includes: true,
       themeId: true,
+      planComponents: {
+        select: {
+          merchantComponent: {
+            select: {
+              customName: true,
+              template: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: { hotmapOrder: 'asc' },
+      },
       theme: {
         select: {
           id: true,
@@ -106,9 +120,18 @@ export default async function MerchantListingsPage() {
     },
   });
 
+  // 将 planComponents 转换为 includes（展示用字符串数组）
+  const plansWithIncludes = allPlans.map((plan) => ({
+    ...plan,
+    includes: plan.planComponents.map(
+      (pc) => pc.merchantComponent.template?.name || pc.merchantComponent.customName || '服务'
+    ),
+    planComponents: undefined,
+  }));
+
   return (
     <ListingsClient
-      plans={allPlans}
+      plans={plansWithIncludes}
       merchantId={merchant.id}
       themes={themes}
       tagCategories={tagCategories}

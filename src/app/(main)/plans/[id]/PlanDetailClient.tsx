@@ -14,7 +14,8 @@ import JourneyTimeline from '@/components/plan/JourneyTimeline';
 import StoreLocationCard from '@/components/plan/StoreLocationCard';
 import RelatedPlans from '@/components/plan/RelatedPlans';
 import { useSearchBar } from '@/contexts/SearchBarContext';
-import type { PlanDetailData, RelatedPlanData } from '@/types/plan-detail';
+import { trpc } from '@/shared/api/trpc';
+import type { PlanDetailData } from '@/types/plan-detail';
 import type { MapData } from '@/components/plan/InteractiveKimonoMap/types';
 
 // 动态导入 AITryOnSection (含 AI SDK ~500KB)
@@ -36,20 +37,26 @@ export interface SelectedUpgrade {
 
 interface PlanDetailClientProps {
   plan: PlanDetailData;
-  relatedPlans: RelatedPlanData[];
   mapData: MapData | null;
 }
 
 export function PlanDetailClient({
   plan,
-  relatedPlans,
   mapData,
 }: PlanDetailClientProps) {
   const [mounted, setMounted] = useState(false);
   const [isInFullWidthSection, setIsInFullWidthSection] = useState(true);
   const [selectedUpgrades, setSelectedUpgrades] = useState<SelectedUpgrade[]>([]);
+  const [isRelatedInView, setIsRelatedInView] = useState(false);
   const { setHideSearchBar } = useSearchBar();
   const bookingCardRef = useRef<HTMLDivElement>(null);
+  const relatedPlansRef = useRef<HTMLDivElement>(null);
+
+  // 懒加载相关套餐
+  const { data: relatedPlans, isLoading: isRelatedLoading } = trpc.plan.relatedPlans.useQuery(
+    { themeId: plan.theme.id, excludeId: plan.id, limit: 8 },
+    { enabled: isRelatedInView }
+  );
 
   // 升级服务操作回调
   const handleAddUpgrade = useCallback((upgrade: SelectedUpgrade) => {
@@ -96,6 +103,31 @@ export function PlanDetailClient({
     return () => observer.disconnect();
   }, [mounted]);
 
+  // Intersection Observer: 检测相关套餐区域是否进入视口（懒加载触发）
+  useEffect(() => {
+    if (!mounted || isRelatedInView) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsRelatedInView(true);
+          }
+        });
+      },
+      {
+        rootMargin: '200px 0px', // 提前 200px 开始加载
+        threshold: 0,
+      }
+    );
+
+    if (relatedPlansRef.current) {
+      observer.observe(relatedPlansRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [mounted, isRelatedInView]);
+
   const scrollToBooking = () => {
     if (bookingCardRef.current) {
       bookingCardRef.current.scrollIntoView({
@@ -131,7 +163,7 @@ export function PlanDetailClient({
   }));
 
   // 转换 relatedPlans 为旧格式
-  const relatedPlansForComponent = relatedPlans.map((p) => ({
+  const relatedPlansForComponent = (relatedPlans || []).map((p) => ({
     id: p.id,
     name: p.name,
     price: p.price,
@@ -340,14 +372,34 @@ export function PlanDetailClient({
           </div>
         </div>
 
-        {/* 猜你喜欢 */}
-        {relatedPlansForComponent.length > 0 && (
-          <RelatedPlans
-            plans={relatedPlansForComponent}
-            themeName={plan.theme.name}
-            themeSlug={plan.theme.slug}
-          />
-        )}
+        {/* 猜你喜欢 - 懒加载 */}
+        <div ref={relatedPlansRef}>
+          {isRelatedLoading ? (
+            <section className="mt-16 pt-12 border-t border-wabi-200/50">
+              <div className="flex items-center gap-3 mb-8">
+                <div className="w-10 h-px bg-gradient-to-r from-sakura-400 to-transparent" />
+                <span className="text-[12px] uppercase tracking-[0.25em] text-sakura-500 font-medium">
+                  Related Plans
+                </span>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="animate-pulse">
+                    <div className="aspect-[3/4] bg-gray-200 rounded-xl mb-3" />
+                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
+                    <div className="h-3 bg-gray-200 rounded w-1/2" />
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : relatedPlansForComponent.length > 0 ? (
+            <RelatedPlans
+              plans={relatedPlansForComponent}
+              themeName={plan.theme.name}
+              themeSlug={plan.theme.slug}
+            />
+          ) : null}
+        </div>
       </div>
 
       {/* MiniBookingBar */}

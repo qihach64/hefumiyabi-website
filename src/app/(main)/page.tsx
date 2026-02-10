@@ -41,7 +41,6 @@ export default async function HomePage() {
     <Suspense fallback={<HomeSkeleton />}>
       <HomeClient
         themeSections={homepageData.themeSections}
-        allPlans={homepageData.allPlans}
         campaigns={homepageData.campaigns}
         stores={homepageData.stores}
         tagCategories={homepageData.tagCategories}

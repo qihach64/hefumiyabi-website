@@ -52,7 +52,6 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
         }
 
         if (isVisible !== lastVisible) {
-          console.log(`[HeroSection] 👁️ visibility changed: ${isVisible} (ratio=${ratio.toFixed(2)}, hysteresis applied)`);
           lastVisible = isVisible;
           onHeroVisibilityChange(isVisible);
         }
@@ -67,7 +66,7 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
   return (
     <section
       ref={heroRef}
-      className="relative h-screen w-full overflow-hidden bg-white"
+      className="relative h-svh w-full overflow-hidden bg-white"
     >
       {/* Layer 1: 背景图片 */}
       <div className="absolute inset-0 z-0">

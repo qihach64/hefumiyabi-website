@@ -12,7 +12,6 @@ const createPlanSchema = z.object({
   originalPrice: z.number().int().positive().optional().nullable(),
   depositAmount: z.number().int().nonnegative("押金不能为负数"),
   duration: z.number().int().positive("时长必须大于0"),
-  includes: z.array(z.string()),
   imageUrl: z.union([z.string().url(), z.literal("")]).optional().nullable().transform(val => val || ""),
   images: z.array(z.string().url()).optional().default([]), // 多图支持
   storeName: z.string().optional().nullable().transform(val => val || ""),
@@ -63,7 +62,6 @@ export async function POST(request: Request) {
         originalPrice: validatedData.originalPrice || null,
         depositAmount: validatedData.depositAmount,
         duration: validatedData.duration,
-        includes: validatedData.includes,
         imageUrl: validatedData.imageUrl || null,
         images: validatedData.images || [],
         storeName: validatedData.storeName || null,

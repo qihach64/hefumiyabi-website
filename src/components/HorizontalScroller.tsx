@@ -78,16 +78,24 @@ const HorizontalScroller = forwardRef<HorizontalScrollerRef, HorizontalScrollerP
           });
         }
       } else {
-        // 单行布局：滚动到下一个snap点
-        const scrollAmount = container.clientWidth * 0.85; // 稍微小于可视宽度，确保能触发snap
-        const targetScroll = direction === "left"
-          ? container.scrollLeft - scrollAmount
-          : container.scrollLeft + scrollAmount;
+        // 单行布局：基于子元素宽度滚动整数个卡片
+        const firstChild = container.firstElementChild as HTMLElement;
+        if (firstChild) {
+          const cardWidth = firstChild.offsetWidth;
+          const gap = parseInt(getComputedStyle(container).gap) || 16;
+          // 计算可视区域内能显示多少张卡片，滚动相同数量
+          const visibleCards = Math.max(1, Math.floor(container.clientWidth / (cardWidth + gap)));
+          const scrollAmount = visibleCards * (cardWidth + gap);
 
-        container.scrollTo({
-          left: targetScroll,
-          behavior: "smooth",
-        });
+          const targetScroll = direction === "left"
+            ? container.scrollLeft - scrollAmount
+            : container.scrollLeft + scrollAmount;
+
+          container.scrollTo({
+            left: targetScroll,
+            behavior: "smooth",
+          });
+        }
       }
     };
 

@@ -10,19 +10,22 @@ const notoSansSC = Noto_Sans_SC({
   subsets: ["latin"],
   weight: ["400", "500", "700"],
   variable: "--font-noto-sans-sc",
+  display: "swap",
 });
 
 const notoSerifSC = Noto_Serif_SC({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "700"],
   variable: "--font-noto-serif-sc",
+  display: "swap",
 });
 
 // 日本明朝体 - 用于 Hero 标题和日式元素
 const shipporiMincho = Shippori_Mincho({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["400", "500"],
   variable: "--font-shippori",
+  display: "swap",
 });
 
 export const metadata: Metadata = {

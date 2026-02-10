@@ -5,6 +5,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  // directUrl = env("DIRECT_URL")  // 启用连接池后取消注释
 }
 
 model User {
@@ -257,7 +258,6 @@ model RentalPlan {
   originalPrice Int?
   depositAmount Int           @default(0)
   duration      Int
-  includes      String[]
   imageUrl      String?
   images        String[]      @default([])  // 多图支持
   customMapImageUrl String?   @map("custom_map_image_url")  // 自定义热点图背景
@@ -324,6 +324,10 @@ model RentalPlan {
   @@index([campaignId])
   @@index([isCampaign])
   @@index([availableFrom, availableUntil])
+  // 性能优化索引
+  @@index([isActive, displayOrder])              // 活跃套餐排序
+  @@index([isFeatured, isActive, displayOrder])  // 首页特色
+  @@index([status])                              // 状态筛选
   @@map("rental_plans")
 }
 

@@ -83,7 +83,7 @@ export default function ScrollableSection({
         </div>
 
         {/* 左右箭头按钮 - Miyabi 风格 */}
-        <div className="hidden md:flex items-center gap-2 flex-shrink-0">
+        <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
           <button
             onClick={() => scrollerRef.current?.scrollLeft()}
             disabled={!canScrollLeft}
@@ -121,7 +121,7 @@ export default function ScrollableSection({
       {featuredChild ? (
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
           {/* 左侧：大卡片 - 调整宽度以配合单行滚动 */}
-          <div className="w-full lg:w-[340px] xl:w-[380px] flex-shrink-0">
+          <div className="w-full lg:w-[320px] xl:w-[360px] 2xl:w-[400px] flex-shrink-0">
             {featuredChild}
           </div>
 

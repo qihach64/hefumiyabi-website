@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ShoppingCart, Check, Award, MapPin } from "lucide-react";
-import { toast } from "sonner";
-import { useCartStore } from "@/store/cart";
+import { useCartToggle } from "./useCartToggle";
 
 interface Tag {
   id: string;
@@ -40,17 +39,9 @@ export default function FeaturedPlanCard({
   plan,
   themeColor = '#FF7A9A',
 }: FeaturedPlanCardProps) {
-  const [isAdding, setIsAdding] = useState(false);
-  const [justChanged, setJustChanged] = useState(false);
-  const [lastAction, setLastAction] = useState<'add' | 'remove' | null>(null);
+  const { isInCart, isAdding, justChanged, lastAction, handleToggleCart } = useCartToggle(plan);
 
   const searchParams = useSearchParams();
-  const addItem = useCartStore((state) => state.addItem);
-  const removeItem = useCartStore((state) => state.removeItem);
-  const items = useCartStore((state) => state.items);
-
-  const cartItem = items.find(item => item.planId === plan.id);
-  const isInCart = !!cartItem;
 
   const planDetailHref = useMemo(() => {
     const params = new URLSearchParams();
@@ -61,44 +52,6 @@ export default function FeaturedPlanCard({
     const queryString = params.toString();
     return queryString ? `/plans/${plan.id}?${queryString}` : `/plans/${plan.id}`;
   }, [plan.id, searchParams]);
-
-  const discountAmount = plan.originalPrice && plan.originalPrice > plan.price
-    ? plan.originalPrice - plan.price
-    : 0;
-
-  const handleToggleCart = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    setIsAdding(true);
-
-    if (isInCart && cartItem) {
-      removeItem(cartItem.id);
-      setLastAction('remove');
-      toast.success("已从购物车移除");
-    } else {
-      addItem({
-        type: 'PLAN',
-        planId: plan.id,
-        name: plan.name,
-        nameEn: plan.nameEn,
-        price: plan.price,
-        originalPrice: plan.originalPrice,
-        image: plan.imageUrl,
-        addOns: [],
-        isCampaign: plan.isCampaign,
-      });
-      setLastAction('add');
-      toast.success("已加入购物车");
-    }
-
-    setJustChanged(true);
-    setTimeout(() => {
-      setIsAdding(false);
-      setJustChanged(false);
-      setLastAction(null);
-    }, 1000);
-  };
 
   return (
     <Link
@@ -115,7 +68,7 @@ export default function FeaturedPlanCard({
                 alt={plan.name}
                 fill
                 className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-                sizes="(max-width: 768px) 100vw, 500px"
+                sizes="(max-width: 1024px) 100vw, 380px"
               />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center bg-sakura-50">
@@ -160,7 +113,7 @@ export default function FeaturedPlanCard({
 
           </div>
 
-          {/* 信息区域 - 重新排版，均匀留白 */}
+          {/* 信息区域 */}
           <div className="p-5 md:p-6 flex-1 flex flex-col bg-white relative z-20">
 
             {/* 第一区块：商家 + 地区 + 套餐名称 */}
@@ -199,7 +152,6 @@ export default function FeaturedPlanCard({
             {/* 第三区块：包含（带分割线） */}
             {plan.includes && plan.includes.length > 0 && (
               <div className="mb-5">
-                {/* 分隔线 - 主题色渐变 */}
                 <div
                   className="h-px mb-4 transition-all duration-500 ease-out group-hover:w-20"
                   style={{
@@ -229,7 +181,6 @@ export default function FeaturedPlanCard({
             {/* 第四区块：标签（带分割线） */}
             {plan.planTags && plan.planTags.length > 0 && (
               <div className="mb-5">
-                {/* 分隔线 - 主题色渐变 */}
                 <div
                   className="h-px mb-4 transition-all duration-500 ease-out group-hover:w-20"
                   style={{

@@ -14,6 +14,8 @@ export default async function PlanDetailPage({
   params,
   searchParams,
 }: PlanDetailPageProps) {
+  const pageStart = performance.now();
+
   const { id } = await params;
   const { store: storeId } = await searchParams;
 
@@ -24,13 +26,15 @@ export default async function PlanDetailPage({
     notFound();
   }
 
-  // 串行获取相关套餐（页面底部，不影响首屏）
-  const relatedPlans = await planService.getRelatedPlans(plan.theme.id, id);
+  // 开发环境性能日志
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[PlanDetailPage] ⏱️ Total: ${(performance.now() - pageStart).toFixed(1)}ms`);
+  }
 
+  // relatedPlans 改为客户端懒加载，不阻塞首屏渲染
   return (
     <PlanDetailClient
       plan={plan}
-      relatedPlans={relatedPlans}
       mapData={plan.mapData}
     />
   );

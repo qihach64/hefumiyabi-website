@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import withBundleAnalyzer from "@next/bundle-analyzer";
 
 const nextConfig: NextConfig = {
   // 部署时忽略 ESLint 错误（开发时仍会显示警告）
@@ -67,4 +68,9 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// ANALYZE=true pnpm build 启用 bundle 分析
+const analyzer = withBundleAnalyzer({
+  enabled: process.env.ANALYZE === "true",
+});
+
+export default analyzer(nextConfig);

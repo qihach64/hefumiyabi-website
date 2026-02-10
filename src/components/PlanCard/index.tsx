@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ShoppingCart, Check, MapPin } from "lucide-react";
-import { toast } from "sonner";
 import { Badge } from "@/components/ui";
-import { useCartStore } from "@/store/cart";
+import { useCartToggle } from "./useCartToggle";
 
 interface Tag {
   id: string;
@@ -76,18 +75,9 @@ export default function PlanCard({
 }: PlanCardProps) {
   // 使用主题色作为点缀色
   const accentColor = themeColor;
-  const [isAdding, setIsAdding] = useState(false);
-  const [justChanged, setJustChanged] = useState(false);
-  const [lastAction, setLastAction] = useState<'add' | 'remove' | null>(null);
+  const { isInCart, isAdding, justChanged, lastAction, handleToggleCart } = useCartToggle(plan);
 
   const searchParams = useSearchParams();
-  const addItem = useCartStore((state) => state.addItem);
-  const removeItem = useCartStore((state) => state.removeItem);
-  const items = useCartStore((state) => state.items);
-
-  // 检查是否已在购物车中
-  const cartItem = items.find(item => item.planId === plan.id);
-  const isInCart = !!cartItem;
 
   // 构建详情页链接 - 保留搜索参数
   const planDetailHref = useMemo(() => {
@@ -120,41 +110,6 @@ export default function PlanCard({
     ? plan.originalPrice - plan.price
     : 0;
 
-  // 切换购物车状态
-  const handleToggleCart = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    setIsAdding(true);
-
-    if (isInCart && cartItem) {
-      removeItem(cartItem.id);
-      setLastAction('remove');
-      toast.success("已从购物车移除");
-    } else {
-      addItem({
-        type: 'PLAN',
-        planId: plan.id,
-        name: plan.name,
-        nameEn: plan.nameEn,
-        price: plan.price,
-        originalPrice: plan.originalPrice,
-        image: plan.imageUrl,
-        addOns: [],
-        isCampaign: plan.isCampaign,
-      });
-      setLastAction('add');
-      toast.success("已加入购物车");
-    }
-
-    setJustChanged(true);
-    setTimeout(() => {
-      setIsAdding(false);
-      setJustChanged(false);
-      setLastAction(null);
-    }, 1000);
-  };
-
   // 分类标签
   const getCategoryLabel = (category: string) => {
     const labels: Record<string, string> = {
@@ -183,7 +138,7 @@ export default function PlanCard({
                 alt={plan.name}
                 fill
                 className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                sizes="(max-width: 640px) 50vw, (max-width: 1200px) 33vw, 25vw"
               />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center bg-sakura-50">

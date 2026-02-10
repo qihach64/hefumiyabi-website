@@ -33,4 +33,24 @@ export const planRouter = router({
     .query(async ({ input }) => {
       return planService.getFeatured(input?.limit);
     }),
+
+  // 获取首页搜索模式的所有套餐（按需加载）
+  searchAll: publicProcedure
+    .query(async () => {
+      const data = await planService.getHomepagePlans();
+      return data.allPlans;
+    }),
+
+  // 获取相关套餐（客户端懒加载用）
+  relatedPlans: publicProcedure
+    .input(
+      z.object({
+        themeId: z.string(),
+        excludeId: z.string(),
+        limit: z.number().default(8),
+      })
+    )
+    .query(async ({ input }) => {
+      return planService.getRelatedPlans(input.themeId, input.excludeId, input.limit);
+    }),
 });

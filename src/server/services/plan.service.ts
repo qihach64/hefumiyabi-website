@@ -304,6 +304,9 @@ export const planService = {
    * - 返回格式化的 PlanDetailData
    */
   async getDetailById(id: string, storeId?: string): Promise<PlanDetailData | null> {
+    const startTime = performance.now();
+    const queryStart = performance.now();
+
     const plan = await prisma.rentalPlan.findUnique({
       where: { id, isActive: true },
       select: {
@@ -432,6 +435,8 @@ export const planService = {
       },
     });
 
+    const queryTime = performance.now() - queryStart;
+
     if (!plan || !plan.theme) return null;
 
     // Store fallback 统一处理
@@ -456,7 +461,7 @@ export const planService = {
       defaultStore = stores[0] || null;
     }
 
-    return {
+    const result: PlanDetailData = {
       id: plan.id,
       name: plan.name,
       description: plan.description || '',
@@ -500,6 +505,17 @@ export const planService = {
       // mapData 优化：直接在 service 层构建
       mapData: await this.buildPlanMapData(plan.planComponents as PlanComponentForMapData[], plan.theme?.mapTemplate ?? null),
     };
+
+    // 开发环境性能日志
+    if (process.env.NODE_ENV === 'development') {
+      const totalTime = performance.now() - startTime;
+      const transformTime = totalTime - queryTime;
+      console.log(`[planService.getDetailById] ⏱️ Total: ${totalTime.toFixed(1)}ms`);
+      console.log(`  ├─ DB Query: ${queryTime.toFixed(1)}ms`);
+      console.log(`  └─ Transform: ${transformTime.toFixed(1)}ms`);
+    }
+
+    return result;
   },
 
   /**
