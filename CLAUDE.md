@@ -296,6 +296,7 @@ REPLICATE_API_TOKEN="..."            # AI 试穿
 - **组件:** 优先 Server Component，需要交互时用 `'use client'`
 - **路径别名:** `@/` 指向 `src/`
 - **提交信息:** `feat|fix|docs|test|refactor(scope): 中文描述`
+- **CJK 字体:** 禁止用 `next/font/google` 加载 CJK 字体（会生成上百个 woff2 分片，严重拖慢 LCP）。CJK 项目首选系统字体栈，如需自定义字体用 `pyftsubset` 自托管最小子集（< 50KB）
 
 ## 常见任务
 

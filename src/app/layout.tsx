@@ -1,32 +1,9 @@
 import type { Metadata } from "next";
-import { Noto_Sans_SC, Noto_Serif_SC, Shippori_Mincho } from "next/font/google";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { Toaster } from "sonner";
 import "./globals.css";
 import SessionProvider from "@/components/providers/SessionProvider";
 import { TRPCProvider } from "@/shared/api";
-
-const notoSansSC = Noto_Sans_SC({
-  subsets: ["latin"],
-  weight: ["400", "500", "700"],
-  variable: "--font-noto-sans-sc",
-  display: "swap",
-});
-
-const notoSerifSC = Noto_Serif_SC({
-  subsets: ["latin"],
-  weight: ["400", "700"],
-  variable: "--font-noto-serif-sc",
-  display: "swap",
-});
-
-// 日本明朝体 - 用于 Hero 标题和日式元素
-const shipporiMincho = Shippori_Mincho({
-  subsets: ["latin"],
-  weight: ["400", "500"],
-  variable: "--font-shippori",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "Kimono One - 专业和服租赁服务",
@@ -50,7 +27,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://i0.wp.com" />
         <link rel="dns-prefetch" href="https://i0.wp.com" />
       </head>
-      <body className={`${notoSansSC.variable} ${notoSerifSC.variable} ${shipporiMincho.variable} font-sans antialiased`}>
+      <body className="font-sans antialiased">
         <SessionProvider>
           <NuqsAdapter>
             <TRPCProvider>{children}</TRPCProvider>
