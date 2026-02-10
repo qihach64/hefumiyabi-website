@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { MapPin, Calendar, Search, ChevronLeft, ChevronRight, Sparkles, X } from "lucide-react";
 import { getThemeIcon } from "@/lib/themeIcons";
@@ -150,6 +150,23 @@ export default function HeroSearchPanel({ themes, variant = "dark", onDropdownOp
     }
   };
 
+  // 搜索按钮涟漪效果
+  const searchButtonRef = useRef<HTMLButtonElement>(null);
+  const handleRipple = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    const button = searchButtonRef.current;
+    if (!button) return;
+    const rect = button.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const ripple = document.createElement("span");
+    ripple.className = "search-ripple";
+    ripple.style.left = `${x}px`;
+    ripple.style.top = `${y}px`;
+    button.appendChild(ripple);
+    // 动画结束后移除
+    ripple.addEventListener("animationend", () => ripple.remove());
+  }, []);
+
   const handleSearch = async () => {
     // 更新 URL 状态
     await Promise.all([
@@ -245,10 +262,11 @@ export default function HeroSearchPanel({ themes, variant = "dark", onDropdownOp
           {showLocationDropdown && filteredLocations.length > 0 && (
             <div
               ref={locationDropdownRef}
-              className="absolute top-full left-0 mt-2 bg-white rounded-xl overflow-hidden z-[100] min-w-[300px] w-full max-w-[400px]
+              className="absolute top-full left-0 mt-2 bg-white rounded-xl overflow-hidden z-[100] min-w-[min(300px,calc(100vw-2rem))] w-full max-w-[400px]
                 shadow-[0_2px_16px_rgba(0,0,0,0.12)]
                 border border-gray-100
-                animate-in fade-in slide-in-from-top-2 duration-200"
+                animate-spring-in
+                max-h-[calc(100dvh-200px)] overflow-y-auto"
             >
               {/* 标题 */}
               <div className="px-4 pt-4 pb-2">
@@ -352,11 +370,12 @@ export default function HeroSearchPanel({ themes, variant = "dark", onDropdownOp
         {/* 分隔线 */}
         <div className={`hidden md:block w-px my-2 ${isLight ? "bg-gray-200" : "bg-white/10"}`} />
 
-        {/* 搜索按钮 */}
+        {/* 搜索按钮 - 涟漪效果 + hover 上浮 + active 按压 */}
         <div className="flex items-center px-2 md:px-4">
           <button
-            onClick={handleSearch}
-            className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 md:py-4 bg-sakura-500 hover:bg-sakura-600 text-white font-medium rounded-xl transition-all hover:scale-105 shadow-lg shadow-sakura-500/30"
+            ref={searchButtonRef}
+            onClick={(e) => { handleRipple(e); handleSearch(); }}
+            className="relative overflow-hidden w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 md:py-4 min-h-[48px] bg-sakura-500 hover:bg-sakura-600 text-white font-medium rounded-xl transition-all duration-300 transition-quart hover:scale-105 hover:-translate-y-0.5 active:scale-95 shadow-lg shadow-sakura-500/30 hover:shadow-xl hover:shadow-sakura-500/40"
           >
             <Search className="w-5 h-5" />
             <span className="md:hidden lg:inline">开始探索</span>
@@ -401,7 +420,7 @@ export default function HeroSearchPanel({ themes, variant = "dark", onDropdownOp
             {/* 全部选项 */}
             <button
               onClick={() => handleThemeSelect(null)}
-              className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+              className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 md:py-2 min-h-[44px] md:min-h-0 rounded-full text-sm font-medium transition-all duration-200 ${
                 !selectedTheme
                   ? "bg-sakura-500 text-white shadow-md"
                   : isLight
@@ -421,7 +440,7 @@ export default function HeroSearchPanel({ themes, variant = "dark", onDropdownOp
                 <button
                   key={theme.id}
                   onClick={() => handleThemeSelect(isSelected ? null : theme)}
-                  className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                  className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 md:py-2 min-h-[44px] md:min-h-0 rounded-full text-sm font-medium transition-all duration-200 ${
                     isSelected
                       ? "bg-sakura-500 text-white shadow-md"
                       : isLight

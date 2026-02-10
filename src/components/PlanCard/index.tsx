@@ -19,13 +19,13 @@ interface Tag {
 // 卡片变体类型
 type CardVariant = 'default' | 'interactive' | 'soft' | 'zen' | 'glass';
 
-// 卡片变体样式 - 统一白色背景，优雅过渡
+// 卡片变体样式 - 统一白色背景，hover 上浮 8px + 阴影加深
 const cardVariantStyles: Record<CardVariant, string> = {
-  default: 'bg-white transition-all duration-500',
-  interactive: 'bg-white hover:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.12)] hover:-translate-y-0.5 transition-all duration-500',
-  soft: 'bg-white rounded-xl shadow-[0_2px_12px_-4px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.15)] transition-all duration-500',
-  zen: 'bg-white rounded-xl hover:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.1)] transition-all duration-500',
-  glass: 'glass-premium rounded-xl transition-all duration-500',
+  default: 'bg-white transition-all duration-300 hover:-translate-y-2 hover:shadow-xl',
+  interactive: 'bg-white hover:-translate-y-2 hover:shadow-xl transition-all duration-300',
+  soft: 'bg-white rounded-xl shadow-[0_2px_12px_-4px_rgba(0,0,0,0.08)] hover:-translate-y-2 hover:shadow-xl transition-all duration-300',
+  zen: 'bg-white rounded-xl hover:-translate-y-2 hover:shadow-xl transition-all duration-300',
+  glass: 'glass-premium rounded-xl hover:-translate-y-2 hover:shadow-xl transition-all duration-300',
 };
 
 // 图片比例类型

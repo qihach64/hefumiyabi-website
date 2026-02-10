@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useLayoutEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { useSearchLoading } from "@/contexts/SearchLoadingContext";
@@ -25,25 +25,25 @@ const HomepageSearchMode = dynamic(
   }
 );
 
-// 搜索模式骨架屏
+// 搜索模式骨架屏 - Wabi-Sabi 色调
 function SearchModeSkeleton() {
   return (
-    <section className="py-6 bg-background min-h-screen animate-pulse">
+    <section className="py-6 bg-background min-h-screen">
       <div className="container">
         <div className="flex flex-col lg:flex-row gap-6">
           {/* 左侧筛选器骨架 */}
           <div className="hidden lg:block lg:w-64 flex-shrink-0">
             <div className="bg-white rounded-xl border border-wabi-200 p-6 space-y-6">
               <div className="flex items-center gap-2">
-                <div className="w-5 h-5 bg-gray-200 rounded" />
-                <div className="h-6 w-24 bg-gray-200 rounded" />
+                <div className="w-5 h-5 shimmer-wabi rounded" />
+                <div className="h-6 w-24 shimmer-wabi rounded" />
               </div>
               {[1, 2, 3].map((i) => (
                 <div key={i}>
-                  <div className="h-4 w-20 bg-gray-200 rounded mb-3" />
+                  <div className="h-4 w-20 shimmer-wabi rounded mb-3" />
                   <div className="flex flex-wrap gap-2">
                     {[1, 2, 3].map((j) => (
-                      <div key={j} className="h-8 w-16 bg-gray-100 rounded-full" />
+                      <div key={j} className="h-8 w-16 shimmer-wabi rounded-full" />
                     ))}
                   </div>
                 </div>
@@ -52,27 +52,27 @@ function SearchModeSkeleton() {
           </div>
           {/* 移动端筛选按钮骨架 */}
           <div className="lg:hidden mb-6">
-            <div className="w-full h-12 bg-gray-100 rounded-xl" />
+            <div className="w-full h-12 shimmer-wabi rounded-xl" />
           </div>
           {/* 右侧内容骨架 */}
           <div className="flex-1 min-w-0">
             <div className="mb-6">
-              <div className="h-4 w-40 bg-gray-200 rounded" />
+              <div className="h-4 w-40 shimmer-wabi rounded" />
             </div>
             {[1, 2].map((section) => (
               <div key={section} className="mb-8">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 bg-gray-200 rounded-full" />
-                  <div className="h-6 w-32 bg-gray-200 rounded" />
+                  <div className="w-8 h-8 shimmer-wabi rounded-full" />
+                  <div className="h-6 w-32 shimmer-wabi rounded" />
                 </div>
                 <div className="flex gap-4 overflow-hidden">
                   {[1, 2, 3, 4].map((card) => (
                     <div key={card} className="flex-shrink-0 w-[260px]">
                       <div className="bg-white rounded-xl overflow-hidden">
-                        <div className="aspect-square bg-gray-200" />
+                        <div className="aspect-square shimmer-wabi" />
                         <div className="p-3 space-y-2">
-                          <div className="h-4 w-2/3 bg-gray-200 rounded" />
-                          <div className="h-5 w-20 bg-gray-200 rounded" />
+                          <div className="h-4 w-2/3 shimmer-wabi rounded" />
+                          <div className="h-5 w-20 shimmer-wabi rounded" />
                         </div>
                       </div>
                     </div>
@@ -131,6 +131,13 @@ export default function HomeClient({
     selectedRegion ||
     selectedTagIds.length > 0
   );
+
+  // 搜索模式下无 Hero，需要显示 Header 搜索栏
+  useLayoutEffect(() => {
+    if (isSearchMode) {
+      setIsHeroVisible(false);
+    }
+  }, [isSearchMode, setIsHeroVisible]);
 
   // 按需加载 allPlans（仅搜索模式需要，加载后缓存）
   const { data: fetchedPlans } = trpc.plan.searchAll.useQuery(undefined, {

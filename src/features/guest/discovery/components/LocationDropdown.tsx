@@ -104,7 +104,7 @@ export function LocationDropdown({
           className="absolute top-full left-0 mt-4 bg-white rounded-xl overflow-hidden z-[100] min-w-[320px] max-w-[400px]
             shadow-[0_2px_16px_rgba(0,0,0,0.12)]
             border border-gray-100
-            animate-in fade-in slide-in-from-top-2 duration-200"
+            animate-spring-in"
         >
           <div className="px-4 pt-4 pb-2">
             <h3 className="text-[12px] font-semibold text-gray-800 uppercase tracking-wide">

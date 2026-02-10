@@ -57,7 +57,7 @@ export default function FeaturedPlanCard({
     <Link
         href={planDetailHref}
         target="_blank"
-        className="group block bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 border border-gray-100 hover:border-sakura-200/50 h-full relative"
+        className="group block bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-300 border border-gray-100 hover:border-sakura-200/50 h-full relative"
       >
         <div className="flex flex-col h-full">
           {/* 图片容器 - 3:4 比例，顶部圆角 */}

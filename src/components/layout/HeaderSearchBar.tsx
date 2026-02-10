@@ -575,13 +575,14 @@ const HeaderSearchBarInner = memo(function HeaderSearchBarInner() {
           {showDateDropdown && (
             <div
               ref={dateDropdownRef}
-              className="absolute top-full left-1/2 -translate-x-1/2 mt-4 bg-white rounded-xl overflow-hidden z-[100]
+              className="absolute top-full left-0 sm:left-1/2 sm:-translate-x-1/2 mt-4 bg-white rounded-xl overflow-hidden z-[100]
                 shadow-[0_2px_16px_rgba(0,0,0,0.12)]
                 border border-gray-100
-                animate-in fade-in slide-in-from-top-2 duration-200"
+                animate-in fade-in slide-in-from-top-2 duration-200
+                max-h-[calc(100dvh-200px)] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="p-4 w-[320px]">
+              <div className="p-4 w-[min(320px,calc(100vw-2rem))]">
                 {/* 月份导航 */}
                 <div className="flex items-center justify-between mb-4">
                   <button

@@ -286,13 +286,19 @@ body {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
-/* Hero 搜索面板毛玻璃 (Light Glass) - 明亮通透 */
+/* Hero 搜索面板毛玻璃 (Light Glass) - 高端原生 OS 质感 */
 .glass-panel-light {
-  background: rgba(255, 255, 255, 0.75);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.70);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.9);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.glass-panel-light:hover {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.10), 0 4px 12px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
 }
 
 /* 平滑过渡 */
@@ -362,6 +368,21 @@ body {
 
 .scrollbar-hide::-webkit-scrollbar {
   display: none;  /* Chrome, Safari and Opera */
+}
+
+/* === 横向滚动容器右侧 padding 修复 ===
+   overflow-x-auto 的 flex 容器会吞掉 padding-right，
+   用 ::after 伪元素作为 flex 子项提供尾部留白 */
+.scroll-pad-fix::after {
+  content: '';
+  flex-shrink: 0;
+  width: 1rem;
+}
+
+@media (min-width: 768px) {
+  .scroll-pad-fix::after {
+    width: 0;
+  }
 }
 
 /* ================================
@@ -522,6 +543,99 @@ body {
   animation: bounce-arrow 1.5s ease-in-out infinite;
 }
 
+/* ================================
+   Cinematic Zen - 动画基础设施
+   ================================ */
+
+/* === 缓动函数 === */
+:root {
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.transition-quart {
+  transition-timing-function: var(--ease-out-quart);
+}
+
+/* === Ken Burns 动画 - Hero 背景图缓慢缩放 === */
+@keyframes ken-burns {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.05);
+  }
+}
+
+.animate-ken-burns {
+  animation: ken-burns 20s ease-out infinite alternate;
+}
+
+/* === Wabi-Sabi 骨架屏 shimmer - stone-200 色调 === */
+@keyframes shimmer-wabi {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.shimmer-wabi {
+  background: linear-gradient(
+    90deg,
+    #E7E5E4 25%,    /* stone-200 */
+    #F5F5F4 37%,    /* stone-100 */
+    #E7E5E4 63%     /* stone-200 */
+  );
+  background-size: 200% 100%;
+  animation: shimmer-wabi 1.5s ease-in-out infinite;
+}
+
+/* === Spring 弹簧动画 - 下拉菜单打开效果 === */
+@keyframes spring-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.95);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(2px) scale(1.01);
+  }
+  80% {
+    transform: translateY(-1px) scale(1);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-spring-in {
+  animation: spring-in 0.3s var(--ease-out-quart) both;
+}
+
+/* === 搜索按钮涟漪效果 - sakura 色调 === */
+@keyframes ripple-expand {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(4);
+    opacity: 0;
+  }
+}
+
+.search-ripple {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+  pointer-events: none;
+  animation: ripple-expand 0.5s var(--ease-out-quart) forwards;
+}
+
 /* 尊重用户偏好 - 减少动画 */
 @media (prefers-reduced-motion: reduce) {
   .animate-hero-title,
@@ -530,7 +644,11 @@ body {
   .animate-hero-left,
   .animate-hero-right,
   .animate-scroll-indicator,
-  .animate-bounce-arrow {
+  .animate-bounce-arrow,
+  .animate-ken-burns,
+  .shimmer-wabi,
+  .animate-spring-in,
+  .search-ripple {
     animation: none;
     opacity: 1;
   }
