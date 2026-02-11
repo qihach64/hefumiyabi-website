@@ -13,6 +13,7 @@ async function main() {
   await prisma.userPreference.deleteMany();
   await prisma.user.deleteMany();
   await prisma.rentalPlan.deleteMany();
+  await prisma.campaign.deleteMany();
   await prisma.store.deleteMany();
   console.log("✅ 清空完成\n");
 
@@ -97,149 +98,7 @@ async function main() {
   ]);
   console.log(`✅ 创建了 ${stores.length} 个店铺\n`);
 
-  // 2. 创建租赁套餐
-  console.log("📋 创建租赁套餐...");
-  const plans = await Promise.all([
-    prisma.rentalPlan.create({
-      data: {
-        slug: "women-daily-discount",
-        name: "女士日常优惠和服套餐",
-        nameEn: "Women's Daily Discount Kimono Plan",
-        description: "轻松空手来店，免费发型设计等丰富选项。适合中老年女性，体验传统和服之美。",
-        category: "LADIES",
-        price: 30000, // ¥3,000 online = ¥300 CNY = 30000分
-        depositAmount: 0,
-        duration: 8,
-        includes: ["和服租赁", "着装服务", "免费发型设计", "配饰一套", "包袋"],
-        isActive: true,
-      },
-    }),
-    prisma.rentalPlan.create({
-      data: {
-        slug: "furisode-photoshoot",
-        name: "10周年振袖和服套餐（含60分钟摄影）",
-        nameEn: "10th Anniversary Furisode Kimono Plan with 60min Photoshoot",
-        description: "可爱风格、华丽图案丰富。适合成人式等重要场合，含专业摄影服务。",
-        category: "SPECIAL",
-        price: 380000, // ¥38,000 online
-        depositAmount: 50000,
-        duration: 4,
-        includes: [
-          "振袖和服租赁",
-          "专业着装",
-          "发型设计",
-          "60分钟专业摄影",
-          "全套配饰",
-          "修图服务",
-        ],
-        isActive: true,
-      },
-    }),
-    prisma.rentalPlan.create({
-      data: {
-        slug: "couple-discount",
-        name: "情侣优惠套餐",
-        nameEn: "Couple Discount Plan",
-        description: "男女各一名的情侣套餐，在京都清水寺附近享受和服体验。",
-        category: "COUPLE",
-        price: 89990, // ¥8,999 online
-        depositAmount: 0,
-        duration: 8,
-        includes: ["男士和服", "女士和服", "着装服务", "发型设计（女士）", "配饰"],
-        isActive: true,
-      },
-    }),
-    prisma.rentalPlan.create({
-      data: {
-        slug: "group-5-people",
-        name: "5人团体套餐（1人免费）",
-        nameEn: "Group Plan (5 People, 1 Free)",
-        description: "在京都清水寺附近享受5人团体和服体验，其中1名免费。",
-        category: "GROUP",
-        price: 200000, // ¥20,000 online
-        depositAmount: 0,
-        duration: 8,
-        includes: [
-          "5套和服租赁",
-          "着装服务",
-          "发型设计",
-          "配饰",
-          "团体摄影（赠送）",
-        ],
-        isActive: true,
-      },
-    }),
-    prisma.rentalPlan.create({
-      data: {
-        slug: "mens-standard",
-        name: "男士标准和服套餐",
-        nameEn: "Men's Standard Kimono Plan",
-        description: "适合男士的标准和服体验，简约大方。",
-        category: "MENS",
-        price: 35000, // ¥3,500 estimate
-        depositAmount: 0,
-        duration: 8,
-        includes: ["男士和服", "着装服务", "腰带", "木屐", "配饰"],
-        isActive: true,
-      },
-    }),
-    prisma.rentalPlan.create({
-      data: {
-        slug: "family-plan",
-        name: "家庭套餐",
-        nameEn: "Family Plan",
-        description: "适合全家一起体验和服文化，包含儿童和服。",
-        category: "FAMILY",
-        price: 150000, // ¥15,000 estimate
-        depositAmount: 0,
-        duration: 8,
-        includes: [
-          "成人和服（2套）",
-          "儿童和服（2套）",
-          "着装服务",
-          "发型设计",
-          "全套配饰",
-          "家庭合影（赠送）",
-        ],
-        isActive: true,
-      },
-    }),
-  ]);
-  console.log(`✅ 创建了 ${plans.length} 个租赁套餐\n`);
-
-  // 2.5 填充 plan_stores 关联 (每个套餐关联所有店铺)
-  console.log("🔗 填充 plan_stores 关联...");
-  const planStoreRecords = plans.flatMap((plan) =>
-    stores.map((store) => ({ planId: plan.id, storeId: store.id }))
-  );
-  await prisma.planStore.createMany({
-    data: planStoreRecords,
-    skipDuplicates: true,
-  });
-  console.log(`✅ 创建了 ${planStoreRecords.length} 条 plan_stores 关联\n`);
-
-  // 3. 创建测试用户
-  console.log("👤 创建测试用户...");
-  const testUser = await prisma.user.create({
-    data: {
-      email: "test@hefumiyabi.com",
-      name: "测试用户",
-      role: "USER",
-      language: "ZH",
-      preference: {
-        create: {
-          preferredStyles: ["振袖", "访问着"],
-          preferredColors: ["粉色", "红色"],
-          preferredPatterns: ["花卉"],
-          height: 165,
-          emailNotification: true,
-        },
-      },
-    },
-  });
-  console.log("✅ 创建了测试用户\n");
-
-  // 5. 创建优惠活动
+  // 2. 创建优惠活动 (先创建，后面套餐可以关联)
   console.log("🎊 创建优惠活动...");
   const campaign = await prisma.campaign.create({
     data: {
@@ -264,131 +123,144 @@ async function main() {
       restrictions: ["不适用于成人式", "不适用于毕业典礼"],
       terms:
         "本活动仅限在线预订。活动期间预订的套餐可在一年内使用。如需改期或取消，请遵循正常的预约政策。",
-      campaignPlans: {
-        create: [
-          {
-            name: "东京成人式振袖和服套餐 + 60分钟摄影",
-            nameEn: "Tokyo Coming of Age Furisode Kimono + 60min Photography",
-            description:
-              "想体验最正式的和服就是振袖和服了！包含专业摄影服务，留下珍贵回忆。",
-            originalPrice: 5800000, // ¥58,000 = ¥5,800 CNY = 580000分
-            campaignPrice: 3800000, // ¥38,000
-            duration: 8,
-            includes: [
-              "振袖和服租赁",
-              "专业着装服务",
-              "发型设计",
-              "60分钟专业摄影",
-              "全套配饰",
-              "修图服务",
-            ],
-            applicableStores: ["asakusa-main", "asakusa-station", "asakusa-premium"],
-            images: [
-              "https://cdn.sanity.io/images/u9jvdp7a/staging/2c5c377c69c7d60f41b052db2fdcfc955ff32437-1260x1536.png",
-            ],
-            isFeatured: true,
-          },
-          {
-            name: "东京成人式振袖和服套餐",
-            nameEn: "Tokyo Coming of Age Furisode Kimono",
-            description: "正式振袖和服体验，适合各种重要场合。",
-            originalPrice: 3800000, // ¥38,000
-            campaignPrice: 1900000, // ¥19,000
-            duration: 8,
-            includes: [
-              "振袖和服租赁",
-              "专业着装服务",
-              "发型设计",
-              "全套配饰",
-            ],
-            applicableStores: ["asakusa-main", "asakusa-station", "asakusa-premium"],
-            images: [],
-            isFeatured: true,
-          },
-          {
-            name: "家庭三人套餐 + 60分钟摄影",
-            nameEn: "Family 3-Person Package + 60min Photography",
-            description:
-              "全家一同游日本，当然要和小宝贝们一同体验和服！包含父母和儿童套装。",
-            originalPrice: 2600000, // ¥26,000
-            campaignPrice: 1500000, // ¥15,000
-            duration: 8,
-            includes: [
-              "成人和服 x2",
-              "儿童和服 x1",
-              "专业着装服务",
-              "发型设计",
-              "60分钟摄影",
-              "全套配饰",
-            ],
-            applicableStores: ["asakusa-station"],
-            images: [],
-            isFeatured: true,
-          },
-          {
-            name: "蕾丝复古和服团体优惠",
-            nameEn: "Lace and Antique Kimono Group Discount",
-            description: "蕾丝和复古和服特别限定套餐，适合团体游客。",
-            originalPrice: 1500000, // ¥15,000
-            campaignPrice: 900000, // ¥9,000
-            duration: 8,
-            includes: [
-              "蕾丝/复古和服租赁",
-              "专业着装服务",
-              "发型设计",
-              "全套配饰",
-            ],
-            applicableStores: ["asakusa-station"],
-            images: [],
-            isFeatured: false,
-          },
-          {
-            name: "蕾丝复古和服情侣优惠（浅草本店）",
-            nameEn: "Lace and Antique Kimono Couple Discount",
-            description: "优雅或甜美的蕾丝和服，专为情侣设计。",
-            originalPrice: 1500000, // ¥15,000
-            campaignPrice: 1100000, // ¥11,000
-            duration: 8,
-            includes: [
-              "蕾丝和服 x2",
-              "专业着装服务",
-              "发型设计",
-              "全套配饰",
-            ],
-            applicableStores: ["asakusa-main"],
-            images: [
-              "https://cdn.sanity.io/images/u9jvdp7a/staging/5dd1195b6e98cb17cfaf210b018dc5d9582b574f-1066x1314.png",
-            ],
-            isFeatured: false,
-          },
-          {
-            name: "振袖情侣和服套餐",
-            nameEn: "Furisode Couple Kimono Package",
-            description: "只要人对了，天天都是情人节！华丽振袖情侣套装。",
-            originalPrice: 5800000, // ¥58,000
-            campaignPrice: 3900000, // ¥39,000
-            duration: 8,
-            includes: [
-              "振袖和服 x2",
-              "专业着装服务",
-              "发型设计",
-              "全套配饰",
-              "情侣摄影（赠送）",
-            ],
-            applicableStores: ["asakusa-premium"],
-            images: [],
-            isFeatured: true,
-          },
+    },
+  });
+  console.log("✅ 创建了1个优惠活动\n");
+
+  // 3. 创建租赁套餐
+  console.log("📋 创建租赁套餐...");
+  const plans = await Promise.all([
+    // 普通套餐
+    prisma.rentalPlan.create({
+      data: {
+        slug: "women-daily-discount",
+        name: "女士日常优惠和服套餐",
+        description: "轻松空手来店，免费发型设计等丰富选项。适合中老年女性，体验传统和服之美。",
+        price: 30000,
+        depositAmount: 0,
+        duration: 8,
+        region: "东京",
+        isActive: true,
+      },
+    }),
+    prisma.rentalPlan.create({
+      data: {
+        slug: "couple-discount",
+        name: "情侣优惠套餐",
+        description: "男女各一名的情侣套餐，在京都清水寺附近享受和服体验。",
+        price: 89990,
+        depositAmount: 0,
+        duration: 8,
+        region: "京都",
+        isActive: true,
+      },
+    }),
+    prisma.rentalPlan.create({
+      data: {
+        slug: "group-5-people",
+        name: "5人团体套餐（1人免费）",
+        description: "在京都清水寺附近享受5人团体和服体验，其中1名免费。",
+        price: 200000,
+        depositAmount: 0,
+        duration: 8,
+        region: "京都",
+        isActive: true,
+      },
+    }),
+    prisma.rentalPlan.create({
+      data: {
+        slug: "mens-standard",
+        name: "男士标准和服套餐",
+        description: "适合男士的标准和服体验，简约大方。",
+        price: 35000,
+        depositAmount: 0,
+        duration: 8,
+        region: "东京",
+        isActive: true,
+      },
+    }),
+    prisma.rentalPlan.create({
+      data: {
+        slug: "family-plan",
+        name: "家庭套餐",
+        description: "适合全家一起体验和服文化，包含儿童和服。",
+        price: 150000,
+        depositAmount: 0,
+        duration: 8,
+        isActive: true,
+      },
+    }),
+    // 活动套餐 (关联 campaign)
+    prisma.rentalPlan.create({
+      data: {
+        slug: "furisode-photoshoot",
+        name: "10周年振袖和服套餐（含60分钟摄影）",
+        description: "可爱风格、华丽图案丰富。适合成人式等重要场合，含专业摄影服务。",
+        price: 380000,
+        originalPrice: 580000,
+        depositAmount: 50000,
+        duration: 4,
+        region: "东京",
+        isCampaign: true,
+        isFeatured: true,
+        campaignId: campaign.id,
+        images: [
+          "https://cdn.sanity.io/images/u9jvdp7a/staging/2c5c377c69c7d60f41b052db2fdcfc955ff32437-1260x1536.png",
         ],
+        isActive: true,
+      },
+    }),
+  ]);
+  console.log(`✅ 创建了 ${plans.length} 个租赁套餐\n`);
+
+  // 4. 填充 plan_stores 关联 (每个套餐按 region 匹配店铺)
+  console.log("🔗 填充 plan_stores 关联...");
+  const REGION_CITY: Record<string, string[]> = { 京都: ["京都"], 东京: ["东京"] };
+  const planStoreRecords = plans.flatMap((plan) => {
+    // region 为 null 时关联所有店铺
+    const regionVal = (plan as { region?: string | null }).region;
+    const matchedStores = regionVal
+      ? stores.filter((s) => {
+          for (const [kw, cities] of Object.entries(REGION_CITY)) {
+            if (regionVal.includes(kw) && s.city && cities.includes(s.city)) return true;
+          }
+          return false;
+        })
+      : stores;
+    return matchedStores.map((store) => ({ planId: plan.id, storeId: store.id }));
+  });
+  await prisma.planStore.createMany({
+    data: planStoreRecords,
+    skipDuplicates: true,
+  });
+  console.log(`✅ 创建了 ${planStoreRecords.length} 条 plan_stores 关联\n`);
+
+  // 5. 创建测试用户
+  console.log("👤 创建测试用户...");
+  await prisma.user.create({
+    data: {
+      email: "test@hefumiyabi.com",
+      name: "测试用户",
+      role: "USER",
+      language: "ZH",
+      preference: {
+        create: {
+          preferredStyles: ["振袖", "访问着"],
+          preferredColors: ["粉色", "红色"],
+          preferredPatterns: ["花卉"],
+          height: 165,
+          emailNotification: true,
+        },
       },
     },
   });
-  console.log("✅ 创建了1个优惠活动，包含6个活动套餐\n");
+  console.log("✅ 创建了测试用户\n");
 
   console.log("🎉 数据库填充完成！\n");
   console.log("📊 统计:");
   console.log(`   - 店铺: ${stores.length} 个`);
   console.log(`   - 租赁套餐: ${plans.length} 个`);
+  console.log(`   - plan_stores: ${planStoreRecords.length} 条`);
   console.log(`   - 用户: 1 个`);
   console.log(`   - 优惠活动: 1 个`);
 }

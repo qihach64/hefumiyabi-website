@@ -80,7 +80,7 @@ HAVING COUNT(ps.id) = 0;
 
 ### 任务
 
-- [ ] **2.1** 确认废弃列无代码引用
+- [x] **2.1** 确认废弃列无代码引用 (Prisma Schema 已不含这些字段)
   ```bash
   # 搜索代码中是否还有引用
   grep -r "isLimited\|maxBookings\|currentBookings" src/ --include="*.ts" --include="*.tsx"
@@ -97,9 +97,9 @@ HAVING COUNT(ps.id) = 0;
     DROP COLUMN IF EXISTS "currentBookings",
     DROP COLUMN IF EXISTS "nameEn";
   ```
-- [ ] **2.3** 更新 `prisma/seed.ts` — 移除 `category`, `includes`, `nameEn` 等已删除字段的引用 (当前 seed.ts 仍在使用这些字段，如 `seed.ts:108`, `seed.ts:112`, `seed.ts:107`)
+- [x] **2.3** 重写 `prisma/seed.ts` — 移除废弃字段 + 修复 campaign 关联方式
 - [ ] **2.4** 运行 `pnpm prisma db push` 验证 schema 与数据库一致
-- [ ] **2.5** 运行 `pnpm build` 确认无编译错误
+- [x] **2.5** 运行 `pnpm build` 确认无编译错误
 
 ---
 
