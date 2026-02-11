@@ -133,9 +133,9 @@ export default function ScrollableSection({
               {/* 桌面端：两行网格横向滚动 */}
               <HorizontalScroller
                 ref={scrollerRef}
-                className={`${scrollerClassName} lg:!grid lg:!grid-rows-2 lg:!grid-flow-col lg:!gap-4 lg:!snap-x lg:!snap-mandatory`}
+                className={`${scrollerClassName} lg:!grid lg:!grid-rows-2 lg:!grid-flow-col lg:!gap-4 lg:!snap-x lg:!snap-mandatory lg:!pr-4`}
                 style={{
-                  gridAutoColumns: '260px', // 稍微调窄一点，适应两行
+                  gridAutoColumns: '250px', // 4列刚好适配 scroller 可用宽度
                 } as React.CSSProperties}
                 onScrollStateChange={handleScrollStateChange}
               >
