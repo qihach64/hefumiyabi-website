@@ -85,12 +85,19 @@ export default function MiniCalendar({
     };
   }, [calendarMonth]);
 
+  // 本地日期字符串，避免 toISOString() 的 UTC 时区偏移
+  const toLocalDateStr = useCallback(
+    (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`,
+    []
+  );
+
   const handleDateSelect = useCallback(
     (date: Date) => {
-      const dateStr = date.toISOString().split("T")[0];
+      const dateStr = toLocalDateStr(date);
       onChange(dateStr);
     },
-    [onChange]
+    [onChange, toLocalDateStr]
   );
 
   const handlePrevMonth = () => {
@@ -147,7 +154,7 @@ export default function MiniCalendar({
       {/* Date grid - Compact Zen style */}
       <div className="grid grid-cols-7 gap-0.5">
         {calendarData.days.map((day, index) => {
-          const dateStr = day.date.toISOString().split("T")[0];
+          const dateStr = toLocalDateStr(day.date);
           const isSelected = value === dateStr;
           const isWeekend = day.date.getDay() === 0 || day.date.getDay() === 6;
 

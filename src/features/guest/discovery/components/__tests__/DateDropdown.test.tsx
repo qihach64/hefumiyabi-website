@@ -351,7 +351,10 @@ describe('DateDropdown', () => {
           !['今天', '明天', '下周'].includes(btn.textContent || '')
       );
 
-      expect(dayButtons.length).toBe(42); // 6 rows * 7 days
+      // 动态行数：格子数 = ceil(天数 / 7) * 7，不固定 42
+      expect(dayButtons.length % 7).toBe(0);
+      expect(dayButtons.length).toBeGreaterThanOrEqual(28);
+      expect(dayButtons.length).toBeLessThanOrEqual(42);
     });
   });
 });

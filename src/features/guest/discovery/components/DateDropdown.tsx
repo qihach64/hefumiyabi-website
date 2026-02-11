@@ -76,8 +76,9 @@ export function DateDropdown({
       });
     }
 
-    // 下个月的天数填充
-    const remainingDays = 42 - days.length;
+    // 下个月的天数填充（动态行数，不强制 6 行）
+    const totalCells = Math.ceil(days.length / 7) * 7;
+    const remainingDays = totalCells - days.length;
     for (let i = 1; i <= remainingDays; i++) {
       const date = new Date(year, month + 1, i);
       days.push({
@@ -96,14 +97,21 @@ export function DateDropdown({
     };
   }, [calendarMonth]);
 
+  // 本地日期字符串，避免 toISOString() 的 UTC 时区偏移
+  const toLocalDateStr = useCallback(
+    (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`,
+    []
+  );
+
   const handleDateSelect = useCallback(
     (date: Date) => {
-      const dateStr = date.toISOString().split("T")[0];
+      const dateStr = toLocalDateStr(date);
       onChange(dateStr);
       onClose();
       onSelect?.(dateStr);
     },
-    [onChange, onClose, onSelect]
+    [onChange, onClose, onSelect, toLocalDateStr]
   );
 
   const handlePrevMonth = () => {
@@ -159,7 +167,7 @@ export function DateDropdown({
         {/* 日期网格 */}
         <div className="grid grid-cols-7 gap-1">
           {calendarData.days.map((day, index) => {
-            const dateStr = day.date.toISOString().split("T")[0];
+            const dateStr = toLocalDateStr(day.date);
             const isSelected = value === dateStr;
 
             return (
@@ -168,7 +176,7 @@ export function DateDropdown({
                 onClick={() => !day.isPast && day.isCurrentMonth && handleDateSelect(day.date)}
                 disabled={day.isPast || !day.isCurrentMonth}
                 className={`
-                  w-10 h-10 rounded-full text-[14px] font-medium
+                  w-9 h-9 rounded-full text-[13px] font-medium
                   transition-all duration-200
                   flex items-center justify-center
                   ${
