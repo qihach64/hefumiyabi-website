@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/favorites - 添加收藏
+// POST /api/favorites - 添加收藏 (upsert: 1 次查询搞定)
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
@@ -70,34 +70,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 检查是否已存在
-    const existing = await prisma.favorite.findFirst({
+    // upsert: 已存在则返回，不存在则创建 (利用 @@unique([userId, planId, imageUrl]))
+    const favorite = await prisma.favorite.upsert({
       where: {
+        userId_planId_imageUrl: {
+          userId: session.user.id,
+          planId,
+          imageUrl: imageUrl || null,
+        },
+      },
+      update: {},
+      create: {
         userId: session.user.id,
         planId,
         imageUrl,
       },
-    });
-
-    if (existing) {
-      return NextResponse.json(
-        { error: 'Already favorited', favorite: existing },
-        { status: 409 }
-      );
-    }
-
-    // 创建收藏
-    const favorite = await prisma.favorite.create({
-      data: {
-        userId: session.user.id,
-        planId,
-        imageUrl,
-      },
-    });
-
-    // 获取套餐信息
-    const favoriteWithPlan = await prisma.favorite.findUnique({
-      where: { id: favorite.id },
       include: {
         plan: {
           select: {
@@ -110,7 +97,8 @@ export async function POST(request: NextRequest) {
         },
       },
     });
-    return NextResponse.json({ favorite: favoriteWithPlan }, { status: 201 });
+
+    return NextResponse.json({ favorite }, { status: 201 });
   } catch (error) {
     console.error('Error adding favorite:', error);
     return NextResponse.json(
@@ -120,7 +108,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// DELETE /api/favorites - 删除收藏
+// DELETE /api/favorites - 删除收藏 (deleteMany: 1 次查询搞定)
 export async function DELETE(request: NextRequest) {
   try {
     const session = await auth();
@@ -139,26 +127,20 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // 查找收藏
-    const favorite = await prisma.favorite.findFirst({
+    const { count } = await prisma.favorite.deleteMany({
       where: {
         userId: session.user.id,
         planId,
-        imageUrl,
+        imageUrl: imageUrl || undefined,
       },
     });
 
-    if (!favorite) {
+    if (count === 0) {
       return NextResponse.json(
         { error: 'Favorite not found' },
         { status: 404 }
       );
     }
-
-    // 删除收藏
-    await prisma.favorite.delete({
-      where: { id: favorite.id },
-    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -159,12 +159,12 @@ HAVING COUNT(ps.id) = 0;
 
 #### 任务
 
-- [ ] **4A.1** 确认无代码引用这些表
+- [x] **4A.1** 确认: Cart/CartItem/Payout/Listing 已不在 Schema 中; Account/Session 是 NextAuth 需要的保留
   ```bash
   grep -r "carts\|cart_items\|payouts\|listings" src/ prisma/ --include="*.ts" --include="*.tsx"
   # sessions/accounts 可能被 NextAuth 引用，需特别确认
   ```
-- [ ] **4A.2** 从 `prisma/schema.prisma` 移除对应 model (如果还在的话)
+- [x] **4A.2** Model 已不在 Schema 中; 创建 scripts/cleanup-dead-tables.sql 供生产 DBA 执行
 - [ ] **4A.3** 创建 migration 删除死表
   ```sql
   DROP TABLE IF EXISTS cart_items;
@@ -183,7 +183,7 @@ HAVING COUNT(ps.id) = 0;
 
 #### 任务
 
-- [ ] **4B.1** 重构 POST handler — 使用 `upsert` + `include`
+- [x] **4B.1** 重构 POST handler — 使用 `upsert` + `include` (3次查询→1次)
   ```typescript
   // 替换 route.ts:74-112
   // Favorite 已有 @@unique([userId, planId, imageUrl])，可直接 upsert
@@ -211,7 +211,7 @@ HAVING COUNT(ps.id) = 0;
     },
   });
   ```
-- [ ] **4B.2** 重构 DELETE handler — 使用 `deleteMany` 替代 findFirst + delete
+- [x] **4B.2** 重构 DELETE handler — 使用 `deleteMany` 替代 findFirst + delete (2次→1次)
   ```typescript
   // 替换 route.ts:143-161
   const { count } = await prisma.favorite.deleteMany({
