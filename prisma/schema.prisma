@@ -28,7 +28,6 @@ model User {
   updatedAt     DateTime        @updatedAt
   accounts      Account[]
   bookings      Booking[]
-  cart          Cart?
   favorites     Favorite[]
   sessions      Session[]
   preference    UserPreference?
@@ -106,19 +105,13 @@ model Merchant {
   commissionRate Float            @default(0.15)
   bankAccount    String?
   taxId          String?
-  totalBookings  Int              @default(0)
-  totalRevenue   Int              @default(0)
-  rating         Float?
-  reviewCount    Int              @default(0)
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
   owner          User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   stores         Store[]
-  listings       Listing[]
   rentalPlans    RentalPlan[]
   bookings       Booking[]
   reviews        MerchantReview[]
-  payouts        Payout[]
   components     MerchantComponent[]  // 商户组件实例
 
   @@index([status])
@@ -145,7 +138,6 @@ model Store {
   updatedAt    DateTime      @updatedAt
   merchant     Merchant?     @relation(fields: [merchantId], references: [id])
   bookingItems BookingItem[]
-  listings     Listing[]
   planStores   PlanStore[]   // 店铺可售套餐 (1:N via junction)
 
   @@index([merchantId])
@@ -230,7 +222,6 @@ model RentalPlan {
   // 店铺和地区信息
   storeName String?
   region    String?
-  tags      String[]      @default([])  // 保留旧字段，后续可移除
 
   // 活动关联
   campaignId String?
@@ -238,9 +229,6 @@ model RentalPlan {
 
   // 活动特性
   isCampaign      Boolean @default(false)
-  isLimited       Boolean @default(false)
-  maxBookings     Int?
-  currentBookings Int     @default(0)
 
   // 时间/季节限制（套餐级别，覆盖 Theme 级别）
   availableFrom  DateTime?
@@ -258,7 +246,6 @@ model RentalPlan {
 
   // 关联
   bookingItems   BookingItem[]
-  cartItems      CartItem[]
   planTags       PlanTag[]
   planComponents PlanComponent[]  // 套餐包含的服务组件
   planUpgrades   PlanUpgrade[]    // 套餐可选的升级服务
@@ -304,68 +291,6 @@ model PlanStore {
   @@map("plan_stores")
 }
 
-model Listing {
-  id             String        @id @default(cuid())
-  merchantId     String
-  storeId        String
-  name           String
-  nameEn         String?
-  description    String
-  price          Int
-  originalPrice  Int?
-  depositAmount  Int           @default(0)
-  duration       Int
-  includes       String[]
-  imageUrl       String?
-  images         String[]      @default([])
-  status         ListingStatus @default(PENDING)
-  rejectionReason String?
-  isActive       Boolean       @default(true)
-  isFeatured     Boolean       @default(false)
-  viewCount      Int           @default(0)
-  bookingCount   Int           @default(0)
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  merchant       Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
-  store          Store         @relation(fields: [storeId], references: [id])
-
-  @@index([merchantId])
-  @@index([storeId])
-  @@index([status])
-  @@map("listings")
-}
-
-model Cart {
-  id        String     @id @default(cuid())
-  userId    String?    @unique
-  sessionId String?    @unique
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  expiresAt DateTime
-  items     CartItem[]
-  user      User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([sessionId])
-  @@index([expiresAt])
-  @@map("carts")
-}
-
-model CartItem {
-  id             String      @id @default(cuid())
-  cartId         String
-  type           String
-  planId         String?
-  quantity       Int         @default(1)
-  addOns         String[]
-  notes          String?
-  createdAt      DateTime    @default(now())
-  cart           Cart        @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  plan           RentalPlan? @relation(fields: [planId], references: [id], onDelete: Cascade)
-
-  @@map("cart_items")
-}
-
 model Booking {
   id              String        @id @default(cuid())
   userId          String?
@@ -389,7 +314,6 @@ model Booking {
   items           BookingItem[]
   user            User?         @relation(fields: [userId], references: [id])
   merchant        Merchant?     @relation(fields: [merchantId], references: [id])
-  payout          Payout?
 
   @@index([userId])
   @@index([merchantId])
@@ -515,14 +439,6 @@ enum Gender {
   OTHER
 }
 
-enum Season {
-  SPRING
-  SUMMER
-  AUTUMN
-  WINTER
-  ALL_SEASON
-}
-
 enum PlanStatus {
   DRAFT
   PUBLISHED
@@ -561,29 +477,6 @@ enum CampaignType {
   SPECIAL
 }
 
-model Payout {
-  id          String       @id @default(cuid())
-  merchantId  String
-  bookingId   String       @unique
-  amount      Int
-  platformFee Int
-  status      PayoutStatus @default(PENDING)
-  scheduledAt DateTime?
-  paidAt      DateTime?
-  method      String?
-  reference   String?
-  notes       String?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  merchant    Merchant     @relation(fields: [merchantId], references: [id], onDelete: Cascade)
-  booking     Booking      @relation(fields: [bookingId], references: [id])
-
-  @@index([merchantId])
-  @@index([status])
-  @@index([scheduledAt])
-  @@map("payouts")
-}
-
 model MerchantReview {
   id          String   @id @default(cuid())
   merchantId  String
@@ -607,22 +500,6 @@ enum MerchantStatus {
   APPROVED
   REJECTED
   SUSPENDED
-}
-
-enum ListingStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  SUSPENDED
-}
-
-enum PayoutStatus {
-  PENDING
-  SCHEDULED
-  PROCESSING
-  COMPLETED
-  FAILED
-  CANCELLED
 }
 
 enum ComponentApprovalStatus {

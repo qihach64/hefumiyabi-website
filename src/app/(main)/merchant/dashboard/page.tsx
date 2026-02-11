@@ -123,10 +123,20 @@ export default async function MerchantDashboardPage({ searchParams }: MerchantDa
     {} as Record<string, number>
   );
 
-  // 计算统计数据
-  const totalRevenue = merchant.totalRevenue;
-  const avgRating = merchant.rating || 0;
-  const reviewCount = merchant.reviewCount;
+  // 计算统计数据（实时查询）
+  const revenueData = await prisma.booking.aggregate({
+    where: { merchantId: merchant.id, paymentStatus: "PAID" },
+    _sum: { totalAmount: true },
+  });
+  const totalRevenue = revenueData._sum.totalAmount || 0;
+
+  const reviewStats = await prisma.merchantReview.aggregate({
+    where: { merchantId: merchant.id },
+    _avg: { rating: true },
+    _count: true,
+  });
+  const avgRating = reviewStats._avg.rating || 0;
+  const reviewCount = reviewStats._count;
 
   // 本月数据
   const now = new Date();
@@ -279,7 +289,7 @@ export default async function MerchantDashboardPage({ searchParams }: MerchantDa
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
-                  全部 ({merchant.totalBookings})
+                  全部 ({totalBookings})
                 </Link>
                 <Link
                   href="/merchant/dashboard?status=PENDING"

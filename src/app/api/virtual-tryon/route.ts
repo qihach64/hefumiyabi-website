@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
                       `guest-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     const body = await req.json();
-    const { personImageBase64, planId, kimonoId, kimonoImageUrl, customPrompt } = body;
+    const { personImageBase64, planId, kimonoImageUrl, customPrompt } = body;
 
     if (!personImageBase64) {
       return NextResponse.json(
@@ -70,21 +70,13 @@ export async function POST(req: NextRequest) {
     // 获取和服图片URL
     let kimonoImageUrlToUse = kimonoImageUrl;
 
-    if (!kimonoImageUrlToUse) {
-      // 如果没有直接提供URL，尝试从数据库获取
-      if (kimonoId) {
-        const kimonoInfo = await prisma.kimono.findUnique({
-          where: { id: kimonoId },
-          include: { images: { orderBy: { order: 'asc' }, take: 1 } },
-        });
-        kimonoImageUrlToUse = kimonoInfo?.images?.[0]?.url;
-      } else if (planId) {
-        const plan = await prisma.rentalPlan.findUnique({
-          where: { id: planId },
-          select: { imageUrl: true },
-        });
-        kimonoImageUrlToUse = plan?.imageUrl;
-      }
+    if (!kimonoImageUrlToUse && planId) {
+      // 如果没有直接提供URL，从套餐获取
+      const plan = await prisma.rentalPlan.findUnique({
+        where: { id: planId },
+        select: { imageUrl: true },
+      });
+      kimonoImageUrlToUse = plan?.imageUrl;
     }
 
     if (!kimonoImageUrlToUse) {
@@ -181,7 +173,6 @@ export async function POST(req: NextRequest) {
           userId,
           sessionId,
           planId,
-          kimonoId,
           resultImageUrl: resultUrl,
           status: TryOnStatus.COMPLETED,
           duration,
@@ -230,7 +221,6 @@ export async function POST(req: NextRequest) {
             userId,
             sessionId,
             planId,
-            kimonoId,
             resultImageUrl: '',
             status: TryOnStatus.FAILED,
             errorMessage: aiError.message || '未知错误',

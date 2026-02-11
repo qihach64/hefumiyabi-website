@@ -5,9 +5,9 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("🗑️  清空测试预约数据...");
 
-  // 先删除关联表数据
-  const deletedKimonos = await prisma.bookingKimono.deleteMany();
-  console.log(`✅ 删除了 ${deletedKimonos.count} 条和服记录`);
+  // 先删除预约项目
+  const deletedItems = await prisma.bookingItem.deleteMany();
+  console.log(`✅ 删除了 ${deletedItems.count} 条预约项目`);
 
   // 删除预约数据
   const deletedBookings = await prisma.booking.deleteMany();

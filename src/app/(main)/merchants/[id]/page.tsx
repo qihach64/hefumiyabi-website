@@ -27,14 +27,6 @@ export default async function MerchantPage({ params }: MerchantPageProps) {
           phone: true,
         },
       },
-      listings: {
-        where: { status: "APPROVED" },
-        select: {
-          id: true,
-          price: true,
-          createdAt: true,
-        },
-      },
       reviews: {
         orderBy: {
           createdAt: "desc",
@@ -102,6 +94,18 @@ export default async function MerchantPage({ params }: MerchantPageProps) {
     });
   }
 
+  // 实时统计
+  const [bookingCount, reviewStats] = await Promise.all([
+    prisma.booking.count({ where: { merchantId: id } }),
+    prisma.merchantReview.aggregate({
+      where: { merchantId: id },
+      _avg: { rating: true },
+      _count: true,
+    }),
+  ]);
+  const merchantRating = reviewStats._avg.rating;
+  const merchantReviewCount = reviewStats._count;
+
   // 计算加入时长
   const joinedDate = new Date(merchant.createdAt);
   const now = new Date();
@@ -151,9 +155,9 @@ export default async function MerchantPage({ params }: MerchantPageProps) {
                     <div className="flex items-center gap-1 text-sm text-gray-600">
                       <Star className="w-4 h-4 fill-gray-900 text-gray-900" />
                       <span className="font-semibold text-gray-900">
-                        {merchant.rating?.toFixed(1) || "暂无"}
+                        {merchantRating?.toFixed(1) || "暂无"}
                       </span>
-                      <span>({merchant.reviewCount} 条评价)</span>
+                      <span>({merchantReviewCount} 条评价)</span>
                     </div>
                     <span className="text-sm text-gray-600">
                       加入 {monthsJoined > 0 ? `${monthsJoined} 个月` : "本月"}
@@ -185,7 +189,7 @@ export default async function MerchantPage({ params }: MerchantPageProps) {
                 </div>
                 <div>
                   <p className="text-xl font-bold text-gray-900">
-                    {merchant.totalBookings}
+                    {bookingCount}
                   </p>
                   <p className="text-xs text-gray-600">完成订单</p>
                 </div>
@@ -230,7 +234,7 @@ export default async function MerchantPage({ params }: MerchantPageProps) {
                 <div className="flex items-center gap-2 mb-4">
                   <Star className="w-5 h-5 fill-gray-900 text-gray-900" />
                   <h2 className="text-xl font-bold text-gray-900">
-                    {merchant.rating?.toFixed(1)} · {merchant.reviewCount} 条评价
+                    {merchantRating?.toFixed(1)} · {merchantReviewCount} 条评价
                   </h2>
                 </div>
 
@@ -267,10 +271,10 @@ export default async function MerchantPage({ params }: MerchantPageProps) {
                   ))}
                 </div>
 
-                {merchant.reviewCount > 6 && (
+                {merchantReviewCount > 6 && (
                   <div className="text-center mt-6">
                     <p className="text-sm text-gray-600">
-                      显示 6 / {merchant.reviewCount} 条评价
+                      显示 6 / {merchantReviewCount} 条评价
                     </p>
                   </div>
                 )}
