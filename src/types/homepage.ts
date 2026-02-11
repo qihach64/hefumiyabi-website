@@ -82,7 +82,6 @@ export interface HomepageTagCategory {
 
 export interface HomepageData {
   themeSections: ThemeSection[];
-  allPlans: HomepagePlanCard[];
   campaigns: HomepageCampaign[];
   stores: HomepageStore[];
   tagCategories: HomepageTagCategory[];

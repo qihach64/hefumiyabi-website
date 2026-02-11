@@ -645,146 +645,56 @@ export const planService = {
    * 获取首页所需的所有数据
    * 使用 Promise.all 并行查询，精简字段减少数据传输
    */
-  async getHomepagePlans(options: GetHomepagePlansOptions = {}): Promise<HomepageData> {
-    const { limitPerTheme = 8, searchLocation } = options;
-
-    // 构建套餐查询条件
-    const planWhere: Prisma.RentalPlanWhereInput = {
-      isActive: true,
-      themeId: { not: null },
-    };
-
-    if (searchLocation) {
-      planWhere.region = { contains: searchLocation };
-    }
-
-    // 并行执行 5 个查询
-    const [themes, plans, campaigns, stores, tagCategories] = await Promise.all([
-      // 1. 获取活跃主题
-      prisma.theme.findMany({
-        where: { isActive: true },
-        orderBy: { displayOrder: 'asc' },
-        select: {
-          id: true,
-          slug: true,
-          name: true,
-          icon: true,
-          color: true,
-          description: true,
-        },
-      }),
-
-      // 2. 获取套餐 (精简字段)
-      prisma.rentalPlan.findMany({
-        where: planWhere,
-        select: {
-          id: true,
-          name: true,
-          description: true,
-          price: true,
-          originalPrice: true,
-          imageUrl: true,
-          region: true,
-          storeName: true,
-          themeId: true,
-          isFeatured: true,
-          isCampaign: true,
-          merchant: {
-            select: {
-              businessName: true,
-            },
-          },
-          planComponents: {
-            select: {
-              merchantComponent: {
-                select: {
-                  customName: true,
-                  template: {
-                    select: {
-                      name: true,
-                    },
-                  },
-                },
-              },
-            },
-            orderBy: { hotmapOrder: 'asc' },
-          },
-          planTags: {
-            select: {
-              tag: {
-                select: {
-                  id: true,
-                  name: true,
-                  icon: true,
-                  color: true,
-                },
-              },
-            },
+  // 套餐卡片查询的 select 字段 (复用)
+  _planCardSelect: {
+    id: true,
+    name: true,
+    description: true,
+    price: true,
+    originalPrice: true,
+    imageUrl: true,
+    region: true,
+    storeName: true,
+    themeId: true,
+    isFeatured: true,
+    isCampaign: true,
+    merchant: {
+      select: { businessName: true },
+    },
+    planComponents: {
+      select: {
+        merchantComponent: {
+          select: {
+            customName: true,
+            template: { select: { name: true } },
           },
         },
-        orderBy: [
-          { isFeatured: 'desc' },
-          { isCampaign: 'desc' },
-          { price: 'asc' },
-        ],
-      }),
+      },
+      orderBy: { hotmapOrder: 'asc' as const },
+    },
+    planTags: {
+      select: {
+        tag: { select: { id: true, name: true, icon: true, color: true } },
+      },
+    },
+  } satisfies Prisma.RentalPlanSelect,
 
-      // 3. 获取活跃活动
-      prisma.campaign.findMany({
-        where: {
-          isActive: true,
-          endDate: { gte: new Date() },
-        },
-        orderBy: { priority: 'desc' },
-        select: {
-          id: true,
-          slug: true,
-          title: true,
-          description: true,
-          isActive: true,
-          priority: true,
-          startDate: true,
-          endDate: true,
-        },
-      }),
-
-      // 4. 获取店铺列表
-      prisma.store.findMany({
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-        },
-        orderBy: { name: 'asc' },
-      }),
-
-      // 5. 获取标签分类 (用于筛选器)
-      prisma.tagCategory.findMany({
-        where: {
-          isActive: true,
-          showInFilter: true,
-        },
-        select: {
-          id: true,
-          code: true,
-          name: true,
-          icon: true,
-          color: true,
-          tags: {
-            where: { isActive: true },
-            select: {
-              id: true,
-              name: true,
-              icon: true,
-              color: true,
-            },
-          },
-        },
-      }),
-    ]);
-
-    // 转换套餐为卡片格式
-    const transformPlan = (plan: typeof plans[0]): HomepagePlanCard => ({
+  // 转换 DB 套餐为卡片格式
+  _transformPlanCard(plan: {
+    id: string;
+    name: string;
+    description: string | null;
+    price: number;
+    originalPrice: number | null;
+    imageUrl: string | null;
+    region: string | null;
+    storeName: string | null;
+    themeId: string | null;
+    merchant: { businessName: string } | null;
+    planComponents: { merchantComponent: { customName: string | null; template: { name: string } | null } }[];
+    planTags: { tag: { id: string; name: string; icon: string | null; color: string | null } }[];
+  }): HomepagePlanCard {
+    return {
       id: plan.id,
       name: plan.name,
       description: plan.description,
@@ -799,36 +709,84 @@ export const planService = {
       ),
       planTags: plan.planTags,
       themeId: plan.themeId,
-    });
-
-    const allPlans = plans.map(transformPlan);
-
-    // 按主题分组构建 sections
-    const themeSections: ThemeSection[] = themes.map((theme) => {
-      const themePlans = allPlans
-        .filter((plan) => plan.themeId === theme.id)
-        // 按 includes 数量降序排序，服务最多的作为 featured
-        .sort((a, b) => b.includes.length - a.includes.length)
-        .slice(0, limitPerTheme);
-
-      return {
-        id: theme.id,
-        slug: theme.slug,
-        icon: theme.icon || '',
-        label: theme.name,
-        description: theme.description || '',
-        color: THEME_COLOR_MAP[theme.slug] || theme.color || '',
-        plans: themePlans,
-      };
-    });
-
-    return {
-      themeSections,
-      allPlans,
-      campaigns,
-      stores,
-      tagCategories,
     };
+  },
+
+  async getHomepagePlans(options: GetHomepagePlansOptions = {}): Promise<HomepageData> {
+    const { limitPerTheme = 8, searchLocation } = options;
+
+    // 构建地点筛选条件
+    const locationWhere: Prisma.RentalPlanWhereInput = searchLocation
+      ? { region: { contains: searchLocation } }
+      : {};
+
+    // 第一步: 并行查询 themes + 辅助数据
+    const [themes, campaigns, stores, tagCategories] = await Promise.all([
+      prisma.theme.findMany({
+        where: { isActive: true },
+        orderBy: { displayOrder: 'asc' },
+        select: { id: true, slug: true, name: true, icon: true, color: true, description: true },
+      }),
+      prisma.campaign.findMany({
+        where: { isActive: true, endDate: { gte: new Date() } },
+        orderBy: { priority: 'desc' },
+        select: {
+          id: true, slug: true, title: true, description: true,
+          isActive: true, priority: true, startDate: true, endDate: true,
+        },
+      }),
+      prisma.store.findMany({
+        select: { id: true, name: true, slug: true },
+        orderBy: { name: 'asc' },
+      }),
+      prisma.tagCategory.findMany({
+        where: { isActive: true, showInFilter: true },
+        select: {
+          id: true, code: true, name: true, icon: true, color: true,
+          tags: {
+            where: { isActive: true },
+            select: { id: true, name: true, icon: true, color: true },
+          },
+        },
+      }),
+    ]);
+
+    // 第二步: 按主题并行查询套餐 (每个主题 LIMIT limitPerTheme)
+    const themePlansResults = await Promise.all(
+      themes.map((theme) =>
+        prisma.rentalPlan.findMany({
+          where: { isActive: true, themeId: theme.id, ...locationWhere },
+          take: limitPerTheme,
+          orderBy: [{ isFeatured: 'desc' }, { isCampaign: 'desc' }, { price: 'asc' }],
+          select: this._planCardSelect,
+        })
+      )
+    );
+
+    // 构建 themeSections
+    const themeSections: ThemeSection[] = themes.map((theme, i) => ({
+      id: theme.id,
+      slug: theme.slug,
+      icon: theme.icon || '',
+      label: theme.name,
+      description: theme.description || '',
+      color: THEME_COLOR_MAP[theme.slug] || theme.color || '',
+      plans: themePlansResults[i].map((p) => this._transformPlanCard(p)),
+    }));
+
+    return { themeSections, campaigns, stores, tagCategories };
+  },
+
+  /**
+   * 获取搜索模式的所有套餐 (供 tRPC searchAll 使用)
+   */
+  async getSearchPlans(): Promise<HomepagePlanCard[]> {
+    const plans = await prisma.rentalPlan.findMany({
+      where: { isActive: true, themeId: { not: null } },
+      select: this._planCardSelect,
+      orderBy: [{ isFeatured: 'desc' }, { isCampaign: 'desc' }, { price: 'asc' }],
+    });
+    return plans.map((p) => this._transformPlanCard(p));
   },
 
   /**

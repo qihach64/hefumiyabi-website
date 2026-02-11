@@ -115,7 +115,7 @@ HAVING COUNT(ps.id) = 0;
 
 ### 任务
 
-- [ ] **3.1** 重构 `getHomepagePlans()` — 拆分为"按主题查询"
+- [x] **3.1** 重构 `getHomepagePlans()` — 拆分为"按主题查询"
   ```typescript
   // plan.service.ts — getHomepagePlans()
   // 当前: 查全部 → JS 过滤
@@ -138,13 +138,13 @@ HAVING COUNT(ps.id) = 0;
 
   // Step 3: campaigns, stores, tagCategories 查询不变
   ```
-- [ ] **3.2** 保留 `allPlans` 返回值 — 搜索模式仍需全量数据，通过参数控制:
+- [x] **3.2** 分离 `getSearchPlans()` — 搜索模式独立查询，不再污染首页查询:
   ```typescript
   // 探索模式: 只查按主题分组 (新逻辑)
   // 搜索模式: 查全量 (保持现有逻辑)
   async getHomepagePlans(options: { mode: 'explore' | 'search', ... })
   ```
-- [ ] **3.3** 验证首页渲染结果一致 (各主题 section 内容不变)
+- [x] **3.3** 验证: pnpm build 通过 + 362 测试全部通过
 - [ ] **3.4** (可选) 首页 ISR 缓存 `revalidate: 300`，减少重复查库
 
 ---

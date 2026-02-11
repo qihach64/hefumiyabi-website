@@ -37,8 +37,7 @@ export const planRouter = router({
   // 获取首页搜索模式的所有套餐（按需加载）
   searchAll: publicProcedure
     .query(async () => {
-      const data = await planService.getHomepagePlans();
-      return data.allPlans;
+      return planService.getSearchPlans();
     }),
 
   // 获取相关套餐（客户端懒加载用）
