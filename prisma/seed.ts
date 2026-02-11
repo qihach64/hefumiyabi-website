@@ -9,6 +9,7 @@ async function main() {
   console.log("🗑️  清空现有数据...");
   await prisma.booking.deleteMany();
   await prisma.favorite.deleteMany();
+  await prisma.planStore.deleteMany();
   await prisma.userPreference.deleteMany();
   await prisma.user.deleteMany();
   await prisma.rentalPlan.deleteMany();
@@ -205,6 +206,17 @@ async function main() {
     }),
   ]);
   console.log(`✅ 创建了 ${plans.length} 个租赁套餐\n`);
+
+  // 2.5 填充 plan_stores 关联 (每个套餐关联所有店铺)
+  console.log("🔗 填充 plan_stores 关联...");
+  const planStoreRecords = plans.flatMap((plan) =>
+    stores.map((store) => ({ planId: plan.id, storeId: store.id }))
+  );
+  await prisma.planStore.createMany({
+    data: planStoreRecords,
+    skipDuplicates: true,
+  });
+  console.log(`✅ 创建了 ${planStoreRecords.length} 条 plan_stores 关联\n`);
 
   // 3. 创建测试用户
   console.log("👤 创建测试用户...");
