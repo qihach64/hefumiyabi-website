@@ -8,75 +8,10 @@
 ## 概要
 
 对 Kimono One 的后端和数据模型进行了全面审计，涵盖：
-- Supabase PostgreSQL 实际数据库状态（表大小、索引使用率、RLS 策略）
+- Supabase PostgreSQL 实际数据库状态
 - Prisma Schema 与数据库的一致性
 - API 路由的查询效率和安全性
 - Service 层的架构模式
-
-共发现 **6 类问题**，按严重程度排序。
-
----
-
-## 1. [Critical] 安全 — RLS 全面关闭
-
-### 诊断
-
-30 张表全部 `rls_enabled = false`。
-
-### 风险
-
-Supabase 的 `NEXT_PUBLIC_SUPABASE_ANON_KEY` 公开嵌入在前端 JS 中。任何人可以：
-1. 从浏览器 DevTools 获取 anon key
-2. 通过 Supabase REST API (`https://epxyusnhvqfhfbaqgsli.supabase.co/rest/v1/`) 直接查询任意表
-3. `SELECT * FROM users` — 获取所有用户邮箱、电话、密码哈希
-4. `SELECT * FROM bookings` — 获取所有预约记录
-
-### 缓解因素
-
-当前数据操作全部走 Prisma 直连 PostgreSQL，Supabase Client 仅用于 Storage（文件上传）。PostgREST 端口虽开放但前端代码未调用。
-
-### 建议方案
-
-**方案 A（最小修复，推荐）:** 给所有表开 RLS + 默认 deny all policy
-```sql
--- 对每张表执行
-ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
--- 不创建任何 policy = 默认拒绝所有通过 anon/authenticated role 的访问
--- Prisma 走的是 postgres role（service_role 或 direct connection），不受 RLS 影响
-```
-
-**方案 B（彻底）:** 在 Supabase Dashboard → API Settings 中限制 public schema 的暴露。
-
----
-
-## 2. [High] 数据一致性 — Booking 创建无事务保护
-
-### 诊断
-
-`src/app/api/bookings/route.ts:127-202`
-
-多店铺预约时，for 循环内逐个 `prisma.booking.create()`，无 `$transaction` 包裹。
-
-### 场景
-
-用户预约 2 个店铺的套餐：
-1. 店铺 A 预约创建成功 → 确认邮件已发送
-2. 店铺 B 预约创建失败（如数据库约束冲突）
-3. 结果：用户收到 1 封确认邮件，但预期预约了 2 个店铺，体验不一致
-
-### 建议
-
-```typescript
-const bookings = await prisma.$transaction(
-  storeEntries.map(([storeId, storeItems]) =>
-    prisma.booking.create({ data: { ... }, include: { ... } })
-  )
-);
-// 事务成功后再发邮件
-for (const booking of bookings) {
-  sendBookingConfirmationEmail(...).catch(console.error);
-}
-```
 
 ---
 
@@ -164,14 +99,14 @@ ALTER TABLE rental_plans
 
 **死表（0 行，代码中未实际使用）:**
 
-| 表名 | 行数 | 索引数 | 说明 |
-|------|------|--------|------|
-| `carts` | 0 | 5 | 购物车用 Zustand + localStorage 实现，服务端表从未写入 |
-| `cart_items` | 0 | 1 | 同上 |
-| `payouts` | 0 | 4 | 结算功能未实现 |
-| `listings` | 0 | 3 | 用途不明，可能是旧版商品列表 |
-| `sessions` | 0 | 2 | NextAuth sessions 表但无数据，认证可能走了 JWT 策略 |
-| `accounts` | 0 | 2 | NextAuth accounts 表但无 OAuth 登录 |
+| 表名         | 行数 | 索引数 | 说明                                                   |
+| ------------ | ---- | ------ | ------------------------------------------------------ |
+| `carts`      | 0    | 5      | 购物车用 Zustand + localStorage 实现，服务端表从未写入 |
+| `cart_items` | 0    | 1      | 同上                                                   |
+| `payouts`    | 0    | 4      | 结算功能未实现                                         |
+| `listings`   | 0    | 3      | 用途不明，可能是旧版商品列表                           |
+| `sessions`   | 0    | 2      | NextAuth sessions 表但无数据，认证可能走了 JWT 策略    |
+| `accounts`   | 0    | 2      | NextAuth accounts 表但无 OAuth 登录                    |
 
 **从未使用的索引 (idx_scan = 0):** 共 30+ 个
 
@@ -248,15 +183,13 @@ const favorite = await prisma.favorite.upsert({
 
 ## 总结 — 优先级排序
 
-| 优先级 | 问题 | 修复复杂度 | 影响范围 |
-|--------|------|-----------|---------|
-| P0 | RLS 全关 | 低（一个 SQL 脚本） | 安全 |
-| P1 | Booking 无事务 | 低（$transaction 包裹） | 数据一致性 |
-| P1 | plan_stores 空表 | 中（需确认设计意图） | 功能正确性 |
-| P2 | Schema 漂移 | 低（migration 清理） | 维护性 |
-| P2 | 首页全量查询 | 中（重构查询或加缓存） | 未来性能 |
-| P3 | 死表清理 | 低 | 维护性 |
-| P3 | Favorites 多余查询 | 低 | 微小性能 |
+| 优先级 | 问题               | 修复复杂度             | 影响范围   |
+| ------ | ------------------ | ---------------------- | ---------- |
+| P1     | plan_stores 空表   | 中（需确认设计意图）   | 功能正确性 |
+| P2     | Schema 漂移        | 低（migration 清理）   | 维护性     |
+| P2     | 首页全量查询       | 中（重构查询或加缓存） | 未来性能   |
+| P3     | 死表清理           | 低                     | 维护性     |
+| P3     | Favorites 多余查询 | 低                     | 微小性能   |
 
 ---
 
@@ -281,8 +214,6 @@ const favorite = await prisma.favorite.upsert({
 ## 下一步
 
 运行 `/workflows:plan` 创建修复计划，优先级：
-1. P0: RLS 全表开启
-2. P1: Booking 事务保护
 3. P1: plan_stores 数据填充
 4. P2: Schema 漂移清理
 5. P2: 首页查询优化
