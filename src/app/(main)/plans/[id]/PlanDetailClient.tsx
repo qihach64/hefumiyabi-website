@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { Star, Clock, MapPin } from 'lucide-react';
 import BookingCard from '@/components/BookingCard';
-import { MiniBookingBar } from '@/features/guest/booking';
+import MiniBookingBar from '@/features/guest/booking/components/MiniBookingBar';
 import VisualHub from '@/components/plan/VisualHub';
 import ServiceMap from '@/components/plan/ServiceMap';
 import UpgradeServices from '@/components/plan/UpgradeServices';
@@ -44,11 +45,21 @@ export function PlanDetailClient({
   plan,
   mapData,
 }: PlanDetailClientProps) {
+  const searchParams = useSearchParams();
   const [mounted, setMounted] = useState(false);
   const [isInFullWidthSection, setIsInFullWidthSection] = useState(true);
   const [selectedUpgrades, setSelectedUpgrades] = useState<SelectedUpgrade[]>([]);
   const [isRelatedInView, setIsRelatedInView] = useState(false);
   const { setHideSearchBar } = useSearchBar();
+
+  // 客户端计算 defaultStore（从 URL ?store=xxx 或 fallback 到第一个）
+  const defaultStore = useMemo(() => {
+    const storeId = searchParams.get('store');
+    if (storeId) {
+      return plan.stores.find((s) => s.id === storeId) || plan.stores[0] || null;
+    }
+    return plan.stores[0] || null;
+  }, [searchParams, plan.stores]);
   const bookingCardRef = useRef<HTMLDivElement>(null);
   const relatedPlansRef = useRef<HTMLDivElement>(null);
 
@@ -138,8 +149,8 @@ export function PlanDetailClient({
   };
 
   // 转换 store 为 BookingCard 需要的格式
-  const storeForBookingCard = plan.defaultStore
-    ? { id: plan.defaultStore.id, name: plan.defaultStore.name }
+  const storeForBookingCard = defaultStore
+    ? { id: defaultStore.id, name: defaultStore.name }
     : { id: 'default', name: '请选择店铺' };
 
   // 转换升级服务为旧格式
@@ -344,7 +355,7 @@ export function PlanDetailClient({
               onRemoveUpgrade={handleRemoveUpgrade}
             />
 
-            {plan.defaultStore && <StoreLocationCard store={plan.defaultStore} />}
+            {defaultStore && <StoreLocationCard store={defaultStore} />}
 
             <JourneyTimeline duration={plan.duration} />
 

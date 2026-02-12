@@ -1,23 +1,22 @@
-import { notFound } from "next/navigation";
-import { planService } from "@/server/services/plan.service";
-import { PlanDetailClient } from "./PlanDetailClient";
+import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
+import { planService } from '@/server/services/plan.service';
+import { PlanDetailClient } from './PlanDetailClient';
 
 // 60 秒 ISR 缓存
 export const revalidate = 60;
 
 interface PlanDetailPageProps {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ store?: string }>;
 }
 
-export default async function PlanDetailPage({ params, searchParams }: PlanDetailPageProps) {
+export default async function PlanDetailPage({ params }: PlanDetailPageProps) {
   const pageStart = performance.now();
 
   const { id } = await params;
-  const { store: storeId } = await searchParams;
 
   // 使用 Service 层获取套餐详情
-  const plan = await planService.getDetailById(id, storeId);
+  const plan = await planService.getDetailById(id);
 
   if (!plan) {
     notFound();
@@ -29,7 +28,14 @@ export default async function PlanDetailPage({ params, searchParams }: PlanDetai
   }
 
   // relatedPlans 改为客户端懒加载，不阻塞首屏渲染
-  return <PlanDetailClient plan={plan} mapData={plan.mapData} />;
+  return (
+    <Suspense>
+      <PlanDetailClient
+        plan={plan}
+        mapData={plan.mapData}
+      />
+    </Suspense>
+  );
 }
 
 // 静态生成热门套餐页面（CI 无数据库时降级为动态渲染）
