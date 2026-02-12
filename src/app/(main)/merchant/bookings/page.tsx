@@ -1,15 +1,16 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
+import { BookingStatus } from "@prisma/client";
 import Link from "next/link";
 import { ArrowLeft, Calendar, DollarSign, User, Filter } from "lucide-react";
 import { Badge } from "@/components/ui";
 
 interface BookingsPageProps {
-  searchParams: {
+  searchParams: Promise<{
     page?: string;
     status?: string;
-  };
+  }>;
 }
 
 const ITEMS_PER_PAGE = 20;
@@ -35,10 +36,15 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
     redirect("/merchant/dashboard");
   }
 
-  // 构建查询条件
+  // 构建查询条件（status 需要匹配 BookingStatus 枚举）
+  const validStatuses = Object.values(BookingStatus) as string[];
+  const typedStatus =
+    statusFilter && validStatuses.includes(statusFilter)
+      ? (statusFilter as BookingStatus)
+      : undefined;
   const where = {
     merchantId: merchant.id,
-    ...(statusFilter && { status: statusFilter }),
+    ...(typedStatus && { status: typedStatus }),
   };
 
   // 获取订单总数
@@ -124,9 +130,7 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">订单管理</h1>
-              <p className="text-gray-600">
-                共 {totalBookings} 个订单
-              </p>
+              <p className="text-gray-600">共 {totalBookings} 个订单</p>
             </div>
 
             {/* 状态筛选 */}
@@ -207,9 +211,7 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                           <div className="flex items-center gap-2 text-gray-600">
                             <User className="w-4 h-4" />
-                            <span>
-                              {booking.guestName || booking.user?.name || "未知客户"}
-                            </span>
+                            <span>{booking.guestName || booking.user?.name || "未知客户"}</span>
                             {booking.guestEmail || booking.user?.email ? (
                               <span className="text-gray-400">
                                 ({booking.guestEmail || booking.user?.email})
@@ -220,7 +222,11 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
                           <div className="flex items-center gap-2 text-gray-600">
                             <Calendar className="w-4 h-4" />
                             <span>
-                              到店: {booking.visitDate ? new Date(booking.visitDate).toLocaleDateString("zh-CN") : "未设置"} {booking.visitTime || ""}
+                              到店:{" "}
+                              {booking.visitDate
+                                ? new Date(booking.visitDate).toLocaleDateString("zh-CN")
+                                : "未设置"}{" "}
+                              {booking.visitTime || ""}
                             </span>
                           </div>
                         </div>
@@ -245,8 +251,8 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
                       {/* 右侧：金额和时间 */}
                       <div className="flex lg:flex-col items-center lg:items-end justify-between lg:justify-center gap-2">
                         <div className="flex items-center gap-2 text-2xl font-bold text-gray-900">
-                          <DollarSign className="w-5 h-5 text-gray-400" />
-                          ¥{(booking.totalAmount / 100).toLocaleString()}
+                          <DollarSign className="w-5 h-5 text-gray-400" />¥
+                          {(booking.totalAmount / 100).toLocaleString()}
                         </div>
                         <p className="text-sm text-gray-500">
                           {new Date(booking.createdAt).toLocaleString("zh-CN")}
@@ -319,9 +325,7 @@ export default async function BookingsPage({ searchParams }: BookingsPageProps) 
               {statusFilter ? "暂无符合条件的订单" : "暂无订单"}
             </h3>
             <p className="text-gray-600 mb-6">
-              {statusFilter
-                ? "尝试切换其他筛选条件查看订单"
-                : "发布套餐后，客户预订就会显示在这里"}
+              {statusFilter ? "尝试切换其他筛选条件查看订单" : "发布套餐后，客户预订就会显示在这里"}
             </p>
             {!statusFilter && (
               <Link href="/merchant/listings/new">

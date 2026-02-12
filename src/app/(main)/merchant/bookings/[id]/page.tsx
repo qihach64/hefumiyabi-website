@@ -17,9 +17,9 @@ import {
 import { Badge } from "@/components/ui";
 
 interface BookingDetailPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default async function BookingDetailPage({ params }: BookingDetailPageProps) {
@@ -41,7 +41,7 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
     redirect("/merchant/dashboard");
   }
 
-  // 获取订单详情
+  // 获取订单详情（包含用户和订单项关系）
   const booking = await prisma.booking.findUnique({
     where: {
       id,
@@ -62,7 +62,6 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
             select: {
               id: true,
               name: true,
-              nameEn: true,
               imageUrl: true,
             },
           },
@@ -166,9 +165,7 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
                     <p className="font-semibold text-gray-900">
                       {booking.guestName || booking.user?.name || "未知客户"}
                     </p>
-                    {booking.user && (
-                      <p className="text-sm text-gray-600">注册用户</p>
-                    )}
+                    {booking.user && <p className="text-sm text-gray-600">注册用户</p>}
                   </div>
                 </div>
 
@@ -234,10 +231,7 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
 
               <div className="space-y-4">
                 {booking.items.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex gap-4 p-4 bg-gray-50 rounded-xl"
-                  >
+                  <div key={item.id} className="flex gap-4 p-4 bg-gray-50 rounded-xl">
                     {item.plan?.imageUrl && (
                       <div className="w-20 h-20 flex-shrink-0">
                         <img
@@ -252,11 +246,7 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
                       <h3 className="font-semibold text-gray-900 mb-1">
                         {item.plan?.name || "未知套餐"}
                       </h3>
-                      {item.plan?.nameEn && (
-                        <p className="text-sm text-gray-600 mb-2">
-                          {item.plan.nameEn}
-                        </p>
-                      )}
+                      {/* 套餐名称已在上方显示 */}
                       <div className="flex items-center gap-4 text-sm text-gray-600">
                         <span>数量: {item.quantity}</span>
                         <span>单价: ¥{(item.unitPrice / 100).toLocaleString()}</span>
@@ -280,9 +270,7 @@ export default async function BookingDetailPage({ params }: BookingDetailPagePro
                   <FileText className="w-5 h-5" />
                   特殊要求
                 </h2>
-                <p className="text-gray-700 whitespace-pre-wrap">
-                  {booking.specialRequests}
-                </p>
+                <p className="text-gray-700 whitespace-pre-wrap">{booking.specialRequests}</p>
               </div>
             )}
           </div>

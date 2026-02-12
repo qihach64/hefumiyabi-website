@@ -1,13 +1,10 @@
-import {
-  S3Client,
-  PutObjectCommand,
-} from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 // AWS 配置
-const AWS_REGION = process.env.AWS_REGION || 'ap-northeast-1';
-const AWS_S3_BUCKET = process.env.AWS_S3_BUCKET || 'kimono-one-images-prod';
-const CLOUDFRONT_DOMAIN = process.env.CLOUDFRONT_DOMAIN || '';
+const AWS_REGION = process.env.AWS_REGION || "ap-northeast-1";
+const AWS_S3_BUCKET = process.env.AWS_S3_BUCKET || "kimono-one-images-prod";
+const CLOUDFRONT_DOMAIN = process.env.CLOUDFRONT_DOMAIN || "";
 
 // 延迟初始化 S3 客户端
 let _s3Client: S3Client | null = null;
@@ -18,7 +15,7 @@ function getS3Client(): S3Client {
     const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
 
     if (!accessKeyId || !secretAccessKey) {
-      throw new Error('AWS credentials are not configured');
+      throw new Error("AWS credentials are not configured");
     }
 
     _s3Client = new S3Client({
@@ -34,27 +31,18 @@ function getS3Client(): S3Client {
 
 // 图片分类和对应的存储路径
 export type ImageCategory =
-  | 'plan'
-  | 'merchant'
-  | 'user'
-  | 'tryon'
-  | 'component'
-  | 'upgrade';
+  | "plan"
+  | "merchant"
+  | "user"
+  | "tryon"
+  | "component"
+  | "upgrade"
+  | "custom-service";
 
-export type ImagePurpose =
-  | 'main'
-  | 'gallery'
-  | 'avatar'
-  | 'logo'
-  | 'cover'
-  | 'banner';
+export type ImagePurpose = "main" | "gallery" | "avatar" | "logo" | "cover" | "banner";
 
 // 支持的图片类型
-export const ALLOWED_IMAGE_TYPES = [
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-] as const;
+export const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 
 export type AllowedImageType = (typeof ALLOWED_IMAGE_TYPES)[number];
 
@@ -77,25 +65,25 @@ export type ImageVariant = keyof typeof IMAGE_VARIANTS;
 export function generateS3Key(
   category: ImageCategory,
   entityId: string,
-  purpose: ImagePurpose = 'main',
-  extension: string = 'jpg'
+  purpose: ImagePurpose = "main",
+  extension: string = "jpg"
 ): string {
   const timestamp = Date.now();
   const random = Math.random().toString(36).substring(2, 8);
 
   // 根据分类生成不同的路径结构
   switch (category) {
-    case 'plan':
+    case "plan":
       return `originals/plans/${entityId}/${purpose}-${timestamp}-${random}.${extension}`;
-    case 'merchant':
+    case "merchant":
       return `originals/merchants/${entityId}/${purpose}-${timestamp}-${random}.${extension}`;
-    case 'user':
+    case "user":
       return `originals/users/${entityId}/${purpose}-${timestamp}-${random}.${extension}`;
-    case 'tryon':
+    case "tryon":
       return `originals/tryon/${entityId}/${timestamp}-${random}.${extension}`;
-    case 'component':
+    case "component":
       return `originals/components/${entityId}/${purpose}-${timestamp}-${random}.${extension}`;
-    case 'upgrade':
+    case "upgrade":
       return `originals/upgrades/${entityId}/${purpose}-${timestamp}-${random}.${extension}`;
     default:
       return `originals/misc/${entityId}/${timestamp}-${random}.${extension}`;
@@ -107,11 +95,11 @@ export function generateS3Key(
  */
 export function getExtensionFromMimeType(mimeType: string): string {
   const mimeToExt: Record<string, string> = {
-    'image/jpeg': 'jpg',
-    'image/png': 'png',
-    'image/webp': 'webp',
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
   };
-  return mimeToExt[mimeType] || 'jpg';
+  return mimeToExt[mimeType] || "jpg";
 }
 
 /**
@@ -128,7 +116,7 @@ export async function getPresignedUploadUrl(
     Bucket: AWS_S3_BUCKET,
     Key: key,
     ContentType: contentType,
-    CacheControl: 'public, max-age=31536000', // 1 年缓存
+    CacheControl: "public, max-age=31536000", // 1 年缓存
   });
 
   const presignedUrl = await getSignedUrl(s3, command, { expiresIn });
@@ -140,4 +128,3 @@ export async function getPresignedUploadUrl(
 
   return { presignedUrl, publicUrl };
 }
-

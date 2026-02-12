@@ -19,14 +19,14 @@ interface PlanCardManagementProps {
     id: string;
     slug: string;
     name: string;
-    category: string;
+    category?: string;
     price: number;
     originalPrice: number | null;
     imageUrl: string | null;
     isActive: boolean;
     isFeatured: boolean;
     isCampaign: boolean;
-    currentBookings: number;
+    currentBookings?: number;
     duration: number;
     includes: string[];
     planTags?: { tag: Tag }[];
@@ -53,7 +53,7 @@ function QuickMenu({
   onCopy,
   onDelete,
 }: {
-  plan: PlanCardManagementProps['plan'];
+  plan: PlanCardManagementProps["plan"];
   onClose: () => void;
   onToggleStatus?: (planId: string) => void;
   onCopy?: (planId: string) => void;
@@ -112,12 +112,7 @@ export default function PlanCardManagement({
       {/* 套餐图片 - 正方形比例（参考 Airbnb） */}
       <div className="relative aspect-square bg-gray-100">
         {plan.imageUrl ? (
-          <Image
-            src={plan.imageUrl}
-            alt={plan.name}
-            fill
-            className="object-cover"
-          />
+          <Image src={plan.imageUrl} alt={plan.name} fill className="object-cover" />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
             <Package className="w-12 h-12 text-gray-300" />
@@ -126,18 +121,22 @@ export default function PlanCardManagement({
 
         {/* 状态标签 */}
         <div className="absolute top-1.5 left-1.5 flex gap-0.5">
-          <span className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${
-            plan.isActive
-              ? 'bg-green-500 text-white'
-              : 'bg-gray-400 text-white'
-          }`}>
+          <span
+            className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${
+              plan.isActive ? "bg-green-500 text-white" : "bg-gray-400 text-white"
+            }`}
+          >
             {plan.isActive ? "上架" : "下架"}
           </span>
           {plan.isFeatured && (
-            <span className="text-[9px] px-1.5 py-0.5 rounded font-medium bg-amber-500 text-white">精选</span>
+            <span className="text-[9px] px-1.5 py-0.5 rounded font-medium bg-amber-500 text-white">
+              精选
+            </span>
           )}
           {plan.isCampaign && (
-            <span className="text-[9px] px-1.5 py-0.5 rounded font-medium bg-red-500 text-white">活动</span>
+            <span className="text-[9px] px-1.5 py-0.5 rounded font-medium bg-red-500 text-white">
+              活动
+            </span>
           )}
         </div>
 
@@ -181,18 +180,23 @@ export default function PlanCardManagement({
         <div className="flex items-center justify-between text-[9px] text-gray-600 mb-1.5">
           <span className="flex items-center gap-0.5">
             <TrendingUp className="w-2.5 h-2.5" />
-            {plan.currentBookings} 次
+            {plan.currentBookings ?? 0} 次
           </span>
-          <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded text-[9px] font-medium">
-            {CATEGORY_LABELS[plan.category] || plan.category}
-          </span>
+          {plan.category && (
+            <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded text-[9px] font-medium">
+              {CATEGORY_LABELS[plan.category] || plan.category}
+            </span>
+          )}
         </div>
 
         {/* 标签 - 只显示前2个 */}
         {plan.planTags && plan.planTags.length > 0 && (
           <div className="flex flex-wrap gap-0.5 mb-1.5">
             {plan.planTags.slice(0, 2).map(({ tag }) => (
-              <span key={tag.id} className="px-1.5 py-0.5 bg-sakura-50 text-sakura-700 rounded text-[9px]">
+              <span
+                key={tag.id}
+                className="px-1.5 py-0.5 bg-sakura-50 text-sakura-700 rounded text-[9px]"
+              >
                 {tag.icon && <span className="mr-0.5">{tag.icon}</span>}
                 {tag.name}
               </span>

@@ -14,12 +14,19 @@ function InlineDetail({ hotspot, onClose }: { hotspot: HotspotData; onClose: () 
   const displayHighlights = component.highlights;
 
   const getTypeLabel = () => {
-    switch (component.type) {
-      case "KIMONO": return "和服本体";
-      case "STYLING": return "造型服务";
-      case "ACCESSORY": return "配件";
-      case "EXPERIENCE": return "增值体验";
-      default: return "配件";
+    if (component.type === "ADDON") return "增值体验";
+    // OUTFIT: 根据 outfitCategory 细分
+    switch (component.outfitCategory) {
+      case "MAIN_GARMENT":
+        return "和服本体";
+      case "STYLING":
+        return "造型服务";
+      case "OBI_SET":
+        return "腰带组";
+      case "INNERWEAR":
+        return "内搭";
+      default:
+        return "配件";
     }
   };
 
@@ -44,9 +51,7 @@ function InlineDetail({ hotspot, onClose }: { hotspot: HotspotData; onClose: () 
 
       {/* 描述 */}
       {displayDescription && (
-        <p className="text-[13px] text-gray-500 leading-relaxed">
-          {displayDescription}
-        </p>
+        <p className="text-[13px] text-gray-500 leading-relaxed">{displayDescription}</p>
       )}
 
       {/* 亮点列表 - 更精致的样式 */}
@@ -77,9 +82,7 @@ function CompactDetail({ hotspot }: { hotspot: HotspotData }) {
     <div className="px-3 pb-3 space-y-2 animate-in fade-in duration-200">
       {/* 描述 */}
       {displayDescription && (
-        <p className="text-[12px] text-gray-500 leading-relaxed">
-          {displayDescription}
-        </p>
+        <p className="text-[12px] text-gray-500 leading-relaxed">{displayDescription}</p>
       )}
 
       {/* 亮点列表 - 紧凑 */}
@@ -121,9 +124,7 @@ export default function InteractiveKimonoMap({
   };
 
   // 按 displayOrder 排序热点
-  const sortedHotspots = [...mapData.hotspots].sort(
-    (a, b) => a.displayOrder - b.displayOrder
-  );
+  const sortedHotspots = [...mapData.hotspots].sort((a, b) => a.displayOrder - b.displayOrder);
 
   // 统计已包含和可加购数量
   const includedCount = sortedHotspots.filter((h) => h.isIncluded !== false).length;
@@ -141,9 +142,7 @@ export default function InteractiveKimonoMap({
             Package Contents
           </span>
         </div>
-        <h3 className="text-xl font-serif text-gray-900 mb-1">
-          套餐包含项目
-        </h3>
+        <h3 className="text-xl font-serif text-gray-900 mb-1">套餐包含项目</h3>
         <p className="text-[13px] text-gray-400">
           {isVertical ? "点击标记或下方列表查看详情" : "点击图片上的标记或右侧列表查看详情"}
         </p>
@@ -184,16 +183,12 @@ export default function InteractiveKimonoMap({
             <div className="absolute bottom-3 left-3 right-3 flex items-center justify-center gap-6 bg-white/90 backdrop-blur-md rounded-lg px-4 py-2 shadow-sm">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-sakura-500 ring-2 ring-sakura-500/20" />
-                <span className="text-[11px] text-gray-600">
-                  已包含 ({includedCount})
-                </span>
+                <span className="text-[11px] text-gray-600">已包含 ({includedCount})</span>
               </div>
               {addonCount > 0 && (
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-gray-300 ring-2 ring-gray-300/20" />
-                  <span className="text-[11px] text-gray-600">
-                    可加购 ({addonCount})
-                  </span>
+                  <span className="text-[11px] text-gray-600">可加购 ({addonCount})</span>
                 </div>
               )}
             </div>
@@ -202,9 +197,7 @@ export default function InteractiveKimonoMap({
           {/* 配件列表 - 2列网格，节省垂直空间 */}
           <div>
             <div className="flex items-baseline justify-between mb-3 pb-2 border-b border-gray-100">
-              <h4 className="text-sm font-medium text-gray-900">
-                全部配件
-              </h4>
+              <h4 className="text-sm font-medium text-gray-900">全部配件</h4>
               <span className="text-[11px] text-gray-400 tabular-nums">
                 {sortedHotspots.length} 项
               </span>
@@ -225,9 +218,10 @@ export default function InteractiveKimonoMap({
                       className={`
                         w-full flex items-center gap-2 p-2.5 rounded-lg text-left
                         transition-all duration-200
-                        ${isSelected
-                          ? "bg-sakura-50 ring-1 ring-sakura-200"
-                          : "bg-gray-50 hover:bg-gray-100"
+                        ${
+                          isSelected
+                            ? "bg-sakura-50 ring-1 ring-sakura-200"
+                            : "bg-gray-50 hover:bg-gray-100"
                         }
                       `}
                     >
@@ -327,9 +321,7 @@ export default function InteractiveKimonoMap({
           {/* 右侧：配件列表 - 右边距与外层容器一致 */}
           <div className="w-full lg:w-[45%] lg:flex-shrink-0 overflow-hidden">
             <div className="flex items-baseline justify-between mb-6 pb-4 border-b border-gray-100 px-4">
-              <h4 className="text-lg font-serif text-gray-900">
-                全部配件
-              </h4>
+              <h4 className="text-lg font-serif text-gray-900">全部配件</h4>
               <span className="text-[12px] text-gray-400 tabular-nums">
                 {sortedHotspots.length} 项
               </span>
@@ -385,9 +377,7 @@ export default function InteractiveKimonoMap({
                               已包含
                             </span>
                           ) : (
-                            <span className="text-[11px] text-gray-400 tracking-wide">
-                              可加购
-                            </span>
+                            <span className="text-[11px] text-gray-400 tracking-wide">可加购</span>
                           )}
                         </div>
                       </div>
@@ -435,9 +425,17 @@ export default function InteractiveKimonoMap({
                     {selectedHotspot.component.name}
                   </h3>
                   <span className="text-[11px] uppercase tracking-widest text-gray-400">
-                    {selectedHotspot.component.type === "KIMONO" ? "和服本体" :
-                     selectedHotspot.component.type === "STYLING" ? "造型服务" :
-                     selectedHotspot.component.type === "EXPERIENCE" ? "增值体验" : "配件"}
+                    {selectedHotspot.component.type === "ADDON"
+                      ? "增值体验"
+                      : selectedHotspot.component.outfitCategory === "MAIN_GARMENT"
+                        ? "和服本体"
+                        : selectedHotspot.component.outfitCategory === "STYLING"
+                          ? "造型服务"
+                          : selectedHotspot.component.outfitCategory === "OBI_SET"
+                            ? "腰带组"
+                            : selectedHotspot.component.outfitCategory === "INNERWEAR"
+                              ? "内搭"
+                              : "配件"}
                   </span>
                 </div>
               </div>

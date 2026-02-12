@@ -5,9 +5,26 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import {
-  Plus, Eye, Edit, Search, Grid, List, MoreVertical,
-  Power, Copy, Trash2, Package, TrendingUp, Filter,
-  CheckSquare, Square, Tag, X, Loader2, PowerOff, Check
+  Plus,
+  Eye,
+  Edit,
+  Search,
+  Grid,
+  List,
+  MoreVertical,
+  Power,
+  Copy,
+  Trash2,
+  Package,
+  TrendingUp,
+  Filter,
+  CheckSquare,
+  Square,
+  Tag,
+  X,
+  Loader2,
+  PowerOff,
+  Check,
 } from "lucide-react";
 import { Button, Badge } from "@/components/ui";
 import { PlanCardManagement } from "@/features/merchant/plans";
@@ -40,14 +57,14 @@ interface Plan {
   id: string;
   slug: string;
   name: string;
-  category: string;
+  category?: string;
   price: number;
   originalPrice: number | null;
   imageUrl: string | null;
   isActive: boolean;
   isFeatured: boolean;
   isCampaign: boolean;
-  currentBookings: number;
+  currentBookings?: number;
   createdAt: Date;
   duration: number;
   includes: string[];
@@ -76,7 +93,12 @@ const CATEGORY_LABELS: Record<string, string> = {
   SPECIAL: "特别套餐",
 };
 
-export default function ListingsClient({ plans, merchantId, themes, tagCategories }: ListingsClientProps) {
+export default function ListingsClient({
+  plans,
+  merchantId,
+  themes,
+  tagCategories,
+}: ListingsClientProps) {
   const router = useRouter();
   const [viewMode, setViewMode] = useState<ViewMode>("list"); // 默认列表视图便于批量操作
   const [searchQuery, setSearchQuery] = useState("");
@@ -92,13 +114,13 @@ export default function ListingsClient({ plans, merchantId, themes, tagCategorie
   // 统计数据
   const stats = {
     total: plans.length,
-    active: plans.filter(p => p.isActive).length,
-    bookings: plans.reduce((sum, p) => sum + p.currentBookings, 0),
+    active: plans.filter((p) => p.isActive).length,
+    bookings: plans.reduce((sum, p) => sum + (p.currentBookings ?? 0), 0),
   };
 
   // 批量选择处理
   const toggleSelect = useCallback((id: string) => {
-    setSelectedIds(prev => {
+    setSelectedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
         next.delete(id);
@@ -211,33 +233,36 @@ export default function ListingsClient({ plans, merchantId, themes, tagCategorie
   };
 
   // 更新套餐名称
-  const handleNameUpdate = useCallback(async (id: string, newName: string): Promise<boolean> => {
-    try {
-      const response = await fetch(`/api/merchant/plans/${id}/name`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newName }),
-      });
+  const handleNameUpdate = useCallback(
+    async (id: string, newName: string): Promise<boolean> => {
+      try {
+        const response = await fetch(`/api/merchant/plans/${id}/name`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: newName }),
+        });
 
-      if (!response.ok) {
-        const data = await response.json();
-        alert(data.error || "更新失败");
+        if (!response.ok) {
+          const data = await response.json();
+          alert(data.error || "更新失败");
+          return false;
+        }
+
+        // 刷新页面数据
+        router.refresh();
+        return true;
+      } catch (error) {
+        console.error("Name update failed:", error);
+        alert("更新失败，请重试");
         return false;
       }
-
-      // 刷新页面数据
-      router.refresh();
-      return true;
-    } catch (error) {
-      console.error("Name update failed:", error);
-      alert("更新失败，请重试");
-      return false;
-    }
-  }, [router]);
+    },
+    [router]
+  );
 
   // 筛选和排序
   const filteredPlans = plans
-    .filter(plan => {
+    .filter((plan) => {
       // 搜索筛选
       if (searchQuery && !plan.name.toLowerCase().includes(searchQuery.toLowerCase())) {
         return false;
@@ -256,7 +281,7 @@ export default function ListingsClient({ plans, merchantId, themes, tagCategorie
         case "price-desc":
           return b.price - a.price;
         case "bookings":
-          return b.currentBookings - a.currentBookings;
+          return (b.currentBookings ?? 0) - (a.currentBookings ?? 0);
         case "theme":
           // 按主题名称排序，无主题的排在最后
           const themeA = a.theme?.name || "\uffff"; // 无主题放最后
@@ -433,9 +458,7 @@ export default function ListingsClient({ plans, merchantId, themes, tagCategorie
         {selectedIds.size > 0 && (
           <div className="bg-sakura-50 border border-sakura-200 rounded-2xl p-4 mb-6 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <span className="text-sakura-700 font-medium">
-                已选择 {selectedIds.size} 个套餐
-              </span>
+              <span className="text-sakura-700 font-medium">已选择 {selectedIds.size} 个套餐</span>
               <button
                 onClick={clearSelection}
                 className="text-sakura-600 hover:text-sakura-800 text-sm underline"
@@ -524,7 +547,7 @@ export default function ListingsClient({ plans, merchantId, themes, tagCategorie
               tagCategories={tagCategories}
               selectedIds={selectedIds}
               onToggleSelect={toggleSelect}
-              onSelectAll={() => selectAll(filteredPlans.map(p => p.id))}
+              onSelectAll={() => selectAll(filteredPlans.map((p) => p.id))}
               onClearSelection={clearSelection}
               onNameUpdate={handleNameUpdate}
               onRefresh={() => router.refresh()}
@@ -571,8 +594,8 @@ function ListView({
   onNameUpdate: (id: string, newName: string) => Promise<boolean>;
   onRefresh: () => void;
 }) {
-  const allSelected = plans.length > 0 && plans.every(p => selectedIds.has(p.id));
-  const someSelected = plans.some(p => selectedIds.has(p.id));
+  const allSelected = plans.length > 0 && plans.every((p) => selectedIds.has(p.id));
+  const someSelected = plans.some((p) => selectedIds.has(p.id));
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
@@ -581,7 +604,7 @@ function ListView({
           <tr>
             <th className="w-12 px-4 py-4">
               <button
-                onClick={() => allSelected ? onClearSelection() : onSelectAll()}
+                onClick={() => (allSelected ? onClearSelection() : onSelectAll())}
                 className="p-1 hover:bg-gray-200 rounded transition-colors"
               >
                 {allSelected ? (
@@ -652,7 +675,7 @@ function PlanRow({
   const [showTagsDropdown, setShowTagsDropdown] = useState(false);
   const [isTagsSaving, setIsTagsSaving] = useState(false);
   const [selectedTagIds, setSelectedTagIds] = useState<Set<string>>(
-    new Set(plan.planTags?.map(pt => pt.tag.id) || [])
+    new Set(plan.planTags?.map((pt) => pt.tag.id) || [])
   );
 
   // 进入编辑模式时聚焦输入框
@@ -665,7 +688,7 @@ function PlanRow({
 
   // 同步标签状态
   useEffect(() => {
-    setSelectedTagIds(new Set(plan.planTags?.map(pt => pt.tag.id) || []));
+    setSelectedTagIds(new Set(plan.planTags?.map((pt) => pt.tag.id) || []));
   }, [plan.planTags]);
 
   const handleStartEdit = () => {
@@ -730,7 +753,7 @@ function PlanRow({
 
   // 切换标签选中状态
   const toggleTagSelection = (tagId: string) => {
-    setSelectedTagIds(prev => {
+    setSelectedTagIds((prev) => {
       const next = new Set(prev);
       if (next.has(tagId)) {
         next.delete(tagId);
@@ -784,13 +807,13 @@ function PlanRow({
         onRefresh();
       } else {
         // 恢复状态
-        setSelectedTagIds(new Set(plan.planTags?.map(pt => pt.tag.id) || []));
+        setSelectedTagIds(new Set(plan.planTags?.map((pt) => pt.tag.id) || []));
         const data = await response.json();
         alert(data.error || "删除失败");
       }
     } catch (error) {
       console.error("Tag remove failed:", error);
-      setSelectedTagIds(new Set(plan.planTags?.map(pt => pt.tag.id) || []));
+      setSelectedTagIds(new Set(plan.planTags?.map((pt) => pt.tag.id) || []));
       alert("删除失败，请重试");
     } finally {
       setIsTagsSaving(false);
@@ -815,12 +838,7 @@ function PlanRow({
         <div className="flex items-center gap-4">
           <div className="relative w-14 h-14 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
             {plan.imageUrl ? (
-              <Image
-                src={plan.imageUrl}
-                alt={plan.name}
-                fill
-                className="object-cover"
-              />
+              <Image src={plan.imageUrl} alt={plan.name} fill className="object-cover" />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center">
                 <Package className="w-5 h-5 text-gray-300" />
@@ -855,7 +873,10 @@ function PlanRow({
               </button>
             )}
             <p className="text-sm text-gray-600">
-              {CATEGORY_LABELS[plan.category] || plan.category} · {plan.duration}小时
+              {plan.category
+                ? CATEGORY_LABELS[plan.category] || plan.category
+                : plan.theme?.name || "套餐"}{" "}
+              · {plan.duration}小时
             </p>
           </div>
         </div>
@@ -973,7 +994,9 @@ function PlanRow({
                 <div className="p-3 max-h-64 overflow-y-auto">
                   {tagCategories.map((category) => (
                     <div key={category.id} className="mb-3">
-                      <h4 className="text-xs font-semibold text-gray-500 mb-1.5">{category.name}</h4>
+                      <h4 className="text-xs font-semibold text-gray-500 mb-1.5">
+                        {category.name}
+                      </h4>
                       <div className="flex flex-wrap gap-1">
                         {category.tags.map((tag) => {
                           const isSelected = selectedTagIds.has(tag.id);
@@ -982,7 +1005,9 @@ function PlanRow({
                               key={tag.id}
                               onClick={() => toggleTagSelection(tag.id)}
                               className={`inline-flex items-center gap-0.5 px-2 py-1 rounded text-xs transition-all ${
-                                isSelected ? "ring-2 ring-sakura-500" : "hover:ring-1 hover:ring-gray-300"
+                                isSelected
+                                  ? "ring-2 ring-sakura-500"
+                                  : "hover:ring-1 hover:ring-gray-300"
                               }`}
                               style={{
                                 backgroundColor: tag.color ? `${tag.color}15` : "#f3f4f6",
@@ -1025,13 +1050,15 @@ function PlanRow({
           <Badge variant={plan.isActive ? "success-solid" : "secondary-solid"} size="sm">
             {plan.isActive ? "上架" : "下架"}
           </Badge>
-          {plan.isFeatured && <Badge variant="warning-solid" size="sm">精选</Badge>}
+          {plan.isFeatured && (
+            <Badge variant="warning-solid" size="sm">
+              精选
+            </Badge>
+          )}
         </div>
       </td>
       <td className="px-4 py-4">
-        <span className="font-medium text-gray-900">
-          ¥{(plan.price / 100).toLocaleString()}
-        </span>
+        <span className="font-medium text-gray-900">¥{(plan.price / 100).toLocaleString()}</span>
       </td>
       <td className="px-4 py-4">
         <div className="flex items-center justify-end gap-2">
@@ -1052,9 +1079,7 @@ function PlanRow({
             >
               <MoreVertical className="w-5 h-5 text-gray-600" />
             </button>
-            {showMenu && (
-              <QuickMenu plan={plan} onClose={() => setShowMenu(false)} />
-            )}
+            {showMenu && <QuickMenu plan={plan} onClose={() => setShowMenu(false)} />}
           </div>
         </div>
       </td>
@@ -1066,10 +1091,7 @@ function PlanRow({
 function QuickMenu({ plan, onClose }: { plan: Plan; onClose: () => void }) {
   return (
     <>
-      <div
-        className="fixed inset-0 z-40"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 z-40" onClick={onClose} />
       <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
         <button className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2">
           <Power className="w-4 h-4" />
@@ -1097,12 +1119,8 @@ function EmptyState({ searchQuery }: { searchQuery: string }) {
         <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <Search className="w-8 h-8 text-gray-400" />
         </div>
-        <h2 className="text-xl font-bold text-gray-900 mb-2">
-          未找到匹配的套餐
-        </h2>
-        <p className="text-gray-600">
-          试试其他搜索关键词或筛选条件
-        </p>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">未找到匹配的套餐</h2>
+        <p className="text-gray-600">试试其他搜索关键词或筛选条件</p>
       </div>
     );
   }
@@ -1112,12 +1130,8 @@ function EmptyState({ searchQuery }: { searchQuery: string }) {
       <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
         <Package className="w-8 h-8 text-gray-400" />
       </div>
-      <h2 className="text-xl font-bold text-gray-900 mb-2">
-        还没有套餐
-      </h2>
-      <p className="text-gray-600 mb-6">
-        发布您的第一个和服租赁套餐，开始接待客户
-      </p>
+      <h2 className="text-xl font-bold text-gray-900 mb-2">还没有套餐</h2>
+      <p className="text-gray-600 mb-6">发布您的第一个和服租赁套餐，开始接待客户</p>
       <Link href="/merchant/listings/new">
         <Button variant="primary" size="lg">
           <Plus className="w-5 h-5 mr-2" />
@@ -1145,22 +1159,15 @@ function ThemeSelectionModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* 背景遮罩 */}
-      <div
-        className="absolute inset-0 bg-black/50"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
       {/* 模态框内容 */}
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
         {/* 标题栏 */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">
-              批量修改主题
-            </h3>
-            <p className="text-sm text-gray-500 mt-0.5">
-              将 {selectedCount} 个套餐分配到指定主题
-            </p>
+            <h3 className="text-lg font-semibold text-gray-900">批量修改主题</h3>
+            <p className="text-sm text-gray-500 mt-0.5">将 {selectedCount} 个套餐分配到指定主题</p>
           </div>
           <button
             onClick={onClose}
@@ -1246,7 +1253,7 @@ function TagsSelectionModal({
   const [mode, setMode] = useState<"add" | "remove" | "set">("add");
 
   const toggleTag = (tagId: string) => {
-    setSelectedTagIds(prev => {
+    setSelectedTagIds((prev) => {
       const next = new Set(prev);
       if (next.has(tagId)) {
         next.delete(tagId);
@@ -1265,22 +1272,15 @@ function TagsSelectionModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* 背景遮罩 */}
-      <div
-        className="absolute inset-0 bg-black/50"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
       {/* 模态框内容 */}
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
         {/* 标题栏 */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">
-              批量修改标签
-            </h3>
-            <p className="text-sm text-gray-500 mt-0.5">
-              为 {selectedCount} 个套餐修改标签
-            </p>
+            <h3 className="text-lg font-semibold text-gray-900">批量修改标签</h3>
+            <p className="text-sm text-gray-500 mt-0.5">为 {selectedCount} 个套餐修改标签</p>
           </div>
           <button
             onClick={onClose}
@@ -1336,9 +1336,7 @@ function TagsSelectionModal({
         <div className="p-4 max-h-[350px] overflow-y-auto">
           {tagCategories.map((category) => (
             <div key={category.id} className="mb-4">
-              <h4 className="text-sm font-semibold text-gray-700 mb-2">
-                {category.name}
-              </h4>
+              <h4 className="text-sm font-semibold text-gray-700 mb-2">{category.name}</h4>
               <div className="flex flex-wrap gap-2">
                 {category.tags.map((tag) => {
                   const isSelected = selectedTagIds.has(tag.id);
@@ -1374,9 +1372,7 @@ function TagsSelectionModal({
 
         {/* 底部操作栏 */}
         <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex items-center justify-between">
-          <p className="text-sm text-gray-600">
-            已选择 {selectedTagIds.size} 个标签
-          </p>
+          <p className="text-sm text-gray-600">已选择 {selectedTagIds.size} 个标签</p>
           <div className="flex gap-2">
             <Button variant="secondary" size="sm" onClick={onClose} disabled={isUpdating}>
               取消

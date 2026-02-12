@@ -131,7 +131,7 @@ function calculateScore(query: string, faq: any): number {
 function findBestMatch(query: string) {
   let bestMatch = null;
   let bestScore = 0;
-  let allMatches: any[] = [];
+  const allMatches: any[] = [];
 
   for (const category of faqData) {
     for (const faq of category.faqs) {
@@ -155,9 +155,7 @@ function generateReply(query: string) {
 
   // 如果找到了很好的匹配
   if (bestScore > 50 && bestMatch) {
-    const suggestions = allMatches
-      .slice(1, 4)
-      .map((m) => m.question);
+    const suggestions = allMatches.slice(1, 4).map((m) => m.question);
 
     return {
       reply: `关于"${bestMatch.question}"：\n\n${bestMatch.answer}\n\n您还想了解其他问题吗？`,
@@ -168,9 +166,7 @@ function generateReply(query: string) {
   // 如果有一些匹配但不太确定
   if (bestScore > 0 && allMatches.length > 0) {
     const topMatches = allMatches.slice(0, 3);
-    const matchList = topMatches
-      .map((m, i) => `${i + 1}. ${m.question}`)
-      .join("\n");
+    const matchList = topMatches.map((m, i) => `${i + 1}. ${m.question}`).join("\n");
 
     return {
       reply: `我理解您可能想了解以下问题：\n\n${matchList}\n\n请点击下方按钮选择，或者换个方式描述您的问题。`,
@@ -181,11 +177,7 @@ function generateReply(query: string) {
   // 完全没有匹配
   return {
     reply: `抱歉，我没有找到相关的问题解答。\n\n您可以：\n1. 换个方式描述您的问题\n2. 浏览下方的常见问题\n3. 联系人工客服获取帮助\n\n我们的客服电话：03-XXXX-XXXX`,
-    suggestions: [
-      "和服租赁多少钱？",
-      "如何预约？",
-      "营业时间是什么时候？",
-    ],
+    suggestions: ["和服租赁多少钱？", "如何预约？", "营业时间是什么时候？"],
   };
 }
 
@@ -194,10 +186,7 @@ export async function POST(request: NextRequest) {
     const { message } = await request.json();
 
     if (!message || typeof message !== "string") {
-      return NextResponse.json(
-        { error: "Invalid message" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid message" }, { status: 400 });
     }
 
     const response = generateReply(message);
@@ -205,9 +194,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(response);
   } catch (error) {
     console.error("Chatbot error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -7,9 +7,9 @@ import { PlanCard, PlanCardGrid } from "@/features/guest/plans";
 import { Badge } from "@/components/ui";
 
 interface MerchantPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default async function MerchantPage({ params }: MerchantPageProps) {
@@ -52,7 +52,7 @@ export default async function MerchantPage({ params }: MerchantPageProps) {
   let plans = await prisma.rentalPlan.findMany({
     where: {
       storeName: {
-        in: merchant.stores.map(s => s.name),
+        in: merchant.stores.map((s) => s.name),
       },
       isActive: true,
     },
@@ -64,10 +64,7 @@ export default async function MerchantPage({ params }: MerchantPageProps) {
         },
       },
     },
-    orderBy: [
-      { isCampaign: "desc" },
-      { createdAt: "desc" },
-    ],
+    orderBy: [{ isCampaign: "desc" }, { createdAt: "desc" }],
     take: 12,
   });
 
@@ -85,11 +82,7 @@ export default async function MerchantPage({ params }: MerchantPageProps) {
           },
         },
       },
-      orderBy: [
-        { isCampaign: "desc" },
-        { isFeatured: "desc" },
-        { createdAt: "desc" },
-      ],
+      orderBy: [{ isCampaign: "desc" }, { isFeatured: "desc" }, { createdAt: "desc" }],
       take: 12,
     });
   }
@@ -131,9 +124,7 @@ export default async function MerchantPage({ params }: MerchantPageProps) {
                     className="object-cover"
                   />
                 ) : (
-                  <span className="text-5xl text-white">
-                    {merchant.businessName.charAt(0)}
-                  </span>
+                  <span className="text-5xl text-white">{merchant.businessName.charAt(0)}</span>
                 )}
               </div>
             </div>
@@ -142,9 +133,7 @@ export default async function MerchantPage({ params }: MerchantPageProps) {
             <div className="flex-1">
               <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-3">
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                    {merchant.businessName}
-                  </h1>
+                  <h1 className="text-2xl font-bold text-gray-900 mb-2">{merchant.businessName}</h1>
                   <div className="flex flex-wrap items-center gap-2">
                     {merchant.verified && (
                       <Badge variant="success" size="md">
@@ -168,29 +157,21 @@ export default async function MerchantPage({ params }: MerchantPageProps) {
 
               {/* 描述 */}
               {merchant.description && (
-                <p className="text-gray-700 leading-relaxed mb-4">
-                  {merchant.description}
-                </p>
+                <p className="text-gray-700 leading-relaxed mb-4">{merchant.description}</p>
               )}
 
               {/* 统计数据 */}
               <div className="grid grid-cols-3 gap-4 pt-3 border-t border-gray-200">
                 <div>
-                  <p className="text-xl font-bold text-gray-900">
-                    {plans.length}
-                  </p>
+                  <p className="text-xl font-bold text-gray-900">{plans.length}</p>
                   <p className="text-xs text-gray-600">套餐</p>
                 </div>
                 <div>
-                  <p className="text-xl font-bold text-gray-900">
-                    {merchant.stores.length}
-                  </p>
+                  <p className="text-xl font-bold text-gray-900">{merchant.stores.length}</p>
                   <p className="text-xs text-gray-600">店铺</p>
                 </div>
                 <div>
-                  <p className="text-xl font-bold text-gray-900">
-                    {bookingCount}
-                  </p>
+                  <p className="text-xl font-bold text-gray-900">{bookingCount}</p>
                   <p className="text-xs text-gray-600">完成订单</p>
                 </div>
               </div>
@@ -204,18 +185,12 @@ export default async function MerchantPage({ params }: MerchantPageProps) {
           <div className="lg:col-span-2">
             {/* 套餐 */}
             <div className="mb-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
-                商家套餐
-              </h2>
+              <h2 className="text-xl font-bold text-gray-900 mb-4">商家套餐</h2>
 
               {plans.length > 0 ? (
                 <PlanCardGrid variant="grid-3">
                   {plans.map((plan) => (
-                    <PlanCard
-                      key={plan.id}
-                      plan={plan}
-                      showMerchant={false}
-                    />
+                    <PlanCard key={plan.id} plan={plan} showMerchant={false} />
                   ))}
                 </PlanCardGrid>
               ) : (
@@ -240,18 +215,13 @@ export default async function MerchantPage({ params }: MerchantPageProps) {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {merchant.reviews.map((review) => (
-                    <div
-                      key={review.id}
-                      className="bg-white rounded-xl border border-gray-200 p-4"
-                    >
+                    <div key={review.id} className="bg-white rounded-xl border border-gray-200 p-4">
                       <div className="flex items-center gap-2 mb-3">
                         <div className="w-12 h-12 bg-gradient-to-br from-sakura-400 to-sakura-500 rounded-full flex items-center justify-center text-white font-bold">
                           用
                         </div>
                         <div>
-                          <p className="font-semibold text-gray-900">
-                            用户
-                          </p>
+                          <p className="font-semibold text-gray-900">用户</p>
                           <p className="text-sm text-gray-600">
                             {new Date(review.createdAt).toLocaleDateString("zh-CN")}
                           </p>
@@ -263,9 +233,7 @@ export default async function MerchantPage({ params }: MerchantPageProps) {
                         ))}
                       </div>
                       {review.comment && (
-                        <p className="text-gray-700 leading-relaxed">
-                          {review.comment}
-                        </p>
+                        <p className="text-gray-700 leading-relaxed">{review.comment}</p>
                       )}
                     </div>
                   ))}
@@ -273,9 +241,7 @@ export default async function MerchantPage({ params }: MerchantPageProps) {
 
                 {merchantReviewCount > 6 && (
                   <div className="text-center mt-6">
-                    <p className="text-sm text-gray-600">
-                      显示 6 / {merchantReviewCount} 条评价
-                    </p>
+                    <p className="text-sm text-gray-600">显示 6 / {merchantReviewCount} 条评价</p>
                   </div>
                 )}
               </div>
@@ -297,9 +263,7 @@ export default async function MerchantPage({ params }: MerchantPageProps) {
                     key={store.id}
                     className="pb-4 last:pb-0 last:border-0 border-b border-gray-200"
                   >
-                    <h3 className="font-semibold text-gray-900 mb-2">
-                      {store.name}
-                    </h3>
+                    <h3 className="font-semibold text-gray-900 mb-2">{store.name}</h3>
                     <div className="space-y-2 text-sm text-gray-600">
                       <div className="flex items-start gap-2">
                         <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
@@ -328,9 +292,7 @@ export default async function MerchantPage({ params }: MerchantPageProps) {
                 <div className="flex items-start gap-2">
                   <Award className="w-5 h-5 text-sakura-600 flex-shrink-0 mt-0.5" />
                   <div>
-                    <h3 className="font-semibold text-sakura-900 mb-1 text-sm">
-                      官方认证商家
-                    </h3>
+                    <h3 className="font-semibold text-sakura-900 mb-1 text-sm">官方认证商家</h3>
                     <p className="text-xs text-sakura-800 leading-relaxed">
                       此商家已通过平台审核验证，资质真实可靠，为您提供安全保障。
                     </p>

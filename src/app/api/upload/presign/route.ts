@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
-import prisma from '@/lib/prisma';
+import { NextRequest, NextResponse } from "next/server";
+import type { Session } from "next-auth";
+import { auth } from "@/auth";
+import prisma from "@/lib/prisma";
 import {
   getPresignedUploadUrl,
   generateS3Key,
@@ -10,7 +11,7 @@ import {
   type ImagePurpose,
   type AllowedImageType,
   MAX_FILE_SIZE,
-} from '@/lib/aws';
+} from "@/lib/aws";
 
 interface PresignRequest {
   fileType: string;
@@ -42,21 +43,18 @@ export async function POST(request: NextRequest) {
     const session = await auth();
     const body = (await request.json()) as PresignRequest;
 
-    const { fileType, fileSize, category, entityId, purpose = 'main' } = body;
+    const { fileType, fileSize, category, entityId, purpose = "main" } = body;
 
     // 验证必填字段
     if (!fileType || !category) {
-      return NextResponse.json(
-        { error: '缺少必填字段: fileType, category' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "缺少必填字段: fileType, category" }, { status: 400 });
     }
 
     // 验证文件类型
     if (!ALLOWED_IMAGE_TYPES.includes(fileType as AllowedImageType)) {
       return NextResponse.json(
         {
-          error: `不支持的文件类型。支持: ${ALLOWED_IMAGE_TYPES.join(', ')}`,
+          error: `不支持的文件类型。支持: ${ALLOWED_IMAGE_TYPES.join(", ")}`,
         },
         { status: 400 }
       );
@@ -77,7 +75,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 生成 S3 Key
-    const resolvedEntityId = entityId || authResult.resolvedEntityId || 'unknown';
+    const resolvedEntityId = entityId || authResult.resolvedEntityId || "unknown";
     const extension = getExtensionFromMimeType(fileType);
     const key = generateS3Key(category, resolvedEntityId, purpose, extension);
 
@@ -96,19 +94,13 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('Presign error:', error);
+    console.error("Presign error:", error);
 
-    if (error instanceof Error && error.message.includes('AWS credentials')) {
-      return NextResponse.json(
-        { error: 'AWS 服务未配置' },
-        { status: 503 }
-      );
+    if (error instanceof Error && error.message.includes("AWS credentials")) {
+      return NextResponse.json({ error: "AWS 服务未配置" }, { status: 503 });
     }
 
-    return NextResponse.json(
-      { error: '获取上传凭证失败' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "获取上传凭证失败" }, { status: 500 });
   }
 }
 
@@ -116,7 +108,7 @@ export async function POST(request: NextRequest) {
  * 权限检查
  */
 async function checkPermission(
-  session: Awaited<ReturnType<typeof auth>>,
+  session: Session | null,
   category: ImageCategory,
   entityId?: string
 ): Promise<{
@@ -129,16 +121,16 @@ async function checkPermission(
   const userRole = (user as { role?: string } | undefined)?.role;
 
   switch (category) {
-    case 'plan':
-    case 'component':
-    case 'upgrade': {
+    case "plan":
+    case "component":
+    case "upgrade": {
       // 需要管理员角色 或 拥有已审批的商家账户
       if (!userId) {
-        return { allowed: false, message: '需要登录' };
+        return { allowed: false, message: "需要登录" };
       }
 
       // 管理员直接通过
-      if (userRole === 'ADMIN') {
+      if (userRole === "ADMIN") {
         return { allowed: true, resolvedEntityId: entityId || `admin-${userId}` };
       }
 
@@ -148,21 +140,21 @@ async function checkPermission(
         select: { id: true, status: true },
       });
 
-      if (!merchant || merchant.status !== 'APPROVED') {
-        return { allowed: false, message: '需要管理员或已审批的商家权限' };
+      if (!merchant || merchant.status !== "APPROVED") {
+        return { allowed: false, message: "需要管理员或已审批的商家权限" };
       }
 
       // 商家通过，使用商家 ID 作为路径
       return {
         allowed: true,
-        resolvedEntityId: entityId || `merchant-${merchant.id}`
+        resolvedEntityId: entityId || `merchant-${merchant.id}`,
       };
     }
 
-    case 'merchant': {
+    case "merchant": {
       // 需要是商家所有者
       if (!userId) {
-        return { allowed: false, message: '需要登录' };
+        return { allowed: false, message: "需要登录" };
       }
 
       // 检查是否有已审批的商家账户
@@ -171,26 +163,26 @@ async function checkPermission(
         select: { id: true, status: true },
       });
 
-      if (!merchant || merchant.status !== 'APPROVED') {
-        return { allowed: false, message: '需要已审批的商家权限' };
+      if (!merchant || merchant.status !== "APPROVED") {
+        return { allowed: false, message: "需要已审批的商家权限" };
       }
 
       return { allowed: true, resolvedEntityId: entityId || merchant.id };
     }
 
-    case 'user':
+    case "user":
       // 需要登录，只能上传自己的内容
       if (!userId) {
-        return { allowed: false, message: '需要登录' };
+        return { allowed: false, message: "需要登录" };
       }
       // 用户只能上传自己的头像/评价图
       return { allowed: true, resolvedEntityId: userId };
 
-    case 'tryon':
+    case "tryon":
       // AI 试穿允许游客，使用 userId 或 'guest'
-      return { allowed: true, resolvedEntityId: userId || 'guest' };
+      return { allowed: true, resolvedEntityId: userId || "guest" };
 
     default:
-      return { allowed: false, message: '不支持的分类' };
+      return { allowed: false, message: "不支持的分类" };
   }
 }

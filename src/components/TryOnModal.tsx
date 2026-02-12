@@ -40,7 +40,7 @@ export default function TryOnModal({ isOpen, onClose, plan }: TryOnModalProps) {
     if (isOpen && cachedPhoto && !userPhoto && !resultPhoto) {
       setUserPhoto(cachedPhoto);
       setShowCacheTip(true);
-      console.log('✨ 自动加载缓存照片');
+      console.log("✨ 自动加载缓存照片");
     }
   }, [isOpen, cachedPhoto]);
 
@@ -97,20 +97,20 @@ export default function TryOnModal({ isOpen, onClose, plan }: TryOnModalProps) {
       }
 
       // 预加载图片，确保加载完成后再显示
-      console.log('🖼️ 开始预加载合成图片...');
+      console.log("🖼️ 开始预加载合成图片...");
       setIsLoadingImage(true);
 
       await new Promise<void>((resolve, reject) => {
         const img = new window.Image();
 
         img.onload = () => {
-          console.log('✅ 合成图片加载完成');
+          console.log("✅ 合成图片加载完成");
           resolve();
         };
 
         img.onerror = () => {
-          console.error('❌ 合成图片加载失败');
-          reject(new Error('图片加载失败'));
+          console.error("❌ 合成图片加载失败");
+          reject(new Error("图片加载失败"));
         };
 
         // 开始加载
@@ -149,6 +149,10 @@ export default function TryOnModal({ isOpen, onClose, plan }: TryOnModalProps) {
       image: plan.imageUrl,
       addOns: [],
       isCampaign: plan.isCampaign,
+      pricingUnit: "person" as const,
+      unitLabel: "人",
+      storeName: "",
+      storeId: "",
       // 不存储 tryOnPhoto 到购物车，避免 localStorage quota 超限
       // 试穿记录已保存在 useTryOnStore 中，可通过 planId 获取
     });
@@ -208,12 +212,8 @@ export default function TryOnModal({ isOpen, onClose, plan }: TryOnModalProps) {
               <div className="w-16 h-16 bg-sakura-500 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Sparkles className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">
-                已加入购物车！
-              </h3>
-              <p className="text-gray-600">
-                试穿照片已保存
-              </p>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">已加入购物车！</h3>
+              <p className="text-gray-600">试穿照片已保存</p>
             </div>
           </div>
         )}
@@ -252,9 +252,9 @@ export default function TryOnModal({ isOpen, onClose, plan }: TryOnModalProps) {
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                   <span className="text-sakura-500">
-                    {resultPhoto ? '✨' : displayPhoto ? '📸' : '⬆️'}
+                    {resultPhoto ? "✨" : displayPhoto ? "📸" : "⬆️"}
                   </span>
-                  {resultPhoto ? '试穿效果' : displayPhoto ? '您的照片' : '上传照片'}
+                  {resultPhoto ? "试穿效果" : displayPhoto ? "您的照片" : "上传照片"}
                   {showCacheTip && userPhoto && !resultPhoto && (
                     <span className="text-xs font-normal text-sakura-600 bg-sakura-50 px-2 py-0.5 rounded-full">
                       已自动加载
@@ -295,12 +295,8 @@ export default function TryOnModal({ isOpen, onClose, plan }: TryOnModalProps) {
                         <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
                         {isGenerating && !isLoadingImage && (
                           <>
-                            <div className="text-white font-semibold">
-                              AI 正在生成试穿效果...
-                            </div>
-                            <div className="text-white/80 text-sm">
-                              大约需要 15 秒
-                            </div>
+                            <div className="text-white font-semibold">AI 正在生成试穿效果...</div>
+                            <div className="text-white/80 text-sm">大约需要 15 秒</div>
                           </>
                         )}
                         {isLoadingImage && (
@@ -329,15 +325,9 @@ export default function TryOnModal({ isOpen, onClose, plan }: TryOnModalProps) {
                         <Upload className="w-10 h-10 text-sakura-500" />
                       </div>
                       <div className="text-center px-6">
-                        <p className="font-semibold text-gray-900 mb-2 text-lg">
-                          点击上传照片
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          支持 JPG、PNG，最大 5MB
-                        </p>
-                        <p className="text-xs text-gray-500 mt-2">
-                          建议上传全身或半身照
-                        </p>
+                        <p className="font-semibold text-gray-900 mb-2 text-lg">点击上传照片</p>
+                        <p className="text-sm text-gray-600">支持 JPG、PNG，最大 5MB</p>
+                        <p className="text-xs text-gray-500 mt-2">建议上传全身或半身照</p>
                       </div>
                     </button>
                   </>

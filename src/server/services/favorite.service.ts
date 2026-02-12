@@ -1,5 +1,5 @@
-import { TRPCError } from '@trpc/server';
-import type { PrismaClient } from '@prisma/client';
+import { TRPCError } from "@trpc/server";
+import type { PrismaClient } from "@prisma/client";
 
 // 收藏 select 复用
 const favoriteInclude = {
@@ -23,7 +23,7 @@ export const favoriteService = {
     const favorites = await prisma.favorite.findMany({
       where: { userId, planId: { not: null } },
       include: favoriteInclude,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
 
     return favorites.map((f) => ({
@@ -37,7 +37,7 @@ export const favoriteService = {
 
   async add(prisma: PrismaClient, userId: string, planId: string, imageUrl?: string) {
     if (!planId) {
-      throw new TRPCError({ code: 'BAD_REQUEST', message: 'planId 不能为空' });
+      throw new TRPCError({ code: "BAD_REQUEST", message: "planId 不能为空" });
     }
 
     // upsert：已存在则返回，不存在则创建
@@ -46,7 +46,7 @@ export const favoriteService = {
         userId_planId_imageUrl: {
           userId,
           planId,
-          imageUrl: imageUrl || null,
+          imageUrl: imageUrl || "",
         },
       },
       update: {},
@@ -61,7 +61,7 @@ export const favoriteService = {
 
   async remove(prisma: PrismaClient, userId: string, planId: string, imageUrl?: string) {
     if (!planId) {
-      throw new TRPCError({ code: 'BAD_REQUEST', message: 'planId 不能为空' });
+      throw new TRPCError({ code: "BAD_REQUEST", message: "planId 不能为空" });
     }
 
     const { count } = await prisma.favorite.deleteMany({
@@ -69,14 +69,14 @@ export const favoriteService = {
     });
 
     if (count === 0) {
-      throw new TRPCError({ code: 'NOT_FOUND', message: '收藏不存在' });
+      throw new TRPCError({ code: "NOT_FOUND", message: "收藏不存在" });
     }
   },
 
   async sync(
     prisma: PrismaClient,
     userId: string,
-    localFavorites: { planId: string; imageUrl: string }[],
+    localFavorites: { planId: string; imageUrl: string }[]
   ) {
     // 获取已有收藏
     const existing = await prisma.favorite.findMany({
@@ -84,8 +84,8 @@ export const favoriteService = {
       select: { planId: true, imageUrl: true },
     });
 
-    const existingSet = new Set(existing.map((f) => `${f.planId}:${f.imageUrl || ''}`));
-    const toAdd = localFavorites.filter((f) => !existingSet.has(`${f.planId}:${f.imageUrl || ''}`));
+    const existingSet = new Set(existing.map((f) => `${f.planId}:${f.imageUrl || ""}`));
+    const toAdd = localFavorites.filter((f) => !existingSet.has(`${f.planId}:${f.imageUrl || ""}`));
 
     if (toAdd.length > 0) {
       await prisma.favorite.createMany({
@@ -98,7 +98,7 @@ export const favoriteService = {
     const allFavorites = await prisma.favorite.findMany({
       where: { userId, planId: { not: null } },
       include: favoriteInclude,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
 
     return {

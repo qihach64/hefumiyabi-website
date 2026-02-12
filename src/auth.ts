@@ -5,7 +5,8 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(prisma),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- next-auth 已知的 AdapterUser 类型兼容问题
+  adapter: PrismaAdapter(prisma) as any,
   session: {
     strategy: "jwt",
   },

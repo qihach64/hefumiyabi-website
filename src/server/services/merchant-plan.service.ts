@@ -1,19 +1,14 @@
-import { TRPCError } from '@trpc/server';
-import type { PrismaClient } from '@prisma/client';
-import type { CreatePlanInput, UpdatePlanInput } from '@/server/schemas';
-import { handlePrismaError } from '@/server/trpc/utils';
+import { TRPCError } from "@trpc/server";
+import type { PrismaClient } from "@prisma/client";
+import type { CreatePlanInput, UpdatePlanInput } from "@/server/schemas";
+import { handlePrismaError } from "@/server/trpc/utils";
 
 // 商家套餐管理服务
 export const merchantPlanService = {
   /**
    * 创建套餐
    */
-  async create(
-    prisma: PrismaClient,
-    input: CreatePlanInput,
-    merchantId: string,
-    userId: string,
-  ) {
+  async create(prisma: PrismaClient, input: CreatePlanInput, merchantId: string, userId: string) {
     const slug = `plan-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
     try {
@@ -55,7 +50,7 @@ export const merchantPlanService = {
     planId: string,
     input: UpdatePlanInput,
     merchantId: string,
-    userId: string,
+    userId: string
   ) {
     // 验证套餐所有权
     const plan = await prisma.rentalPlan.findUnique({
@@ -64,10 +59,10 @@ export const merchantPlanService = {
     });
 
     if (!plan) {
-      throw new TRPCError({ code: 'NOT_FOUND', message: '套餐不存在' });
+      throw new TRPCError({ code: "NOT_FOUND", message: "套餐不存在" });
     }
     if (plan.merchantId !== merchantId) {
-      throw new TRPCError({ code: 'FORBIDDEN', message: '无权限操作此套餐' });
+      throw new TRPCError({ code: "FORBIDDEN", message: "无权限操作此套餐" });
     }
 
     // 事务更新（8s 超时）
@@ -120,7 +115,7 @@ export const merchantPlanService = {
 
         return updatedPlan;
       },
-      { timeout: 8000 },
+      { timeout: 8000 }
     );
   },
 
@@ -134,10 +129,10 @@ export const merchantPlanService = {
     });
 
     if (!plan) {
-      throw new TRPCError({ code: 'NOT_FOUND', message: '套餐不存在' });
+      throw new TRPCError({ code: "NOT_FOUND", message: "套餐不存在" });
     }
     if (plan.merchantId !== merchantId) {
-      throw new TRPCError({ code: 'FORBIDDEN', message: '无权限操作此套餐' });
+      throw new TRPCError({ code: "FORBIDDEN", message: "无权限操作此套餐" });
     }
 
     await prisma.rentalPlan.update({
@@ -157,7 +152,7 @@ export const merchantPlanService = {
     tx: any,
     planId: string,
     newTagIds: string[],
-    userId: string,
+    userId: string
   ) {
     // 获取旧标签
     const oldPlanTags = await tx.planTag.findMany({
@@ -168,7 +163,7 @@ export const merchantPlanService = {
     const newTagIdSet = new Set(newTagIds);
 
     // 计算 diff
-    const toRemove = [...oldTagIds].filter((id) => !newTagIdSet.has(id));
+    const toRemove = [...oldTagIds].filter((id) => !newTagIdSet.has(id as string)) as string[];
     const toAdd = newTagIds.filter((id) => !oldTagIds.has(id));
 
     // 删除旧关联
@@ -209,7 +204,7 @@ export const merchantPlanService = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     tx: any,
     planId: string,
-    input: UpdatePlanInput,
+    input: UpdatePlanInput
   ) {
     await tx.planComponent.deleteMany({ where: { planId } });
 
@@ -220,7 +215,7 @@ export const merchantPlanService = {
           merchantComponentId: pc.merchantComponentId,
           hotmapX: pc.hotmapX ?? null,
           hotmapY: pc.hotmapY ?? null,
-          hotmapLabelPosition: pc.hotmapLabelPosition ?? 'right',
+          hotmapLabelPosition: pc.hotmapLabelPosition ?? "right",
           hotmapLabelOffsetX: pc.hotmapLabelOffsetX ?? null,
           hotmapLabelOffsetY: pc.hotmapLabelOffsetY ?? null,
           hotmapOrder: pc.hotmapOrder ?? 0,
@@ -244,7 +239,7 @@ export const merchantPlanService = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     tx: any,
     planId: string,
-    planUpgrades: UpdatePlanInput['planUpgrades'],
+    planUpgrades: UpdatePlanInput["planUpgrades"]
   ) {
     await tx.planUpgrade.deleteMany({ where: { planId } });
 
