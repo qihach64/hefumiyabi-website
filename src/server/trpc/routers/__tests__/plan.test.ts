@@ -7,6 +7,8 @@ vi.mock('@/server/services/plan.service', () => ({
     getList: vi.fn(),
     getById: vi.fn(),
     getFeatured: vi.fn(),
+    getSearchPlans: vi.fn(),
+    getRelatedPlans: vi.fn(),
   },
 }));
 
@@ -17,6 +19,8 @@ const mockPlanService = planService as {
   getList: ReturnType<typeof vi.fn>;
   getById: ReturnType<typeof vi.fn>;
   getFeatured: ReturnType<typeof vi.fn>;
+  getSearchPlans: ReturnType<typeof vi.fn>;
+  getRelatedPlans: ReturnType<typeof vi.fn>;
 };
 
 // Create a minimal caller for testing
@@ -131,6 +135,72 @@ describe('planRouter', () => {
       await caller.featured({ limit: 4 });
 
       expect(mockPlanService.getFeatured).toHaveBeenCalledWith(4);
+    });
+  });
+
+  describe('searchAll', () => {
+    it('调用 planService.getSearchPlans 并透传返回值', async () => {
+      const mockPlans = [
+        { id: '1', name: 'Plan A', price: 5000 },
+        { id: '2', name: 'Plan B', price: 8000 },
+      ];
+      mockPlanService.getSearchPlans.mockResolvedValue(mockPlans);
+
+      const caller = createCaller();
+      const result = await caller.searchAll();
+
+      expect(mockPlanService.getSearchPlans).toHaveBeenCalledOnce();
+      expect(result).toEqual(mockPlans);
+    });
+  });
+
+  describe('relatedPlans', () => {
+    it('正确传递输入参数到 planService.getRelatedPlans', async () => {
+      mockPlanService.getRelatedPlans.mockResolvedValue([]);
+
+      const caller = createCaller();
+      await caller.relatedPlans({
+        themeId: 'theme-1',
+        excludeId: 'plan-1',
+        limit: 4,
+      });
+
+      expect(mockPlanService.getRelatedPlans).toHaveBeenCalledWith(
+        'theme-1',
+        'plan-1',
+        4
+      );
+    });
+
+    it('limit 默认值为 8', async () => {
+      mockPlanService.getRelatedPlans.mockResolvedValue([]);
+
+      const caller = createCaller();
+      await caller.relatedPlans({
+        themeId: 'theme-1',
+        excludeId: 'plan-1',
+      });
+
+      expect(mockPlanService.getRelatedPlans).toHaveBeenCalledWith(
+        'theme-1',
+        'plan-1',
+        8
+      );
+    });
+
+    it('返回值透传', async () => {
+      const mockRelated = [
+        { id: 'r1', name: '相关套餐A', price: 6000 },
+      ];
+      mockPlanService.getRelatedPlans.mockResolvedValue(mockRelated);
+
+      const caller = createCaller();
+      const result = await caller.relatedPlans({
+        themeId: 'theme-1',
+        excludeId: 'plan-1',
+      });
+
+      expect(result).toEqual(mockRelated);
     });
   });
 });

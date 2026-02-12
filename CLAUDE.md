@@ -43,59 +43,60 @@ pnpm prisma db push   # 推送 schema 变更
 ```
 src/
 ├── app/                    # Next.js App Router
-│   ├── (main)/            # 公开页面 (header/footer layout)
-│   │   ├── plans/         # 套餐列表和详情
-│   │   ├── booking/       # 预约流程
-│   │   ├── cart/          # 购物车
-│   │   ├── stores/        # 店铺
-│   │   ├── merchant/      # 商家后台
-│   │   └── admin/         # 管理后台
-│   ├── (auth)/            # 认证页面 (login, register)
-│   └── api/               # API 路由 + tRPC
+│   ├── (main)/            # 公开页面 (带 header/footer layout)
+│   ├── (auth)/            # 认证页面 (login, register, verify-email)
+│   └── api/               # REST API + tRPC 入口
+├── server/                # 服务端三层架构
+│   ├── schemas/           # Zod 输入校验 (集中导出: schemas/index.ts)
+│   ├── services/          # 业务逻辑层 (8 个 service 文件)
+│   └── trpc/              # tRPC 路由定义
+│       ├── trpc.ts        # 4 种 procedure 权限定义
+│       ├── context.ts     # 请求上下文
+│       └── routers/       # 7 个 router (注册在 routers/index.ts)
 ├── features/              # 业务功能模块 (FSD)
-│   └── guest/
-│       ├── discovery/     # 搜索、筛选组件
-│       │   └── components/
-│       ├── plans/         # 套餐相关
-│       │   ├── components/
-│       │   └── hooks/     # usePlanList, usePlanDetail
-│       └── booking/       # 预约相关
+│   ├── guest/             # 游客功能
+│   │   ├── discovery/     # 搜索、筛选
+│   │   ├── plans/         # 套餐 (hooks + components)
+│   │   └── booking/       # 预约
+│   └── merchant/          # 商家功能
+├── components/            # 通用 UI 组件
+│   ├── layout/            # Header, Footer
+│   ├── home/              # 首页
+│   ├── plan/              # 套餐详情子组件
+│   ├── PlanCard/          # 套餐卡片
+│   └── ui/                # 基础 UI 元素
 ├── shared/                # 共享代码
-│   ├── api/              # tRPC client, TRPCProvider
-│   └── hooks/            # useSearchState (nuqs)
-├── server/               # 服务端代码
-│   ├── trpc/             # tRPC routers
-│   │   └── routers/      # plan, health
-│   └── services/         # 业务逻辑 (plan.service.ts)
-├── components/           # 通用 UI 组件
-│   ├── layout/           # Header, Footer, MobileSearchBar
-│   ├── home/             # 首页组件
-│   └── plans/            # 套餐展示组件
-├── contexts/             # React Context
-│   ├── SearchBarContext.tsx      # 搜索栏 UI 状态
-│   └── SearchLoadingContext.tsx  # 搜索加载状态
-├── store/                # Zustand stores
-│   ├── cart.ts           # 购物车
-│   ├── favorites.ts      # 收藏
-│   ├── planDraft.ts      # 套餐草稿 (商家)
-│   ├── tryOn.ts          # AI 试穿缓存
-│   └── userPhoto.ts      # 用户照片
-└── lib/                  # 工具函数
+│   ├── api/               # tRPC client
+│   ├── hooks/             # useSearchState 等
+│   ├── components/        # 跨功能共享组件
+│   ├── lib/               # 共享工具
+│   └── ui/                # 共享 UI
+├── store/                 # Zustand stores (cart, favorites 等)
+├── contexts/              # React Context
+├── types/                 # TypeScript 类型定义
+├── config/                # 配置
+└── lib/                   # 工具函数
 ```
 
 ### 路由结构
 
-| 路由               | 说明                |
-| ------------------ | ------------------- |
-| `/`                | 首页，特色套餐展示  |
-| `/plans`           | 套餐列表，支持筛选  |
-| `/plans/[id]`      | 套餐详情，加购/预约 |
-| `/cart`            | 购物车              |
-| `/booking`         | 预约确认页          |
-| `/booking/success` | 预约成功            |
-| `/stores`          | 店铺列表            |
-| `/merchant/*`      | 商家后台            |
-| `/admin/*`         | 管理后台            |
+| 路由 | 说明 |
+|------|------|
+| `/` | 首页，特色套餐展示 |
+| `/plans` | 套餐列表，支持筛选 |
+| `/plans/[id]` | 套餐详情，加购/预约 |
+| `/cart` | 购物车 |
+| `/booking` | 预约确认页 |
+| `/booking/success` | 预约成功 |
+| `/stores` | 店铺列表 |
+| `/search` | 搜索结果 |
+| `/campaigns` | 活动列表 |
+| `/about`, `/contact`, `/faq` | 信息页面 |
+| `/login`, `/register` | 认证 |
+| `/profile` | 用户资料 |
+| `/virtual-tryon` | AI 试穿 |
+| `/merchant/*` | 商家后台 |
+| `/admin/*` | 管理后台 |
 
 ### 数据获取策略
 
@@ -108,131 +109,54 @@ src/
 
 ### 核心数据模型
 
+完整定义: `prisma/schema.prisma` (25 个模型)
+
+**核心业务关系:**
 ```
 User ─── Booking ─── BookingItem ─── RentalPlan
   │                                      │
-  └── Cart ─── CartItem                  │
-                                    PlanStore ─── Store
+  └── Favorite                       PlanStore ─── Store
 ```
 
-**关键模型:**
-- `RentalPlan` - 套餐 (isCampaign 标记活动套餐)
-- `Store` - 店铺 (多店铺支持)
-- `PlanStore` - 套餐-店铺关联 (多对多)
-- `Booking` / `BookingItem` - 预约记录
-- `Cart` / `CartItem` - 购物车 (Zustand 管理)
+**按业务域分组:**
+- **用户:** User, Account, Session, VerificationToken, UserPreference
+- **商品:** RentalPlan, PlanStore, PlanTag, PlanComponent, PlanUpgrade, Store, Theme
+- **交易:** Booking, BookingItem, Cart/CartItem (Zustand 管理，不在 DB)
+- **商家:** Merchant, MerchantComponent, ServiceComponent, MerchantReview
+- **互动:** Favorite, VirtualTryOn, Campaign
+- **地图:** MapTemplate, MapHotspot
+- **标签:** Tag, TagCategory, PlanTag
 
-详细 Schema: `prisma/schema.prisma`
+### 服务端三层架构
+
+新 API 一律用 tRPC router（不要创建 REST API）。
+
+**数据流:** Schema (Zod 校验) → Router (tRPC 端点) → Service (业务逻辑) → Prisma
+
+**现有 7 个 Router:**
+health, plan, store, booking, favorite, merchant, tag
+(注册在 `src/server/trpc/routers/index.ts`)
+
+**4 种权限级别** (`src/server/trpc/trpc.ts`):
+- `publicProcedure` — 任何人
+- `protectedProcedure` — 需登录
+- `merchantProcedure` — 需商家身份 (已审核)
+- `adminProcedure` — 需管理员/职员
 
 ## 关键模式
 
-### 1. URL 状态管理 (nuqs)
+### URL 状态管理 (nuqs)
+用 `useSearchState` hook（`src/shared/hooks/useSearchState.ts`）管理搜索筛选状态。
+**重要**: 同页面用 nuqs setters，跨页面用 `router.push()`，不要混用。详见 `docs/guides/url-state-management.md`
 
-```typescript
-import { useSearchState } from '@/shared/hooks';
+### 购物车 (Zustand)
+`src/store/cart.ts` — 用 `useCartStore` 管理购物车，数据持久化到 localStorage。
 
-const {
-  // 基础搜索参数
-  location, setLocation,
-  date, setDate,
-  theme, setTheme,
-  guests, setGuests,
-  // 筛选参数
-  minPrice, maxPrice, setPriceRange,
-  sort, setSort,
-  category, setCategory,
-  tags, setTags,
-  // 工具方法
-  clearAll,      // 清空所有筛选
-  hasFilters,    // 是否有筛选条件
-} = useSearchState();
+### tRPC Hooks
+`src/features/guest/plans/hooks/` — `usePlanList`, `usePlanDetail` 等 hooks 封装了 tRPC 调用。
 
-// URL 自动同步: /plans?location=京都&theme=traditional&minPrice=5000
-```
-
-**重要规范**: 不要混用 `router.push()` 和 nuqs setters！
-- 同页面状态更新 → 用 nuqs setters
-- 跨页面导航 → 用 router.push() 构建完整 URL
-- 详见 `docs/guides/url-state-management.md`
-
-### 2. 购物车 (Zustand)
-
-```typescript
-import { useCartStore } from '@/store/cart';
-
-// 添加商品
-useCartStore.getState().addItem({
-  planId: plan.id,
-  name: plan.name,
-  price: plan.price,
-  quantity: 1,
-  date: '2025-01-20',
-  time: '10:00',
-  storeId: store.id,
-});
-
-// 读取购物车
-const items = useCartStore((state) => state.items);
-```
-
-### 3. tRPC Hooks (服务端数据)
-
-```typescript
-import { usePlanList, usePlanDetail } from '@/features/guest/plans';
-
-// 套餐列表 (带筛选)
-const { data, isLoading } = usePlanList({
-  theme: 'traditional',
-  location: '京都',
-  limit: 20,
-});
-
-// 套餐详情
-const { data: plan } = usePlanDetail(planId);
-```
-
-### 4. 价格处理
-
-**所有价格以"分"存储** (避免浮点精度问题)
-
-```typescript
-// 显示价格
-const displayPrice = (cents: number) => `¥${(cents / 100).toLocaleString()}`;
-
-// 折扣计算
-const discount = ((originalPrice - price) / originalPrice) * 100;
-```
-
-### 5. 组件开发位置
-
-| 组件类型  | 位置                                       |
-| --------- | ------------------------------------------ |
-| 搜索/筛选 | `src/features/guest/discovery/components/` |
-| 套餐相关  | `src/features/guest/plans/`                |
-| 预约相关  | `src/features/guest/booking/`              |
-| 布局组件  | `src/components/layout/`                   |
-| 通用 UI   | `src/components/`                          |
-
-## API 路由
-
-```
-# tRPC (类型安全)
-/api/trpc/[trpc]     # tRPC 入口 (plan.list, plan.getById, plan.featured, health.check)
-
-# REST API
-/api/bookings        # 预约 CRUD
-/api/plans/[id]      # 套餐详情
-/api/stores          # 店铺列表
-/api/themes          # 主题列表
-/api/locations       # 地点列表
-/api/tags            # 标签系统
-/api/favorites       # 收藏功能
-/api/chatbot         # AI 聊天机器人
-/api/virtual-tryon   # AI 试穿
-/api/upload          # 文件上传
-/api/merchant/*      # 商家后台 API
-/api/admin/*         # 管理后台 API
-```
+### 价格处理
+所有价格以**分**存储。显示时除以 100：`¥${(cents / 100).toLocaleString()}`
 
 ## 测试
 
@@ -277,6 +201,24 @@ GOOGLE_AI_API_KEY="..."              # AI 聊天机器人
 REPLICATE_API_TOKEN="..."            # AI 试穿
 ```
 
+## Agent 导航速查
+
+| 要做什么 | 先看哪里 |
+|---------|---------|
+| 加/改后端 API | `src/server/` — schemas → services → trpc/routers 三层 |
+| 加/改页面 | `src/app/(main)/` — page.tsx (Server) + Client.tsx (交互) |
+| 加/改前端组件 | `src/features/guest/` 或 `src/components/` |
+| 改数据模型 | `prisma/schema.prisma` → `pnpm prisma db push && pnpm prisma generate` |
+| 参考完整功能实现 | booking 全链路最完整: schema → service → router → test |
+| UI 设计规范 | 使用 ui-design-system skill |
+
+## 绝对不要做
+
+- 改了 `prisma/schema.prisma` 但不运行 `pnpm prisma db push && pnpm prisma generate`
+- 把 Client Component 逻辑写在 `page.tsx` 里（page.tsx 是 Server Component）
+- 在 `src/app/api/` 创建新 REST 路由（新 API 一律用 tRPC router）
+- 用 `next/font/google` 加载 CJK 字体
+
 ## 文档索引
 
 | 需求       | 文档                                      |
@@ -300,17 +242,25 @@ REPLICATE_API_TOKEN="..."            # AI 试穿
 
 ## 常见任务
 
+### 添加新功能（端到端）
+1. 数据层: 更新 `prisma/schema.prisma` → `pnpm prisma db push` → `pnpm prisma generate`
+2. Schema: `src/server/schemas/{name}.schema.ts` → 导出到 `schemas/index.ts`
+3. Service: `src/server/services/{name}.service.ts`
+4. Router: `src/server/trpc/routers/{name}.ts` → 注册到 `routers/index.ts`
+5. 前端: `src/app/(main)/{route}/page.tsx` + 交互组件
+6. 测试: `src/server/services/__tests__/{name}.service.test.ts`
+
 ### 添加新页面
-1. 创建 `src/app/(main)/[route]/page.tsx` (Server Component)
-2. 需要交互？创建 `[Route]Client.tsx` (Client Component)
+1. `src/app/(main)/[route]/page.tsx` (Server Component)
+2. 需要交互？创建 `[Route]Client.tsx` (Client Component, 加 `'use client'`)
 3. 数据获取放在 Server Component
 
-### 添加新组件
-1. 确定位置 (features/ 或 components/)
-2. 创建组件文件
-3. 添加到 index.ts 导出
+### 常见错误急救
 
-### 修改数据模型
-1. 更新 `prisma/schema.prisma`
-2. 运行 `pnpm prisma db push`
-3. 更新相关 API 和组件
+| 错误症状 | 修复方法 |
+|---------|---------|
+| `PrismaClientKnownRequestError` | `pnpm prisma db push` |
+| `Cannot find module '@prisma/client'` | `pnpm prisma generate` |
+| `No "xxx" query found` (tRPC) | 检查 `src/server/trpc/routers/index.ts` 是否注册 |
+| 页面空白 / hydration error | 交互逻辑放 `'use client'` 文件里 |
+| `Module not found: '@/xxx'` | `@/` = `src/`，检查文件路径 |

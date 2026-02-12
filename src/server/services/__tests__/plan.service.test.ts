@@ -251,4 +251,213 @@ describe('planService', () => {
       );
     });
   });
+
+  describe('getSearchPlans', () => {
+    // 模拟 Prisma 返回的原始数据 (匹配 _planCardSelect 查询结果)
+    const mockRawPlan = {
+      id: 'plan-1',
+      name: '经典和服体验',
+      description: '含全套配饰',
+      price: 5000,
+      originalPrice: 8000,
+      imageUrl: '/img/plan1.jpg',
+      region: '京都',
+      storeName: '祇園店',
+      themeId: 'theme-1',
+      isFeatured: true,
+      isCampaign: false,
+      merchant: { businessName: '和服屋' },
+      planComponents: [
+        { merchantComponent: { customName: null, template: { name: '振袖' } } },
+        { merchantComponent: { customName: '特制帯', template: null } },
+      ],
+      planTags: [
+        { tag: { id: 'tag-1', name: '人気', icon: '🔥', color: '#FF0000' } },
+      ],
+    };
+
+    it('查询条件: isActive + themeId 不为 null', async () => {
+      mockPrisma.rentalPlan.findMany.mockResolvedValue([]);
+
+      await planService.getSearchPlans();
+
+      expect(mockPrisma.rentalPlan.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { isActive: true, themeId: { not: null } },
+        })
+      );
+    });
+
+    it('排序: isFeatured desc → isCampaign desc → price asc', async () => {
+      mockPrisma.rentalPlan.findMany.mockResolvedValue([]);
+
+      await planService.getSearchPlans();
+
+      expect(mockPrisma.rentalPlan.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: [{ isFeatured: 'desc' }, { isCampaign: 'desc' }, { price: 'asc' }],
+        })
+      );
+    });
+
+    it('返回值经过 _transformPlanCard 转换', async () => {
+      mockPrisma.rentalPlan.findMany.mockResolvedValue([mockRawPlan]);
+
+      const result = await planService.getSearchPlans();
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual({
+        id: 'plan-1',
+        name: '经典和服体验',
+        description: '含全套配饰',
+        price: 5000,
+        originalPrice: 8000,
+        imageUrl: '/img/plan1.jpg',
+        region: '京都',
+        merchantName: '和服屋',
+        isCampaign: true, // originalPrice > price → true
+        includes: ['振袖', '特制帯'],
+        planTags: [{ tag: { id: 'tag-1', name: '人気', icon: '🔥', color: '#FF0000' } }],
+        themeId: 'theme-1',
+      });
+    });
+
+    it('merchantName 回退: 无 merchant 时用 storeName', async () => {
+      const planNoMerchant = { ...mockRawPlan, merchant: null };
+      mockPrisma.rentalPlan.findMany.mockResolvedValue([planNoMerchant]);
+
+      const result = await planService.getSearchPlans();
+
+      expect(result[0].merchantName).toBe('祇園店');
+    });
+
+    it('isCampaign 计算: originalPrice 不大于 price 时为 false', async () => {
+      const planSamePrice = { ...mockRawPlan, originalPrice: 5000 };
+      mockPrisma.rentalPlan.findMany.mockResolvedValue([planSamePrice]);
+
+      const result = await planService.getSearchPlans();
+
+      expect(result[0].isCampaign).toBe(false);
+    });
+  });
+
+  describe('getRelatedPlans', () => {
+    const mockRawRelatedPlan = {
+      id: 'related-1',
+      name: '枫叶和服套餐',
+      price: 6000,
+      originalPrice: 9000,
+      imageUrl: '/img/related.jpg',
+      region: '岚山',
+      storeName: '岚山店',
+      isCampaign: false,
+      merchant: { businessName: '京美' },
+      planComponents: [
+        { merchantComponent: { customName: null, template: { name: '小振袖' } } },
+      ],
+      planTags: [
+        { tag: { id: 't1', code: 'popular', name: '人気', icon: '🔥', color: '#FF0000' } },
+        { tag: { id: 't2', code: 'autumn', name: '秋季', icon: '🍂', color: '#FFA500' } },
+      ],
+    };
+
+    it('themeId 为 null 时直接返回空数组', async () => {
+      const result = await planService.getRelatedPlans(null, 'exclude-1');
+
+      expect(result).toEqual([]);
+      expect(mockPrisma.rentalPlan.findMany).not.toHaveBeenCalled();
+    });
+
+    it('查询条件: themeId + 排除当前 id + isActive', async () => {
+      mockPrisma.rentalPlan.findMany.mockResolvedValue([]);
+
+      await planService.getRelatedPlans('theme-1', 'exclude-1');
+
+      expect(mockPrisma.rentalPlan.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            themeId: 'theme-1',
+            id: { not: 'exclude-1' },
+            isActive: true,
+          },
+        })
+      );
+    });
+
+    it('默认 limit = 8', async () => {
+      mockPrisma.rentalPlan.findMany.mockResolvedValue([]);
+
+      await planService.getRelatedPlans('theme-1', 'exclude-1');
+
+      expect(mockPrisma.rentalPlan.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ take: 8 })
+      );
+    });
+
+    it('支持自定义 limit', async () => {
+      mockPrisma.rentalPlan.findMany.mockResolvedValue([]);
+
+      await planService.getRelatedPlans('theme-1', 'exclude-1', 4);
+
+      expect(mockPrisma.rentalPlan.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ take: 4 })
+      );
+    });
+
+    it('返回值正确转换', async () => {
+      mockPrisma.rentalPlan.findMany.mockResolvedValue([mockRawRelatedPlan]);
+
+      const result = await planService.getRelatedPlans('theme-1', 'exclude-1');
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual({
+        id: 'related-1',
+        name: '枫叶和服套餐',
+        price: 6000,
+        originalPrice: 9000,
+        imageUrl: '/img/related.jpg',
+        region: '岚山',
+        merchantName: '京美',
+        isCampaign: true, // originalPrice > price
+        includes: ['小振袖'],
+        tags: [
+          { id: 't1', code: 'popular', name: '人気', icon: '🔥', color: '#FF0000' },
+          { id: 't2', code: 'autumn', name: '秋季', icon: '🍂', color: '#FFA500' },
+        ],
+      });
+    });
+
+    it('merchantName 回退: 无 merchant 时用 storeName', async () => {
+      const planNoMerchant = { ...mockRawRelatedPlan, merchant: null };
+      mockPrisma.rentalPlan.findMany.mockResolvedValue([planNoMerchant]);
+
+      const result = await planService.getRelatedPlans('theme-1', 'exclude-1');
+
+      expect(result[0].merchantName).toBe('岚山店');
+    });
+
+    it('includes 回退: 无 template 时用 customName', async () => {
+      const planCustomName = {
+        ...mockRawRelatedPlan,
+        planComponents: [
+          { merchantComponent: { customName: '手工帯', template: null } },
+        ],
+      };
+      mockPrisma.rentalPlan.findMany.mockResolvedValue([planCustomName]);
+
+      const result = await planService.getRelatedPlans('theme-1', 'exclude-1');
+
+      expect(result[0].includes).toEqual(['手工帯']);
+    });
+
+    it('planTags 限制 3 个 (由 Prisma take 控制)', async () => {
+      // getRelatedPlans 的 select 里 planTags 有 take: 3
+      mockPrisma.rentalPlan.findMany.mockResolvedValue([]);
+
+      await planService.getRelatedPlans('theme-1', 'exclude-1');
+
+      const callArgs = mockPrisma.rentalPlan.findMany.mock.calls[0][0];
+      expect(callArgs.select.planTags.take).toBe(3);
+    });
+  });
 });
