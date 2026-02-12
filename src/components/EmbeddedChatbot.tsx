@@ -24,7 +24,8 @@ export default function EmbeddedChatbot() {
     {
       id: "welcome",
       role: "assistant",
-      content: "您好！我是江户和装工房雅的AI助手 🤖\n\n我可以帮您解答关于和服租赁的各种问题，比如：\n• 租赁流程和价格\n• 着装和归还\n• 预约和取消政策\n• 店铺信息\n\n请在下方输入您的问题，或点击快捷问题开始对话！",
+      content:
+        "您好！我是江户和装工房雅的AI助手 🤖\n\n我可以帮您解答关于和服租赁的各种问题，比如：\n• 租赁流程和价格\n• 着装和归还\n• 预约和取消政策\n• 店铺信息\n\n请在下方输入您的问题，或点击快捷问题开始对话！",
       timestamp: new Date(),
       suggestions: quickQuestions.slice(0, 4),
     },
@@ -126,9 +127,7 @@ export default function EmbeddedChatbot() {
             </div>
           </div>
         </div>
-        <p className="text-center text-white/80 text-sm">
-          有任何关于和服租赁的问题，随时问我！
-        </p>
+        <p className="text-center text-white/80 text-sm">有任何关于和服租赁的问题，随时问我！</p>
       </div>
 
       {/* 消息区域 */}
@@ -166,15 +165,13 @@ export default function EmbeddedChatbot() {
                     : "bg-white border-2 border-gray-200 rounded-tl-none shadow-sm"
                 }`}
               >
-                <p className="text-sm whitespace-pre-line leading-relaxed">
-                  {message.content}
-                </p>
+                <p className="text-sm whitespace-pre-line leading-relaxed">{message.content}</p>
               </div>
             </div>
 
             {/* 建议按钮 */}
             {message.role === "assistant" && message.suggestions && (
-              <div className={`flex flex-wrap gap-2 ${message.role === "user" ? "justify-end pr-13" : "pl-13"}`}>
+              <div className="flex flex-wrap gap-2 pl-13">
                 {message.suggestions.map((suggestion, index) => (
                   <button
                     key={index}
@@ -198,8 +195,14 @@ export default function EmbeddedChatbot() {
             <div className="bg-white border-2 border-gray-200 px-5 py-3 rounded-2xl rounded-tl-none shadow-sm">
               <div className="flex gap-1.5">
                 <div className="w-2.5 h-2.5 bg-gray-400 rounded-full animate-bounce"></div>
-                <div className="w-2.5 h-2.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
-                <div className="w-2.5 h-2.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
+                <div
+                  className="w-2.5 h-2.5 bg-gray-400 rounded-full animate-bounce"
+                  style={{ animationDelay: "0.1s" }}
+                ></div>
+                <div
+                  className="w-2.5 h-2.5 bg-gray-400 rounded-full animate-bounce"
+                  style={{ animationDelay: "0.2s" }}
+                ></div>
               </div>
             </div>
           </div>

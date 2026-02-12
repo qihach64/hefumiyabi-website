@@ -5,10 +5,7 @@ import { z } from "zod";
 import { updatePlanSchema } from "@/server/schemas";
 
 // GET - 获取单个套餐详情（v10.1）
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Await params (Next.js 15 requirement)
     const { id } = await params;
@@ -63,7 +60,7 @@ export async function GET(
               },
             },
           },
-          orderBy: { hotmapOrder: 'asc' },
+          orderBy: { hotmapOrder: "asc" },
         },
         // 升级服务
         planUpgrades: {
@@ -87,7 +84,7 @@ export async function GET(
               },
             },
           },
-          orderBy: { displayOrder: 'asc' },
+          orderBy: { displayOrder: "asc" },
         },
       },
     });
@@ -96,82 +93,86 @@ export async function GET(
       return NextResponse.json({ message: "套餐不存在" }, { status: 404 });
     }
 
-    // 转换 planComponents 数据格式以便前端使用
-    const enhancedPlanComponents = plan.planComponents.map(pc => {
-      const mc = pc.merchantComponent;
-      const template = mc.template;
-      return {
-        id: pc.id,
-        planId: pc.planId,
-        merchantComponentId: pc.merchantComponentId,
-        hotmapX: pc.hotmapX,
-        hotmapY: pc.hotmapY,
-        hotmapLabelPosition: pc.hotmapLabelPosition,
-        hotmapLabelOffsetX: pc.hotmapLabelOffsetX,
-        hotmapLabelOffsetY: pc.hotmapLabelOffsetY,
-        hotmapOrder: pc.hotmapOrder,
-        // 商户组件信息
-        merchantComponent: {
-          id: mc.id,
-          isEnabled: mc.isEnabled,
-          price: mc.price,
-          // 使用商户自定义内容，如果为空则使用模板默认
-          images: mc.images.length > 0 ? mc.images : template.defaultImages,
-          highlights: mc.highlights.length > 0 ? mc.highlights : template.defaultHighlights,
-        },
-        // 模板信息（平台定义）
-        template: {
-          id: template.id,
-          code: template.code,
-          name: template.name,
-          nameJa: template.nameJa,
-          nameEn: template.nameEn,
-          description: template.description,
-          type: template.type,
-          icon: template.icon,
-          basePrice: template.basePrice,
-        },
-        // 有效价格 = 商户价格 ?? 平台建议价
-        effectivePrice: mc.price ?? template.basePrice,
-      };
-    });
+    // 转换 planComponents 数据格式以便前端使用（跳过没有模板的组件）
+    const enhancedPlanComponents = plan.planComponents
+      .filter((pc) => pc.merchantComponent.template !== null)
+      .map((pc) => {
+        const mc = pc.merchantComponent;
+        const template = mc.template!;
+        return {
+          id: pc.id,
+          planId: pc.planId,
+          merchantComponentId: pc.merchantComponentId,
+          hotmapX: pc.hotmapX,
+          hotmapY: pc.hotmapY,
+          hotmapLabelPosition: pc.hotmapLabelPosition,
+          hotmapLabelOffsetX: pc.hotmapLabelOffsetX,
+          hotmapLabelOffsetY: pc.hotmapLabelOffsetY,
+          hotmapOrder: pc.hotmapOrder,
+          // 商户组件信息
+          merchantComponent: {
+            id: mc.id,
+            isEnabled: mc.isEnabled,
+            price: mc.price,
+            // 使用商户自定义内容，如果为空则使用模板默认
+            images: mc.images.length > 0 ? mc.images : template.defaultImages,
+            highlights: mc.highlights.length > 0 ? mc.highlights : template.defaultHighlights,
+          },
+          // 模板信息（平台定义）
+          template: {
+            id: template.id,
+            code: template.code,
+            name: template.name,
+            nameJa: template.nameJa,
+            nameEn: template.nameEn,
+            description: template.description,
+            type: template.type,
+            icon: template.icon,
+            basePrice: template.basePrice,
+          },
+          // 有效价格 = 商户价格 ?? 平台建议价
+          effectivePrice: mc.price ?? template.basePrice,
+        };
+      });
 
-    // 转换 planUpgrades 数据格式以便前端使用
-    const enhancedPlanUpgrades = plan.planUpgrades.map(pu => {
-      const mc = pu.merchantComponent;
-      const template = mc.template;
-      // 有效价格优先级: 套餐覆盖价 > 商户价格 > 平台建议价
-      const effectivePrice = pu.priceOverride ?? mc.price ?? template.basePrice;
-      return {
-        id: pu.id,
-        planId: pu.planId,
-        merchantComponentId: pu.merchantComponentId,
-        priceOverride: pu.priceOverride,
-        isPopular: pu.isPopular,
-        displayOrder: pu.displayOrder,
-        // 商户组件信息
-        merchantComponent: {
-          id: mc.id,
-          isEnabled: mc.isEnabled,
-          price: mc.price,
-          images: mc.images.length > 0 ? mc.images : template.defaultImages,
-          highlights: mc.highlights.length > 0 ? mc.highlights : template.defaultHighlights,
-        },
-        // 模板信息
-        template: {
-          id: template.id,
-          code: template.code,
-          name: template.name,
-          nameJa: template.nameJa,
-          nameEn: template.nameEn,
-          description: template.description,
-          icon: template.icon,
-          basePrice: template.basePrice,
-        },
-        // 有效价格
-        effectivePrice,
-      };
-    });
+    // 转换 planUpgrades 数据格式以便前端使用（跳过没有模板的组件）
+    const enhancedPlanUpgrades = plan.planUpgrades
+      .filter((pu) => pu.merchantComponent.template !== null)
+      .map((pu) => {
+        const mc = pu.merchantComponent;
+        const template = mc.template!;
+        // 有效价格优先级: 套餐覆盖价 > 商户价格 > 平台建议价
+        const effectivePrice = pu.priceOverride ?? mc.price ?? template.basePrice;
+        return {
+          id: pu.id,
+          planId: pu.planId,
+          merchantComponentId: pu.merchantComponentId,
+          priceOverride: pu.priceOverride,
+          isPopular: pu.isPopular,
+          displayOrder: pu.displayOrder,
+          // 商户组件信息
+          merchantComponent: {
+            id: mc.id,
+            isEnabled: mc.isEnabled,
+            price: mc.price,
+            images: mc.images.length > 0 ? mc.images : template.defaultImages,
+            highlights: mc.highlights.length > 0 ? mc.highlights : template.defaultHighlights,
+          },
+          // 模板信息
+          template: {
+            id: template.id,
+            code: template.code,
+            name: template.name,
+            nameJa: template.nameJa,
+            nameEn: template.nameEn,
+            description: template.description,
+            icon: template.icon,
+            basePrice: template.basePrice,
+          },
+          // 有效价格
+          effectivePrice,
+        };
+      });
 
     return NextResponse.json({
       ...plan,
@@ -185,10 +186,7 @@ export async function GET(
 }
 
 // PATCH - 更新套餐（v10.1）
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Await params (Next.js 15 requirement)
     const { id } = await params;
@@ -204,10 +202,7 @@ export async function PATCH(
     });
 
     if (!merchant || merchant.status !== "APPROVED") {
-      return NextResponse.json(
-        { message: "无权限执行此操作" },
-        { status: 403 }
-      );
+      return NextResponse.json({ message: "无权限执行此操作" }, { status: 403 });
     }
 
     const body = await request.json();
@@ -224,10 +219,7 @@ export async function PATCH(
     }
 
     if (plan.merchantId !== merchant.id) {
-      return NextResponse.json(
-        { message: "无权限操作此套餐" },
-        { status: 403 }
-      );
+      return NextResponse.json({ message: "无权限操作此套餐" }, { status: 403 });
     }
 
     // 使用事务更新套餐、标签和组件
@@ -268,7 +260,9 @@ export async function PATCH(
 
           // 时间限制
           availableFrom: validatedData.availableFrom ? new Date(validatedData.availableFrom) : null,
-          availableUntil: validatedData.availableUntil ? new Date(validatedData.availableUntil) : null,
+          availableUntil: validatedData.availableUntil
+            ? new Date(validatedData.availableUntil)
+            : null,
 
           // 状态
           ...(validatedData.status !== undefined && { status: validatedData.status }),
@@ -372,13 +366,13 @@ export async function PATCH(
   } catch (error) {
     if (error instanceof z.ZodError) {
       const errorMessages = error.issues
-        .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
-        .join('; ');
+        .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
+        .join("; ");
 
       return NextResponse.json(
         {
           message: `数据验证失败: ${errorMessages}`,
-          errors: error.issues
+          errors: error.issues,
         },
         { status: 400 }
       );
@@ -390,10 +384,7 @@ export async function PATCH(
 }
 
 // DELETE - 删除套餐（软删除 - 设为不可用）
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Await params (Next.js 15 requirement)
     const { id } = await params;
@@ -409,10 +400,7 @@ export async function DELETE(
     });
 
     if (!merchant || merchant.status !== "APPROVED") {
-      return NextResponse.json(
-        { message: "无权限执行此操作" },
-        { status: 403 }
-      );
+      return NextResponse.json({ message: "无权限执行此操作" }, { status: 403 });
     }
 
     // 验证套餐所有权
@@ -426,10 +414,7 @@ export async function DELETE(
     }
 
     if (plan.merchantId !== merchant.id) {
-      return NextResponse.json(
-        { message: "无权限操作此套餐" },
-        { status: 403 }
-      );
+      return NextResponse.json({ message: "无权限操作此套餐" }, { status: 403 });
     }
 
     // 软删除 - 设为不可用

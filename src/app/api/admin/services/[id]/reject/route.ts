@@ -11,10 +11,7 @@ const rejectSchema = z.object({
  * POST /api/admin/services/[id]/reject
  * 拒绝自定义服务
  */
-export async function POST(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await auth();
 

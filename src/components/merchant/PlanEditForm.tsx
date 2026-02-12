@@ -3,14 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui";
-import {
-  Save,
-  Loader2,
-  FileText,
-  Send,
-  Clock,
-  ArrowLeft,
-} from "lucide-react";
+import { Save, Loader2, FileText, Send, Clock, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 // Tab 组件
@@ -77,7 +70,7 @@ interface PlanComponent {
       name: string;
       type: string;
       icon: string | null;
-    };
+    } | null;
   };
 }
 
@@ -100,13 +93,13 @@ interface PlanUpgrade {
   displayOrder: number;
   merchantComponent: {
     id: string;
-    price: number;
+    price: number | null;
     template: {
       id: string;
       code: string;
       name: string;
       icon: string | null;
-    };
+    } | null;
   };
 }
 
@@ -141,8 +134,8 @@ interface PlanData {
   isCampaign: boolean;
   isLimited?: boolean;
   maxBookings?: number | null;
-  availableFrom?: string | null;
-  availableUntil?: string | null;
+  availableFrom?: string | Date | null;
+  availableUntil?: string | Date | null;
   status?: string;
 }
 
@@ -168,8 +161,7 @@ export default function PlanForm({ plan, mapTemplate }: PlanFormProps) {
   const [success, setSuccess] = useState<string | null>(null);
 
   // 草稿 Store
-  const { saveDraft, getDraft, clearDraft, hasDraft, getLastSaved } =
-    usePlanDraftStore();
+  const { saveDraft, getDraft, clearDraft, hasDraft, getLastSaved } = usePlanDraftStore();
   const [lastSavedTime, setLastSavedTime] = useState<Date | null>(null);
   const [showDraftRecovery, setShowDraftRecovery] = useState(false);
 
@@ -202,8 +194,16 @@ export default function PlanForm({ plan, mapTemplate }: PlanFormProps) {
         selectedTagIds: plan.planTags?.map((pt) => pt.tag.id) || [],
         isLimited: plan.isLimited || false,
         maxBookings: plan.maxBookings || null,
-        availableFrom: plan.availableFrom || null,
-        availableUntil: plan.availableUntil || null,
+        availableFrom: plan.availableFrom
+          ? plan.availableFrom instanceof Date
+            ? plan.availableFrom.toISOString()
+            : plan.availableFrom
+          : null,
+        availableUntil: plan.availableUntil
+          ? plan.availableUntil instanceof Date
+            ? plan.availableUntil.toISOString()
+            : plan.availableUntil
+          : null,
         isFeatured: plan.isFeatured,
         isActive: plan.isActive,
       };
@@ -213,9 +213,9 @@ export default function PlanForm({ plan, mapTemplate }: PlanFormProps) {
   });
 
   // 组件配置
-  const [selectedMerchantComponentIds, setSelectedMerchantComponentIds] = useState<
-    string[]
-  >(plan?.planComponents?.map((pc) => pc.merchantComponentId) || []);
+  const [selectedMerchantComponentIds, setSelectedMerchantComponentIds] = useState<string[]>(
+    plan?.planComponents?.map((pc) => pc.merchantComponentId) || []
+  );
 
   const [componentConfigs, setComponentConfigs] = useState<ComponentConfig[]>(
     plan?.planComponents?.map((pc) => ({
@@ -253,9 +253,7 @@ export default function PlanForm({ plan, mapTemplate }: PlanFormProps) {
           hotmapOrder: pc.hotmapOrder ?? 0,
         }))
       );
-      setSelectedMerchantComponentIds(
-        plan.planComponents.map((pc) => pc.merchantComponentId)
-      );
+      setSelectedMerchantComponentIds(plan.planComponents.map((pc) => pc.merchantComponentId));
     }
   }, [plan?.planComponents]);
 
@@ -343,7 +341,14 @@ export default function PlanForm({ plan, mapTemplate }: PlanFormProps) {
       saveDraft(draftId, formData, componentConfigs, selectedMerchantComponentIds, upgradeConfigs);
       setLastSavedTime(new Date());
     }, 3000);
-  }, [draftId, formData, componentConfigs, selectedMerchantComponentIds, upgradeConfigs, saveDraft]);
+  }, [
+    draftId,
+    formData,
+    componentConfigs,
+    selectedMerchantComponentIds,
+    upgradeConfigs,
+    saveDraft,
+  ]);
 
   // 表单变化时触发自动保存
   useEffect(() => {
@@ -356,10 +361,7 @@ export default function PlanForm({ plan, mapTemplate }: PlanFormProps) {
   }, [formData, componentConfigs, selectedMerchantComponentIds, upgradeConfigs, triggerAutoSave]);
 
   // 表单字段更新
-  const handleFormChange = <K extends keyof PlanFormData>(
-    field: K,
-    value: PlanFormData[K]
-  ) => {
+  const handleFormChange = <K extends keyof PlanFormData>(field: K, value: PlanFormData[K]) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -451,9 +453,7 @@ export default function PlanForm({ plan, mapTemplate }: PlanFormProps) {
 
     try {
       // 新建模式使用 POST，编辑模式使用 PATCH
-      const url = isCreateMode
-        ? "/api/merchant/plans"
-        : `/api/merchant/plans/${plan!.id}`;
+      const url = isCreateMode ? "/api/merchant/plans" : `/api/merchant/plans/${plan!.id}`;
       const method = isCreateMode ? "POST" : "PATCH";
 
       const response = await fetch(url, {
@@ -483,7 +483,9 @@ export default function PlanForm({ plan, mapTemplate }: PlanFormProps) {
         setTimeout(() => setSuccess(null), 3000);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : (isCreateMode ? "创建失败，请重试" : "发布失败，请重试"));
+      setError(
+        err instanceof Error ? err.message : isCreateMode ? "创建失败，请重试" : "发布失败，请重试"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -495,12 +497,8 @@ export default function PlanForm({ plan, mapTemplate }: PlanFormProps) {
     description: formData.description,
     highlights: formData.highlights || null,
     price: Math.round(Number(formData.price) * 100),
-    originalPrice: formData.originalPrice
-      ? Math.round(Number(formData.originalPrice) * 100)
-      : null,
-    depositAmount: formData.depositAmount
-      ? Math.round(Number(formData.depositAmount) * 100)
-      : 0,
+    originalPrice: formData.originalPrice ? Math.round(Number(formData.originalPrice) * 100) : null,
+    depositAmount: formData.depositAmount ? Math.round(Number(formData.depositAmount) * 100) : 0,
     pricingUnit: formData.pricingUnit,
     unitLabel: formData.unitLabel,
     unitDescription: formData.unitDescription || null,
@@ -559,9 +557,7 @@ export default function PlanForm({ plan, mapTemplate }: PlanFormProps) {
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-xl">
             <h3 className="text-[18px] font-semibold text-gray-900 mb-2">发现未保存的编辑</h3>
-            <p className="text-[14px] text-gray-600 mb-6">
-              您有一个未保存的草稿版本，是否要恢复？
-            </p>
+            <p className="text-[14px] text-gray-600 mb-6">您有一个未保存的草稿版本，是否要恢复？</p>
             <div className="flex gap-4">
               <button
                 onClick={recoverDraft}
@@ -681,10 +677,7 @@ export default function PlanForm({ plan, mapTemplate }: PlanFormProps) {
           )}
 
           {activeTab === "upgrades" && (
-            <UpgradesTab
-              selectedUpgrades={upgradeConfigs}
-              onUpgradesChange={setUpgradeConfigs}
-            />
+            <UpgradesTab selectedUpgrades={upgradeConfigs} onUpgradesChange={setUpgradeConfigs} />
           )}
 
           {activeTab === "tags" && (

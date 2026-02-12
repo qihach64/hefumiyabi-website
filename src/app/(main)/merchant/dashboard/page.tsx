@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
+import { BookingStatus } from "@prisma/client";
 import Link from "next/link";
 import {
   Store,
@@ -21,10 +22,10 @@ import {
 import { Button, Badge } from "@/components/ui";
 
 interface MerchantDashboardPageProps {
-  searchParams: {
+  searchParams: Promise<{
     page?: string;
     status?: string;
-  };
+  }>;
 }
 
 const ITEMS_PER_PAGE = 10;
@@ -70,10 +71,15 @@ export default async function MerchantDashboardPage({ searchParams }: MerchantDa
     redirect("/merchant/pending");
   }
 
-  // 构建订单查询条件
+  // 构建订单查询条件（status 需要匹配 BookingStatus 枚举）
+  const validStatuses = Object.values(BookingStatus) as string[];
+  const typedStatus =
+    statusFilter && validStatuses.includes(statusFilter)
+      ? (statusFilter as BookingStatus)
+      : undefined;
   const where = {
     merchantId: merchant.id,
-    ...(statusFilter && { status: statusFilter }),
+    ...(typedStatus && { status: typedStatus }),
   };
 
   // 获取订单总数
@@ -173,9 +179,7 @@ export default async function MerchantDashboardPage({ searchParams }: MerchantDa
         <div className="mb-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                {merchant.businessName}
-              </h1>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">{merchant.businessName}</h1>
               <div className="flex items-center gap-3">
                 <Badge variant={merchant.verified ? "success" : "warning"} size="md">
                   {merchant.verified ? "✓ 已认证" : "待认证"}
@@ -216,9 +220,7 @@ export default async function MerchantDashboardPage({ searchParams }: MerchantDa
                 本月 {thisMonthBookings}
               </Badge>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-1">
-              {totalBookings}
-            </h3>
+            <h3 className="text-2xl font-bold text-gray-900 mb-1">{totalBookings}</h3>
             <p className="text-sm text-gray-600">总订单数</p>
           </div>
 
@@ -248,9 +250,7 @@ export default async function MerchantDashboardPage({ searchParams }: MerchantDa
                 {reviewCount} 评价
               </Badge>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-1">
-              {avgRating.toFixed(1)}
-            </h3>
+            <h3 className="text-2xl font-bold text-gray-900 mb-1">{avgRating.toFixed(1)}</h3>
             <p className="text-sm text-gray-600">平均评分</p>
           </div>
 
@@ -261,9 +261,7 @@ export default async function MerchantDashboardPage({ searchParams }: MerchantDa
                 <Store className="w-6 h-6 text-sakura-600" />
               </div>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-1">
-              {merchant.stores.length}
-            </h3>
+            <h3 className="text-2xl font-bold text-gray-900 mb-1">{merchant.stores.length}</h3>
             <p className="text-sm text-gray-600">店铺数量</p>
           </div>
         </div>
@@ -274,9 +272,7 @@ export default async function MerchantDashboardPage({ searchParams }: MerchantDa
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-gray-900">订单管理</h2>
-                <span className="text-sm text-gray-600">
-                  共 {totalBookings} 个订单
-                </span>
+                <span className="text-sm text-gray-600">共 {totalBookings} 个订单</span>
               </div>
 
               {/* 状态筛选 */}
@@ -379,7 +375,9 @@ export default async function MerchantDashboardPage({ searchParams }: MerchantDa
                                 <div className="flex items-center gap-1">
                                   <Calendar className="w-3.5 h-3.5" />
                                   <span>
-                                    {booking.visitDate ? new Date(booking.visitDate).toLocaleDateString("zh-CN") : new Date(booking.createdAt).toLocaleDateString("zh-CN")}
+                                    {booking.visitDate
+                                      ? new Date(booking.visitDate).toLocaleDateString("zh-CN")
+                                      : new Date(booking.createdAt).toLocaleDateString("zh-CN")}
                                   </span>
                                 </div>
                               </div>
@@ -569,19 +567,12 @@ export default async function MerchantDashboardPage({ searchParams }: MerchantDa
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-semibold text-gray-900 truncate">
-                              {store.name}
-                            </h3>
-                            <Badge
-                              variant={store.isActive ? "success" : "secondary"}
-                              size="sm"
-                            >
+                            <h3 className="font-semibold text-gray-900 truncate">{store.name}</h3>
+                            <Badge variant={store.isActive ? "success" : "secondary"} size="sm">
                               {store.isActive ? "营业中" : "已关闭"}
                             </Badge>
                           </div>
-                          <p className="text-sm text-gray-600 mb-2">
-                            📍 {store.address}
-                          </p>
+                          <p className="text-sm text-gray-600 mb-2">📍 {store.address}</p>
                           <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
                             <span>🏙️ {store.city}</span>
                             {store.phone && <span>📞 {store.phone}</span>}

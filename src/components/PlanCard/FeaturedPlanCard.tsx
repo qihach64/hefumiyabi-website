@@ -9,7 +9,7 @@ import { useCartToggle } from "./useCartToggle";
 
 interface Tag {
   id: string;
-  code: string;
+  code?: string;
   name: string;
   icon: string | null;
   color: string | null;
@@ -20,12 +20,12 @@ interface FeaturedPlanCardProps {
     id: string;
     name: string;
     nameEn?: string;
-    description?: string;
+    description?: string | null;
     price: number;
-    originalPrice?: number;
-    imageUrl?: string;
+    originalPrice?: number | null;
+    imageUrl?: string | null;
     merchantName?: string;
-    region?: string;
+    region?: string | null;
     category?: string;
     duration?: number;
     isCampaign?: boolean;
@@ -35,201 +35,187 @@ interface FeaturedPlanCardProps {
   themeColor?: string;
 }
 
-export default function FeaturedPlanCard({
-  plan,
-  themeColor = '#FF7A9A',
-}: FeaturedPlanCardProps) {
+export default function FeaturedPlanCard({ plan, themeColor = "#FF7A9A" }: FeaturedPlanCardProps) {
   const { isInCart, isAdding, justChanged, lastAction, handleToggleCart } = useCartToggle(plan);
 
   const searchParams = useSearchParams();
 
   const planDetailHref = useMemo(() => {
     const params = new URLSearchParams();
-    const date = searchParams.get('date');
-    if (date) params.set('date', date);
-    const guests = searchParams.get('guests');
-    if (guests) params.set('guests', guests);
+    const date = searchParams.get("date");
+    if (date) params.set("date", date);
+    const guests = searchParams.get("guests");
+    if (guests) params.set("guests", guests);
     const queryString = params.toString();
     return queryString ? `/plans/${plan.id}?${queryString}` : `/plans/${plan.id}`;
   }, [plan.id, searchParams]);
 
   return (
     <Link
-        href={planDetailHref}
-        target="_blank"
-        className="group block bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-300 border border-gray-100 hover:border-sakura-200/50 h-full relative"
-      >
-        <div className="flex flex-col h-full">
-          {/* 图片容器 - 3:4 比例，顶部圆角 */}
-          <div className="relative w-full aspect-[3/4] overflow-hidden rounded-t-xl bg-gray-100 flex-shrink-0">
-            {plan.imageUrl ? (
-              <Image
-                src={plan.imageUrl}
-                alt={plan.name}
-                fill
-                className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-                sizes="(max-width: 1024px) 100vw, 380px"
-              />
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center bg-sakura-50">
-                <span className="text-8xl opacity-20">👘</span>
-              </div>
-            )}
-
-            {/* 精选标签 - Sakura 品牌色 */}
-            <div className="absolute top-3 left-3 z-10">
-              <div className="px-2.5 py-1 rounded-full bg-sakura-600 flex items-center gap-1 shadow-sm">
-                <Award className="w-3.5 h-3.5 text-white" />
-                <span className="text-[12px] font-semibold text-white">
-                  精选推荐
-                </span>
-              </div>
+      href={planDetailHref}
+      target="_blank"
+      className="group block bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-300 border border-gray-100 hover:border-sakura-200/50 h-full relative"
+    >
+      <div className="flex flex-col h-full">
+        {/* 图片容器 - 3:4 比例，顶部圆角 */}
+        <div className="relative w-full aspect-[3/4] overflow-hidden rounded-t-xl bg-gray-100 flex-shrink-0">
+          {plan.imageUrl ? (
+            <Image
+              src={plan.imageUrl}
+              alt={plan.name}
+              fill
+              className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+              sizes="(max-width: 1024px) 100vw, 380px"
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center bg-sakura-50">
+              <span className="text-8xl opacity-20">👘</span>
             </div>
+          )}
 
-            {/* 购物车按钮 - 右上角 */}
-            <button
-              onClick={handleToggleCart}
-              disabled={isAdding}
-              className={`absolute top-3 right-3 p-2.5 rounded-full transition-all glass-button z-10 ${
-                justChanged
-                  ? lastAction === 'add'
-                    ? 'bg-green-50/90 text-green-600 scale-110 border-green-200'
-                    : 'bg-gray-50/90 text-gray-400 scale-110'
-                  : isInCart
-                  ? 'bg-sakura-50/90 text-sakura-600 border-sakura-200'
-                  : 'text-gray-700 hover:scale-110'
-              }`}
-              aria-label={isInCart ? "从购物车移除" : "加入购物车"}
-              title={isInCart ? "点击从购物车移除" : "点击加入购物车"}
-            >
-              {justChanged ? (
-                <Check className="w-5 h-5" />
-              ) : (
-                <ShoppingCart
-                  className={`w-5 h-5 ${isInCart ? 'fill-current' : ''}`}
-                />
-              )}
-            </button>
-
+          {/* 精选标签 - Sakura 品牌色 */}
+          <div className="absolute top-3 left-3 z-10">
+            <div className="px-2.5 py-1 rounded-full bg-sakura-600 flex items-center gap-1 shadow-sm">
+              <Award className="w-3.5 h-3.5 text-white" />
+              <span className="text-[12px] font-semibold text-white">精选推荐</span>
+            </div>
           </div>
 
-          {/* 信息区域 */}
-          <div className="p-5 md:p-6 flex-1 flex flex-col bg-white relative z-20">
+          {/* 购物车按钮 - 右上角 */}
+          <button
+            onClick={handleToggleCart}
+            disabled={isAdding}
+            className={`absolute top-3 right-3 p-2.5 rounded-full transition-all glass-button z-10 ${
+              justChanged
+                ? lastAction === "add"
+                  ? "bg-green-50/90 text-green-600 scale-110 border-green-200"
+                  : "bg-gray-50/90 text-gray-400 scale-110"
+                : isInCart
+                  ? "bg-sakura-50/90 text-sakura-600 border-sakura-200"
+                  : "text-gray-700 hover:scale-110"
+            }`}
+            aria-label={isInCart ? "从购物车移除" : "加入购物车"}
+            title={isInCart ? "点击从购物车移除" : "点击加入购物车"}
+          >
+            {justChanged ? (
+              <Check className="w-5 h-5" />
+            ) : (
+              <ShoppingCart className={`w-5 h-5 ${isInCart ? "fill-current" : ""}`} />
+            )}
+          </button>
+        </div>
 
-            {/* 第一区块：商家 + 地区 + 套餐名称 */}
-            <div className="mb-4">
-              {/* 商家名称 + 地区 */}
-              <div className="flex items-center gap-2 mb-2 text-xs text-gray-500">
-                {plan.merchantName && (
-                  <>
-                    <span className="font-bold tracking-wide uppercase">
-                      {plan.merchantName}
-                    </span>
-                    <div className="h-1 w-1 rounded-full bg-gray-300" />
-                  </>
-                )}
-                {plan.region && (
-                  <div className="flex items-center gap-1">
-                    <MapPin className="w-3 h-3" style={{ color: themeColor }} />
-                    <span>{plan.region}</span>
-                  </div>
-                )}
-              </div>
-
-              {/* 套餐名称 */}
-              <h3 className="text-xl md:text-2xl font-bold text-gray-900 line-clamp-2 leading-tight group-hover:text-sakura-600 transition-colors duration-300">
-                {plan.name}
-              </h3>
+        {/* 信息区域 */}
+        <div className="p-5 md:p-6 flex-1 flex flex-col bg-white relative z-20">
+          {/* 第一区块：商家 + 地区 + 套餐名称 */}
+          <div className="mb-4">
+            {/* 商家名称 + 地区 */}
+            <div className="flex items-center gap-2 mb-2 text-xs text-gray-500">
+              {plan.merchantName && (
+                <>
+                  <span className="font-bold tracking-wide uppercase">{plan.merchantName}</span>
+                  <div className="h-1 w-1 rounded-full bg-gray-300" />
+                </>
+              )}
+              {plan.region && (
+                <div className="flex items-center gap-1">
+                  <MapPin className="w-3 h-3" style={{ color: themeColor }} />
+                  <span>{plan.region}</span>
+                </div>
+              )}
             </div>
 
-            {/* 第二区块：描述（弹性填充） */}
-            {plan.description && (
-              <p className="text-sm text-gray-600 leading-relaxed flex-1 mb-4">
-                {plan.description}
+            {/* 套餐名称 */}
+            <h3 className="text-xl md:text-2xl font-bold text-gray-900 line-clamp-2 leading-tight group-hover:text-sakura-600 transition-colors duration-300">
+              {plan.name}
+            </h3>
+          </div>
+
+          {/* 第二区块：描述（弹性填充） */}
+          {plan.description && (
+            <p className="text-sm text-gray-600 leading-relaxed flex-1 mb-4">{plan.description}</p>
+          )}
+
+          {/* 第三区块：包含（带分割线） */}
+          {plan.includes && plan.includes.length > 0 && (
+            <div className="mb-5">
+              <div
+                className="h-px mb-4 transition-all duration-500 ease-out group-hover:w-20"
+                style={{
+                  width: "40px",
+                  background: `linear-gradient(to right, ${themeColor}50, transparent)`,
+                }}
+              />
+              <p className="text-xs font-semibold text-gray-500 mb-2.5 uppercase tracking-wide">
+                包含
               </p>
-            )}
+              <div className="flex flex-wrap gap-1.5">
+                {plan.includes.map((item, index) => (
+                  <span
+                    key={index}
+                    className="text-xs px-2.5 py-1 rounded-md text-gray-600 font-medium bg-white/80 transition-colors duration-300"
+                    style={{
+                      border: `1px solid ${themeColor}30`,
+                    }}
+                  >
+                    {item}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
-            {/* 第三区块：包含（带分割线） */}
-            {plan.includes && plan.includes.length > 0 && (
-              <div className="mb-5">
-                <div
-                  className="h-px mb-4 transition-all duration-500 ease-out group-hover:w-20"
-                  style={{
-                    width: '40px',
-                    background: `linear-gradient(to right, ${themeColor}50, transparent)`,
-                  }}
-                />
-                <p className="text-xs font-semibold text-gray-500 mb-2.5 uppercase tracking-wide">
-                  包含
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {plan.includes.map((item, index) => (
-                    <span
-                      key={index}
-                      className="text-xs px-2.5 py-1 rounded-md text-gray-600 font-medium bg-white/80 transition-colors duration-300"
-                      style={{
-                        border: `1px solid ${themeColor}30`,
-                      }}
-                    >
-                      {item}
-                    </span>
-                  ))}
+          {/* 第四区块：标签（带分割线） */}
+          {plan.planTags && plan.planTags.length > 0 && (
+            <div className="mb-5">
+              <div
+                className="h-px mb-4 transition-all duration-500 ease-out group-hover:w-20"
+                style={{
+                  width: "40px",
+                  background: `linear-gradient(to right, ${themeColor}50, transparent)`,
+                }}
+              />
+              <p className="text-xs font-semibold text-gray-500 mb-2.5 uppercase tracking-wide">
+                标签
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {plan.planTags.map(({ tag }) => (
+                  <span
+                    key={tag.id}
+                    className="text-xs px-2 py-1 rounded-md text-gray-600 font-medium bg-white/80 transition-colors duration-300"
+                    style={{
+                      border: `1px solid ${themeColor}30`,
+                    }}
+                  >
+                    {tag.icon && <span className="mr-0.5">{tag.icon}</span>}
+                    {tag.name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 第五区块：价格 */}
+          <div className="mt-auto pt-4 border-t border-gray-100/50">
+            <div className="flex items-baseline flex-wrap gap-x-3 gap-y-1">
+              <span className="text-3xl md:text-4xl font-bold text-gray-900 whitespace-nowrap">
+                ¥{(plan.price / 100).toLocaleString()}
+                <span className="text-sm font-normal text-gray-500">/人</span>
+              </span>
+              {plan.originalPrice && plan.originalPrice > 0 && plan.originalPrice > plan.price && (
+                <div className="flex items-baseline gap-2">
+                  <span className="text-base text-gray-400 line-through">
+                    ¥{(plan.originalPrice / 100).toLocaleString()}
+                  </span>
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-100">
+                    省¥{((plan.originalPrice - plan.price) / 100).toLocaleString()}
+                  </span>
                 </div>
-              </div>
-            )}
-
-            {/* 第四区块：标签（带分割线） */}
-            {plan.planTags && plan.planTags.length > 0 && (
-              <div className="mb-5">
-                <div
-                  className="h-px mb-4 transition-all duration-500 ease-out group-hover:w-20"
-                  style={{
-                    width: '40px',
-                    background: `linear-gradient(to right, ${themeColor}50, transparent)`,
-                  }}
-                />
-                <p className="text-xs font-semibold text-gray-500 mb-2.5 uppercase tracking-wide">
-                  标签
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {plan.planTags.map(({ tag }) => (
-                    <span
-                      key={tag.id}
-                      className="text-xs px-2 py-1 rounded-md text-gray-600 font-medium bg-white/80 transition-colors duration-300"
-                      style={{
-                        border: `1px solid ${themeColor}30`,
-                      }}
-                    >
-                      {tag.icon && <span className="mr-0.5">{tag.icon}</span>}
-                      {tag.name}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* 第五区块：价格 */}
-            <div className="mt-auto pt-4 border-t border-gray-100/50">
-              <div className="flex items-baseline flex-wrap gap-x-3 gap-y-1">
-                <span className="text-3xl md:text-4xl font-bold text-gray-900 whitespace-nowrap">
-                  ¥{(plan.price / 100).toLocaleString()}<span className="text-sm font-normal text-gray-500">/人</span>
-                </span>
-                {plan.originalPrice && plan.originalPrice > 0 && plan.originalPrice > plan.price && (
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-base text-gray-400 line-through">
-                      ¥{(plan.originalPrice / 100).toLocaleString()}
-                    </span>
-                    <span
-                      className="text-xs font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-100"
-                    >
-                      省¥{((plan.originalPrice - plan.price) / 100).toLocaleString()}
-                    </span>
-                  </div>
-                )}
-              </div>
+              )}
             </div>
           </div>
         </div>
+      </div>
     </Link>
   );
 }

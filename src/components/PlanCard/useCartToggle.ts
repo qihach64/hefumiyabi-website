@@ -9,8 +9,8 @@ interface CartTogglePlan {
   name: string;
   nameEn?: string;
   price: number;
-  originalPrice?: number;
-  imageUrl?: string;
+  originalPrice?: number | null;
+  imageUrl?: string | null;
   isCampaign?: boolean;
 }
 
@@ -21,13 +21,13 @@ interface CartTogglePlan {
 export function useCartToggle(plan: CartTogglePlan) {
   const [isAdding, setIsAdding] = useState(false);
   const [justChanged, setJustChanged] = useState(false);
-  const [lastAction, setLastAction] = useState<'add' | 'remove' | null>(null);
+  const [lastAction, setLastAction] = useState<"add" | "remove" | null>(null);
 
   const addItem = useCartStore((state) => state.addItem);
   const removeItem = useCartStore((state) => state.removeItem);
   const items = useCartStore((state) => state.items);
 
-  const cartItem = items.find(item => item.planId === plan.id);
+  const cartItem = items.find((item) => item.planId === plan.id);
   const isInCart = !!cartItem;
 
   // 切换购物车状态（动态导入 toast 避免首屏加载 sonner）
@@ -41,21 +41,25 @@ export function useCartToggle(plan: CartTogglePlan) {
 
     if (isInCart && cartItem) {
       removeItem(cartItem.id);
-      setLastAction('remove');
+      setLastAction("remove");
       toast.success("已从购物车移除");
     } else {
       addItem({
-        type: 'PLAN',
+        type: "PLAN",
         planId: plan.id,
         name: plan.name,
         nameEn: plan.nameEn,
         price: plan.price,
-        originalPrice: plan.originalPrice,
-        image: plan.imageUrl,
+        originalPrice: plan.originalPrice ?? undefined,
+        image: plan.imageUrl ?? undefined,
         addOns: [],
         isCampaign: plan.isCampaign,
+        pricingUnit: "person" as const,
+        unitLabel: "人",
+        storeName: "",
+        storeId: "",
       });
-      setLastAction('add');
+      setLastAction("add");
       toast.success("已加入购物车");
     }
 
