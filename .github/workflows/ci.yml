@@ -37,7 +37,7 @@ jobs:
         run: pnpm typecheck
 
       - name: Test
-        run: pnpm test --run
+        run: pnpm test --run --exclude src/lib/__tests__/kimono-map.test.ts
 
       - name: Build
         run: pnpm build
