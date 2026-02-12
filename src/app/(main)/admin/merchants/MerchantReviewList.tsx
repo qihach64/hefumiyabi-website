@@ -8,8 +8,8 @@ import { useRouter } from "next/navigation";
 interface Merchant {
   id: string;
   businessName: string;
-  legalName: string;
-  description: string;
+  legalName: string | null;
+  description: string | null;
   logo: string | null;
   status: string;
   verified: boolean;
@@ -118,10 +118,10 @@ export default function MerchantReviewList({ merchants }: MerchantReviewListProp
                 {status === "ALL"
                   ? "全部"
                   : status === "PENDING"
-                  ? "待审核"
-                  : status === "APPROVED"
-                  ? "已批准"
-                  : "已拒绝"}
+                    ? "待审核"
+                    : status === "APPROVED"
+                      ? "已批准"
+                      : "已拒绝"}
               </button>
             ))}
           </div>
@@ -176,24 +176,16 @@ export default function MerchantReviewList({ merchants }: MerchantReviewListProp
                         <div className="text-sm font-medium text-gray-900">
                           {merchant.businessName}
                         </div>
-                        <div className="text-sm text-gray-500">
-                          {merchant.legalName}
-                        </div>
+                        <div className="text-sm text-gray-500">{merchant.legalName}</div>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {merchant.owner.name || "未设置"}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {merchant.owner.email}
-                    </div>
+                    <div className="text-sm text-gray-900">{merchant.owner.name || "未设置"}</div>
+                    <div className="text-sm text-gray-500">{merchant.owner.email}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {merchant.stores.length} 个店铺
-                    </div>
+                    <div className="text-sm text-gray-900">{merchant.stores.length} 个店铺</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Badge
@@ -201,16 +193,16 @@ export default function MerchantReviewList({ merchants }: MerchantReviewListProp
                         merchant.status === "APPROVED"
                           ? "success"
                           : merchant.status === "PENDING"
-                          ? "warning"
-                          : "danger"
+                            ? "warning"
+                            : "danger"
                       }
                       size="sm"
                     >
                       {merchant.status === "APPROVED"
                         ? "已批准"
                         : merchant.status === "PENDING"
-                        ? "待审核"
-                        : "已拒绝"}
+                          ? "待审核"
+                          : "已拒绝"}
                     </Badge>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -286,9 +278,7 @@ export default function MerchantReviewList({ merchants }: MerchantReviewListProp
                     <h2 className="text-2xl font-bold text-gray-900">
                       {selectedMerchant.businessName}
                     </h2>
-                    <p className="text-gray-600">
-                      {selectedMerchant.legalName}
-                    </p>
+                    <p className="text-gray-600">{selectedMerchant.legalName}</p>
                   </div>
                 </div>
                 <button
@@ -302,41 +292,29 @@ export default function MerchantReviewList({ merchants }: MerchantReviewListProp
               <div className="space-y-6">
                 {/* 商家简介 */}
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                    商家简介
-                  </h3>
-                  <p className="text-gray-600">
-                    {selectedMerchant.description}
-                  </p>
+                  <h3 className="text-sm font-semibold text-gray-700 mb-2">商家简介</h3>
+                  <p className="text-gray-600">{selectedMerchant.description}</p>
                 </div>
 
                 {/* 负责人信息 */}
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-700 mb-3">
-                    负责人信息
-                  </h3>
+                  <h3 className="text-sm font-semibold text-gray-700 mb-3">负责人信息</h3>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-sm">
                       <Mail className="w-4 h-4 text-gray-400" />
-                      <span className="text-gray-600">
-                        {selectedMerchant.owner.email}
-                      </span>
+                      <span className="text-gray-600">{selectedMerchant.owner.email}</span>
                     </div>
                     {selectedMerchant.owner.phone && (
                       <div className="flex items-center gap-2 text-sm">
                         <Phone className="w-4 h-4 text-gray-400" />
-                        <span className="text-gray-600">
-                          {selectedMerchant.owner.phone}
-                        </span>
+                        <span className="text-gray-600">{selectedMerchant.owner.phone}</span>
                       </div>
                     )}
                     <div className="flex items-center gap-2 text-sm">
                       <Calendar className="w-4 h-4 text-gray-400" />
                       <span className="text-gray-600">
                         注册时间：
-                        {new Date(
-                          selectedMerchant.owner.createdAt
-                        ).toLocaleDateString("zh-CN")}
+                        {new Date(selectedMerchant.owner.createdAt).toLocaleDateString("zh-CN")}
                       </span>
                     </div>
                   </div>
@@ -345,15 +323,10 @@ export default function MerchantReviewList({ merchants }: MerchantReviewListProp
                 {/* 店铺信息 */}
                 {selectedMerchant.stores.length > 0 && (
                   <div>
-                    <h3 className="text-sm font-semibold text-gray-700 mb-3">
-                      店铺信息
-                    </h3>
+                    <h3 className="text-sm font-semibold text-gray-700 mb-3">店铺信息</h3>
                     <div className="space-y-2">
                       {selectedMerchant.stores.map((store) => (
-                        <div
-                          key={store.id}
-                          className="flex items-center gap-2 text-sm"
-                        >
+                        <div key={store.id} className="flex items-center gap-2 text-sm">
                           <MapPin className="w-4 h-4 text-gray-400" />
                           <span className="text-gray-600">
                             {store.name} - {store.city}
@@ -368,7 +341,7 @@ export default function MerchantReviewList({ merchants }: MerchantReviewListProp
                 {selectedMerchant.status === "PENDING" && (
                   <div className="flex gap-3 pt-4 border-t">
                     <Button
-                      variant="success"
+                      variant="primary"
                       size="lg"
                       fullWidth
                       onClick={() => handleApprove(selectedMerchant.id)}
@@ -378,7 +351,7 @@ export default function MerchantReviewList({ merchants }: MerchantReviewListProp
                       批准申请
                     </Button>
                     <Button
-                      variant="danger"
+                      variant="destructive"
                       size="lg"
                       fullWidth
                       onClick={() => handleReject(selectedMerchant.id)}

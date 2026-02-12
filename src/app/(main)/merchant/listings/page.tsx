@@ -28,10 +28,7 @@ export default async function MerchantListingsPage() {
     where: {
       merchantId: merchant.id,
     },
-    orderBy: [
-      { isFeatured: "desc" },
-      { createdAt: "desc" },
-    ],
+    orderBy: [{ isFeatured: "desc" }, { createdAt: "desc" }],
     select: {
       id: true,
       slug: true,
@@ -42,7 +39,6 @@ export default async function MerchantListingsPage() {
       isActive: true,
       isFeatured: true,
       isCampaign: true,
-      currentBookings: true,
       createdAt: true,
       duration: true,
       themeId: true,
@@ -59,7 +55,7 @@ export default async function MerchantListingsPage() {
             },
           },
         },
-        orderBy: { hotmapOrder: 'asc' },
+        orderBy: { hotmapOrder: "asc" },
       },
       theme: {
         select: {
@@ -124,7 +120,7 @@ export default async function MerchantListingsPage() {
   const plansWithIncludes = allPlans.map((plan) => ({
     ...plan,
     includes: plan.planComponents.map(
-      (pc) => pc.merchantComponent.template?.name || pc.merchantComponent.customName || '服务'
+      (pc) => pc.merchantComponent.template?.name || pc.merchantComponent.customName || "服务"
     ),
     planComponents: undefined,
   }));

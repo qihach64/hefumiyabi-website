@@ -171,10 +171,7 @@ function PlansClientInner({
     setPendingTheme(theme);
 
     // 使用 nuqs 同步更新主题和清除筛选条件
-    await Promise.all([
-      clearFilters(),
-      setUrlTheme(theme?.slug ?? null),
-    ]);
+    await Promise.all([clearFilters(), setUrlTheme(theme?.slug ?? null)]);
 
     // 重置 pending 状态
     setPendingTheme(undefined);
@@ -187,10 +184,7 @@ function PlansClientInner({
 
   // ========== 价格变更（前端过滤，URL 自动同步）==========
   const handlePriceChange = (range: [number, number]) => {
-    setUrlPriceRange([
-      range[0] > 0 ? range[0] : null,
-      range[1] < maxPrice ? range[1] : null,
-    ]);
+    setUrlPriceRange([range[0] > 0 ? range[0] : null, range[1] < maxPrice ? range[1] : null]);
   };
 
   // ========== 排序变更（前端过滤，URL 自动同步）==========
@@ -210,7 +204,7 @@ function PlansClientInner({
     (sortBy !== "recommended" ? 1 : 0);
 
   // 获取当前显示主题的颜色
-  const themeColor = displayTheme?.color || '#FF7A9A';
+  const themeColor = displayTheme?.color || "#FF7A9A";
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -225,7 +219,9 @@ function PlansClientInner({
           {/* 1. 主题选择器 - 放在最上方 */}
           <div className="pt-6 md:pt-8 pb-4">
             <div className="flex items-center gap-2 mb-4">
-              <span className="text-[13px] font-medium text-gray-500 uppercase tracking-wide">选择主题</span>
+              <span className="text-[13px] font-medium text-gray-500 uppercase tracking-wide">
+                选择主题
+              </span>
               <div className="flex-1 h-px bg-gray-200" />
             </div>
             <ThemeImageSelector
@@ -233,7 +229,7 @@ function PlansClientInner({
               selectedTheme={currentTheme || null}
               onSelect={handleThemeChange}
               isPending={pendingTheme !== undefined}
-              pendingTheme={pendingTheme}
+              pendingThemeSlug={pendingTheme?.slug ?? (pendingTheme === null ? null : undefined)}
             />
           </div>
 
@@ -253,10 +249,7 @@ function PlansClientInner({
                         boxShadow: `0 4px 12px ${themeColor}20, 0 2px 4px ${themeColor}10`,
                       }}
                     >
-                      <ThemeIcon
-                        className="w-7 h-7 md:w-8 md:h-8"
-                        style={{ color: themeColor }}
-                      />
+                      <ThemeIcon className="w-7 h-7 md:w-8 md:h-8" style={{ color: themeColor }} />
                     </div>
                   );
                 })()}
@@ -269,7 +262,7 @@ function PlansClientInner({
                       color: themeColor,
                       textShadow: `0 2px 12px ${themeColor}20, 0 1px 3px ${themeColor}10`,
                       fontWeight: 800,
-                      letterSpacing: '-0.03em',
+                      letterSpacing: "-0.03em",
                     }}
                   >
                     {displayTheme ? displayTheme.name : "探索和服体验"}
@@ -283,21 +276,28 @@ function PlansClientInner({
                     >
                       {displayTheme.description}
                     </p>
-                  ) : !displayTheme && (
-                    <p
-                      className="text-sm md:text-base font-medium leading-relaxed tracking-wide mb-2"
-                      style={{ color: `${themeColor}aa` }}
-                    >
-                      浏览我们精心策划的所有和服体验套餐，找到最适合您的款式与风格。
-                    </p>
+                  ) : (
+                    !displayTheme && (
+                      <p
+                        className="text-sm md:text-base font-medium leading-relaxed tracking-wide mb-2"
+                        style={{ color: `${themeColor}aa` }}
+                      >
+                        浏览我们精心策划的所有和服体验套餐，找到最适合您的款式与风格。
+                      </p>
+                    )
                   )}
 
                   {/* 套餐数量 */}
                   <p className="text-[14px] text-gray-500">
-                    共 <span className="font-medium text-gray-700">{filteredAndSortedPlans.length}</span> 个套餐
-                    {activeFiltersCount > 0 && serverPlans.length !== filteredAndSortedPlans.length && (
-                      <span className="text-gray-400 ml-1">· 已筛选</span>
-                    )}
+                    共{" "}
+                    <span className="font-medium text-gray-700">
+                      {filteredAndSortedPlans.length}
+                    </span>{" "}
+                    个套餐
+                    {activeFiltersCount > 0 &&
+                      serverPlans.length !== filteredAndSortedPlans.length && (
+                        <span className="text-gray-400 ml-1">· 已筛选</span>
+                      )}
                   </p>
                 </div>
               </div>
@@ -333,74 +333,70 @@ function PlansClientInner({
         <div className="container py-6">
           {/* 侧边栏 + 套餐列表 */}
           <div className="flex gap-8">
-          {/* 桌面端侧边栏 */}
-          <div className="hidden lg:block w-72 flex-shrink-0">
-            <div className="sticky top-24">
-              <SearchFilterSidebar
-                categories={tagCategories}
-                selectedTags={selectedTags}
-                onTagsChange={handleTagsChange}
-                priceRange={priceRange}
-                onPriceChange={handlePriceChange}
-                maxPrice={maxPrice}
-                sortBy={sortBy}
-                onSortChange={handleSortChange}
-                onReset={handleReset}
-              />
+            {/* 桌面端侧边栏 */}
+            <div className="hidden lg:block w-72 flex-shrink-0">
+              <div className="sticky top-24">
+                <SearchFilterSidebar
+                  categories={tagCategories}
+                  selectedTags={selectedTags}
+                  onTagsChange={handleTagsChange}
+                  priceRange={priceRange}
+                  onPriceChange={handlePriceChange}
+                  maxPrice={maxPrice}
+                  sortBy={sortBy}
+                  onSortChange={handleSortChange}
+                  onReset={handleReset}
+                />
+              </div>
+            </div>
+
+            {/* 套餐列表 */}
+            <div className="flex-1 min-w-0">
+              {/* 无结果提示 */}
+              {filteredAndSortedPlans.length === 0 ? (
+                <div className="text-center py-20">
+                  <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gray-100 flex items-center justify-center">
+                    <Search className="w-10 h-10 text-gray-400" />
+                  </div>
+                  <h2 className="text-xl font-semibold text-gray-900 mb-2">暂无符合条件的套餐</h2>
+                  <p className="text-gray-500 mb-6">试试调整筛选条件或查看其他主题</p>
+                  <div className="flex items-center justify-center gap-3">
+                    {activeFiltersCount > 0 && (
+                      <button
+                        onClick={handleReset}
+                        className="px-6 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-full hover:bg-gray-50 transition-colors"
+                      >
+                        清除筛选
+                      </button>
+                    )}
+                    <button
+                      onClick={() => {
+                        setPendingTheme(null);
+                        clearAll();
+                      }}
+                      className="px-6 py-2.5 bg-sakura-500 text-white font-medium rounded-full hover:bg-sakura-600 transition-colors"
+                    >
+                      查看全部套餐
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* 套餐网格 - 搜索页使用 3:4 比例 */
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
+                  {filteredAndSortedPlans.map((plan) => (
+                    <PlanCard
+                      key={plan.id}
+                      plan={plan}
+                      variant="soft"
+                      showMerchant={true}
+                      themeColor={themeColor}
+                      aspectRatio="3:4"
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </div>
-
-          {/* 套餐列表 */}
-          <div className="flex-1 min-w-0">
-            {/* 无结果提示 */}
-            {filteredAndSortedPlans.length === 0 ? (
-              <div className="text-center py-20">
-                <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gray-100 flex items-center justify-center">
-                  <Search className="w-10 h-10 text-gray-400" />
-                </div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                  暂无符合条件的套餐
-                </h2>
-                <p className="text-gray-500 mb-6">
-                  试试调整筛选条件或查看其他主题
-                </p>
-                <div className="flex items-center justify-center gap-3">
-                  {activeFiltersCount > 0 && (
-                    <button
-                      onClick={handleReset}
-                      className="px-6 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-full hover:bg-gray-50 transition-colors"
-                    >
-                      清除筛选
-                    </button>
-                  )}
-                  <button
-                    onClick={() => {
-                      setPendingTheme(null);
-                      clearAll();
-                    }}
-                    className="px-6 py-2.5 bg-sakura-500 text-white font-medium rounded-full hover:bg-sakura-600 transition-colors"
-                  >
-                    查看全部套餐
-                  </button>
-                </div>
-              </div>
-            ) : (
-              /* 套餐网格 - 搜索页使用 3:4 比例 */
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
-                {filteredAndSortedPlans.map((plan) => (
-                  <PlanCard
-                    key={plan.id}
-                    plan={plan}
-                    variant="soft"
-                    showMerchant={true}
-                    themeColor={themeColor}
-                    aspectRatio="3:4"
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
         </div>
       </div>
 

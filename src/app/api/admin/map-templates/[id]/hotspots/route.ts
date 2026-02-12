@@ -10,35 +10,23 @@ interface HotspotUpdate {
 }
 
 // PATCH /api/admin/map-templates/[id]/hotspots - 批量更新热点坐标
-export async function PATCH(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await auth();
 
     // 权限检查: 仅 ADMIN 或 STAFF 可修改热点
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { message: "未登录" },
-        { status: 401 }
-      );
+      return NextResponse.json({ message: "未登录" }, { status: 401 });
     }
     if (session.user.role !== "ADMIN" && session.user.role !== "STAFF") {
-      return NextResponse.json(
-        { message: "需要管理员权限" },
-        { status: 403 }
-      );
+      return NextResponse.json({ message: "需要管理员权限" }, { status: 403 });
     }
 
     const { id: templateId } = await params;
-    const { hotspots } = await request.json() as { hotspots: HotspotUpdate[] };
+    const { hotspots } = (await request.json()) as { hotspots: HotspotUpdate[] };
 
     if (!Array.isArray(hotspots) || hotspots.length === 0) {
-      return NextResponse.json(
-        { message: "缺少热点数据" },
-        { status: 400 }
-      );
+      return NextResponse.json({ message: "缺少热点数据" }, { status: 400 });
     }
 
     // 验证模板是否存在
@@ -48,10 +36,7 @@ export async function PATCH(
     });
 
     if (!template) {
-      return NextResponse.json(
-        { message: "地图模板不存在" },
-        { status: 404 }
-      );
+      return NextResponse.json({ message: "地图模板不存在" }, { status: 404 });
     }
 
     // 批量更新热点坐标
@@ -83,18 +68,12 @@ export async function PATCH(
     });
   } catch (error) {
     console.error("Update hotspots error:", error);
-    return NextResponse.json(
-      { message: "更新失败，请重试" },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: "更新失败，请重试" }, { status: 500 });
   }
 }
 
 // GET /api/admin/map-templates/[id]/hotspots - 获取模板的所有热点
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     // 权限检查: 仅 ADMIN 或 STAFF 可查看热点
     const session = await auth();
@@ -126,10 +105,7 @@ export async function GET(
     });
 
     if (!template) {
-      return NextResponse.json(
-        { message: "地图模板不存在" },
-        { status: 404 }
-      );
+      return NextResponse.json({ message: "地图模板不存在" }, { status: 404 });
     }
 
     const hotspots = template.hotspots.map((h) => ({
@@ -149,9 +125,6 @@ export async function GET(
     });
   } catch (error) {
     console.error("Get hotspots error:", error);
-    return NextResponse.json(
-      { message: "获取失败" },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: "获取失败" }, { status: 500 });
   }
 }

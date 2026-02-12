@@ -1,12 +1,12 @@
-import prisma from '@/lib/prisma';
-import type { Prisma } from '@prisma/client';
+import prisma from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 import type {
   HomepageData,
   HomepagePlanCard,
   ThemeSection,
   GetHomepagePlansOptions,
-} from '@/types/homepage';
-import type { MapData, HotspotData } from '@/components/plan/InteractiveKimonoMap/types';
+} from "@/types/homepage";
+import type { MapData, HotspotData } from "@/components/plan/InteractiveKimonoMap/types";
 
 // ============================================================
 // mapData 构建相关类型和辅助函数
@@ -51,8 +51,8 @@ type PlanComponentForMapData = {
 type PlanComponentWithValidHotspot = PlanComponentForMapData & {
   hotmapX: number;
   hotmapY: number;
-  merchantComponent: PlanComponentForMapData['merchantComponent'] & {
-    template: NonNullable<PlanComponentForMapData['merchantComponent']['template']>;
+  merchantComponent: PlanComponentForMapData["merchantComponent"] & {
+    template: NonNullable<PlanComponentForMapData["merchantComponent"]["template"]>;
   };
 };
 
@@ -69,7 +69,7 @@ function buildHotspot(pc: PlanComponentWithValidHotspot, index: number): Hotspot
     id: pc.id,
     x: pc.hotmapX,
     y: pc.hotmapY,
-    labelPosition: (pc.hotmapLabelPosition || 'right') as 'left' | 'right' | 'top' | 'bottom',
+    labelPosition: (pc.hotmapLabelPosition || "right") as "left" | "right" | "top" | "bottom",
     labelOffsetX: pc.hotmapLabelOffsetX,
     labelOffsetY: pc.hotmapLabelOffsetY,
     displayOrder: pc.hotmapOrder ?? index,
@@ -100,7 +100,9 @@ function buildMapData(
 ): MapData | null {
   if (!mapTemplate) return null;
 
-  const hotspots = planComponents.filter(hasValidHotspot).map((pc, index) => buildHotspot(pc, index));
+  const hotspots = planComponents
+    .filter(hasValidHotspot)
+    .map((pc, index) => buildHotspot(pc, index));
 
   return {
     imageUrl: mapTemplate.imageUrl,
@@ -123,7 +125,9 @@ export interface PlansPagePlanCard {
   duration: number;
   isCampaign: boolean;
   includes: string[];
-  planTags: { tag: { id: string; code: string; name: string; icon: string | null; color: string | null } }[];
+  planTags: {
+    tag: { id: string; code: string; name: string; icon: string | null; color: string | null };
+  }[];
   themeId?: string;
   themeName?: string;
   themeIcon?: string;
@@ -155,12 +159,12 @@ export interface PlansPageData {
 
 // 日本传统色系映射 (低饱和度、高明度，与樱花粉协调)
 const THEME_COLOR_MAP: Record<string, string> = {
-  'trendy-photo': '#F28B82',    // 薄红 - 柔和的珊瑚红
-  'formal-ceremony': '#FFCC80', // 杏色 - 温暖的淡橙色
-  'together': '#80CBC4',        // 青磁 - 清新的薄荷青
-  'seasonal': '#AED581',        // 萌黄 - 柔和自然
-  'casual-stroll': '#90CAF9',   // 勿忘草 - 通透的天空蓝
-  'specialty': '#B39DDB',       // 藤紫 - 优雅的浅紫色
+  "trendy-photo": "#F28B82", // 薄红 - 柔和的珊瑚红
+  "formal-ceremony": "#FFCC80", // 杏色 - 温暖的淡橙色
+  together: "#80CBC4", // 青磁 - 清新的薄荷青
+  seasonal: "#AED581", // 萌黄 - 柔和自然
+  "casual-stroll": "#90CAF9", // 勿忘草 - 通透的天空蓝
+  specialty: "#B39DDB", // 藤紫 - 优雅的浅紫色
 };
 
 export interface PlanListParams {
@@ -270,8 +274,8 @@ export const planService = {
       if (location) {
         storeFilter.store = {
           OR: [
-            { city: { contains: location, mode: 'insensitive' } },
-            { name: { contains: location, mode: 'insensitive' } },
+            { city: { contains: location, mode: "insensitive" } },
+            { name: { contains: location, mode: "insensitive" } },
           ],
         };
       }
@@ -287,7 +291,7 @@ export const planService = {
           planStores: { include: { store: true } },
           planTags: { include: { tag: true } },
         },
-        orderBy: [{ isFeatured: 'desc' }, { displayOrder: 'desc' }],
+        orderBy: [{ isFeatured: "desc" }, { displayOrder: "desc" }],
         take: limit,
         skip: offset,
       }),
@@ -397,7 +401,7 @@ export const planService = {
               },
             },
           },
-          orderBy: { hotmapOrder: 'asc' },
+          orderBy: { hotmapOrder: "asc" },
         },
         planUpgrades: {
           select: {
@@ -423,7 +427,7 @@ export const planService = {
               },
             },
           },
-          orderBy: { displayOrder: 'asc' },
+          orderBy: { displayOrder: "asc" },
         },
         planTags: {
           include: {
@@ -464,7 +468,7 @@ export const planService = {
     const result: PlanDetailData = {
       id: plan.id,
       name: plan.name,
-      description: plan.description || '',
+      description: plan.description || "",
       price: plan.price,
       originalPrice: plan.originalPrice || undefined,
       imageUrl: plan.imageUrl || undefined,
@@ -472,24 +476,28 @@ export const planService = {
       duration: plan.duration,
       region: plan.region || undefined,
       storeName: plan.storeName || undefined,
-      highlights: plan.highlights,
+      highlights: plan.highlights ? [plan.highlights] : [],
       isFeatured: plan.isFeatured,
       isActive: plan.isActive,
       isCampaign: plan.isCampaign || !!(plan.originalPrice && plan.originalPrice > plan.price),
       theme: plan.theme,
       campaign: plan.campaign || undefined,
-      merchant: { businessName: plan.merchant?.businessName || '' },
+      merchant: { businessName: plan.merchant?.businessName || "" },
       defaultStore,
       stores,
       components: plan.planComponents.map((pc) => ({
-        name: pc.merchantComponent.customName || pc.merchantComponent.template?.name || '',
+        name: pc.merchantComponent.customName || pc.merchantComponent.template?.name || "",
         icon: pc.merchantComponent.template?.icon || undefined,
       })),
       upgrades: plan.planUpgrades.map((pu) => ({
         id: pu.merchantComponent.id,
-        name: pu.merchantComponent.customName || pu.merchantComponent.template?.name || '',
-        nameEn: pu.merchantComponent.customNameEn || pu.merchantComponent.template?.nameEn || undefined,
-        description: pu.merchantComponent.customDescription || pu.merchantComponent.template?.description || undefined,
+        name: pu.merchantComponent.customName || pu.merchantComponent.template?.name || "",
+        nameEn:
+          pu.merchantComponent.customNameEn || pu.merchantComponent.template?.nameEn || undefined,
+        description:
+          pu.merchantComponent.customDescription ||
+          pu.merchantComponent.template?.description ||
+          undefined,
         price: pu.priceOverride ?? pu.merchantComponent.price ?? 0,
         images: pu.merchantComponent.images,
         highlights: pu.merchantComponent.highlights,
@@ -503,11 +511,14 @@ export const planService = {
         color: pt.tag.color || undefined,
       })),
       // mapData 优化：直接在 service 层构建
-      mapData: await this.buildPlanMapData(plan.planComponents as PlanComponentForMapData[], plan.theme?.mapTemplate ?? null),
+      mapData: await this.buildPlanMapData(
+        plan.planComponents as PlanComponentForMapData[],
+        plan.theme?.mapTemplate ?? null
+      ),
     };
 
     // 开发环境性能日志
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === "development") {
       const totalTime = performance.now() - startTime;
       const transformTime = totalTime - queryTime;
       console.log(`[planService.getDetailById] ⏱️ Total: ${totalTime.toFixed(1)}ms`);
@@ -549,11 +560,11 @@ export const planService = {
         planTags: { include: { tag: true } },
         planComponents: {
           include: { merchantComponent: true },
-          orderBy: { hotmapOrder: 'asc' },
+          orderBy: { hotmapOrder: "asc" },
         },
         planUpgrades: {
           include: { merchantComponent: true },
-          orderBy: { displayOrder: 'asc' },
+          orderBy: { displayOrder: "asc" },
         },
       },
     });
@@ -566,7 +577,7 @@ export const planService = {
         theme: true,
         planStores: { include: { store: true } },
       },
-      orderBy: { displayOrder: 'desc' },
+      orderBy: { displayOrder: "desc" },
       take: limit,
     });
   },
@@ -606,7 +617,7 @@ export const planService = {
               },
             },
           },
-          orderBy: { hotmapOrder: 'asc' },
+          orderBy: { hotmapOrder: "asc" },
         },
         planTags: {
           take: 3,
@@ -616,7 +627,7 @@ export const planService = {
         },
       },
       take: limit,
-      orderBy: [{ isFeatured: 'desc' }, { displayOrder: 'desc' }],
+      orderBy: [{ isFeatured: "desc" }, { displayOrder: "desc" }],
     });
 
     return plans.map((p) => ({
@@ -629,7 +640,7 @@ export const planService = {
       merchantName: p.merchant?.businessName || p.storeName || undefined,
       isCampaign: p.isCampaign || !!(p.originalPrice && p.originalPrice > p.price),
       includes: p.planComponents.map(
-        (pc) => pc.merchantComponent.template?.name || pc.merchantComponent.customName || '服务'
+        (pc) => pc.merchantComponent.template?.name || pc.merchantComponent.customName || "服务"
       ),
       tags: p.planTags.map((pt) => ({
         id: pt.tag.id,
@@ -670,7 +681,7 @@ export const planService = {
           },
         },
       },
-      orderBy: { hotmapOrder: 'asc' as const },
+      orderBy: { hotmapOrder: "asc" as const },
     },
     planTags: {
       select: {
@@ -691,7 +702,9 @@ export const planService = {
     storeName: string | null;
     themeId: string | null;
     merchant: { businessName: string } | null;
-    planComponents: { merchantComponent: { customName: string | null; template: { name: string } | null } }[];
+    planComponents: {
+      merchantComponent: { customName: string | null; template: { name: string } | null };
+    }[];
     planTags: { tag: { id: string; name: string; icon: string | null; color: string | null } }[];
   }): HomepagePlanCard {
     return {
@@ -702,10 +715,10 @@ export const planService = {
       originalPrice: plan.originalPrice,
       imageUrl: plan.imageUrl,
       region: plan.region,
-      merchantName: plan.merchant?.businessName || plan.storeName || '',
+      merchantName: plan.merchant?.businessName || plan.storeName || "",
       isCampaign: !!(plan.originalPrice && plan.originalPrice > plan.price),
       includes: plan.planComponents.map(
-        (pc) => pc.merchantComponent.template?.name || pc.merchantComponent.customName || '服务'
+        (pc) => pc.merchantComponent.template?.name || pc.merchantComponent.customName || "服务"
       ),
       planTags: plan.planTags,
       themeId: plan.themeId,
@@ -724,25 +737,35 @@ export const planService = {
     const [themes, campaigns, stores, tagCategories] = await Promise.all([
       prisma.theme.findMany({
         where: { isActive: true },
-        orderBy: { displayOrder: 'asc' },
+        orderBy: { displayOrder: "asc" },
         select: { id: true, slug: true, name: true, icon: true, color: true, description: true },
       }),
       prisma.campaign.findMany({
         where: { isActive: true, endDate: { gte: new Date() } },
-        orderBy: { priority: 'desc' },
+        orderBy: { priority: "desc" },
         select: {
-          id: true, slug: true, title: true, description: true,
-          isActive: true, priority: true, startDate: true, endDate: true,
+          id: true,
+          slug: true,
+          title: true,
+          description: true,
+          isActive: true,
+          priority: true,
+          startDate: true,
+          endDate: true,
         },
       }),
       prisma.store.findMany({
         select: { id: true, name: true, slug: true },
-        orderBy: { name: 'asc' },
+        orderBy: { name: "asc" },
       }),
       prisma.tagCategory.findMany({
         where: { isActive: true, showInFilter: true },
         select: {
-          id: true, code: true, name: true, icon: true, color: true,
+          id: true,
+          code: true,
+          name: true,
+          icon: true,
+          color: true,
           tags: {
             where: { isActive: true },
             select: { id: true, name: true, icon: true, color: true },
@@ -757,7 +780,7 @@ export const planService = {
         prisma.rentalPlan.findMany({
           where: { isActive: true, themeId: theme.id, ...locationWhere },
           take: limitPerTheme,
-          orderBy: [{ isFeatured: 'desc' }, { isCampaign: 'desc' }, { price: 'asc' }],
+          orderBy: [{ isFeatured: "desc" }, { isCampaign: "desc" }, { price: "asc" }],
           select: this._planCardSelect,
         })
       )
@@ -767,10 +790,10 @@ export const planService = {
     const themeSections: ThemeSection[] = themes.map((theme, i) => ({
       id: theme.id,
       slug: theme.slug,
-      icon: theme.icon || '',
+      icon: theme.icon || "",
       label: theme.name,
-      description: theme.description || '',
-      color: THEME_COLOR_MAP[theme.slug] || theme.color || '',
+      description: theme.description || "",
+      color: THEME_COLOR_MAP[theme.slug] || theme.color || "",
       plans: themePlansResults[i].map((p) => this._transformPlanCard(p)),
     }));
 
@@ -784,7 +807,7 @@ export const planService = {
     const plans = await prisma.rentalPlan.findMany({
       where: { isActive: true, themeId: { not: null } },
       select: this._planCardSelect,
-      orderBy: [{ isFeatured: 'desc' }, { isCampaign: 'desc' }, { price: 'asc' }],
+      orderBy: [{ isFeatured: "desc" }, { isCampaign: "desc" }, { price: "asc" }],
     });
     return plans.map((p) => this._transformPlanCard(p));
   },
@@ -799,7 +822,7 @@ export const planService = {
       // 1. 获取活跃主题
       prisma.theme.findMany({
         where: { isActive: true },
-        orderBy: { displayOrder: 'asc' },
+        orderBy: { displayOrder: "asc" },
         select: {
           id: true,
           slug: true,
@@ -850,7 +873,7 @@ export const planService = {
                 },
               },
             },
-            orderBy: { hotmapOrder: 'asc' },
+            orderBy: { hotmapOrder: "asc" },
           },
           planTags: {
             select: {
@@ -866,11 +889,7 @@ export const planService = {
             },
           },
         },
-        orderBy: [
-          { isFeatured: 'desc' },
-          { isCampaign: 'desc' },
-          { price: 'asc' },
-        ],
+        orderBy: [{ isFeatured: "desc" }, { isCampaign: "desc" }, { price: "asc" }],
       }),
 
       // 3. 获取筛选用的标签分类
@@ -886,7 +905,7 @@ export const planService = {
           icon: true,
           tags: {
             where: { isActive: true },
-            orderBy: { order: 'asc' },
+            orderBy: { order: "asc" },
             select: {
               id: true,
               code: true,
@@ -896,7 +915,7 @@ export const planService = {
             },
           },
         },
-        orderBy: { filterOrder: 'asc' },
+        orderBy: { filterOrder: "asc" },
       }),
 
       // 4. 获取价格范围
@@ -912,7 +931,7 @@ export const planService = {
       slug: theme.slug,
       name: theme.name,
       icon: theme.icon,
-      color: THEME_COLOR_MAP[theme.slug] || theme.color || '',
+      color: THEME_COLOR_MAP[theme.slug] || theme.color || "",
       description: theme.description,
     }));
 
@@ -929,7 +948,7 @@ export const planService = {
       duration: plan.duration,
       isCampaign: !!plan.originalPrice && plan.originalPrice > plan.price,
       includes: plan.planComponents.map(
-        (pc) => pc.merchantComponent.template?.name || pc.merchantComponent.customName || '服务'
+        (pc) => pc.merchantComponent.template?.name || pc.merchantComponent.customName || "服务"
       ),
       planTags: plan.planTags.map((pt) => ({ tag: pt.tag })),
       themeId: plan.themeId || undefined,

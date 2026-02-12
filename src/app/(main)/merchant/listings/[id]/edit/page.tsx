@@ -6,9 +6,9 @@ import { ArrowLeft } from "lucide-react";
 import PlanForm from "@/components/merchant/PlanEditForm";
 
 interface EditListingPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default async function EditListingPage({ params }: EditListingPageProps) {
@@ -183,16 +183,17 @@ export default async function EditListingPage({ params }: EditListingPageProps) 
     <div className="min-h-screen bg-gray-50">
       <div className="container py-8 max-w-7xl">
         {/* 返回按钮 */}
-        <Link href="/merchant/listings" className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 transition-colors">
+        <Link
+          href="/merchant/listings"
+          className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 transition-colors"
+        >
           <ArrowLeft className="w-4 h-4" />
           返回套餐列表
         </Link>
 
         {/* 标题 */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            编辑套餐
-          </h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">编辑套餐</h1>
           <p className="text-gray-600">{plan.name}</p>
         </div>
 

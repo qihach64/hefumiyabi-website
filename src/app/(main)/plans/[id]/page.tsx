@@ -1,6 +1,6 @@
-import { notFound } from 'next/navigation';
-import { planService } from '@/server/services/plan.service';
-import { PlanDetailClient } from './PlanDetailClient';
+import { notFound } from "next/navigation";
+import { planService } from "@/server/services/plan.service";
+import { PlanDetailClient } from "./PlanDetailClient";
 
 // 60 秒 ISR 缓存
 export const revalidate = 60;
@@ -10,10 +10,7 @@ interface PlanDetailPageProps {
   searchParams: Promise<{ store?: string }>;
 }
 
-export default async function PlanDetailPage({
-  params,
-  searchParams,
-}: PlanDetailPageProps) {
+export default async function PlanDetailPage({ params, searchParams }: PlanDetailPageProps) {
   const pageStart = performance.now();
 
   const { id } = await params;
@@ -27,21 +24,20 @@ export default async function PlanDetailPage({
   }
 
   // 开发环境性能日志
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env.NODE_ENV === "development") {
     console.log(`[PlanDetailPage] ⏱️ Total: ${(performance.now() - pageStart).toFixed(1)}ms`);
   }
 
   // relatedPlans 改为客户端懒加载，不阻塞首屏渲染
-  return (
-    <PlanDetailClient
-      plan={plan}
-      mapData={plan.mapData}
-    />
-  );
+  return <PlanDetailClient plan={plan} mapData={plan.mapData} />;
 }
 
-// 静态生成热门套餐页面
+// 静态生成热门套餐页面（CI 无数据库时降级为动态渲染）
 export async function generateStaticParams() {
-  const plans = await planService.getFeatured(20);
-  return plans.map((plan) => ({ id: plan.id }));
+  try {
+    const plans = await planService.getFeatured(20);
+    return plans.map((plan) => ({ id: plan.id }));
+  } catch {
+    return [];
+  }
 }

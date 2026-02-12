@@ -16,7 +16,12 @@
     "migrate:campaigns": "tsx scripts/migrate-campaigns-to-plans.ts",
     "test": "vitest",
     "test:run": "vitest run",
-    "lint:unused": "knip"
+    "typecheck": "tsc --noEmit -p tsconfig.build.json",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint:fix": "eslint --fix",
+    "lint:unused": "knip",
+    "prepare": "husky"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -50,6 +55,15 @@
     "zod": "^4.1.12",
     "zustand": "^5.0.8"
   },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,css,yml,yaml}": [
+      "prettier --write"
+    ]
+  },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@next/bundle-analyzer": "^16.1.6",
@@ -64,10 +78,13 @@
     "@vitejs/plugin-react": "^5.0.4",
     "cheerio": "^1.1.2",
     "eslint": "^9",
-    "eslint-config-next": "^16.1.6",
+    "eslint-config-next": "^15.5.7",
     "happy-dom": "^20.0.0",
+    "husky": "^9.1.7",
     "jsdom": "^27.3.0",
     "knip": "^5.83.1",
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.8.1",
     "tailwindcss": "^4",
     "tsx": "^4.20.6",
     "typescript": "^5",

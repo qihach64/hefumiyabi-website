@@ -47,10 +47,7 @@ export default function BookingSuccessClient() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <p className="text-gray-600 mb-4">预约信息未找到</p>
-          <Link
-            href="/"
-            className="text-rose-600 hover:text-rose-700 font-medium"
-          >
+          <Link href="/" className="text-rose-600 hover:text-rose-700 font-medium">
             返回首页
           </Link>
         </div>
@@ -66,12 +63,8 @@ export default function BookingSuccessClient() {
           <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4">
             <CheckCircle className="w-12 h-12 text-green-600" />
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
-            预约成功！
-          </h1>
-          <p className="text-gray-600">
-            感谢您的预约，我们已收到您的预约信息
-          </p>
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">预约成功！</h1>
+          <p className="text-gray-600">感谢您的预约，我们已收到您的预约信息</p>
         </div>
 
         {/* 预约详情卡片 */}
@@ -79,9 +72,7 @@ export default function BookingSuccessClient() {
           <div className="mb-6 pb-6 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold text-gray-900">预约详情</h2>
-              <span className="text-sm text-gray-500">
-                预约编号: {booking.id.slice(0, 8)}
-              </span>
+              <span className="text-sm text-gray-500">预约编号: {booking.id.slice(0, 8)}</span>
             </div>
           </div>
 
@@ -114,9 +105,7 @@ export default function BookingSuccessClient() {
                           <div className="font-medium text-gray-900">
                             {item.plan?.name || "和服租赁"}
                           </div>
-                          <div className="text-sm text-gray-600 mt-1">
-                            数量: {item.quantity}
-                          </div>
+                          <div className="text-sm text-gray-600 mt-1">数量: {item.quantity}</div>
                           {item.store && (
                             <div className="text-sm text-gray-600 mt-1">
                               店铺: {item.store.name}
@@ -136,12 +125,18 @@ export default function BookingSuccessClient() {
                 <MapPin className="w-5 h-5 text-gray-500 mt-0.5 shrink-0" />
                 <div className="flex-1">
                   <p className="text-sm text-gray-500">店铺</p>
-                  {Array.from(new Set(booking.items.map((item: any) => JSON.stringify({
-                    name: item.store.name,
-                    city: item.store.city,
-                    address: item.store.address,
-                  })))).map((storeJson: string, idx: number) => {
-                    const store = JSON.parse(storeJson);
+                  {Array.from(
+                    new Set(
+                      booking.items.map((item: any) =>
+                        JSON.stringify({
+                          name: item.store.name,
+                          city: item.store.city,
+                          address: item.store.address,
+                        })
+                      )
+                    )
+                  ).map((storeJson, idx: number) => {
+                    const store = JSON.parse(String(storeJson));
                     return (
                       <div key={idx} className="mt-1">
                         <p className="font-medium text-gray-900">{store.name}</p>
@@ -210,9 +205,7 @@ export default function BookingSuccessClient() {
         {/* 游客注册提示 */}
         {!booking.userId && (
           <div className="bg-rose-50 border border-rose-200 rounded-lg p-6 mb-6">
-            <h3 className="font-semibold text-rose-900 mb-2">
-              注册账户享受更多优惠
-            </h3>
+            <h3 className="font-semibold text-rose-900 mb-2">注册账户享受更多优惠</h3>
             <p className="text-sm text-rose-800 mb-4">
               注册后可以查看预约历史、获得会员折扣、优先预约特别活动
             </p>

@@ -2,37 +2,25 @@ import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
-export async function POST(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     // 验证登录和管理员权限
     const session = await auth();
 
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { message: "请先登录" },
-        { status: 401 }
-      );
+      return NextResponse.json({ message: "请先登录" }, { status: 401 });
     }
 
     if (session.user.role !== "ADMIN" && session.user.role !== "STAFF") {
-      return NextResponse.json(
-        { message: "无权限执行此操作" },
-        { status: 403 }
-      );
+      return NextResponse.json({ message: "无权限执行此操作" }, { status: 403 });
     }
 
-    const merchantId = params.id;
+    const { id: merchantId } = await params;
     const body = await request.json();
     const { reason } = body;
 
     if (!reason || reason.trim().length === 0) {
-      return NextResponse.json(
-        { message: "请提供拒绝原因" },
-        { status: 400 }
-      );
+      return NextResponse.json({ message: "请提供拒绝原因" }, { status: 400 });
     }
 
     // 检查商家是否存在
@@ -49,10 +37,7 @@ export async function POST(
     });
 
     if (!merchant) {
-      return NextResponse.json(
-        { message: "商家不存在" },
-        { status: 404 }
-      );
+      return NextResponse.json({ message: "商家不存在" }, { status: 404 });
     }
 
     // 更新商家状态为已拒绝
@@ -86,9 +71,6 @@ export async function POST(
     );
   } catch (error) {
     console.error("拒绝商家失败:", error);
-    return NextResponse.json(
-      { message: "操作失败，请重试" },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: "操作失败，请重试" }, { status: 500 });
   }
 }
