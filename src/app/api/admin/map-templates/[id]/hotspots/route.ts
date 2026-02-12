@@ -17,11 +17,17 @@ export async function PATCH(
   try {
     const session = await auth();
 
-    // 验证用户权限（管理员或商户）
-    if (!session?.user) {
+    // 权限检查: 仅 ADMIN 或 STAFF 可修改热点
+    if (!session?.user?.id) {
       return NextResponse.json(
         { message: "未登录" },
         { status: 401 }
+      );
+    }
+    if (session.user.role !== "ADMIN" && session.user.role !== "STAFF") {
+      return NextResponse.json(
+        { message: "需要管理员权限" },
+        { status: 403 }
       );
     }
 
@@ -90,6 +96,15 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    // 权限检查: 仅 ADMIN 或 STAFF 可查看热点
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ message: "未登录" }, { status: 401 });
+    }
+    if (session.user.role !== "ADMIN" && session.user.role !== "STAFF") {
+      return NextResponse.json({ message: "需要管理员权限" }, { status: 403 });
+    }
+
     const { id: templateId } = await params;
 
     const template = await prisma.mapTemplate.findUnique({

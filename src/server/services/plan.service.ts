@@ -616,7 +616,7 @@ export const planService = {
         },
       },
       take: limit,
-      orderBy: [{ isFeatured: 'desc' }, { currentBookings: 'desc' }],
+      orderBy: [{ isFeatured: 'desc' }, { displayOrder: 'desc' }],
     });
 
     return plans.map((p) => ({

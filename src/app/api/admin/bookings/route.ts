@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 
 export async function GET(request: NextRequest) {
   try {
+    // 权限检查: 仅 ADMIN 或 STAFF 可查看预约列表
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (session.user.role !== "ADMIN" && session.user.role !== "STAFF") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const start = searchParams.get("start");
     const end = searchParams.get("end");

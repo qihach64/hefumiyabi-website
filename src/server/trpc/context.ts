@@ -12,3 +12,8 @@ export async function createContext() {
 }
 
 export type Context = Awaited<ReturnType<typeof createContext>>;
+
+// merchantProcedure 注入到 ctx 中的商家信息
+export type MerchantContext = {
+  merchant: { id: string; status: string; businessName: string };
+};

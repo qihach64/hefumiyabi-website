@@ -2,28 +2,7 @@ import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-
-// 验证 schema
-const createPlanSchema = z.object({
-  name: z.string().min(1, "套餐名称不能为空"),
-  nameEn: z.string().optional().nullable().transform(val => val || ""),
-  description: z.string().min(10, "描述至少需要10个字符"),
-  price: z.number().int().positive("价格必须大于0"),
-  originalPrice: z.number().int().positive().optional().nullable(),
-  depositAmount: z.number().int().nonnegative("押金不能为负数"),
-  duration: z.number().int().positive("时长必须大于0"),
-  imageUrl: z.union([z.string().url(), z.literal("")]).optional().nullable().transform(val => val || ""),
-  images: z.array(z.string().url()).optional().default([]), // 多图支持
-  storeName: z.string().optional().nullable().transform(val => val || ""),
-  region: z.string().optional().nullable().transform(val => val || ""),
-  tags: z.array(z.string()),
-  isActive: z.boolean().default(true),
-  isFeatured: z.boolean().default(false),
-  isLimited: z.boolean().default(false),
-  maxBookings: z.number().int().positive().optional().nullable(),
-  availableFrom: z.union([z.string().datetime(), z.literal("")]).optional().nullable().transform(val => val || ""),
-  availableUntil: z.union([z.string().datetime(), z.literal("")]).optional().nullable().transform(val => val || ""),
-});
+import { createPlanSchema } from "@/server/schemas";
 
 // POST - 创建新套餐
 export async function POST(request: Request) {
@@ -56,7 +35,6 @@ export async function POST(request: Request) {
       data: {
         slug,
         name: validatedData.name,
-        nameEn: validatedData.nameEn || null,
         description: validatedData.description,
         price: validatedData.price,
         originalPrice: validatedData.originalPrice || null,
@@ -66,11 +44,8 @@ export async function POST(request: Request) {
         images: validatedData.images || [],
         storeName: validatedData.storeName || null,
         region: validatedData.region || null,
-        tags: validatedData.tags,
         isActive: validatedData.isActive,
         isFeatured: validatedData.isFeatured,
-        isLimited: validatedData.isLimited,
-        maxBookings: validatedData.maxBookings || null,
         availableFrom: validatedData.availableFrom
           ? new Date(validatedData.availableFrom)
           : null,

@@ -40,11 +40,8 @@ export async function POST(request: Request) {
     const session = await auth();
     const data: BookingRequest = await request.json();
 
-    console.log("Booking request data:", JSON.stringify(data, null, 2));
-
     // Validate items
     if (!data.items || !Array.isArray(data.items) || data.items.length === 0) {
-      console.log("Invalid items:", data.items);
       return NextResponse.json(
         { error: "At least one item is required" },
         { status: 400 }
@@ -55,7 +52,6 @@ export async function POST(request: Request) {
     const hasGuestContact =
       data.guestName && (data.guestEmail || data.guestPhone);
     if (!session?.user?.id && !hasGuestContact) {
-      console.log("Missing contact information.");
       return NextResponse.json(
         { error: "请提供姓名和联系方式（邮箱或电话）" },
         { status: 400 }
@@ -99,7 +95,6 @@ export async function POST(request: Request) {
       const invalidPlanIds = planIds.filter((id) => !existingPlanIds.includes(id));
 
       if (invalidPlanIds.length > 0) {
-        console.log("Invalid plan IDs:", invalidPlanIds);
         return NextResponse.json(
           {
             error: "部分套餐已不存在，请刷新页面重新选择",
