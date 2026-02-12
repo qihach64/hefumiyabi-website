@@ -226,7 +226,6 @@ export interface PlanDetailData {
   theme: { id: string; slug: string; name: string };
   campaign?: { id: string; slug: string; title: string; description: string | null };
   merchant: { businessName: string };
-  defaultStore: PlanDetailStoreData | null;
   stores: PlanDetailStoreData[];
   components: PlanDetailComponentData[];
   upgrades: PlanDetailUpgradeData[];
@@ -303,7 +302,7 @@ export const planService = {
    * - 统一处理 Store fallback
    * - 返回格式化的 PlanDetailData
    */
-  async getDetailById(id: string, storeId?: string): Promise<PlanDetailData | null> {
+  async getDetailById(id: string): Promise<PlanDetailData | null> {
     const startTime = performance.now();
     const queryStart = performance.now();
 
@@ -452,15 +451,6 @@ export const planService = {
       openingHours: ps.store.openingHours || undefined,
     }));
 
-    let defaultStore: PlanDetailStoreData | null = null;
-    if (storeId) {
-      // 优先使用 URL 传入的 storeId
-      defaultStore = stores.find((s) => s.id === storeId) || stores[0] || null;
-    } else {
-      // 使用第一个关联店铺
-      defaultStore = stores[0] || null;
-    }
-
     const result: PlanDetailData = {
       id: plan.id,
       name: plan.name,
@@ -479,7 +469,6 @@ export const planService = {
       theme: plan.theme,
       campaign: plan.campaign || undefined,
       merchant: { businessName: plan.merchant?.businessName || '' },
-      defaultStore,
       stores,
       components: plan.planComponents.map((pc) => ({
         name: pc.merchantComponent.customName || pc.merchantComponent.template?.name || '',
