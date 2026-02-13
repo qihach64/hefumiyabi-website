@@ -24,6 +24,7 @@ allowed-tools: Read, Edit, Write, Grep, Glob
 当用户提出以下类型的请求时，**主动使用此 skill**：
 
 ### 明确触发
+
 - 写一个 xxx 组件 / 页面 / 卡片
 - 优化 / 美化 / 调整 UI
 - 改 xxx 的样式 / 颜色 / 布局
@@ -31,12 +32,14 @@ allowed-tools: Read, Edit, Write, Grep, Glob
 - 新建 / 重构 React 组件
 
 ### 隐式触发
+
 - 涉及 Tailwind CSS 类名修改
 - 涉及颜色、字体、间距、圆角等视觉属性
 - 创建或修改 `.tsx` 文件中的 JSX 结构
 - 讨论页面布局或用户体验
 
 ### 不触发
+
 - 纯后端 API 逻辑
 - 数据库操作
 - 非视觉相关的 TypeScript 类型定义
@@ -62,16 +65,22 @@ allowed-tools: Read, Edit, Write, Grep, Glob
 **在写任何前端代码前，先检查这些常见错误：**
 
 ### 颜色禁区
+
 ```tsx
 // ❌ 绝对禁止的颜色
+bg-rose-*      // 用 sakura-* 代替（认证页常见错误）
+bg-pink-*      // 用 sakura-* 代替
 bg-purple-*    // 土气！用 sakura-*
 bg-violet-*    // 土气！用 sakura-*
 bg-indigo-*    // 不协调
-bg-pink-*      // 用 sakura-* 代替
-from-purple-* to-pink-*  // AI slop 渐变
+from-rose-* to-pink-*     // 认证页常见错误
+from-purple-* to-pink-*   // AI slop 渐变
+from-blue-* via-purple-*  // AI 聊天框常见错误，用 sakura-*
+// ⚠️ blue-* 仅限语义用途（信息提示 bg-blue-50），禁止用于品牌/主题元素
 ```
 
 ### 间距禁区
+
 ```tsx
 // ❌ 禁止非 4 倍数
 gap-5  gap-7  gap-9  p-5  p-7  mb-5  mb-9
@@ -80,6 +89,7 @@ gap-4  gap-6  gap-8  p-4  p-6  mb-4  mb-8
 ```
 
 ### 字号禁区
+
 ```tsx
 // ❌ 禁止 Tailwind 默认字号
 text-sm  text-base  text-lg  text-xl  text-2xl
@@ -88,6 +98,7 @@ text-[12px]  text-[14px]  text-[15px]  text-[16px]  text-[22px]  text-[26px]
 ```
 
 ### 圆角禁区
+
 ```tsx
 // ❌ 禁止
 rounded-md  rounded-sm  rounded-3xl
@@ -96,6 +107,7 @@ rounded-lg (按钮)  rounded-xl (卡片)  rounded-2xl (Hero)  rounded-full (头�
 ```
 
 ### 动画禁区
+
 ```tsx
 // ❌ 禁止
 duration-100  duration-150  duration-700  duration-1000
@@ -105,17 +117,97 @@ duration-200  duration-300  duration-500
 hover:scale-105  hover:-translate-y-1
 ```
 
+### 行为禁区
+
+```tsx
+// ❌ 内部链接禁止新窗口打开（电商体验差）
+<Link href="/plans/[id]" target="_blank">  // ❌ 绝对禁止
+
+// ❌ 禁止 emoji 作为专业页面的占位图
+<span className="text-6xl">👘</span>       // ❌ 用 Lucide 图标或 SVG 装饰代替
+
+// ❌ 禁止在组件中留调试代码
+console.log(...)                            // ❌ 生产组件中不允许
+let renderCount = 0                         // ❌ 调试计数器
+performance.now()                           // ❌ 非必要的性能测量
+
+// ❌ 禁止用 /logo.png 图片作 Logo — 全站统一用 CSS 家纹
+<Image src="/logo.png" />                   // ❌ 用下方「品牌家纹」组件
+```
+
+---
+
+## 🏯 品牌家纹组件（Brand Kamon）
+
+全站统一的 CSS 家纹 Logo，**禁止使用 /logo.png 图片**。
+
+### 标准家纹（3 种尺寸）
+
+```tsx
+// 尺寸映射
+const kamonSizes = {
+  sm: "w-8 h-8", // Footer、次要位置
+  md: "w-10 h-10", // Header（默认）
+  lg: "w-14 h-14", // Auth 页面、独立页面
+};
+
+// ✅ 标准家纹 JSX（以 md 为例）
+<div className="relative w-10 h-10 shrink-0">
+  <div className="absolute inset-0 rounded-full border-2 border-sakura-500" />
+  <div
+    className="absolute inset-1 rounded-full border border-sakura-400/50"
+    style={{
+      background:
+        "repeating-conic-gradient(from 0deg, transparent 0deg 30deg, rgba(236, 72, 153, 0.06) 30deg 60deg)",
+    }}
+  />
+  <div className="absolute inset-[6px] rounded-full bg-white" />
+  <div className="absolute inset-0 flex items-center justify-center">
+    <span
+      className="font-serif text-[14px] font-medium text-sakura-600 select-none"
+      style={{ fontFamily: '"Noto Serif JP", "Source Han Serif", serif' }}
+    >
+      一
+    </span>
+  </div>
+</div>;
+```
+
+### 品牌名排版（家纹旁边）
+
+```tsx
+// ✅ Header/Footer 品牌名
+<div className="flex flex-col leading-none">
+  <span className="font-serif text-[18px] text-sakura-600">
+    <span className="italic font-medium">Kimono</span>
+    <span className="font-light ml-1">One</span>
+  </span>
+  <span className="text-[10px] tracking-[0.25em] mt-1 font-medium text-sakura-500/70">
+    着物レンタル
+  </span>
+</div>
+```
+
+### 使用场景
+
+| 场景         | 尺寸      | 背景色         | 注意                        |
+| ------------ | --------- | -------------- | --------------------------- |
+| Header       | md (w-10) | `bg-white`     | 支持 hover/transparent 切换 |
+| Footer       | sm (w-10) | `bg-[#FDFBF7]` | 内圈背景色匹配 Footer 背景  |
+| Auth 页面    | lg (w-14) | `bg-white`     | 居中展示，无需 hover 效果   |
+| About/独立页 | lg+       | 按需           | 可放大用作装饰性图案        |
+
 ---
 
 ## 🔤 字体系统（Typography）
 
 ### 字体家族
 
-| 用途 | 字体类名 | 字体栈 | 示例文本 |
-|------|----------|--------|----------|
-| 日文标题 | `font-mincho` | Shippori Mincho | 「一の着物」「京都・和服体験」 |
-| 中文标题 | `font-serif` | Noto Serif SC (思源宋体) | 套餐详情、限时优惠 |
-| 正文内容 | `font-sans` | Noto Sans SC | 描述文字、按钮文案 |
+| 用途     | 字体类名      | 字体栈                   | 示例文本                       |
+| -------- | ------------- | ------------------------ | ------------------------------ |
+| 日文标题 | `font-mincho` | Shippori Mincho          | 「一の着物」「京都・和服体験」 |
+| 中文标题 | `font-serif`  | Noto Serif SC (思源宋体) | 套餐详情、限时优惠             |
+| 正文内容 | `font-sans`   | Noto Sans SC             | 描述文字、按钮文案             |
 
 ### 使用规范
 
@@ -139,14 +231,14 @@ hover:scale-105  hover:-translate-y-1
 
 ### 字体使用场景速查
 
-| 场景 | 字体 | 示例 |
-|------|------|------|
-| Hero 主标题 | `font-mincho` | 一の着物 |
-| 竖排装饰文字 | `font-mincho` | 京都・和服体験 |
-| 区块标题 | `font-serif` | 套餐详情 |
-| 卡片标题 | `font-sans` + `font-semibold` | 经典女士套餐 |
-| 正文描述 | `font-sans` | 包含专业着装服务... |
-| 按钮/标签 | `font-sans` + `font-medium` | 立即预订 |
+| 场景         | 字体                          | 示例                |
+| ------------ | ----------------------------- | ------------------- |
+| Hero 主标题  | `font-mincho`                 | 一の着物            |
+| 竖排装饰文字 | `font-mincho`                 | 京都・和服体験      |
+| 区块标题     | `font-serif`                  | 套餐详情            |
+| 卡片标题     | `font-sans` + `font-semibold` | 经典女士套餐        |
+| 正文描述     | `font-sans`                   | 包含专业着装服务... |
+| 按钮/标签    | `font-sans` + `font-medium`   | 立即预订            |
 
 ---
 
@@ -154,11 +246,11 @@ hover:scale-105  hover:-translate-y-1
 
 ### 背景色规范
 
-| 页面类型 | 背景色 | CSS 类 | 氛围描述 |
-|----------|--------|--------|----------|
-| 高能量页 | 纯白 | `bg-white` | 首页、搜索结果 - 明亮开放，激发探索欲 |
-| 沉浸体验页 | 米白 | `bg-[#FDFBF7]` | 详情页、预览页 - 温暖宁静，如宣纸质感 |
-| 功能操作页 | 浅灰 | `bg-gray-50` | 结账、表单、后台 - 中性专业，减少干扰 |
+| 页面类型   | 背景色 | CSS 类         | 氛围描述                              |
+| ---------- | ------ | -------------- | ------------------------------------- |
+| 高能量页   | 纯白   | `bg-white`     | 首页、搜索结果 - 明亮开放，激发探索欲 |
+| 沉浸体验页 | 米白   | `bg-[#FDFBF7]` | 详情页、预览页 - 温暖宁静，如宣纸质感 |
+| 功能操作页 | 浅灰   | `bg-gray-50`   | 结账、表单、后台 - 中性专业，减少干扰 |
 
 ```tsx
 // ✅ 首页 - 明亮白色
@@ -236,33 +328,33 @@ hover:scale-105  hover:-translate-y-1
 
 ### Framer Motion 使用范围
 
-| 场景 | 是否使用 | 原因 |
-|------|----------|------|
-| 首页 Hero | ✅ 使用 | 品牌展示，需要仪式感 |
-| 页面入场 | ❌ 不使用 | 避免拖慢感知速度 |
-| 详情页内容 | ❌ 不使用 | 用户需要快速浏览信息 |
-| Modal/Drawer | ✅ 使用 | 状态转换需要平滑过渡 |
-| 卡片 Hover | ❌ 不使用 | 用 CSS transition 即可 |
+| 场景         | 是否使用  | 原因                   |
+| ------------ | --------- | ---------------------- |
+| 首页 Hero    | ✅ 使用   | 品牌展示，需要仪式感   |
+| 页面入场     | ❌ 不使用 | 避免拖慢感知速度       |
+| 详情页内容   | ❌ 不使用 | 用户需要快速浏览信息   |
+| Modal/Drawer | ✅ 使用   | 状态转换需要平滑过渡   |
+| 卡片 Hover   | ❌ 不使用 | 用 CSS transition 即可 |
 
 ### CSS Transition 规范
 
 ```tsx
 // ✅ 标准过渡（最常用）
-className="transition-all duration-300"
+className = "transition-all duration-300";
 
 // ✅ 缓慢优雅过渡（Zen 感）
-className="transition-all duration-500"
+className = "transition-all duration-500";
 
 // ✅ 卡片 hover
-className="hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
+className = "hover:shadow-lg hover:-translate-y-1 transition-all duration-300";
 
 // ✅ 图片 hover
-className="group-hover:scale-105 transition-transform duration-700 ease-out"
+className = "group-hover:scale-105 transition-transform duration-700 ease-out";
 
 // ❌ 禁止
-className="duration-100"  // ❌ 太快，感觉廉价
-className="duration-1000" // ❌ 太慢，感觉拖沓
-className="animate-bounce" // ❌ 太活泼，不符合 Zen
+className = "duration-100"; // ❌ 太快，感觉廉价
+className = "duration-1000"; // ❌ 太慢，感觉拖沓
+className = "animate-bounce"; // ❌ 太活泼，不符合 Zen
 ```
 
 ---
@@ -271,16 +363,16 @@ className="animate-bounce" // ❌ 太活泼，不符合 Zen
 
 ### 多语言使用场景
 
-| 场景 | 日文 | 中文 | 英文 |
-|------|------|------|------|
-| Hero 主标题 | ✅ 首选 | — | — |
-| Hero 副标题 | ✅ 可选 | — | — |
-| 区块小标题标签 | — | — | ✅ 大写 |
-| 区块主标题 | — | ✅ 首选 | — |
-| 正文内容 | — | ✅ 首选 | — |
-| 按钮文案 | — | ✅ 首选 | — |
-| 状态标签 | — | ✅ 首选 | — |
-| 占位符提示 | — | ✅ 首选 | — |
+| 场景           | 日文    | 中文    | 英文    |
+| -------------- | ------- | ------- | ------- |
+| Hero 主标题    | ✅ 首选 | —       | —       |
+| Hero 副标题    | ✅ 可选 | —       | —       |
+| 区块小标题标签 | —       | —       | ✅ 大写 |
+| 区块主标题     | —       | ✅ 首选 | —       |
+| 正文内容       | —       | ✅ 首选 | —       |
+| 按钮文案       | —       | ✅ 首选 | —       |
+| 状态标签       | —       | ✅ 首选 | —       |
+| 占位符提示     | —       | ✅ 首选 | —       |
 
 ```tsx
 // ✅ 正确的多语言组合
@@ -306,18 +398,18 @@ className="animate-bounce" // ❌ 太活泼，不符合 Zen
 
 区别于冷灰色系，侘寂色系带有温暖的褐调，如同老宣纸、茶室木材的自然色泽。
 
-| Token | 色值 | 日文名 | 用途 |
-|-------|------|--------|------|
-| `wabi-50` | `#FDFBF7` | 宣纸 | 沉浸页面背景 |
-| `wabi-100` | `#F5F0E8` | 绢白 | 卡片背景、hover |
-| `wabi-200` | `#E8E2DC` | 枯草 | 分割线、边框 |
-| `wabi-300` | `#D4CCC2` | 灰梅 | 深边框 |
-| `wabi-400` | `#B8A89A` | 墨淡 | 装饰文字、图标 |
-| `wabi-500` | `#8B7355` | 路考茶 | 次要图标 |
-| `wabi-600` | `#5C5854` | 鼠灰 | 次要正文 |
-| `wabi-700` | `#3D3A38` | 墨鼠 | 正文 |
-| `wabi-800` | `#2D2A26` | 漆黑 | 标题 |
-| `wabi-900` | `#1A1816` | 玄黑 | 最深色 |
+| Token      | 色值      | 日文名 | 用途            |
+| ---------- | --------- | ------ | --------------- |
+| `wabi-50`  | `#FDFBF7` | 宣纸   | 沉浸页面背景    |
+| `wabi-100` | `#F5F0E8` | 绢白   | 卡片背景、hover |
+| `wabi-200` | `#E8E2DC` | 枯草   | 分割线、边框    |
+| `wabi-300` | `#D4CCC2` | 灰梅   | 深边框          |
+| `wabi-400` | `#B8A89A` | 墨淡   | 装饰文字、图标  |
+| `wabi-500` | `#8B7355` | 路考茶 | 次要图标        |
+| `wabi-600` | `#5C5854` | 鼠灰   | 次要正文        |
+| `wabi-700` | `#3D3A38` | 墨鼠   | 正文            |
+| `wabi-800` | `#2D2A26` | 漆黑   | 标题            |
+| `wabi-900` | `#1A1816` | 玄黑   | 最深色          |
 
 ### 使用场景
 
@@ -341,30 +433,33 @@ className="animate-bounce" // ❌ 太活泼，不符合 Zen
 
 ### 与 Gray 色系的区别
 
-| 场景 | 使用 Wabi | 使用 Gray |
-|------|-----------|-----------|
-| 详情页背景 | ✅ `wabi-50` | ❌ |
-| 结账页背景 | ❌ | ✅ `gray-50` |
-| 日式装饰 | ✅ `wabi-400` | ❌ |
-| 正文文本 | ❌ | ✅ `gray-700` |
-| 分割线 | ✅ `wabi-200` (详情页) | ✅ `gray-200` (其他页) |
+| 场景       | 使用 Wabi              | 使用 Gray              |
+| ---------- | ---------------------- | ---------------------- |
+| 详情页背景 | ✅ `wabi-50`           | ❌                     |
+| 结账页背景 | ❌                     | ✅ `gray-50`           |
+| 日式装饰   | ✅ `wabi-400`          | ❌                     |
+| 正文文本   | ❌                     | ✅ `gray-700`          |
+| 分割线     | ✅ `wabi-200` (详情页) | ✅ `gray-200` (其他页) |
 
 ---
 
 ## 🚨 核心原则（必须遵守）
 
 ### 1. 永远不要随意修改现有设计风格
+
 - ❌ 不要引入新的颜色值（除非在设计系统中已定义）
 - ❌ 不要使用非标准的间距（必须是 4 的倍数）
 - ❌ 不要改变已有组件的圆角、阴影、字体大小
 - ❌ 不要创建与现有风格不一致的新组件
 
 ### 2. 优先使用现有组件和模式
+
 - ✅ 查找 `src/components/` 中是否已有类似组件
 - ✅ 复用 `UI_UX_DESIGN_GUIDE.md` 中定义的样式
 - ✅ 参考现有页面的布局模式
 
 ### 3. 保持设计系统的完整性
+
 - ✅ 所有新样式必须在 `UI_UX_DESIGN_GUIDE.md` 中有依据
 - ✅ 使用设计 token（CSS 变量）而非硬编码值
 - ✅ 遵循 Airbnb 的视觉语言
@@ -376,6 +471,7 @@ className="animate-bounce" // ❌ 太活泼，不符合 Zen
 ### 主色调 - 樱花粉（Sakura）
 
 **使用优先级**：
+
 ```tsx
 // ✅ 正确使用 - ONLY Sakura 主题色
 bg-sakura-50     // 极浅背景（卡片背景、浅色区域）
@@ -407,6 +503,7 @@ border-purple-500     // ❌ 边框也不行！
 ```
 
 **🚨 特别警告：AI 功能相关元素**
+
 ```tsx
 // ❌ 错误示例（土气、不一致）
 <div className="bg-gradient-to-r from-purple-600 to-pink-600">
@@ -424,19 +521,20 @@ border-purple-500     // ❌ 边框也不行！
 ### 中性色系统
 
 **文本层级**（严格遵守）：
+
 ```tsx
 // ✅ 正确的文本颜色
-text-gray-900    // 主标题、重要文本
-text-gray-800    // 二级标题
-text-gray-700    // 正文文本
-text-gray-600    // 次要文本
-text-gray-500    // 占位符、禁用状态
-text-gray-400    // 辅助信息
+text - gray - 900; // 主标题、重要文本
+text - gray - 800; // 二级标题
+text - gray - 700; // 正文文本
+text - gray - 600; // 次要文本
+text - gray - 500; // 占位符、禁用状态
+text - gray - 400; // 辅助信息
 
 // ❌ 禁止使用
-text-black       // 太硬，不柔和
-text-gray-950    // 不在设计系统中
-text-slate-600   // 不要使用 slate
+text - black; // 太硬，不柔和
+text - gray - 950; // 不在设计系统中
+text - slate - 600; // 不要使用 slate
 ```
 
 ### 语义颜色（仅用于状态提示）
@@ -469,30 +567,30 @@ bg-indigo-50     // ❌ 绝对禁止！
 
 ### 主题色映射表
 
-| 主题 Slug | 颜色值 | 色名 | 日文 | 感觉描述 |
-|-----------|--------|------|------|----------|
-| `trendy-photo` | `#F28B82` | 薄红 | Usu-beni | 柔和的珊瑚调，像少女脸颊的红晕 |
-| `formal-ceremony` | `#B39DDB` | 藤紫 | Fuji-murasaki | 紫藤花的颜色，优雅高贵 |
-| `together` | `#80CBC4` | 青磁 | Seiji | 清透的薄荷青，粉色的完美互补 |
-| `seasonal` | `#AED581` | 萌黄 | Moegi | 春天新芽的嫩绿，充满生机 |
-| `casual-stroll` | `#90CAF9` | 勿忘草 | Wasurenagusa | 通透的天空蓝，轻盈自在 |
-| `specialty` | `#FFCC80` | 杏色 | Anzu | 温暖的淡橙色，亲切包容 |
+| 主题 Slug         | 颜色值    | 色名   | 日文          | 感觉描述                       |
+| ----------------- | --------- | ------ | ------------- | ------------------------------ |
+| `trendy-photo`    | `#F28B82` | 薄红   | Usu-beni      | 柔和的珊瑚调，像少女脸颊的红晕 |
+| `formal-ceremony` | `#B39DDB` | 藤紫   | Fuji-murasaki | 紫藤花的颜色，优雅高贵         |
+| `together`        | `#80CBC4` | 青磁   | Seiji         | 清透的薄荷青，粉色的完美互补   |
+| `seasonal`        | `#AED581` | 萌黄   | Moegi         | 春天新芽的嫩绿，充满生机       |
+| `casual-stroll`   | `#90CAF9` | 勿忘草 | Wasurenagusa  | 通透的天空蓝，轻盈自在         |
+| `specialty`       | `#FFCC80` | 杏色   | Anzu          | 温暖的淡橙色，亲切包容         |
 
 ### 代码实现
 
 ```tsx
 // ✅ 前端主题色映射（覆盖数据库颜色）
 const themeColorMap: Record<string, string> = {
-  'trendy-photo': '#F28B82',    // 薄红
-  'formal-ceremony': '#B39DDB', // 藤紫
-  'together': '#80CBC4',        // 青磁
-  'seasonal': '#AED581',        // 萌黄
-  'casual-stroll': '#90CAF9',   // 勿忘草
-  'specialty': '#FFCC80',       // 杏色
+  "trendy-photo": "#F28B82", // 薄红
+  "formal-ceremony": "#B39DDB", // 藤紫
+  together: "#80CBC4", // 青磁
+  seasonal: "#AED581", // 萌黄
+  "casual-stroll": "#90CAF9", // 勿忘草
+  specialty: "#FFCC80", // 杏色
 };
 
 // 使用方式
-const themeColor = themeColorMap[theme.slug] || theme.color || '#FF7A9A';
+const themeColor = themeColorMap[theme.slug] || theme.color || "#FF7A9A";
 ```
 
 ### 主题色使用规范
@@ -550,6 +648,7 @@ className="bg-red-50 text-red-600"
 ### 标准间距值
 
 **必须使用**：
+
 ```tsx
 // ✅ 正确的间距（4 的倍数）
 gap-1  gap-2  gap-3  gap-4     // 微间距（4-16px）
@@ -712,26 +811,29 @@ rounded-sm       // ❌ 太小，除非特殊情况
 
 根据使用场景选择合适的卡片样式：
 
-| 变体 | 用途 | 视觉特点 |
-|------|------|----------|
-| `default` | 通用列表卡片 | 白色背景、微阴影、hover 加深阴影 |
-| `interactive` | 可点击卡片 | default + 悬停上浮 + 轻微放大 |
-| `sakura` | 品牌强调卡片 | 樱花粉边框、品牌阴影 |
-| `zen` | 高端/传统套餐 | 温暖米色背景(#FDFBF7)、hover 时淡边框 |
-| `glass` | Hero 叠加区域 | 毛玻璃效果、半透明 |
-| `soft` | 精选/推荐卡片 | 大圆角(3xl)、柔和长阴影 |
+| 变体          | 用途          | 视觉特点                              |
+| ------------- | ------------- | ------------------------------------- |
+| `default`     | 通用列表卡片  | 白色背景、微阴影、hover 加深阴影      |
+| `interactive` | 可点击卡片    | default + 悬停上浮 + 轻微放大         |
+| `sakura`      | 品牌强调卡片  | 樱花粉边框、品牌阴影                  |
+| `zen`         | 高端/传统套餐 | 温暖米色背景(#FDFBF7)、hover 时淡边框 |
+| `glass`       | Hero 叠加区域 | 毛玻璃效果、半透明                    |
+| `soft`        | 精选/推荐卡片 | 大圆角(3xl)、柔和长阴影               |
 
 ```tsx
 // ✅ 变体样式定义
 const cardVariants = {
   // 默认白卡片
-  default: "bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300",
+  default:
+    "bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300",
 
   // 交互式卡片（带上浮效果）
-  interactive: "bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300",
+  interactive:
+    "bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300",
 
   // 樱花主题卡片
-  sakura: "bg-white rounded-xl border-2 border-sakura-200 shadow-[0_4px_20px_-4px_rgba(236,72,153,0.15)]",
+  sakura:
+    "bg-white rounded-xl border-2 border-sakura-200 shadow-[0_4px_20px_-4px_rgba(236,72,153,0.15)]",
 
   // 和风卡片（温暖高端）
   zen: "bg-[#FDFBF7] rounded-xl border border-transparent hover:border-sakura-200/50 transition-all duration-300",
@@ -746,27 +848,27 @@ const cardVariants = {
 // ❌ 禁止混合使用不同变体的样式
 <div className="bg-[#FDFBF7] backdrop-blur-md rounded-3xl shadow-lg">
   {/* 混合了 zen + glass + soft 的样式，视觉混乱 */}
-</div>
+</div>;
 ```
 
 ### 6. 卡片 Hover 动画规范
 
 ```tsx
 // ✅ 标准卡片 hover 效果
-className="transition-all duration-300 ease-out hover:shadow-lg hover:-translate-y-1"
+className = "transition-all duration-300 ease-out hover:shadow-lg hover:-translate-y-1";
 
 // ✅ 图片 hover 效果
-className="transition-transform duration-300 group-hover:scale-105"
+className = "transition-transform duration-300 group-hover:scale-105";
 
 // ✅ 按钮 hover 效果（浮动按钮）
-className="transition-all duration-200 hover:scale-110 hover:shadow-md"
+className = "transition-all duration-200 hover:scale-110 hover:shadow-md";
 
 // ❌ 禁止的动画
-className="hover:scale-110"       // ❌ 放大幅度过大（最大 1.05）
-className="hover:rotate-3"        // ❌ 不符合风格
-className="hover:-translate-y-3"  // ❌ 上浮幅度过大（最大 -1）
-className="duration-100"          // ❌ 太快，感觉生硬
-className="duration-700"          // ❌ 太慢，感觉拖沓
+className = "hover:scale-110"; // ❌ 放大幅度过大（最大 1.05）
+className = "hover:rotate-3"; // ❌ 不符合风格
+className = "hover:-translate-y-3"; // ❌ 上浮幅度过大（最大 -1）
+className = "duration-100"; // ❌ 太快，感觉生硬
+className = "duration-700"; // ❌ 太慢，感觉拖沓
 ```
 
 ### 7. 卡片内容层次
@@ -857,17 +959,17 @@ transition-all duration-700   // ❌ 太慢
 
 ```tsx
 // ✅ 卡片 hover（Airbnb 风格）
-className="hover:shadow-lg hover:scale-[1.02] hover:-translate-y-1 transition-all duration-300"
+className = "hover:shadow-lg hover:scale-[1.02] hover:-translate-y-1 transition-all duration-300";
 
 // ✅ 按钮 hover
-className="hover:shadow-lg hover:scale-105 transition-all duration-300"
+className = "hover:shadow-lg hover:scale-105 transition-all duration-300";
 
 // ✅ 图片 hover
-className="group-hover:scale-105 transition-transform duration-300"
+className = "group-hover:scale-105 transition-transform duration-300";
 
 // ❌ 禁止过度动画
-className="hover:scale-110"          // ❌ 缩放太大
-className="hover:rotate-6"           // ❌ 不符合风格
+className = "hover:scale-110"; // ❌ 缩放太大
+className = "hover:rotate-6"; // ❌ 不符合风格
 ```
 
 ---
@@ -902,13 +1004,13 @@ text-sm      // ❌ 使用 text-[15px]
 
 ```tsx
 // ✅ 正确使用
-font-semibold    // 600 - 标题、强调
-font-medium      // 500 - 次要标题
-font-normal      // 400 - 正文
+font - semibold; // 600 - 标题、强调
+font - medium; // 500 - 次要标题
+font - normal; // 400 - 正文
 
 // ❌ 禁止使用
-font-bold        // ❌ 太重，使用 font-semibold
-font-light       // ❌ 太轻，使用 font-normal
+font - bold; // ❌ 太重，使用 font-semibold
+font - light; // ❌ 太轻，使用 font-normal
 ```
 
 ---
@@ -918,18 +1020,21 @@ font-light       // ❌ 太轻，使用 font-normal
 ### 编写新组件时
 
 1. **检查是否有现有组件可复用**
+
    ```bash
    # 搜索类似组件
    ls src/components/ | grep -i "card\|button\|badge"
    ```
 
 2. **阅读设计指南**
+
    ```bash
    # 查看完整设计系统
    cat UI_UX_DESIGN_GUIDE.md
    ```
 
 3. **使用设计 token**
+
    ```tsx
    // ✅ 使用 Tailwind 类名
    <div className="bg-sakura-50 text-gray-900">
@@ -1005,19 +1110,144 @@ font-light       // ❌ 太轻，使用 font-normal
 
 ---
 
+## 🏗️ 页面级模板（Page-Level Patterns）
+
+### 认证页面（Login / Register）
+
+认证页面必须保持 sakura 品牌一致性，**禁止 rose/pink**。
+
+```tsx
+// ✅ 认证页标准结构
+<div
+  className="min-h-screen bg-gradient-to-br from-[#FFF5F7]/60 via-white to-[#FFF5F7]/30
+  flex items-center justify-center px-4 py-12"
+>
+  {/* 品牌区 — 居中 lg 家纹 */}
+  <div className="flex items-center gap-3 mb-8">
+    {/* lg 家纹 (w-14 h-14) */}
+    {/* + "Kimono One" + "着物レンタル" */}
+  </div>
+
+  {/* 表单卡片 */}
+  <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-8 w-full max-w-md">
+    <h1 className="text-[22px] font-semibold text-gray-900 text-center mb-6">欢迎回来</h1>
+    {/* 输入框: focus:ring-sakura-500 focus:border-sakura-500 */}
+    {/* 主按钮: bg-gradient-to-r from-sakura-500 to-sakura-600 */}
+    {/* 链接: text-sakura-600 hover:text-sakura-700 */}
+  </div>
+</div>
+```
+
+### Footer 模板
+
+Footer 必须包含品牌标识，使用 wabi-50 背景。
+
+```tsx
+// ✅ Footer 标准结构
+<footer className="w-full bg-[#FDFBF7]">
+  {/* 顶部装饰线 */}
+  <div className="h-px bg-gradient-to-r from-transparent via-sakura-300 to-transparent" />
+
+  <div className="container py-12 md:py-16">
+    <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12">
+      {/* 品牌区 (md:col-span-4) — 家纹 + 品牌名 + tagline + 社交图标 */}
+      {/* 快速链接 (md:col-span-2) */}
+      {/* 客户服务 + 合作伙伴 (md:col-span-2) */}
+      {/* 联系方式 (md:col-span-2) */}
+    </div>
+
+    {/* 版权 */}
+    <div className="mt-12 pt-8">
+      <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent mb-8" />
+      <p className="text-center text-[12px] text-gray-400">
+        &copy; {new Date().getFullYear()} Kimono One. All rights reserved.
+      </p>
+    </div>
+  </div>
+</footer>
+```
+
+**Footer 必须包含：**
+
+- CSS 家纹 Logo + 品牌名 (Kimono One + 着物レンタル)
+- 品牌描述 + 日文 tagline（伝統の美、現代の心）
+- 社交图标（Instagram / Twitter / Youtube，用 Lucide 图标 + sakura 圆形按钮）
+- 渐变装饰线分隔
+
+### 手风琴动画（FAQ details/summary）
+
+```css
+/* globals.css — FAQ 展开动画 */
+@keyframes faqExpand {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+```
+
+```tsx
+// ✅ FAQ 手风琴内容区
+<details>
+  <summary>问题标题</summary>
+  <div className="motion-safe:animate-[faqExpand_200ms_ease-out]">答案内容</div>
+</details>
+```
+
+### 图标替代 Emoji 规范
+
+专业页面禁止用 emoji 做占位图，改用 Lucide 图标 + sakura 背景：
+
+```tsx
+// ❌ 禁止
+<span className="text-6xl">👘</span>;
+
+// ✅ 正确 — Lucide 图标 + 装饰背景
+import { Scissors, Sparkles, Camera } from "lucide-react";
+
+<div className="w-16 h-16 rounded-2xl bg-sakura-50 flex items-center justify-center">
+  <Scissors className="w-8 h-8 text-sakura-600" />
+</div>;
+```
+
+---
+
 ## 📋 检查清单
 
 在提交代码前，确保：
 
-- [ ] 所有颜色值都在设计系统中定义
+**颜色与设计系统**
+
+- [ ] 所有颜色值都在设计系统中定义（sakura-_ / gray-_ / wabi-\* / 语义色）
+- [ ] 没有 rose-_ / pink-_ / purple-_ / violet-_ / indigo-\*
+- [ ] blue-\* 仅用于语义提示（bg-blue-50），不用于品牌元素
+- [ ] 没有硬编码的颜色值（`#hex` 或 `rgb()`）
+
+**间距与排版**
+
 - [ ] 所有间距都是 4 的倍数
 - [ ] 使用 `text-[Npx]` 而非 `text-lg/xl`
-- [ ] 按钮使用 `rounded-lg`
-- [ ] 卡片使用 `rounded-xl`
-- [ ] 套餐卡片图片使用 `aspect-[3/4]`
+- [ ] 按钮使用 `rounded-lg`，卡片使用 `rounded-xl`
+
+**品牌一致性**
+
+- [ ] Logo 使用 CSS 家纹，不用 /logo.png 图片
+- [ ] 认证页用 sakura 色系，不用 rose/pink
+- [ ] 专业页面无 emoji 占位（用 Lucide 图标）
+
+**行为规范**
+
+- [ ] 内部链接无 `target="_blank"`
+- [ ] 无 console.log / 调试代码
 - [ ] Hover 效果包含 `transition-all duration-300`
-- [ ] 没有硬编码的颜色值（`#hex` 或 `rgb()`）
-- [ ] 复用了现有的组件而非重新创建
+
+**组件复用**
+
+- [ ] 复用了现有组件而非重新创建
 - [ ] 阅读了相关的设计指南章节
 
 ---
@@ -1025,11 +1255,13 @@ font-light       // ❌ 太轻，使用 font-normal
 ## 📚 参考资源
 
 **项目文档**：
+
 - `UI_UX_DESIGN_GUIDE.md` - 完整设计系统
 - `src/components/ui/` - 基础组件库
 - `src/app/globals.css` - 全局样式和 CSS 变量
 
 **外部参考**：
+
 - Airbnb Design Language
 - Tailwind CSS 文档
 - 和服美学配色
