@@ -4,7 +4,6 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -40,21 +39,32 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-rose-50 via-pink-50 to-orange-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#FFF5F7]/60 via-white to-[#FFF5F7]/30 px-4">
       <div className="max-w-md w-full">
         {/* Logo */}
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-3">
-            <div className="relative w-16 h-16 bg-white rounded-full p-2 shadow-sm">
-              <Image
-                src="/logo.png"
-                alt="江戸和装工房雅"
-                fill
-                className="object-contain"
-                priority
+          <Link href="/" className="inline-flex items-center gap-3 group">
+            {/* CSS 家纹 Logo */}
+            <div className="relative w-14 h-14">
+              <div className="absolute inset-0 rounded-full border-2 border-sakura-500 transition-colors duration-300 group-hover:border-sakura-600" />
+              <div
+                className="absolute inset-1 rounded-full border border-sakura-400/50"
+                style={{
+                  background:
+                    "repeating-conic-gradient(from 0deg, transparent 0deg 30deg, rgba(236, 72, 153, 0.06) 30deg 60deg)",
+                }}
               />
+              <div className="absolute inset-2 rounded-full bg-white" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span
+                  className="font-serif text-[18px] font-medium text-sakura-600 select-none"
+                  style={{ fontFamily: '"Noto Serif JP", "Source Han Serif", serif' }}
+                >
+                  一
+                </span>
+              </div>
             </div>
-            <span className="text-2xl font-bold text-gray-900">江戸和装工房雅</span>
+            <span className="text-[22px] font-semibold text-gray-900">Kimono One</span>
           </Link>
         </div>
 
@@ -62,9 +72,7 @@ export default function LoginPage() {
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">欢迎回来</h1>
-            <p className="text-gray-600">
-              登录您的账户继续预约
-            </p>
+            <p className="text-gray-600">登录您的账户继续预约</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -77,10 +85,7 @@ export default function LoginPage() {
 
             {/* 邮箱 */}
             <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                 邮箱地址
               </label>
               <input
@@ -89,17 +94,14 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none transition"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-sakura-500 focus:border-transparent outline-none transition"
                 placeholder="your@email.com"
               />
             </div>
 
             {/* 密码 */}
             <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
                 密码
               </label>
               <input
@@ -108,7 +110,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none transition"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-sakura-500 focus:border-transparent outline-none transition"
                 placeholder="••••••••"
               />
             </div>
@@ -117,7 +119,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-rose-500 to-pink-500 text-white font-semibold py-3 px-6 rounded-lg hover:from-rose-600 hover:to-pink-600 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-md hover:shadow-lg"
+              className="w-full bg-gradient-to-r from-sakura-500 to-sakura-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-sakura-600 hover:to-sakura-700 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-md hover:shadow-lg"
             >
               {loading ? "登录中..." : "登录"}
             </button>
@@ -127,10 +129,7 @@ export default function LoginPage() {
           <div className="mt-6 text-center">
             <p className="text-gray-600">
               还没有账户？{" "}
-              <Link
-                href="/register"
-                className="text-rose-600 hover:text-rose-700 font-medium"
-              >
+              <Link href="/register" className="text-sakura-600 hover:text-sakura-700 font-medium">
                 立即注册
               </Link>
             </p>
@@ -139,10 +138,7 @@ export default function LoginPage() {
 
         {/* 返回首页 */}
         <div className="mt-6 text-center">
-          <Link
-            href="/"
-            className="text-gray-600 hover:text-gray-900 text-sm transition"
-          >
+          <Link href="/" className="text-gray-600 hover:text-gray-900 text-sm transition">
             ← 返回首页
           </Link>
         </div>

@@ -126,7 +126,6 @@ export default function PlanCard({
   return (
     <Link
       href={planDetailHref}
-      target="_blank"
       className={`group block overflow-hidden ${cardVariantStyles[variant]}`}
     >
       <div className="relative">
@@ -246,7 +245,7 @@ export default function PlanCard({
               {plan.planTags.slice(0, 3).map(({ tag }) => (
                 <span
                   key={tag.id}
-                  className="text-[12px] tracking-wide px-2 py-0.5 text-gray-500 bg-white transition-all duration-300 hover:text-gray-700"
+                  className="text-[12px] tracking-wide px-2 py-0.5 rounded-lg text-gray-500 bg-white transition-all duration-300 hover:text-gray-700"
                   style={{
                     border: `1px solid ${accentColor}40`,
                   }}
