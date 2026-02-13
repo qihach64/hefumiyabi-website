@@ -10,6 +10,18 @@ export default defineConfig({
     exclude: ["node_modules", ".next"],
     testTimeout: 30000, // 30 seconds for database tests
     setupFiles: ["./vitest.setup.ts"],
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "html", "lcov"],
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: [
+        "src/**/__tests__/**",
+        "src/app/**/layout.tsx",
+        "src/app/**/loading.tsx",
+        "src/types/**",
+        "src/config/**",
+      ],
+    },
   },
   resolve: {
     alias: {
