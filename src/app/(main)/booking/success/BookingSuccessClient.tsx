@@ -47,7 +47,7 @@ export default function BookingSuccessClient() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <p className="text-gray-600 mb-4">预约信息未找到</p>
-          <Link href="/" className="text-rose-600 hover:text-rose-700 font-medium">
+          <Link href="/" className="text-sakura-600 hover:text-sakura-700 font-medium">
             返回首页
           </Link>
         </div>
@@ -56,7 +56,7 @@ export default function BookingSuccessClient() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-orange-50 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#FFF5F7]/60 via-white to-[#FFF5F7]/30 py-12 px-4">
       <div className="max-w-2xl mx-auto">
         {/* 成功图标 */}
         <div className="text-center mb-8">
@@ -204,14 +204,14 @@ export default function BookingSuccessClient() {
 
         {/* 游客注册提示 */}
         {!booking.userId && (
-          <div className="bg-rose-50 border border-rose-200 rounded-lg p-6 mb-6">
-            <h3 className="font-semibold text-rose-900 mb-2">注册账户享受更多优惠</h3>
-            <p className="text-sm text-rose-800 mb-4">
+          <div className="bg-sakura-50 border border-sakura-200 rounded-lg p-6 mb-6">
+            <h3 className="font-semibold text-sakura-900 mb-2">注册账户享受更多优惠</h3>
+            <p className="text-sm text-sakura-800 mb-4">
               注册后可以查看预约历史、获得会员折扣、优先预约特别活动
             </p>
             <Link
               href="/register"
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-rose-500 to-pink-500 text-white font-semibold py-2 px-6 rounded-lg hover:from-rose-600 hover:to-pink-600 transition shadow-md hover:shadow-lg text-sm"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-sakura-500 to-sakura-600 text-white font-semibold py-2 px-6 rounded-lg hover:from-sakura-600 hover:to-sakura-700 transition shadow-md hover:shadow-lg text-sm"
             >
               <User className="w-4 h-4" />
               立即注册
@@ -224,7 +224,7 @@ export default function BookingSuccessClient() {
           {booking.userId && (
             <Link
               href="/profile#bookings"
-              className="flex-1 text-center bg-gradient-to-r from-rose-500 to-pink-500 text-white font-semibold py-3 px-6 rounded-lg hover:from-rose-600 hover:to-pink-600 transition shadow-md hover:shadow-lg"
+              className="flex-1 text-center bg-gradient-to-r from-sakura-500 to-sakura-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-sakura-600 hover:to-sakura-700 transition shadow-md hover:shadow-lg"
             >
               查看我的预约
             </Link>

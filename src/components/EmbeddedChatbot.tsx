@@ -114,7 +114,7 @@ export default function EmbeddedChatbot() {
   return (
     <div className="w-full max-w-5xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200">
       {/* 头部 */}
-      <div className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white p-6">
+      <div className="bg-gradient-to-r from-sakura-400 to-sakura-600 text-white p-6">
         <div className="flex items-center justify-center gap-3 mb-2">
           <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
             <Sparkles className="w-6 h-6" />
@@ -146,8 +146,8 @@ export default function EmbeddedChatbot() {
               <div
                 className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
                   message.role === "user"
-                    ? "bg-blue-500"
-                    : "bg-gradient-to-br from-purple-500 to-pink-500"
+                    ? "bg-sakura-500"
+                    : "bg-gradient-to-br from-sakura-400 to-sakura-600"
                 }`}
               >
                 {message.role === "user" ? (
@@ -161,7 +161,7 @@ export default function EmbeddedChatbot() {
               <div
                 className={`max-w-[75%] px-5 py-3 rounded-2xl ${
                   message.role === "user"
-                    ? "bg-blue-500 text-white rounded-tr-none shadow-md"
+                    ? "bg-sakura-500 text-white rounded-tr-none shadow-md"
                     : "bg-white border-2 border-gray-200 rounded-tl-none shadow-sm"
                 }`}
               >
@@ -176,7 +176,7 @@ export default function EmbeddedChatbot() {
                   <button
                     key={index}
                     onClick={() => handleSend(suggestion)}
-                    className="text-sm px-4 py-2 bg-white border-2 border-blue-200 rounded-full hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600 transition-all font-medium"
+                    className="text-sm px-4 py-2 bg-white border-2 border-sakura-200 rounded-full hover:border-sakura-400 hover:bg-sakura-50 hover:text-sakura-600 transition-all font-medium"
                   >
                     {suggestion}
                   </button>
@@ -189,7 +189,7 @@ export default function EmbeddedChatbot() {
         {/* 正在输入 */}
         {isTyping && (
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sakura-400 to-sakura-600 flex items-center justify-center shrink-0">
               <Bot className="w-5 h-5 text-white" />
             </div>
             <div className="bg-white border-2 border-gray-200 px-5 py-3 rounded-2xl rounded-tl-none shadow-sm">
@@ -219,13 +219,13 @@ export default function EmbeddedChatbot() {
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="输入您的问题..."
-            className="flex-1 px-5 py-3 border-2 border-gray-300 rounded-full focus:outline-none focus:border-blue-500 text-sm transition-colors"
+            className="flex-1 px-5 py-3 border-2 border-gray-300 rounded-full focus:outline-none focus:border-sakura-500 text-sm transition-colors"
             disabled={isTyping}
           />
           <button
             onClick={() => handleSend()}
             disabled={!input.trim() || isTyping}
-            className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full flex items-center justify-center hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className="w-12 h-12 bg-gradient-to-r from-sakura-500 to-sakura-600 text-white rounded-full flex items-center justify-center hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             <Send className="w-5 h-5" />
           </button>

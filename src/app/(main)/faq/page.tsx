@@ -176,9 +176,7 @@ export default function FAQPage() {
                     <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
                       {category.title}
                     </h2>
-                    <p className="text-sm text-gray-600">
-                      {category.faqs.length} 个问题
-                    </p>
+                    <p className="text-sm text-gray-600">{category.faqs.length} 个问题</p>
                   </div>
                 </div>
 
@@ -196,12 +194,10 @@ export default function FAQPage() {
                         </h3>
                         <ChevronDown className="w-5 h-5 text-gray-600 group-open:rotate-180 transition-transform shrink-0" />
                       </summary>
-                      <div className="px-6 pb-6">
+                      <div className="px-6 pb-6 motion-safe:animate-[faqExpand_200ms_ease-out]">
                         <div className="pt-4 border-t border-gray-200">
                           <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
-                            <span className="text-sakura-600 font-semibold mr-2">
-                              A.
-                            </span>
+                            <span className="text-sakura-600 font-semibold mr-2">A.</span>
                             {faq.answer}
                           </p>
                         </div>
@@ -253,9 +249,7 @@ export default function FAQPage() {
             >
               <div className="text-3xl mb-3">📋</div>
               <h3 className="font-semibold mb-2 text-gray-900">查看套餐</h3>
-              <p className="text-sm text-gray-600">
-                了解不同的租赁套餐和价格
-              </p>
+              <p className="text-sm text-gray-600">了解不同的租赁套餐和价格</p>
             </Link>
 
             <Link
@@ -264,9 +258,7 @@ export default function FAQPage() {
             >
               <div className="text-3xl mb-3">📍</div>
               <h3 className="font-semibold mb-2 text-gray-900">店铺位置</h3>
-              <p className="text-sm text-gray-600">
-                查找离您最近的店铺
-              </p>
+              <p className="text-sm text-gray-600">查找离您最近的店铺</p>
             </Link>
 
             <Link
@@ -275,9 +267,7 @@ export default function FAQPage() {
             >
               <div className="text-3xl mb-3">👘</div>
               <h3 className="font-semibold mb-2 text-gray-900">和服图库</h3>
-              <p className="text-sm text-gray-600">
-                浏览精美的和服款式
-              </p>
+              <p className="text-sm text-gray-600">浏览精美的和服款式</p>
             </Link>
 
             <Link
@@ -286,9 +276,7 @@ export default function FAQPage() {
             >
               <div className="text-3xl mb-3">ℹ️</div>
               <h3 className="font-semibold mb-2 text-gray-900">关于我们</h3>
-              <p className="text-sm text-gray-600">
-                了解我们的服务和理念
-              </p>
+              <p className="text-sm text-gray-600">了解我们的服务和理念</p>
             </Link>
           </div>
         </div>
