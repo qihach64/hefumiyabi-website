@@ -11,9 +11,6 @@ import HeaderSearchBar from "./HeaderSearchBar";
 import NavMenuButton from "./NavMenuButton";
 import { useSearchBar } from "@/contexts/SearchBarContext";
 
-// 渲染计数器（调试用）
-let headerRenderCount = 0;
-
 // 预计算装饰点位置（避免每次渲染计算三角函数）
 const DECORATION_DOTS = [0, 72, 144, 216, 288].map((angle) => {
   const radius = 17;
@@ -25,41 +22,29 @@ const DECORATION_DOTS = [0, 72, 144, 216, 288].map((angle) => {
 });
 
 export default function Header() {
-  headerRenderCount++;
-  const renderStartTime = performance.now();
-
   const pathname = usePathname();
   const { data: session } = useSession();
   const { isSearchBarExpanded, isHeroVisible, hideSearchBar } = useSearchBar();
 
   // 搜索栏只在首页显示
-  const shouldHideSearchBar = hideSearchBar || pathname !== '/';
+  const shouldHideSearchBar = hideSearchBar || pathname !== "/";
   const [merchant, setMerchant] = useState<any>(null);
   const [isScrolled, setIsScrolled] = useState(false);
-
-  // 每次渲染时记录（调试用）
-  useEffect(() => {
-    const renderTime = performance.now() - renderStartTime;
-    console.log(`[Header] 🎨 Render #${headerRenderCount} (${renderTime.toFixed(1)}ms) | isHeroVisible=${isHeroVisible}, isScrolled=${isScrolled}, isSearchBarExpanded=${isSearchBarExpanded}`);
-  });
 
   // 监听滚动，控制 Header 透明度
   useEffect(() => {
     let lastScrollY = window.scrollY;
     let ticking = false;
-    let scrollCount = 0;
 
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
 
       if (!ticking) {
         window.requestAnimationFrame(() => {
-          scrollCount++;
           const newIsScrolled = currentScrollY > 50;
 
           // 只在状态真正改变时更新
-          if (newIsScrolled !== (lastScrollY > 50)) {
-            console.log(`[Header] 🔄 setIsScrolled: ${newIsScrolled} (scroll #${scrollCount}, y=${currentScrollY.toFixed(0)})`);
+          if (newIsScrolled !== lastScrollY > 50) {
             setIsScrolled(newIsScrolled);
           }
 
@@ -73,8 +58,8 @@ export default function Header() {
     // 初始检查
     handleScroll();
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   // 检查用户是否有商家账户
@@ -82,13 +67,13 @@ export default function Header() {
     const fetchMerchant = async () => {
       if (session?.user?.id) {
         try {
-          const response = await fetch('/api/merchant/profile');
+          const response = await fetch("/api/merchant/profile");
           if (response.ok) {
             const data = await response.json();
             setMerchant(data.merchant);
           }
         } catch (error) {
-          console.error('Failed to fetch merchant:', error);
+          console.error("Failed to fetch merchant:", error);
         }
       } else {
         setMerchant(null);
@@ -103,7 +88,7 @@ export default function Header() {
     {
       href: "/virtual-tryon",
       label: "AI 试穿",
-      special: true
+      special: true,
     },
     { href: "/stores", label: "店铺信息" },
     { href: "/faq", label: "常见问题" },
@@ -117,17 +102,19 @@ export default function Header() {
     <header
       className={`w-full sticky top-0 z-50 border-b transition-all duration-300 ease-in-out ${
         isTransparent
-          ? 'bg-transparent border-transparent'
-          : 'bg-white/80 backdrop-blur-md shadow-sm border-gray-200/50'
+          ? "bg-transparent border-transparent"
+          : "bg-white/80 backdrop-blur-md shadow-sm border-gray-200/50"
       }`}
     >
       <div className="container">
         {/* 动态高度：展开搜索栏时增加 padding，让内容有更多空间 */}
-        <div className={`flex items-center justify-between gap-4 transition-all duration-300 ease-in-out ${
-          isSearchBarExpanded && !isHeroVisible && !shouldHideSearchBar
-            ? 'h-20 md:h-24 py-2'
-            : 'h-16 md:h-20'
-        }`}>
+        <div
+          className={`flex items-center justify-between gap-4 transition-all duration-300 ease-in-out ${
+            isSearchBarExpanded && !isHeroVisible && !shouldHideSearchBar
+              ? "h-20 md:h-24 py-2"
+              : "h-16 md:h-20"
+          }`}
+        >
           {/* 左侧：Logo */}
           <div className="flex items-center gap-2 md:gap-3">
             {/* 移动端汉堡菜单 */}
@@ -146,29 +133,25 @@ export default function Header() {
                 <div
                   className={`absolute inset-0 rounded-full border-2 transition-colors duration-300 ${
                     isTransparent
-                      ? 'border-sakura-600 shadow-[0_0_8px_rgba(255,255,255,0.3)]'
-                      : 'border-sakura-500 group-hover:border-sakura-600'
+                      ? "border-sakura-600 shadow-[0_0_8px_rgba(255,255,255,0.3)]"
+                      : "border-sakura-500 group-hover:border-sakura-600"
                   }`}
                 />
                 {/* Decorative middle ring with pattern simulation */}
                 <div
                   className={`absolute inset-[3px] md:inset-1 rounded-full transition-colors duration-300 ${
-                    isTransparent
-                      ? 'border border-sakura-500/60'
-                      : 'border border-sakura-400/50'
+                    isTransparent ? "border border-sakura-500/60" : "border border-sakura-400/50"
                   }`}
                   style={{
                     background: isTransparent
-                      ? 'repeating-conic-gradient(from 0deg, transparent 0deg 30deg, rgba(236, 72, 153, 0.08) 30deg 60deg)'
-                      : 'repeating-conic-gradient(from 0deg, transparent 0deg 30deg, rgba(236, 72, 153, 0.06) 30deg 60deg)',
+                      ? "repeating-conic-gradient(from 0deg, transparent 0deg 30deg, rgba(236, 72, 153, 0.08) 30deg 60deg)"
+                      : "repeating-conic-gradient(from 0deg, transparent 0deg 30deg, rgba(236, 72, 153, 0.06) 30deg 60deg)",
                   }}
                 />
                 {/* Inner circle - background */}
                 <div
                   className={`absolute inset-[6px] md:inset-2 rounded-full transition-colors duration-300 ${
-                    isTransparent
-                      ? 'bg-white/90 backdrop-blur-sm'
-                      : 'bg-white'
+                    isTransparent ? "bg-white/90 backdrop-blur-sm" : "bg-white"
                   }`}
                 />
                 {/* Center character 一 */}
@@ -176,12 +159,12 @@ export default function Header() {
                   <span
                     className={`font-serif text-base md:text-lg font-medium transition-colors duration-300 select-none ${
                       isTransparent
-                        ? 'text-sakura-700'
-                        : 'text-sakura-600 group-hover:text-sakura-700'
+                        ? "text-sakura-700"
+                        : "text-sakura-600 group-hover:text-sakura-700"
                     }`}
                     style={{
                       fontFamily: '"Noto Serif JP", "Source Han Serif", serif',
-                      marginTop: '1px',
+                      marginTop: "1px",
                     }}
                   >
                     一
@@ -193,13 +176,13 @@ export default function Header() {
                     key={i}
                     className={`absolute w-1 h-1 rounded-full transition-all duration-300 ${
                       isTransparent
-                        ? 'bg-sakura-500/70'
-                        : 'bg-sakura-400/60 group-hover:bg-sakura-500/70'
+                        ? "bg-sakura-500/70"
+                        : "bg-sakura-400/60 group-hover:bg-sakura-500/70"
                     }`}
                     style={{
                       top: `calc(50% + ${dot.y}px)`,
                       left: `calc(50% + ${dot.x}px)`,
-                      transform: 'translate(-50%, -50%)',
+                      transform: "translate(-50%, -50%)",
                     }}
                   />
                 ))}
@@ -211,8 +194,8 @@ export default function Header() {
                 <span
                   className={`font-serif text-lg md:text-xl tracking-tight transition-all duration-300 ${
                     isTransparent
-                      ? 'text-sakura-700 drop-shadow-[0_1px_2px_rgba(255,255,255,0.8)]'
-                      : 'text-sakura-600 group-hover:text-sakura-700'
+                      ? "text-sakura-700 drop-shadow-[0_1px_2px_rgba(255,255,255,0.8)]"
+                      : "text-sakura-600 group-hover:text-sakura-700"
                   }`}
                 >
                   <span className="italic font-medium">Kimono</span>
@@ -222,8 +205,8 @@ export default function Header() {
                 <span
                   className={`hidden md:block text-[10px] tracking-[0.25em] mt-1 font-medium transition-colors duration-300 ${
                     isTransparent
-                      ? 'text-sakura-600/80 drop-shadow-[0_1px_1px_rgba(255,255,255,0.6)]'
-                      : 'text-sakura-500/70 group-hover:text-sakura-600/80'
+                      ? "text-sakura-600/80 drop-shadow-[0_1px_1px_rgba(255,255,255,0.6)]"
+                      : "text-sakura-500/70 group-hover:text-sakura-600/80"
                   }`}
                 >
                   着物レンタル
@@ -246,10 +229,7 @@ export default function Header() {
           {/* 右侧：菜单和用户 */}
           <div className="flex items-center gap-2 md:gap-3 shrink-0">
             {/* 购物车按钮 */}
-            <HeaderActions
-              isLoggedIn={!!session?.user}
-              merchant={merchant}
-            />
+            <HeaderActions isLoggedIn={!!session?.user} merchant={merchant} />
 
             {/* 导航菜单 + 用户头像（合并按钮，Airbnb 风格） */}
             <div className="hidden md:flex items-center gap-2 relative">

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Heart, Award, Users, Globe } from "lucide-react";
+import { Heart, Award, Users, Globe, Scissors, Sparkles, Camera } from "lucide-react";
 import { Button } from "@/components/ui";
 
 export default function AboutPage() {
@@ -28,9 +28,7 @@ export default function AboutPage() {
           <div className="max-w-4xl mx-auto">
             <div className="grid md:grid-cols-2 gap-12 items-center mb-16">
               <div>
-                <h2 className="text-3xl md:text-4xl font-bold mb-6 text-gray-900">
-                  我们的故事
-                </h2>
+                <h2 className="text-3xl md:text-4xl font-bold mb-6 text-gray-900">我们的故事</h2>
                 <div className="space-y-4 text-gray-700 leading-relaxed">
                   <p>
                     江戸和装工房雅成立于2010年，是一家专注于和服租赁服务的专业公司。我们在东京浅草和京都清水寺附近设有多家店铺，为来自世界各地的游客提供优质的和服体验服务。
@@ -43,12 +41,38 @@ export default function AboutPage() {
                   </p>
                 </div>
               </div>
-              <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-sakura-50 border border-gray-200 shadow-sm">
-                <div className="flex h-full items-center justify-center text-gray-600">
-                  {/* 占位符 - 可以替换为实际图片 */}
+              <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-gradient-to-br from-sakura-50 to-sakura-100 border border-sakura-200/50">
+                <div className="flex h-full items-center justify-center">
                   <div className="text-center p-8">
-                    <span className="text-6xl mb-4 block">👘</span>
-                    <p className="text-sm font-medium">和服文化传承</p>
+                    {/* 日式装饰图案 */}
+                    <div className="relative w-24 h-24 mx-auto mb-4">
+                      <div className="absolute inset-0 rounded-full border-2 border-sakura-300/60" />
+                      <div
+                        className="absolute inset-2 rounded-full border border-sakura-200/40"
+                        style={{
+                          background:
+                            "repeating-conic-gradient(from 0deg, transparent 0deg 30deg, rgba(236, 72, 153, 0.05) 30deg 60deg)",
+                        }}
+                      />
+                      <div className="absolute inset-4 rounded-full bg-white/80" />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span
+                          className="font-serif text-[28px] font-medium text-sakura-500 select-none"
+                          style={{ fontFamily: '"Noto Serif JP", "Source Han Serif", serif' }}
+                        >
+                          雅
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-[14px] font-medium text-sakura-600/80 tracking-wide">
+                      和服文化传承
+                    </p>
+                    <p
+                      className="text-[12px] text-sakura-400 mt-1 font-serif italic"
+                      style={{ fontFamily: '"Noto Serif JP", "Source Han Serif", serif' }}
+                    >
+                      伝統と現代の融合
+                    </p>
                   </div>
                 </div>
               </div>
@@ -62,9 +86,7 @@ export default function AboutPage() {
         <div className="container">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4 text-gray-900">我们的价值观</h2>
-            <p className="text-gray-700 max-w-2xl mx-auto">
-              专业、用心、创新是我们的核心理念
-            </p>
+            <p className="text-gray-700 max-w-2xl mx-auto">专业、用心、创新是我们的核心理念</p>
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 max-w-5xl mx-auto">
@@ -83,9 +105,7 @@ export default function AboutPage() {
                 <Award className="w-8 h-8 text-sakura-600" />
               </div>
               <h3 className="text-xl font-semibold mb-2 text-gray-900">专业品质</h3>
-              <p className="text-sm text-gray-600">
-                专业的着装团队，严格的品质把控，确保最佳体验
-              </p>
+              <p className="text-sm text-gray-600">专业的着装团队，严格的品质把控，确保最佳体验</p>
             </div>
 
             <div className="text-center">
@@ -93,9 +113,7 @@ export default function AboutPage() {
                 <Users className="w-8 h-8 text-sakura-600" />
               </div>
               <h3 className="text-xl font-semibold mb-2 text-gray-900">文化传承</h3>
-              <p className="text-sm text-gray-600">
-                传承和服文化，让更多人了解和喜爱日本传统服饰
-              </p>
+              <p className="text-sm text-gray-600">传承和服文化，让更多人了解和喜爱日本传统服饰</p>
             </div>
 
             <div className="text-center">
@@ -103,9 +121,7 @@ export default function AboutPage() {
                 <Globe className="w-8 h-8 text-sakura-600" />
               </div>
               <h3 className="text-xl font-semibold mb-2 text-gray-900">国际视野</h3>
-              <p className="text-sm text-gray-600">
-                提供多语言服务，让全世界的游客都能轻松体验
-              </p>
+              <p className="text-sm text-gray-600">提供多语言服务，让全世界的游客都能轻松体验</p>
             </div>
           </div>
         </div>
@@ -175,20 +191,16 @@ export default function AboutPage() {
         <div className="container">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4 text-gray-900">专业团队</h2>
-            <p className="text-gray-700 max-w-2xl mx-auto">
-              我们的团队由经验丰富的和服专家组成
-            </p>
+            <p className="text-gray-700 max-w-2xl mx-auto">我们的团队由经验丰富的和服专家组成</p>
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-4xl mx-auto">
             <div className="text-center">
               <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-sakura-100 flex items-center justify-center">
-                <span className="text-4xl">👔</span>
+                <Scissors className="w-8 h-8 text-sakura-600" />
               </div>
               <h3 className="text-lg font-semibold mb-1 text-gray-900">着装师</h3>
-              <p className="text-sm text-gray-600 mb-2">
-                10年以上经验
-              </p>
+              <p className="text-sm text-gray-600 mb-2">10年以上经验</p>
               <p className="text-xs text-gray-600">
                 专业的和服着装技术，确保每一件和服都穿着得体舒适
               </p>
@@ -196,12 +208,10 @@ export default function AboutPage() {
 
             <div className="text-center">
               <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-sakura-100 flex items-center justify-center">
-                <span className="text-4xl">💅</span>
+                <Sparkles className="w-8 h-8 text-sakura-600" />
               </div>
               <h3 className="text-lg font-semibold mb-1 text-gray-900">发型师</h3>
-              <p className="text-sm text-gray-600 mb-2">
-                专业美发资格
-              </p>
+              <p className="text-sm text-gray-600 mb-2">专业美发资格</p>
               <p className="text-xs text-gray-600">
                 根据和服风格设计搭配的发型，让您的整体造型更加完美
               </p>
@@ -209,12 +219,10 @@ export default function AboutPage() {
 
             <div className="text-center">
               <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-sakura-100 flex items-center justify-center">
-                <span className="text-4xl">📸</span>
+                <Camera className="w-8 h-8 text-sakura-600" />
               </div>
               <h3 className="text-lg font-semibold mb-1 text-gray-900">摄影师</h3>
-              <p className="text-sm text-gray-600 mb-2">
-                专业摄影团队
-              </p>
+              <p className="text-sm text-gray-600 mb-2">专业摄影团队</p>
               <p className="text-xs text-gray-600">
                 部分高级套餐包含专业摄影服务，为您留下珍贵的回忆
               </p>
@@ -228,20 +236,25 @@ export default function AboutPage() {
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMTZjMCAyLjIxLTEuNzkgNC00IDRzLTQtMS43OS00LTQgMS43OS00IDQtNCA0IDEuNzkgNCA0em0tNCAyOGMtMi4yMSAwLTQtMS43OS00LTRzMS43OS00IDQtNCA0IDEuNzkgNCA0LTEuNzkgNC00IDR6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-20"></div>
 
         <div className="container text-center relative">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            准备开始您的和服体验了吗？
-          </h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">准备开始您的和服体验了吗？</h2>
           <p className="text-lg md:text-xl mb-8 opacity-90 max-w-2xl mx-auto">
             立即预约，让我们为您打造难忘的日本文化体验
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/booking">
-              <Button size="lg" className="bg-white text-gray-900 hover:bg-white/90 shadow-lg w-full sm:w-auto min-w-[160px]">
+              <Button
+                size="lg"
+                className="bg-white text-gray-900 hover:bg-white/90 shadow-lg w-full sm:w-auto min-w-[160px]"
+              >
                 立即预约
               </Button>
             </Link>
             <Link href="/plans">
-              <Button variant="outline" size="lg" className="border-2 border-white text-white hover:bg-white/10 w-full sm:w-auto min-w-[160px]">
+              <Button
+                variant="outline"
+                size="lg"
+                className="border-2 border-white text-white hover:bg-white/10 w-full sm:w-auto min-w-[160px]"
+              >
                 浏览和服
               </Button>
             </Link>
