@@ -1,0 +1,32 @@
+# Kimono AI Customer Service
+# Docker Compose 配置
+
+version: '3.8'
+
+services:
+  kimono-ai:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kimono-ai-customer-service
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - PYTHONPATH=/app/src
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/system/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - kimono-network
+
+networks:
+  kimono-network:
+    driver: bridge

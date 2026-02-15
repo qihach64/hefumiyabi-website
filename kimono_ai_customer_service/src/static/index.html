@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kimono AI 客服测试</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Marked.js for Markdown -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        [x-cloak] { display: none !important; }
+        .chat-container {
+            height: calc(100vh - 280px);
+            min-height: 300px;
+        }
+        /* Mobile responsive chat container */
+        @media (max-width: 640px) {
+            .chat-container {
+                height: calc(100vh - 320px);
+                min-height: 250px;
+            }
+        }
+        .message-content p { margin-bottom: 0.5rem; }
+        .message-content p:last-child { margin-bottom: 0; }
+        .message-content ul, .message-content ol {
+            margin-left: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .message-content li { margin-bottom: 0.25rem; }
+        .typing-indicator span {
+            animation: typing 1.4s infinite;
+            animation-fill-mode: both;
+        }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing {
+            0% { opacity: 0.4; }
+            20% { opacity: 1; }
+            100% { opacity: 0.4; }
+        }
+        /* Mobile responsive buttons */
+        @media (max-width: 640px) {
+            .footer-btn-text { display: none; }
+            .footer-btn { padding: 0.5rem; }
+        }
+        /* Hide session ID on mobile */
+        @media (max-width: 480px) {
+            .session-id-display { display: none; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div x-data="chatApp()" x-init="init()" class="max-w-4xl mx-auto px-4 py-6">
+        <!-- Header -->
+        <header class="bg-white rounded-xl shadow-sm p-4 mb-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-800">Kimono AI 客服测试</h1>
+                        <p class="text-sm text-gray-500">和服租赁智能客服系统</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2 sm:space-x-4">
+                    <!-- User Info / Login Button -->
+                    <template x-if="isLoggedIn">
+                        <div class="flex items-center space-x-2 sm:space-x-3">
+                            <!-- 移动端：只显示头像和退出 -->
+                            <div class="hidden sm:block text-right">
+                                <p class="text-sm font-medium text-gray-700" x-text="userInfo?.display_name || userInfo?.username"></p>
+                                <p class="text-xs text-gray-500" x-text="userInfo?.role === 'tenant_admin' ? '管理员' : '客服'"></p>
+                            </div>
+                            <!-- 移动端头像 -->
+                            <div class="sm:hidden w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-white text-sm font-medium"
+                                 x-text="(userInfo?.display_name || userInfo?.username || 'U').charAt(0).toUpperCase()">
+                            </div>
+                            <button
+                                @click="logout"
+                                class="px-2 sm:px-3 py-1.5 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                                title="退出登录"
+                            >
+                                退出
+                            </button>
+                        </div>
+                    </template>
+                    <template x-if="!isLoggedIn">
+                        <a
+                            href="/static/login.html"
+                            class="px-3 sm:px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition"
+                        >
+                            登录
+                        </a>
+                    </template>
+
+                    <!-- 帮助按钮：移动端隐藏 -->
+                    <button
+                        @click="showHelp = true"
+                        class="hidden sm:block p-2 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition"
+                        title="使用说明"
+                    >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </button>
+
+                    <!-- 状态指示器：移动端精简 -->
+                    <div class="flex items-center space-x-1 sm:space-x-2">
+                        <span class="hidden sm:inline text-sm text-gray-500">状态:</span>
+                        <span x-show="isOnline" class="flex items-center text-green-600" title="在线">
+                            <span class="w-2 h-2 bg-green-500 rounded-full sm:mr-1"></span>
+                            <span class="hidden sm:inline">在线</span>
+                        </span>
+                        <span x-show="!isOnline" x-cloak class="flex items-center text-red-600" title="离线">
+                            <span class="w-2 h-2 bg-red-500 rounded-full sm:mr-1"></span>
+                            <span class="hidden sm:inline">离线</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Chat Container -->
+        <div class="bg-white rounded-xl shadow-sm mb-4">
+            <!-- Messages Area -->
+            <div
+                x-ref="messagesContainer"
+                class="chat-container overflow-y-auto p-4 space-y-4"
+            >
+                <!-- Welcome Message -->
+                <div x-show="messages.length === 0" class="text-center py-12">
+                    <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-xl font-semibold text-gray-700 mb-2">欢迎使用 Kimono AI 客服</h2>
+                    <p class="text-gray-500 mb-4">您可以用日语、中文或英语提问</p>
+                    <div class="flex flex-wrap justify-center gap-2">
+                        <button
+                            @click="sendQuickQuestion('和服のレンタル料金を教えてください')"
+                            class="px-3 py-1.5 bg-purple-50 text-purple-700 rounded-full text-sm hover:bg-purple-100 transition"
+                        >
+                            和服のレンタル料金は？
+                        </button>
+                        <button
+                            @click="sendQuickQuestion('如何租借和服？')"
+                            class="px-3 py-1.5 bg-purple-50 text-purple-700 rounded-full text-sm hover:bg-purple-100 transition"
+                        >
+                            如何租借和服？
+                        </button>
+                        <button
+                            @click="sendQuickQuestion('What sizes are available?')"
+                            class="px-3 py-1.5 bg-purple-50 text-purple-700 rounded-full text-sm hover:bg-purple-100 transition"
+                        >
+                            What sizes available?
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Message List -->
+                <template x-for="(msg, index) in messages" :key="index">
+                    <div>
+                        <!-- User Message -->
+                        <div x-show="msg.role === 'user'" class="flex justify-end">
+                            <div class="max-w-[80%] bg-purple-600 text-white rounded-2xl rounded-br-md px-4 py-3">
+                                <p x-text="msg.content" class="whitespace-pre-wrap"></p>
+                            </div>
+                        </div>
+
+                        <!-- AI Message -->
+                        <div x-show="msg.role === 'assistant'" class="flex justify-start">
+                            <div class="max-w-[80%]">
+                                <div class="bg-white border border-gray-200 rounded-2xl rounded-bl-md px-4 py-3 shadow-sm">
+                                    <div class="message-content prose prose-sm max-w-none" x-html="renderMarkdown(msg.content)"></div>
+
+                                    <!-- Sources (if available) -->
+                                    <div x-show="msg.sources?.length > 0" class="mt-3 pt-3 border-t border-gray-100">
+                                        <button
+                                            @click="msg.showSources = !msg.showSources"
+                                            class="text-xs text-gray-500 hover:text-purple-600 flex items-center"
+                                        >
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                            </svg>
+                                            <span x-text="msg.showSources ? '收起来源' : '查看来源 (' + (msg.sources?.length || 0) + ')'"></span>
+                                        </button>
+                                        <div x-show="msg.showSources" x-cloak class="mt-2 space-y-2">
+                                            <template x-for="(source, sIndex) in (msg.sources || [])" :key="sIndex">
+                                                <div class="bg-gray-50 rounded-lg p-2 text-xs">
+                                                    <div class="flex items-center justify-between mb-1">
+                                                        <span class="font-medium text-gray-700" x-text="source.question"></span>
+                                                        <span class="text-purple-600 font-semibold" x-text="Math.round(source.score * 100) + '%'"></span>
+                                                    </div>
+                                                    <p class="text-gray-500 line-clamp-2" x-text="source.answer"></p>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Meta Info & Feedback -->
+                                <div x-show="msg.meta" class="mt-1 px-2 flex items-center justify-between">
+                                    <div class="flex items-center space-x-3 text-xs text-gray-400">
+                                        <span x-show="msg.meta?.model_used" class="flex items-center">
+                                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                            </svg>
+                                            <span x-text="msg.meta?.model_used || ''"></span>
+                                        </span>
+                                        <span x-show="msg.meta?.confidence" class="flex items-center">
+                                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                            <span x-text="msg.meta?.confidence ? Math.round(msg.meta.confidence * 100) + '%' : ''"></span>
+                                        </span>
+                                        <span x-show="msg.meta?.latency_ms" class="flex items-center">
+                                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                            <span x-text="msg.meta?.latency_ms ? (msg.meta.latency_ms / 1000).toFixed(1) + 's' : ''"></span>
+                                        </span>
+                                        <span x-show="msg.meta?.language" class="flex items-center">
+                                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"></path>
+                                            </svg>
+                                            <span x-text="msg.meta?.language ? getLanguageName(msg.meta.language) : ''"></span>
+                                        </span>
+                                    </div>
+
+                                    <!-- Feedback Buttons -->
+                                    <div class="flex items-center space-x-1">
+                                        <!-- Already rated message -->
+                                        <span x-show="msg.feedback" class="text-xs text-green-600 flex items-center">
+                                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                            </svg>
+                                            感谢反馈
+                                        </span>
+
+                                        <!-- Feedback buttons -->
+                                        <template x-if="!msg.feedback">
+                                            <div class="flex items-center space-x-1">
+                                                <button
+                                                    @click="submitFeedback(index, 5, 'positive')"
+                                                    :disabled="msg.feedbackLoading"
+                                                    class="p-1 rounded hover:bg-green-50 text-gray-400 hover:text-green-600 transition disabled:opacity-50"
+                                                    title="有帮助"
+                                                >
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"></path>
+                                                    </svg>
+                                                </button>
+                                                <button
+                                                    @click="submitFeedback(index, 1, 'negative')"
+                                                    :disabled="msg.feedbackLoading"
+                                                    class="p-1 rounded hover:bg-red-50 text-gray-400 hover:text-red-600 transition disabled:opacity-50"
+                                                    title="需要改进"
+                                                >
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5"></path>
+                                                    </svg>
+                                                </button>
+                                                <button
+                                                    @click="openEditModal(index)"
+                                                    :disabled="msg.feedbackLoading"
+                                                    class="p-1 rounded hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition disabled:opacity-50"
+                                                    title="编辑后采纳"
+                                                >
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Loading Indicator -->
+                <div x-show="isLoading" x-cloak class="flex justify-start">
+                    <div class="bg-white border border-gray-200 rounded-2xl rounded-bl-md px-4 py-3 shadow-sm">
+                        <div class="typing-indicator flex space-x-1">
+                            <span class="w-2 h-2 bg-gray-400 rounded-full"></span>
+                            <span class="w-2 h-2 bg-gray-400 rounded-full"></span>
+                            <span class="w-2 h-2 bg-gray-400 rounded-full"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error Message -->
+                <div x-show="errorMessage" x-cloak class="flex justify-center">
+                    <div class="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 flex items-center space-x-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span x-text="errorMessage"></span>
+                        <button @click="errorMessage = ''" class="text-red-500 hover:text-red-700">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="border-t border-gray-100 p-4">
+                <form @submit.prevent="sendMessage" class="flex space-x-3">
+                    <textarea
+                        x-model="inputMessage"
+                        @keydown.enter="handleKeydown($event)"
+                        :disabled="isLoading"
+                        placeholder="请输入您的问题... (Enter 发送，Shift+Enter 换行)"
+                        rows="1"
+                        class="flex-1 border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed resize-none"
+                        style="min-height: 48px; max-height: 150px;"
+                        @input="autoResize($event.target)"
+                    ></textarea>
+                    <button
+                        type="submit"
+                        :disabled="isLoading || !inputMessage.trim()"
+                        class="bg-purple-600 text-white px-6 py-3 rounded-xl font-medium hover:bg-purple-700 transition disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center space-x-2"
+                    >
+                        <span>发送</span>
+                        <svg x-show="!isLoading" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                        </svg>
+                        <svg x-show="isLoading" x-cloak class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <!-- 按钮组：移动端使用网格布局 -->
+            <div class="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+                <button
+                    @click="newConversation"
+                    class="flex items-center justify-center sm:justify-start space-x-2 px-3 sm:px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition text-sm sm:text-base"
+                >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    <span>新对话</span>
+                </button>
+                <button
+                    @click="showQuickQuestions = !showQuickQuestions"
+                    class="flex items-center justify-center sm:justify-start space-x-2 px-3 sm:px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition text-sm sm:text-base"
+                >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                    </svg>
+                    <span>快捷问题</span>
+                </button>
+                <button
+                    @click="showHistory = !showHistory"
+                    class="flex items-center justify-center sm:justify-start space-x-2 px-3 sm:px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition text-sm sm:text-base"
+                    :class="showHistory ? 'bg-purple-50 border-purple-300 text-purple-700' : ''"
+                >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span>历史记录</span>
+                </button>
+                <!-- 管理员功能按钮 (仅管理员显示) -->
+                <template x-if="isLoggedIn && userInfo?.role === 'tenant_admin'">
+                    <a
+                        href="/static/corpus.html"
+                        class="flex items-center justify-center sm:justify-start space-x-2 px-3 sm:px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition text-sm sm:text-base"
+                    >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                        </svg>
+                        <span>语料管理</span>
+                    </a>
+                </template>
+                <template x-if="isLoggedIn && userInfo?.role === 'tenant_admin'">
+                    <a
+                        href="/static/users.html"
+                        class="flex items-center justify-center sm:justify-start space-x-2 px-3 sm:px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition text-sm sm:text-base"
+                    >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                        </svg>
+                        <span>用户管理</span>
+                    </a>
+                </template>
+            </div>
+            <div class="text-xs sm:text-sm text-gray-400 text-center sm:text-right session-id-display hidden sm:block">
+                会话 ID: <span x-text="conversationId || '未开始'" class="font-mono"></span>
+            </div>
+        </div>
+
+        <!-- History Panel -->
+        <div
+            x-show="showHistory"
+            x-cloak
+            x-transition
+            class="mt-4 bg-white rounded-xl shadow-sm p-4"
+        >
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-medium text-gray-700">历史对话</h3>
+                <button
+                    @click="clearAllHistory"
+                    class="text-xs text-red-500 hover:text-red-700"
+                    x-show="conversationHistory.length > 0"
+                >
+                    清空全部
+                </button>
+            </div>
+            <div x-show="conversationHistory.length === 0" class="text-center py-8 text-gray-400 text-sm">
+                暂无历史对话记录
+            </div>
+            <div x-show="conversationHistory.length > 0" class="space-y-2 max-h-64 overflow-y-auto">
+                <template x-for="(conv, idx) in conversationHistory" :key="conv.id">
+                    <div
+                        @click="loadHistoryConversation(conv.id)"
+                        class="p-3 bg-gray-50 hover:bg-purple-50 rounded-lg cursor-pointer transition group"
+                        :class="conversationId === conv.id ? 'bg-purple-100 border border-purple-300' : ''"
+                    >
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-gray-800 truncate" x-text="conv.title || '新对话'"></p>
+                                <p class="text-xs text-gray-500 mt-1" x-text="formatHistoryDate(conv.updatedAt)"></p>
+                                <p class="text-xs text-gray-400 mt-1" x-text="conv.messageCount + ' 条消息'"></p>
+                            </div>
+                            <button
+                                @click.stop="deleteHistoryConversation(conv.id)"
+                                class="p-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"
+                                title="删除"
+                            >
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- Quick Questions Panel -->
+        <div
+            x-show="showQuickQuestions"
+            x-cloak
+            x-transition
+            class="mt-4 bg-white rounded-xl shadow-sm p-4"
+        >
+            <h3 class="text-sm font-medium text-gray-700 mb-3">快捷测试问题</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <template x-for="(question, index) in quickQuestions" :key="index">
+                    <button
+                        @click="sendQuickQuestion(question)"
+                        class="text-left px-3 py-2 bg-gray-50 hover:bg-purple-50 rounded-lg text-sm text-gray-700 hover:text-purple-700 transition"
+                        x-text="question"
+                    ></button>
+                </template>
+            </div>
+        </div>
+
+        <!-- Help Modal -->
+        <div
+            x-show="showHelp"
+            x-cloak
+            class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+            @click.self="showHelp = false"
+        >
+            <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full mx-4 overflow-hidden" @click.stop>
+                <div class="bg-purple-600 text-white px-6 py-4 flex items-center justify-between">
+                    <h2 class="text-lg font-semibold">使用说明</h2>
+                    <button @click="showHelp = false" class="p-1 hover:bg-purple-700 rounded-lg transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div class="px-6 py-4 space-y-4 max-h-96 overflow-y-auto">
+                    <div>
+                        <h3 class="font-medium text-gray-800 mb-2">基本操作</h3>
+                        <ul class="text-sm text-gray-600 space-y-1">
+                            <li>• <kbd class="px-1.5 py-0.5 bg-gray-100 rounded text-xs">Enter</kbd> 发送消息</li>
+                            <li>• <kbd class="px-1.5 py-0.5 bg-gray-100 rounded text-xs">Shift + Enter</kbd> 输入换行</li>
+                            <li>• 点击「新对话」开始新的会话</li>
+                            <li>• 点击「快捷问题」查看预设测试问题</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 class="font-medium text-gray-800 mb-2">多语言支持</h3>
+                        <ul class="text-sm text-gray-600 space-y-1">
+                            <li>• 支持日语、中文、英语提问</li>
+                            <li>• AI 会自动检测语言并使用相同语言回复</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 class="font-medium text-gray-800 mb-2">反馈功能</h3>
+                        <ul class="text-sm text-gray-600 space-y-1">
+                            <li>• 点击 👍 表示回答有帮助</li>
+                            <li>• 点击 👎 表示回答需要改进</li>
+                            <li>• 反馈将帮助优化 AI 回答质量</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 class="font-medium text-gray-800 mb-2">辅助信息</h3>
+                        <ul class="text-sm text-gray-600 space-y-1">
+                            <li>• 每条回复显示使用的模型、置信度、响应时间</li>
+                            <li>• 点击「查看来源」可查看知识库匹配结果</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 class="font-medium text-gray-800 mb-2">会话保存</h3>
+                        <ul class="text-sm text-gray-600 space-y-1">
+                            <li>• 对话记录自动保存到本地</li>
+                            <li>• 刷新页面后可恢复之前的对话</li>
+                            <li>• 点击「新对话」清除当前会话</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="px-6 py-4 bg-gray-50 text-center">
+                    <button
+                        @click="showHelp = false"
+                        class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+                    >
+                        知道了
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Answer Modal -->
+        <div
+            x-show="showEditModal"
+            x-cloak
+            class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+            @click.self="closeEditModal"
+        >
+            <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full mx-4 overflow-hidden" @click.stop>
+                <div class="bg-blue-600 text-white px-6 py-4 flex items-center justify-between">
+                    <h2 class="text-lg font-semibold">编辑答案后采纳</h2>
+                    <button @click="closeEditModal" class="p-1 hover:bg-blue-700 rounded-lg transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div class="px-6 py-4 space-y-4">
+                    <!-- Original Question -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">原始问题</label>
+                        <div class="bg-gray-50 rounded-lg p-3 text-sm text-gray-600" x-text="getEditingQuestion()"></div>
+                    </div>
+                    <!-- Original Answer -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">AI 原始回答</label>
+                        <div class="bg-gray-50 rounded-lg p-3 text-sm text-gray-600 max-h-32 overflow-y-auto" x-text="getEditingOriginalAnswer()"></div>
+                    </div>
+                    <!-- Corrected Answer -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            正确答案 <span class="text-red-500">*</span>
+                        </label>
+                        <textarea
+                            x-model="correctedAnswer"
+                            rows="5"
+                            class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                            placeholder="请输入正确的答案..."
+                        ></textarea>
+                        <p class="mt-1 text-xs text-gray-500">修改后的答案将用于优化 AI 学习</p>
+                    </div>
+                </div>
+                <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3">
+                    <button
+                        @click="closeEditModal"
+                        class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition"
+                    >
+                        取消
+                    </button>
+                    <button
+                        @click="submitCorrectedFeedback"
+                        :disabled="!correctedAnswer.trim() || editSubmitting"
+                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center space-x-2"
+                    >
+                        <span x-show="!editSubmitting">提交纠偏</span>
+                        <span x-show="editSubmitting" class="flex items-center">
+                            <svg class="w-4 h-4 animate-spin mr-2" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            提交中...
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function chatApp() {
+            return {
+                messages: [],
+                inputMessage: '',
+                conversationId: null,
+                isLoading: false,
+                isOnline: true,
+                errorMessage: '',
+                showQuickQuestions: false,
+                showHelp: false,
+                // Edit feedback modal state
+                showEditModal: false,
+                editingMessageIndex: null,
+                correctedAnswer: '',
+                editSubmitting: false,
+                // History state
+                showHistory: false,
+                conversationHistory: [],
+                // Auth state
+                isLoggedIn: false,
+                userInfo: null,
+                accessToken: null,
+                quickQuestions: [
+                    '和服のレンタル料金を教えてください',
+                    'サイズはどのようになっていますか？',
+                    '返却方法を教えてください',
+                    '如何租借和服？',
+                    '有哪些尺寸可以選擇？',
+                    '可以幫忙穿和服嗎？',
+                    '和服租借的价格是多少？',
+                    '需要提前预约吗？',
+                    'How can I rent a kimono?',
+                    'What sizes are available?'
+                ],
+
+                init() {
+                    // Check auth status
+                    this.checkAuthStatus();
+
+                    // Check server status
+                    this.checkServerStatus();
+                    setInterval(() => this.checkServerStatus(), 30000);
+
+                    // Load conversation history list
+                    this.loadConversationHistory();
+
+                    // Load current conversation from localStorage
+                    this.loadConversation();
+                },
+
+                checkAuthStatus() {
+                    this.accessToken = localStorage.getItem('access_token');
+                    const userInfoStr = localStorage.getItem('user_info');
+
+                    if (this.accessToken && userInfoStr) {
+                        try {
+                            this.userInfo = JSON.parse(userInfoStr);
+                            this.isLoggedIn = true;
+                        } catch (e) {
+                            this.logout();
+                        }
+                    }
+                },
+
+                logout() {
+                    localStorage.removeItem('access_token');
+                    localStorage.removeItem('refresh_token');
+                    localStorage.removeItem('tenant_id');
+                    localStorage.removeItem('user_info');
+                    this.isLoggedIn = false;
+                    this.userInfo = null;
+                    this.accessToken = null;
+                    // Clear conversation on logout
+                    this.newConversation();
+                },
+
+                getAuthHeaders() {
+                    const headers = {
+                        'Content-Type': 'application/json'
+                    };
+                    if (this.accessToken) {
+                        headers['Authorization'] = `Bearer ${this.accessToken}`;
+                    }
+                    return headers;
+                },
+
+                handleKeydown(event) {
+                    // Shift+Enter: insert newline
+                    // Enter: send message
+                    if (event.key === 'Enter' && !event.shiftKey) {
+                        event.preventDefault();
+                        this.sendMessage();
+                    }
+                    // Shift+Enter allows default behavior (newline)
+                },
+
+                autoResize(textarea) {
+                    textarea.style.height = 'auto';
+                    textarea.style.height = Math.min(textarea.scrollHeight, 150) + 'px';
+                },
+
+                saveConversation() {
+                    const data = {
+                        messages: this.messages,
+                        conversationId: this.conversationId
+                    };
+                    localStorage.setItem('kimono_chat_conversation', JSON.stringify(data));
+
+                    // Also save to history
+                    this.saveToHistory();
+                },
+
+                loadConversation() {
+                    try {
+                        const saved = localStorage.getItem('kimono_chat_conversation');
+                        if (saved) {
+                            const data = JSON.parse(saved);
+                            // 确保所有消息都有必要的属性，避免 Alpine.js 表达式错误
+                            this.messages = (data.messages || []).map(msg => {
+                                if (msg.role === 'assistant') {
+                                    return {
+                                        ...msg,
+                                        sources: msg.sources || [],
+                                        showSources: msg.showSources || false,
+                                        feedback: msg.feedback || null,
+                                        feedbackLoading: false,
+                                        meta: msg.meta || null  // 保持 null 以便 x-show="msg.meta" 正确工作
+                                    };
+                                }
+                                return msg;
+                            });
+                            this.conversationId = data.conversationId || null;
+                        }
+                    } catch (e) {
+                        console.error('Failed to load conversation:', e);
+                        // 清除损坏的数据
+                        this.clearSavedConversation();
+                    }
+                },
+
+                clearSavedConversation() {
+                    localStorage.removeItem('kimono_chat_conversation');
+                },
+
+                async checkServerStatus() {
+                    try {
+                        const response = await fetch('/api/v1/system/health');
+                        this.isOnline = response.ok;
+                    } catch (e) {
+                        this.isOnline = false;
+                    }
+                },
+
+                async sendMessage() {
+                    const message = this.inputMessage.trim();
+                    if (!message || this.isLoading) return;
+
+                    // Add user message
+                    this.messages.push({
+                        role: 'user',
+                        content: message
+                    });
+                    this.inputMessage = '';
+                    this.errorMessage = '';
+                    this.isLoading = true;
+
+                    // Scroll to bottom
+                    this.$nextTick(() => this.scrollToBottom());
+
+                    try {
+                        const response = await fetch('/api/v1/chat/message', {
+                            method: 'POST',
+                            headers: this.getAuthHeaders(),
+                            body: JSON.stringify({
+                                message: message,
+                                conversation_id: this.conversationId
+                            })
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('服务器响应错误: ' + response.status);
+                        }
+
+                        const data = await response.json();
+
+                        // Update conversation ID
+                        this.conversationId = data.conversation_id;
+
+                        // Add AI response
+                        this.messages.push({
+                            role: 'assistant',
+                            content: data.answer,
+                            message_id: data.message_id,
+                            sources: data.sources || [],
+                            showSources: false,
+                            feedback: null,
+                            feedbackLoading: false,
+                            meta: {
+                                model_used: data.model_used,
+                                confidence: data.confidence,
+                                latency_ms: data.latency_ms,
+                                language: data.language
+                            }
+                        });
+
+                        // Save conversation to localStorage
+                        this.saveConversation();
+
+                    } catch (error) {
+                        console.error('Error:', error);
+                        this.errorMessage = error.message || '发送消息失败，请检查网络连接';
+                        // Remove the user message if failed
+                        // this.messages.pop();
+                    } finally {
+                        this.isLoading = false;
+                        this.$nextTick(() => this.scrollToBottom());
+                    }
+                },
+
+                sendQuickQuestion(question) {
+                    this.inputMessage = question;
+                    this.showQuickQuestions = false;
+                    this.sendMessage();
+                },
+
+                newConversation() {
+                    // Save current conversation to history first
+                    if (this.conversationId && this.messages.length > 0) {
+                        this.saveToHistory();
+                    }
+
+                    this.messages = [];
+                    this.conversationId = null;
+                    this.errorMessage = '';
+                    this.inputMessage = '';
+                    // Clear saved conversation
+                    this.clearSavedConversation();
+                },
+
+                scrollToBottom() {
+                    const container = this.$refs.messagesContainer;
+                    if (container) {
+                        container.scrollTop = container.scrollHeight;
+                    }
+                },
+
+                renderMarkdown(content) {
+                    if (!content) return '';
+                    try {
+                        return marked.parse(content);
+                    } catch (e) {
+                        return content;
+                    }
+                },
+
+                async submitFeedback(msgIndex, rating, type) {
+                    const msg = this.messages[msgIndex];
+                    if (!msg || msg.feedback || msg.feedbackLoading || !this.conversationId) return;
+
+                    // 获取对应的用户问题（上一条用户消息）
+                    let userQuestion = '';
+                    for (let i = msgIndex - 1; i >= 0; i--) {
+                        if (this.messages[i].role === 'user') {
+                            userQuestion = this.messages[i].content;
+                            break;
+                        }
+                    }
+
+                    msg.feedbackLoading = true;
+
+                    try {
+                        const response = await fetch('/api/v1/chat/feedback', {
+                            method: 'POST',
+                            headers: this.getAuthHeaders(),
+                            body: JSON.stringify({
+                                conversation_id: this.conversationId,
+                                message_id: msg.message_id,
+                                rating: rating,
+                                comment: type,
+                                user_question: userQuestion,
+                                original_answer: msg.content
+                            })
+                        });
+
+                        if (response.ok) {
+                            msg.feedback = type;
+                            // 保存会话以记录反馈状态
+                            this.saveConversation();
+                        } else {
+                            console.error('Feedback submission failed');
+                        }
+                    } catch (error) {
+                        console.error('Feedback error:', error);
+                    } finally {
+                        msg.feedbackLoading = false;
+                    }
+                },
+
+                getLanguageName(code) {
+                    const languages = {
+                        'ja': '日本語',
+                        'zh': '中文',
+                        'zh-cn': '简体中文',
+                        'zh-tw': '繁體中文',
+                        'en': 'English'
+                    };
+                    return languages[code] || code;
+                },
+
+                // ========== 编辑答案相关函数 ==========
+
+                openEditModal(msgIndex) {
+                    const msg = this.messages[msgIndex];
+                    if (!msg || msg.role !== 'assistant') return;
+
+                    this.editingMessageIndex = msgIndex;
+                    // 预填充 AI 原始回答作为初始值
+                    this.correctedAnswer = msg.content;
+                    this.showEditModal = true;
+                },
+
+                closeEditModal() {
+                    this.showEditModal = false;
+                    this.editingMessageIndex = null;
+                    this.correctedAnswer = '';
+                    this.editSubmitting = false;
+                },
+
+                getEditingQuestion() {
+                    if (this.editingMessageIndex === null) return '';
+                    // 查找对应的用户问题
+                    for (let i = this.editingMessageIndex - 1; i >= 0; i--) {
+                        if (this.messages[i].role === 'user') {
+                            return this.messages[i].content;
+                        }
+                    }
+                    return '';
+                },
+
+                getEditingOriginalAnswer() {
+                    if (this.editingMessageIndex === null) return '';
+                    const msg = this.messages[this.editingMessageIndex];
+                    return msg ? msg.content : '';
+                },
+
+                async submitCorrectedFeedback() {
+                    if (!this.correctedAnswer.trim() || this.editingMessageIndex === null) return;
+
+                    const msg = this.messages[this.editingMessageIndex];
+                    if (!msg || !this.conversationId) return;
+
+                    const userQuestion = this.getEditingQuestion();
+                    this.editSubmitting = true;
+
+                    try {
+                        const response = await fetch('/api/v1/chat/feedback', {
+                            method: 'POST',
+                            headers: this.getAuthHeaders(),
+                            body: JSON.stringify({
+                                conversation_id: this.conversationId,
+                                message_id: msg.message_id,
+                                rating: 4,  // 纠偏评分设为 4
+                                feedback_type: 'corrected',
+                                comment: '编辑后采纳',
+                                user_question: userQuestion,
+                                original_answer: msg.content,
+                                corrected_answer: this.correctedAnswer.trim()
+                            })
+                        });
+
+                        if (response.ok) {
+                            // 标记为已反馈
+                            msg.feedback = 'corrected';
+                            // 保存会话
+                            this.saveConversation();
+                            // 关闭模态框
+                            this.closeEditModal();
+                        } else {
+                            const error = await response.json();
+                            console.error('Corrected feedback submission failed:', error);
+                            alert('提交失败，请重试');
+                        }
+                    } catch (error) {
+                        console.error('Corrected feedback error:', error);
+                        alert('提交失败，请检查网络连接');
+                    } finally {
+                        this.editSubmitting = false;
+                    }
+                },
+
+                // ========== 历史记录相关函数 ==========
+
+                loadConversationHistory() {
+                    try {
+                        const saved = localStorage.getItem('kimono_chat_history');
+                        if (saved) {
+                            this.conversationHistory = JSON.parse(saved);
+                            // Sort by updatedAt descending
+                            this.conversationHistory.sort((a, b) =>
+                                new Date(b.updatedAt) - new Date(a.updatedAt)
+                            );
+                        }
+                    } catch (e) {
+                        console.error('Failed to load conversation history:', e);
+                        this.conversationHistory = [];
+                    }
+                },
+
+                saveConversationHistory() {
+                    try {
+                        localStorage.setItem('kimono_chat_history', JSON.stringify(this.conversationHistory));
+                    } catch (e) {
+                        console.error('Failed to save conversation history:', e);
+                    }
+                },
+
+                saveToHistory() {
+                    if (!this.conversationId || this.messages.length === 0) return;
+
+                    // Generate title from first user message
+                    let title = '新对话';
+                    for (const msg of this.messages) {
+                        if (msg.role === 'user') {
+                            title = msg.content.substring(0, 50) + (msg.content.length > 50 ? '...' : '');
+                            break;
+                        }
+                    }
+
+                    // Check if conversation already exists in history
+                    const existingIndex = this.conversationHistory.findIndex(
+                        c => c.id === this.conversationId
+                    );
+
+                    const historyEntry = {
+                        id: this.conversationId,
+                        title: title,
+                        messages: this.messages,
+                        messageCount: this.messages.length,
+                        createdAt: existingIndex >= 0
+                            ? this.conversationHistory[existingIndex].createdAt
+                            : new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    };
+
+                    if (existingIndex >= 0) {
+                        // Update existing
+                        this.conversationHistory[existingIndex] = historyEntry;
+                    } else {
+                        // Add new
+                        this.conversationHistory.unshift(historyEntry);
+                    }
+
+                    // Keep only last 50 conversations
+                    if (this.conversationHistory.length > 50) {
+                        this.conversationHistory = this.conversationHistory.slice(0, 50);
+                    }
+
+                    this.saveConversationHistory();
+                },
+
+                loadHistoryConversation(convId) {
+                    // Save current conversation first
+                    if (this.conversationId && this.messages.length > 0) {
+                        this.saveToHistory();
+                    }
+
+                    const conv = this.conversationHistory.find(c => c.id === convId);
+                    if (!conv) return;
+
+                    // Load the conversation
+                    this.messages = (conv.messages || []).map(msg => {
+                        if (msg.role === 'assistant') {
+                            return {
+                                ...msg,
+                                sources: msg.sources || [],
+                                showSources: msg.showSources || false,
+                                feedback: msg.feedback || null,
+                                feedbackLoading: false,
+                                meta: msg.meta || null
+                            };
+                        }
+                        return msg;
+                    });
+                    this.conversationId = convId;
+
+                    // Save to current conversation storage
+                    this.saveConversation();
+
+                    // Scroll to bottom
+                    this.$nextTick(() => this.scrollToBottom());
+                },
+
+                deleteHistoryConversation(convId) {
+                    if (!confirm('确定要删除这条对话记录吗？')) return;
+
+                    this.conversationHistory = this.conversationHistory.filter(c => c.id !== convId);
+                    this.saveConversationHistory();
+
+                    // If deleting current conversation, clear it
+                    if (this.conversationId === convId) {
+                        this.messages = [];
+                        this.conversationId = null;
+                        this.clearSavedConversation();
+                    }
+                },
+
+                clearAllHistory() {
+                    if (!confirm('确定要清空所有历史对话记录吗？此操作不可恢复。')) return;
+
+                    this.conversationHistory = [];
+                    this.saveConversationHistory();
+                },
+
+                formatHistoryDate(dateStr) {
+                    if (!dateStr) return '';
+                    const date = new Date(dateStr);
+                    const now = new Date();
+                    const diff = now - date;
+                    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+                    if (days === 0) {
+                        return '今天 ' + date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+                    } else if (days === 1) {
+                        return '昨天 ' + date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+                    } else if (days < 7) {
+                        return days + ' 天前';
+                    } else {
+                        return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+                    }
+                }
+            };
+        }
+    </script>
+</body>
+</html>
