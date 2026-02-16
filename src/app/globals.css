@@ -5,6 +5,13 @@
    Airbnb 风格 + 樱花美学
    ================================ */
 
+/* 全局防止水平溢出 */
+html,
+body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
 :root {
   /* === 樱花粉红色系 === */
   --sakura-50: #fff5f7;
@@ -307,6 +314,11 @@ body {
     0 12px 40px rgba(0, 0, 0, 0.1),
     0 4px 12px rgba(0, 0, 0, 0.06);
   transform: translateY(-1px);
+}
+
+/* iOS 安全区域填充 */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
 /* 平滑过渡 */

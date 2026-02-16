@@ -3,7 +3,17 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, Home, Package, Sparkles, Store as StoreIcon, HelpCircle, Info, User, LogIn, LogOut } from "lucide-react";
+import {
+  Menu,
+  X,
+  Store as StoreIcon,
+  HelpCircle,
+  Info,
+  Globe,
+  ChevronRight,
+  Heart,
+  Sparkles,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MobileMenuProps {
@@ -38,46 +48,6 @@ export default function MobileMenu({ isLoggedIn, userName, userEmail, merchant }
     };
   }, [isOpen]);
 
-  const navLinks = [
-    {
-      href: "/",
-      label: "首页",
-      icon: Home,
-      description: "返回主页"
-    },
-    {
-      href: "/plans",
-      label: "租赁套餐",
-      icon: Package,
-      description: "浏览和服套餐"
-    },
-    {
-      href: "/virtual-tryon",
-      label: "AI 试穿",
-      icon: Sparkles,
-      description: "智能虚拟试穿",
-      special: true
-    },
-    {
-      href: "/stores",
-      label: "店铺信息",
-      icon: StoreIcon,
-      description: "查找附近店铺"
-    },
-    {
-      href: "/faq",
-      label: "常见问题",
-      icon: HelpCircle,
-      description: "帮助与支持"
-    },
-    {
-      href: "/about",
-      label: "关于我们",
-      icon: Info,
-      description: "了解和缘"
-    },
-  ];
-
   return (
     <>
       {/* 汉堡菜单按钮 */}
@@ -92,190 +62,203 @@ export default function MobileMenu({ isLoggedIn, userName, userEmail, merchant }
       {/* 遮罩层 */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity"
+          className="fixed inset-0 bg-black/40 z-[55] md:hidden transition-opacity backdrop-blur-sm"
           onClick={() => setIsOpen(false)}
           aria-hidden="true"
         />
       )}
 
-      {/* 侧边抽屉 */}
+      {/* 侧边抽屉 - Miyabi 风格 */}
       <div
         className={cn(
-          "fixed top-0 left-0 bottom-0 w-80 max-w-[85vw] bg-white z-50 md:hidden",
+          "fixed top-0 left-0 bottom-0 w-80 max-w-[85vw] z-[60] md:hidden",
+          "bg-white/95 backdrop-blur-xl",
           "transform transition-transform duration-300 ease-out",
-          "shadow-2xl",
+          "shadow-2xl flex flex-col overflow-hidden",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        {/* 顶部区域 */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-sakura-400 to-sakura-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md">
-              和
+        {/* 樱花装饰背景 */}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-30"
+          style={{
+            background: `
+              radial-gradient(circle at 20% 20%, rgba(236, 72, 153, 0.08) 0%, transparent 50%),
+              radial-gradient(circle at 80% 80%, rgba(236, 72, 153, 0.06) 0%, transparent 50%),
+              radial-gradient(circle at 60% 40%, rgba(236, 72, 153, 0.04) 0%, transparent 40%)
+            `,
+          }}
+        />
+        {/* 顶部区域 - 品牌家纹 */}
+        <div className="relative flex items-center justify-between p-4 border-b border-sakura-100/50">
+          <Link href="/" className="flex items-center gap-3 group">
+            {/* CSS 家纹 Kamon */}
+            <div className="relative w-10 h-10 shrink-0">
+              <div className="absolute inset-0 rounded-full border-2 border-sakura-500 transition-colors duration-300 group-hover:border-sakura-600" />
+              <div
+                className="absolute inset-1 rounded-full border border-sakura-400/50"
+                style={{
+                  background:
+                    "repeating-conic-gradient(from 0deg, transparent 0deg 30deg, rgba(236, 72, 153, 0.06) 30deg 60deg)",
+                }}
+              />
+              <div className="absolute inset-[6px] rounded-full bg-white" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span
+                  className="font-serif text-[14px] font-medium text-sakura-600 select-none"
+                  style={{ fontFamily: '"Noto Serif JP", "Source Han Serif", serif' }}
+                >
+                  一
+                </span>
+              </div>
             </div>
-            <div>
-              <h2 className="font-bold text-gray-900">和缘</h2>
-              <p className="text-xs text-gray-500">京都和服体验</p>
+            {/* 品牌名 */}
+            <div className="flex flex-col leading-none">
+              <span className="font-serif text-[18px] text-sakura-600">
+                <span className="italic font-medium">Kimono</span>
+                <span className="font-light ml-1">One</span>
+              </span>
+              <span className="text-[10px] tracking-[0.25em] mt-1 font-medium text-sakura-500/70">
+                着物レンタル
+              </span>
             </div>
-          </div>
+          </Link>
           <button
             onClick={() => setIsOpen(false)}
-            className="p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+            className="p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-sakura-50 transition-all duration-200"
             aria-label="关闭菜单"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* 用户信息区域 */}
-        {isLoggedIn && (
-          <div className="p-4 bg-sakura-50 border-b border-gray-100">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-sakura-500 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md">
-                {userName?.charAt(0)?.toUpperCase() || <User className="w-6 h-6" />}
+        {/* 主要导航区域 */}
+        <div className="relative flex-1 overflow-y-auto">
+          {/* 特色功能入口 */}
+          <div className="p-4 border-b border-sakura-100/50">
+            <Link
+              href="/virtual-tryon"
+              className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-sakura-50 to-sakura-100/50 hover:from-sakura-100 hover:to-sakura-100 transition-all duration-200 active:scale-[0.98]"
+            >
+              <div className="w-10 h-10 rounded-xl bg-sakura-500 flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-white" />
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-gray-900 truncate">
-                  {userName || "用户"}
-                </p>
-                {userEmail && (
-                  <p className="text-xs text-gray-600 truncate">{userEmail}</p>
-                )}
+              <div className="flex-1">
+                <div className="font-medium text-gray-900">AI 试穿</div>
+                <div className="text-[12px] text-sakura-600">体验虚拟和服试穿</div>
               </div>
-            </div>
+              <ChevronRight className="w-5 h-5 text-sakura-400" />
+            </Link>
+          </div>
 
-            {/* 商家状态卡片 */}
-            {merchant && (
-              <div className="mt-3 p-3 bg-white rounded-lg shadow-sm border border-sakura-100">
-                <div className="flex items-center gap-2 text-sm">
-                  <StoreIcon className="w-4 h-4 text-sakura-600" />
-                  <span className="font-medium text-gray-900">{merchant.businessName}</span>
+          {/* 商家入口 */}
+          <div className="p-4 border-b border-sakura-100/50">
+            <p className="px-4 mb-2 text-[11px] uppercase tracking-[0.15em] text-sakura-500 font-medium">
+              商家服务
+            </p>
+            {merchant?.status === "APPROVED" ? (
+              <Link
+                href="/merchant/dashboard"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-sakura-50 transition-all duration-200 active:scale-[0.98]"
+              >
+                <StoreIcon className="w-5 h-5 text-sakura-600" />
+                <div className="flex-1">
+                  <div className="font-medium">商家中心</div>
+                  <div className="text-[12px] text-gray-500">管理您的店铺</div>
                 </div>
-                <div className="mt-1 flex items-center gap-2">
-                  <span
-                    className={cn(
-                      "text-xs font-medium px-2 py-0.5 rounded-full",
-                      merchant.status === "APPROVED" && "bg-green-100 text-green-700",
-                      merchant.status === "PENDING" && "bg-yellow-100 text-yellow-700",
-                      merchant.status === "REJECTED" && "bg-red-100 text-red-700"
-                    )}
-                  >
-                    {merchant.status === "APPROVED" && "已认证"}
-                    {merchant.status === "PENDING" && "审核中"}
-                    {merchant.status === "REJECTED" && "已拒绝"}
-                  </span>
+                <ChevronRight className="w-4 h-4 text-gray-400" />
+              </Link>
+            ) : merchant?.status === "PENDING" ? (
+              <Link
+                href="/merchant/pending"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-yellow-50 transition-all duration-200 active:scale-[0.98]"
+              >
+                <StoreIcon className="w-5 h-5 text-yellow-600" />
+                <div className="flex-1">
+                  <div className="font-medium">申请审核中</div>
+                  <div className="text-[12px] text-gray-500">查看申请状态</div>
                 </div>
-              </div>
+                <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">
+                  审核中
+                </span>
+              </Link>
+            ) : (
+              <Link
+                href="/merchant/register"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-sakura-50 transition-all duration-200 active:scale-[0.98]"
+              >
+                <StoreIcon className="w-5 h-5 text-sakura-600" />
+                <div className="flex-1">
+                  <div className="font-medium">成为商家</div>
+                  <div className="text-[12px] text-gray-500">入驻 Kimono One 平台</div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-gray-400" />
+              </Link>
             )}
           </div>
-        )}
 
-        {/* 导航链接 */}
-        <nav className="flex-1 overflow-y-auto p-2">
-          <div className="space-y-1">
-            {navLinks.map((link) => {
-              const Icon = link.icon;
-              const isActive = link.href === "/"
-                ? pathname === "/"
-                : pathname === link.href || pathname.startsWith(link.href + "/");
-
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-xl transition-all",
-                    "hover:bg-gray-50 active:scale-[0.98]",
-                    isActive
-                      ? "bg-sakura-50 text-sakura-700 font-semibold shadow-sm"
-                      : "text-gray-700",
-                    link.special && !isActive && "text-sakura-600"
-                  )}
-                >
-                  <Icon className={cn(
-                    "w-5 h-5 shrink-0",
-                    isActive && "text-sakura-600",
-                    link.special && !isActive && "text-sakura-500"
-                  )} />
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium flex items-center gap-2">
-                      {link.label}
-                      {link.special && <span className="text-sm">✨</span>}
-                    </div>
-                    <div className="text-xs text-gray-500 truncate">
-                      {link.description}
-                    </div>
-                  </div>
-                  {isActive && (
-                    <div className="w-1.5 h-8 bg-sakura-600 rounded-full" />
-                  )}
-                </Link>
-              );
-            })}
-          </div>
-
-          {/* 商家相关链接 */}
-          {isLoggedIn && (
-            <div className="mt-6 pt-6 border-t border-gray-100">
-              <p className="px-4 pb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                商家中心
-              </p>
-              <div className="space-y-1">
-                {merchant?.status === "APPROVED" ? (
-                  <Link
-                    href="/merchant/dashboard"
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-gray-50 transition-all active:scale-[0.98]"
-                  >
-                    <StoreIcon className="w-5 h-5 text-sakura-600" />
-                    <div className="flex-1">
-                      <div className="font-medium">商家中心</div>
-                      <div className="text-xs text-gray-500">管理您的店铺</div>
-                    </div>
-                  </Link>
-                ) : merchant?.status === "PENDING" ? (
-                  <Link
-                    href="/merchant/pending"
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-gray-50 transition-all active:scale-[0.98]"
-                  >
-                    <StoreIcon className="w-5 h-5 text-yellow-600" />
-                    <div className="flex-1">
-                      <div className="font-medium">申请审核中</div>
-                      <div className="text-xs text-gray-500">查看申请状态</div>
-                    </div>
-                  </Link>
-                ) : (
-                  <Link
-                    href="/merchant/register"
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-gray-50 transition-all active:scale-[0.98]"
-                  >
-                    <StoreIcon className="w-5 h-5 text-sakura-600" />
-                    <div className="flex-1">
-                      <div className="font-medium">成为商家</div>
-                      <div className="text-xs text-gray-500">入驻和缘平台</div>
-                    </div>
-                  </Link>
-                )}
-              </div>
+          {/* 辅助导航 */}
+          <div className="p-4">
+            <p className="px-4 mb-2 text-[11px] uppercase tracking-[0.15em] text-sakura-500 font-medium">
+              更多
+            </p>
+            <div className="space-y-1">
+              <Link
+                href="/favorites"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-sakura-50 transition-all duration-200 active:scale-[0.98]"
+              >
+                <Heart className="w-5 h-5 text-sakura-500" />
+                <span className="flex-1 font-medium">我的收藏</span>
+                <ChevronRight className="w-4 h-4 text-gray-400" />
+              </Link>
+              <Link
+                href="/faq"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-sakura-50 transition-all duration-200 active:scale-[0.98]"
+              >
+                <HelpCircle className="w-5 h-5 text-sakura-500" />
+                <span className="flex-1 font-medium">常见问题</span>
+                <ChevronRight className="w-4 h-4 text-gray-400" />
+              </Link>
+              <Link
+                href="/about"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-sakura-50 transition-all duration-200 active:scale-[0.98]"
+              >
+                <Info className="w-5 h-5 text-sakura-500" />
+                <span className="flex-1 font-medium">关于我们</span>
+                <ChevronRight className="w-4 h-4 text-gray-400" />
+              </Link>
+              <button
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-sakura-50 transition-all duration-200 active:scale-[0.98] w-full"
+              >
+                <Globe className="w-5 h-5 text-sakura-500" />
+                <span className="flex-1 font-medium text-left">语言 / 货币</span>
+                <span className="text-[12px] text-gray-500">简中 / ¥</span>
+              </button>
             </div>
-          )}
-        </nav>
+          </div>
+        </div>
 
-        {/* 底部区域 */}
-        <div className="p-4 border-t border-gray-100 bg-gray-50">
+        {/* 底部 - 简化版用户信息 */}
+        <div className="relative p-4 border-t border-sakura-100/50 bg-gradient-to-t from-sakura-50/50 to-transparent">
           {isLoggedIn ? (
-            <Link
-              href="/api/auth/signout"
-              className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-all active:scale-[0.98] shadow-sm"
-            >
-              <LogOut className="w-5 h-5" />
-              退出登录
-            </Link>
+            <div className="flex items-center gap-3">
+              <div className="flex-1 min-w-0 px-2">
+                <p className="text-[13px] text-gray-600 truncate">
+                  {userName || userEmail || "用户"}
+                </p>
+              </div>
+              <Link
+                href="/api/auth/signout"
+                className="text-[13px] text-gray-500 hover:text-sakura-600 transition-colors"
+              >
+                退出
+              </Link>
+            </div>
           ) : (
             <Link
               href="/login"
-              className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-sakura-600 text-white rounded-xl font-medium hover:bg-sakura-700 transition-all active:scale-[0.98] shadow-md"
+              className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-gradient-to-r from-sakura-500 to-sakura-600 text-white rounded-xl font-medium hover:from-sakura-600 hover:to-sakura-700 transition-all duration-200 active:scale-[0.98] shadow-md"
             >
-              <LogIn className="w-5 h-5" />
               登录 / 注册
             </Link>
           )}
