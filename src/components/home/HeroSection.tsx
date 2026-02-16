@@ -64,7 +64,7 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
   return (
     <section
       ref={heroRef}
-      className="relative h-svh w-full overflow-hidden bg-white"
+      className="relative h-[85svh] md:h-svh w-full overflow-hidden bg-white -mt-16 md:-mt-20"
     >
       {/* Layer 1: 背景图片 - Ken Burns 缓慢缩放 */}
       <div className="absolute inset-0 z-0 animate-ken-burns">
@@ -94,12 +94,13 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
       <div
         className="absolute inset-0 z-[2] pointer-events-none"
         style={{
-          background: "radial-gradient(ellipse 80% 50% at 50% 42%, rgba(255,255,255,0.80) 0%, rgba(255,255,255,0.35) 45%, transparent 72%)"
+          background:
+            "radial-gradient(ellipse 80% 50% at 50% 42%, rgba(255,255,255,0.80) 0%, rgba(255,255,255,0.35) 45%, transparent 72%)",
         }}
       />
 
       {/* Layer 3: 主内容区 */}
-      <div className="relative z-10 h-full flex flex-col items-center justify-center px-4 -mt-16 md:-mt-24">
+      <div className="relative z-10 h-full flex flex-col items-center justify-center px-4 -mt-4 md:-mt-10">
         {/* 竖排装饰文字 - 左侧 */}
         <div className="hidden lg:block absolute left-8 xl:left-16 top-1/2 -translate-y-1/2 animate-hero-left">
           <div
@@ -121,14 +122,14 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
         </div>
 
         {/* 主标题区域 */}
-        <div className="text-center mb-8 md:mb-12 relative -mt-8 md:-mt-12">
+        <div className="text-center mb-4 md:mb-12 relative">
           {/* 主标题 */}
           <div className="relative animate-hero-title">
             <h1 className="relative">
               <span
-                className="block text-[48px] md:text-[72px] lg:text-[88px] font-mincho font-medium tracking-[0.15em] text-wabi-800"
+                className="block text-[40px] md:text-[72px] lg:text-[88px] font-mincho font-medium tracking-[0.15em] text-wabi-800"
                 style={{
-                  textShadow: "0 2px 12px rgba(255, 122, 154, 0.2)"
+                  textShadow: "0 2px 12px rgba(255, 122, 154, 0.2)",
                 }}
               >
                 一の着物
@@ -137,7 +138,7 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
           </div>
 
           {/* 副标题 - 磨砂胶囊 */}
-          <div className="mt-8 animate-hero-subtitle">
+          <div className="mt-4 md:mt-8 animate-hero-subtitle">
             <span className="inline-flex items-center px-8 py-3 rounded-full glass-panel-light">
               <p className="text-[14px] md:text-[16px] font-mincho tracking-[0.25em] text-wabi-700">
                 伝統の美、現代の心
@@ -151,7 +152,6 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
           <HeroSearchPanel themes={themes} variant="light" />
         </div>
       </div>
-
     </section>
   );
 }

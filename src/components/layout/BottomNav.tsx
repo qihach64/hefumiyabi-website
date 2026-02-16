@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Search, ShoppingBag, User, type LucideIcon } from "lucide-react";
@@ -60,27 +61,28 @@ function NavItem({ icon: Icon, label, href, onClick, active, badge }: NavItemPro
 
 export default function BottomNav() {
   const pathname = usePathname();
-  const itemCount = useCartStore((state) => state.getTotalItems());
+  // 延迟读取购物车数量，避免 SSR/客户端 hydration 不匹配
+  const storeItemCount = useCartStore((state) => state.getTotalItems());
+  const [itemCount, setItemCount] = useState(0);
+  useEffect(() => {
+    setItemCount(storeItemCount);
+  }, [storeItemCount]);
   const { openMobileSearchModal } = useSearchBar();
 
   return (
     <nav
       className="fixed bottom-0 inset-x-0 z-50
-                 glass-panel-light border-t border-wabi-100
+                 border-t border-wabi-100
                  h-16 pb-safe md:hidden"
+      style={{
+        background: "rgba(255, 255, 255, 0.92)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
+      }}
     >
       <div className="flex items-center justify-around h-full max-w-lg mx-auto">
-        <NavItem
-          icon={Home}
-          label="首页"
-          href="/"
-          active={pathname === "/"}
-        />
-        <NavItem
-          icon={Search}
-          label="搜索"
-          onClick={openMobileSearchModal}
-        />
+        <NavItem icon={Home} label="首页" href="/" active={pathname === "/"} />
+        <NavItem icon={Search} label="搜索" onClick={openMobileSearchModal} />
         <NavItem
           icon={ShoppingBag}
           label="购物车"

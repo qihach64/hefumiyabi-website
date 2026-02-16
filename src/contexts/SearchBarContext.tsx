@@ -1,9 +1,9 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, ReactNode } from "react";
 
 interface SearchBarContextType {
-  isSearchBarExpanded: boolean;  // Header 搜索栏是否展开（大搜索栏）
+  isSearchBarExpanded: boolean; // Header 搜索栏是否展开（大搜索栏）
   setIsSearchBarExpanded: (expanded: boolean) => void;
   expandManually: () => void; // 手动展开搜索栏
   isHeroVisible: boolean; // Hero 是否可见（用于隐藏 Header 搜索栏）
@@ -12,6 +12,9 @@ interface SearchBarContextType {
   setHideSearchBar: (hide: boolean) => void;
   hideThemeSelector: boolean; // 隐藏主题选择器（如 /plans 页面已有 ThemePills）
   setHideThemeSelector: (hide: boolean) => void;
+  isMobileSearchModalOpen: boolean; // 移动端全屏搜索模态框是否打开
+  openMobileSearchModal: () => void;
+  closeMobileSearchModal: () => void;
 }
 
 const SearchBarContext = createContext<SearchBarContextType | undefined>(undefined);
@@ -21,6 +24,7 @@ export function SearchBarProvider({ children }: { children: ReactNode }) {
   const [isHeroVisible, setIsHeroVisible] = useState(true); // 默认可见，防止首页 Header 搜索栏 FOUC
   const [hideSearchBar, setHideSearchBar] = useState(false); // 完全隐藏搜索栏
   const [hideThemeSelector, setHideThemeSelector] = useState(false); // 隐藏主题选择器
+  const [isMobileSearchModalOpen, setIsMobileSearchModalOpen] = useState(false); // 移动端搜索模态框
   const manuallyExpandedRef = useRef(false); // 记录是否手动展开
   const expandedScrollYRef = useRef(0); // 记录手动展开时的滚动位置
 
@@ -51,7 +55,7 @@ export function SearchBarProvider({ children }: { children: ReactNode }) {
 
           // 只在状态真正改变时更新
           if (shouldExpand !== lastExpanded) {
-            console.log(`[SearchBarContext] 🔄 setIsSearchBarExpanded: ${shouldExpand} (y=${currentScrollY.toFixed(0)})`);
+            // 状态变更: shouldExpand=${shouldExpand}, scrollY=${currentScrollY}
             setIsSearchBarExpanded(shouldExpand);
             lastExpanded = shouldExpand;
           }
@@ -62,10 +66,10 @@ export function SearchBarProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {
-      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener("scroll", handleScroll);
     };
   }, [isSearchBarExpanded]);
 
@@ -75,6 +79,10 @@ export function SearchBarProvider({ children }: { children: ReactNode }) {
     manuallyExpandedRef.current = true;
     expandedScrollYRef.current = window.scrollY;
   };
+
+  // 移动端搜索模态框控制
+  const openMobileSearchModal = () => setIsMobileSearchModalOpen(true);
+  const closeMobileSearchModal = () => setIsMobileSearchModalOpen(false);
 
   return (
     <SearchBarContext.Provider
@@ -88,6 +96,9 @@ export function SearchBarProvider({ children }: { children: ReactNode }) {
         setHideSearchBar,
         hideThemeSelector,
         setHideThemeSelector,
+        isMobileSearchModalOpen,
+        openMobileSearchModal,
+        closeMobileSearchModal,
       }}
     >
       {children}
@@ -98,7 +109,7 @@ export function SearchBarProvider({ children }: { children: ReactNode }) {
 export function useSearchBar() {
   const context = useContext(SearchBarContext);
   if (context === undefined) {
-    throw new Error('useSearchBar must be used within a SearchBarProvider');
+    throw new Error("useSearchBar must be used within a SearchBarProvider");
   }
   return context;
 }

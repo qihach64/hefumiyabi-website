@@ -4,16 +4,9 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { MapPin, Calendar, Search, ChevronLeft, ChevronRight, Sparkles, X } from "lucide-react";
 import { getThemeIcon } from "@/lib/themeIcons";
-import { useSearchState } from "@/shared/hooks";
+import { useSearchFormState } from "@/shared/hooks";
 import { useLocationDropdown, DateDropdown, useDateDropdown } from "@/features/guest/discovery";
-
-interface Theme {
-  id: string;
-  slug: string;
-  name: string;
-  icon: string | null;
-  color: string | null;
-}
+import type { Theme } from "@/types";
 
 interface HeroSearchPanelProps {
   themes: Theme[];
@@ -21,22 +14,25 @@ interface HeroSearchPanelProps {
   onDropdownOpenChange?: (isOpen: boolean) => void; // 下拉菜单打开状态变化时通知父组件
 }
 
-export default function HeroSearchPanel({ themes, variant = "dark", onDropdownOpenChange }: HeroSearchPanelProps) {
+export default function HeroSearchPanel({
+  themes,
+  variant = "dark",
+  onDropdownOpenChange,
+}: HeroSearchPanelProps) {
   const router = useRouter();
-  // 使用 nuqs-based 搜索状态
+  // 使用共享的搜索表单状态
   const {
-    location: urlLocation,
-    setLocation: setUrlLocation,
-    date: urlDate,
-    setDate: setUrlDate,
-    theme: themeSlug,
-    setTheme: setThemeSlug,
-  } = useSearchState();
-
-  // 本地状态 (用于输入控制)
-  const [location, setLocalLocation] = useState(urlLocation || "");
-  const [date, setLocalDate] = useState(urlDate || "");
-  const [selectedTheme, setSelectedTheme] = useState<Theme | null>(null);
+    localLocation: location,
+    setLocalLocation: setLocation,
+    localDate: date,
+    setLocalDate: setDate,
+    selectedTheme,
+    handleThemeSelect,
+    buildSearchUrl,
+    setUrlLocation,
+    setUrlDate,
+    setThemeSlug,
+  } = useSearchFormState({ themes });
 
   const themesScrollRef = useRef<HTMLDivElement>(null);
   const locationContainerRef = useRef<HTMLDivElement>(null);
@@ -44,43 +40,8 @@ export default function HeroSearchPanel({ themes, variant = "dark", onDropdownOp
   const dateContainerRef = useRef<HTMLDivElement>(null);
   const isLight = variant === "light";
 
-  // 同步 URL 主题到本地 Theme 对象
-  useEffect(() => {
-    if (themeSlug && themes.length > 0) {
-      const found = themes.find(t => t.slug === themeSlug);
-      setSelectedTheme(found || null);
-    } else {
-      setSelectedTheme(null);
-    }
-  }, [themeSlug, themes]);
-
-  // 同步 URL location 到本地
-  useEffect(() => {
-    setLocalLocation(urlLocation || "");
-  }, [urlLocation]);
-
-  // 同步 URL date 到本地
-  useEffect(() => {
-    setLocalDate(urlDate || "");
-  }, [urlDate]);
-
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
-
-  // 设置主题的包装函数（用于主题选择按钮）
-  const handleThemeSelect = (theme: Theme | null) => {
-    setSelectedTheme(theme);
-  };
-
-  // 设置 location 的包装函数
-  const setLocation = (value: string) => {
-    setLocalLocation(value);
-  };
-
-  // 设置 date 的包装函数
-  const setDate = (value: string) => {
-    setLocalDate(value);
-  };
 
   // 使用共享的 location dropdown hook
   const {
@@ -175,14 +136,8 @@ export default function HeroSearchPanel({ themes, variant = "dark", onDropdownOp
       setThemeSlug(selectedTheme?.slug || null),
     ]);
 
-    // 构建搜索参数并导航
-    const params = new URLSearchParams();
-    if (location) params.set("location", location);
-    if (date) params.set("date", date);
-    if (selectedTheme) params.set("theme", selectedTheme.slug);
-
-    const queryString = params.toString();
-    router.push(queryString ? `/plans?${queryString}` : "/plans");
+    // 导航到搜索结果页
+    router.push(buildSearchUrl());
   };
 
   const handleLocationChange = (value: string) => {
@@ -208,19 +163,21 @@ export default function HeroSearchPanel({ themes, variant = "dark", onDropdownOp
   };
 
   return (
-    <div className={`rounded-2xl p-1.5 md:p-2 ${isLight ? "glass-panel-light" : "glass-panel shadow-2xl"}`}>
+    <div
+      className={`rounded-2xl p-1.5 md:p-2 ${isLight ? "glass-panel-light" : "glass-panel shadow-2xl"}`}
+    >
       {/* 上部：地点 + 日期 + 搜索按钮 */}
       <div className="flex flex-col md:flex-row">
         {/* 地点选择 */}
         <div ref={locationContainerRef} className="flex-1 relative">
           <div
-            className={`px-4 md:px-6 py-3 md:py-4 rounded-xl transition-colors cursor-pointer group ${
+            className={`px-4 md:px-6 py-2 md:py-4 rounded-xl transition-colors cursor-pointer group ${
               isLight ? "hover:bg-gray-100/50" : "hover:bg-white/5"
             }`}
             onClick={() => handleLocationFocus()}
           >
             <div
-              className={`flex items-center gap-2 text-xs uppercase tracking-wider mb-1 ${
+              className={`flex items-center gap-2 text-[12px] uppercase tracking-wider mb-0.5 md:mb-1 ${
                 isLight ? "text-gray-500" : "text-white/50"
               }`}
             >
@@ -234,10 +191,8 @@ export default function HeroSearchPanel({ themes, variant = "dark", onDropdownOp
                 value={location}
                 onChange={(e) => handleLocationChange(e.target.value)}
                 onFocus={handleLocationFocus}
-                className={`flex-1 bg-transparent border-none outline-none text-lg md:text-xl font-medium placeholder-opacity-50 ${
-                  isLight
-                    ? "text-gray-900 placeholder-gray-400"
-                    : "text-white placeholder-white/50"
+                className={`flex-1 bg-transparent border-none outline-none text-[16px] md:text-[22px] font-medium placeholder-opacity-50 ${
+                  isLight ? "text-gray-900 placeholder-gray-400" : "text-white placeholder-white/50"
                 }`}
               />
               {location && (
@@ -313,13 +268,13 @@ export default function HeroSearchPanel({ themes, variant = "dark", onDropdownOp
         {/* 日期选择 */}
         <div ref={dateContainerRef} className="flex-1 relative">
           <div
-            className={`px-4 md:px-6 py-3 md:py-4 rounded-xl transition-colors cursor-pointer group ${
+            className={`px-4 md:px-6 py-2 md:py-4 rounded-xl transition-colors cursor-pointer group ${
               isLight ? "hover:bg-gray-100/50" : "hover:bg-white/5"
             }`}
             onClick={toggleDateDropdown}
           >
             <div
-              className={`flex items-center gap-2 text-xs uppercase tracking-wider mb-1 ${
+              className={`flex items-center gap-2 text-[12px] uppercase tracking-wider mb-0.5 md:mb-1 ${
                 isLight ? "text-gray-500" : "text-white/50"
               }`}
             >
@@ -327,11 +282,17 @@ export default function HeroSearchPanel({ themes, variant = "dark", onDropdownOp
               <span>到店日期</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className={`text-lg md:text-xl font-medium ${
-                date
-                  ? (isLight ? "text-gray-900" : "text-white")
-                  : (isLight ? "text-gray-400" : "text-white/50")
-              }`}>
+              <span
+                className={`text-[16px] md:text-[22px] font-medium ${
+                  date
+                    ? isLight
+                      ? "text-gray-900"
+                      : "text-white"
+                    : isLight
+                      ? "text-gray-400"
+                      : "text-white/50"
+                }`}
+              >
                 {date
                   ? new Date(date + "T00:00:00").toLocaleDateString("zh-CN", {
                       month: "long",
@@ -374,8 +335,11 @@ export default function HeroSearchPanel({ themes, variant = "dark", onDropdownOp
         <div className="flex items-center px-2 md:px-4">
           <button
             ref={searchButtonRef}
-            onClick={(e) => { handleRipple(e); handleSearch(); }}
-            className="relative overflow-hidden w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 md:py-4 min-h-[48px] bg-sakura-500 hover:bg-sakura-600 text-white font-medium rounded-xl transition-all duration-300 transition-quart hover:scale-105 hover:-translate-y-0.5 active:scale-95 shadow-lg shadow-sakura-500/30 hover:shadow-xl hover:shadow-sakura-500/40"
+            onClick={(e) => {
+              handleRipple(e);
+              handleSearch();
+            }}
+            className="relative overflow-hidden w-full md:w-auto flex items-center justify-center gap-2 px-6 py-2.5 md:py-4 min-h-[44px] bg-sakura-500 hover:bg-sakura-600 text-white font-medium rounded-xl transition-all duration-300 transition-quart hover:scale-105 hover:-translate-y-0.5 active:scale-95 shadow-lg shadow-sakura-500/30 hover:shadow-xl hover:shadow-sakura-500/40"
           >
             <Search className="w-5 h-5" />
             <span className="md:hidden lg:inline">开始探索</span>
@@ -384,10 +348,12 @@ export default function HeroSearchPanel({ themes, variant = "dark", onDropdownOp
       </div>
 
       {/* 分隔线 */}
-      <div className={`h-px mx-4 my-2 ${isLight ? "bg-gray-200" : "bg-white/10"}`} />
+      <div
+        className={`hidden md:block h-px mx-4 my-2 ${isLight ? "bg-gray-200" : "bg-white/10"}`}
+      />
 
       {/* 下部：主题选择 */}
-      <div className="px-4 py-2">
+      <div className="hidden md:block px-4 py-2">
         <div
           className={`flex items-center gap-2 text-xs uppercase tracking-wider mb-3 ${
             isLight ? "text-gray-500" : "text-white/50"
@@ -427,7 +393,9 @@ export default function HeroSearchPanel({ themes, variant = "dark", onDropdownOp
                     ? "bg-white/80 text-gray-700 hover:bg-sakura-50 hover:text-sakura-700"
                     : "bg-white/10 text-white/80 hover:bg-white/20"
               }`}
-              style={!selectedTheme ? { boxShadow: "0 4px 14px rgba(255, 87, 128, 0.3)" } : undefined}
+              style={
+                !selectedTheme ? { boxShadow: "0 4px 14px rgba(255, 87, 128, 0.3)" } : undefined
+              }
             >
               <Sparkles className="w-4 h-4" />
               全部
@@ -447,7 +415,9 @@ export default function HeroSearchPanel({ themes, variant = "dark", onDropdownOp
                         ? "bg-white/80 text-gray-700 hover:bg-sakura-50 hover:text-sakura-700"
                         : "bg-white/10 text-white/80 hover:bg-white/20"
                   }`}
-                  style={isSelected ? { boxShadow: "0 4px 14px rgba(255, 87, 128, 0.3)" } : undefined}
+                  style={
+                    isSelected ? { boxShadow: "0 4px 14px rgba(255, 87, 128, 0.3)" } : undefined
+                  }
                 >
                   <IconComponent className="w-4 h-4" />
                   {theme.name}

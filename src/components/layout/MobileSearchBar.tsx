@@ -1,168 +1,56 @@
 "use client";
 
-import { useState, useEffect, useCallback, Suspense } from "react";
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useCallback, Suspense } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { Search, MapPin, X, Calendar, Palette, Sparkles } from "lucide-react";
-import { useSearchState } from "@/shared/hooks";
+import { useSearchFormState } from "@/shared/hooks";
 import { useSearchBar } from "@/contexts/SearchBarContext";
+import { useLocationDropdown } from "@/features/guest/discovery";
 import { getThemeIcon } from "@/lib/themeIcons";
-
-interface Theme {
-  id: string;
-  slug: string;
-  name: string;
-  icon: string | null;
-  color: string | null;
-}
 
 // 内部组件，使用 useSearchParams
 function MobileSearchBarInner() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const pathname = usePathname();
-  const {
-    location: urlLocation,
-    setLocation: setUrlLocation,
-    date: urlDate,
-    setDate: setUrlDate,
-    theme: themeSlug,
-    setTheme: setThemeSlug,
-  } = useSearchState();
-  const { isHeroVisible } = useSearchBar();
+  const { isHeroVisible, isMobileSearchModalOpen, openMobileSearchModal, closeMobileSearchModal } =
+    useSearchBar();
 
-  // 本地状态
-  const [localLocation, setLocalLocation] = useState(urlLocation || "");
-  const [localDate, setLocalDate] = useState(urlDate || "");
-  const [selectedTheme, setSelectedTheme] = useState<Theme | null>(null);
+  // 使用共享的搜索表单状态（延迟加载主题）
+  const {
+    localLocation,
+    setLocalLocation,
+    localDate,
+    setLocalDate,
+    selectedTheme,
+    themes,
+    isLoadingThemes,
+    handleThemeSelect,
+    buildSearchUrl,
+  } = useSearchFormState({ lazyLoadThemes: true, lazyLoadTrigger: isMobileSearchModalOpen });
+
+  // 使用共享的 location dropdown hook
+  const {
+    filteredLocations,
+    isOpen: showDropdown,
+    open: openLocationDropdown,
+    close: closeLocationDropdown,
+    filter: filterLocations,
+  } = useLocationDropdown();
 
   // 搜索栏只在首页显示
-  const shouldHide = pathname !== '/';
-  const [isMobileModalOpen, setIsMobileModalOpen] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [allLocations, setAllLocations] = useState<string[]>([]);
-  const [filteredLocations, setFilteredLocations] = useState<string[]>([]);
-
-  // 主题相关状态
-  const [themes, setThemes] = useState<Theme[]>([]);
-  const [isLoadingThemes, setIsLoadingThemes] = useState(false);
-
-  // 同步 URL 状态到本地
-  useEffect(() => {
-    setLocalLocation(urlLocation || "");
-  }, [urlLocation]);
-
-  useEffect(() => {
-    setLocalDate(urlDate || "");
-  }, [urlDate]);
-
-  useEffect(() => {
-    if (themeSlug && themes.length > 0) {
-      const found = themes.find(t => t.slug === themeSlug);
-      setSelectedTheme(found || null);
-    } else {
-      setSelectedTheme(null);
-    }
-  }, [themeSlug, themes]);
-
-  // 主题选择立即导航到 /plans
-  const handleThemeSelect = useCallback(async (theme: Theme | null) => {
-    const params = new URLSearchParams(searchParams.toString());
-
-    // 保留当前的 location 和 date
-    if (localLocation) {
-      params.set('location', localLocation);
-    }
-    if (localDate) {
-      params.set('date', localDate);
-    }
-
-    // 设置或清除主题
-    if (theme) {
-      params.set('theme', theme.slug);
-    } else {
-      params.delete('theme');
-    }
-
-    const queryString = params.toString();
-    const url = queryString ? `/plans?${queryString}` : '/plans';
-
-    // 关闭模态框
-    setIsMobileModalOpen(false);
-
-    // 更新本地状态并导航
-    setSelectedTheme(theme);
-    router.push(url);
-  }, [searchParams, localLocation, localDate, router]);
-
-  // 获取主题列表
-  useEffect(() => {
-    if (isMobileModalOpen && themes.length === 0) {
-      setIsLoadingThemes(true);
-      fetch('/api/themes')
-        .then(res => res.json())
-        .then(data => {
-          setThemes(data.themes || []);
-          setIsLoadingThemes(false);
-        })
-        .catch(error => {
-          console.error('Failed to fetch themes:', error);
-          setIsLoadingThemes(false);
-        });
-    }
-  }, [isMobileModalOpen, themes.length]);
-
-  // 获取所有地区数据
-  const fetchLocations = async () => {
-    if (allLocations.length > 0) return;
-
-    try {
-      const response = await fetch('/api/locations');
-      const data = await response.json();
-      if (data.locations) {
-        setAllLocations(data.locations);
-      }
-    } catch (error) {
-      console.error('Failed to fetch locations:', error);
-    }
-  };
+  const shouldHide = pathname !== "/";
 
   const handleLocationChange = (value: string) => {
     setLocalLocation(value);
-    if (value.trim() === '') {
-      setFilteredLocations(allLocations.slice(0, 10));
-    } else {
-      const filtered = allLocations.filter((loc) =>
-        loc.toLowerCase().includes(value.toLowerCase())
-      );
-      setFilteredLocations(filtered.slice(0, 10));
-    }
-    setShowDropdown(true);
+    filterLocations(value);
   };
 
   const handleLocationFocus = () => {
-    if (allLocations.length > 0) {
-      if (localLocation.trim() === '') {
-        setFilteredLocations(allLocations.slice(0, 10));
-      } else {
-        const filtered = allLocations.filter((loc) =>
-          loc.toLowerCase().includes(localLocation.toLowerCase())
-        );
-        setFilteredLocations(filtered.slice(0, 10));
-      }
-      setShowDropdown(true);
-    }
+    openLocationDropdown(localLocation);
   };
 
   const handleSearch = () => {
-    const params = new URLSearchParams();
-    if (localLocation) params.set("location", localLocation);
-    if (localDate) params.set("date", localDate);
-    if (selectedTheme) params.set("theme", selectedTheme.slug);
-
-    const queryString = params.toString();
-
-    // 跳转到套餐列表页
-    router.push(queryString ? `/plans?${queryString}` : '/plans');
+    router.push(buildSearchUrl());
   };
 
   // 生成按钮文本 - 只显示已选中的值
@@ -174,7 +62,7 @@ function MobileSearchBarInner() {
     }
 
     if (localDate) {
-      const dateObj = new Date(localDate + 'T00:00:00');
+      const dateObj = new Date(localDate + "T00:00:00");
       const month = dateObj.getMonth() + 1;
       const day = dateObj.getDate();
       parts.push(`${month}月${day}日`);
@@ -190,12 +78,11 @@ function MobileSearchBarInner() {
     }
 
     // 用 · 分隔已选择的值
-    return parts.join(' · ');
+    return parts.join(" · ");
   };
 
-  const handleOpenModal = async () => {
-    await fetchLocations();
-    setIsMobileModalOpen(true);
+  const handleOpenModal = () => {
+    openMobileSearchModal();
   };
 
   // 非首页不渲染
@@ -207,8 +94,10 @@ function MobileSearchBarInner() {
     <>
       {/* 移动端搜索按钮 - 在 Header 下方显示，Hero 可见时隐藏 */}
       <div
-        className={`md:hidden sticky top-16 z-40 bg-white border-b border-gray-200 px-4 py-3 transition-all duration-300 ${
-          isHeroVisible ? "opacity-0 pointer-events-none -translate-y-full" : "opacity-100 translate-y-0"
+        className={`md:hidden sticky top-16 z-40 transition-all duration-300 ${
+          isHeroVisible
+            ? "max-h-0 overflow-hidden opacity-0 pointer-events-none"
+            : "max-h-20 bg-white border-b border-gray-200 px-4 py-3 opacity-100"
         }`}
       >
         <button
@@ -223,13 +112,13 @@ function MobileSearchBarInner() {
       </div>
 
       {/* 移动端全屏搜索模态框 */}
-      {isMobileModalOpen && (
+      {isMobileSearchModalOpen && (
         <div className="md:hidden fixed inset-0 bg-white z-50 flex flex-col">
           {/* 顶部栏 */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">搜索和服体验</h2>
             <button
-              onClick={() => setIsMobileModalOpen(false)}
+              onClick={closeMobileSearchModal}
               className="p-2 hover:bg-gray-100 rounded-full transition-colors"
             >
               <X className="w-5 h-5 text-gray-600" />
@@ -256,8 +145,8 @@ function MobileSearchBarInner() {
                 {localLocation && (
                   <button
                     onClick={() => {
-                      setLocalLocation('');
-                      setShowDropdown(false);
+                      setLocalLocation("");
+                      closeLocationDropdown();
                     }}
                     className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-200 rounded-full transition-colors"
                   >
@@ -274,7 +163,7 @@ function MobileSearchBarInner() {
                       key={index}
                       onClick={() => {
                         setLocalLocation(loc);
-                        setShowDropdown(false);
+                        closeLocationDropdown();
                       }}
                       className="w-full px-4 py-3 text-left flex items-center gap-3 hover:bg-sakura-50 active:bg-sakura-100 transition-colors border-b border-gray-100 last:border-b-0"
                     >
@@ -301,7 +190,7 @@ function MobileSearchBarInner() {
                     className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-xl focus:border-sakura-500 focus:ring-2 focus:ring-sakura-100 outline-none transition-all text-gray-900 [&::-webkit-calendar-picker-indicator]:hidden [&::-moz-calendar-picker-indicator]:hidden"
                   />
                   <button
-                    onClick={() => setLocalDate('')}
+                    onClick={() => setLocalDate("")}
                     className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-200 rounded-full transition-colors"
                   >
                     <X className="w-4 h-4 text-gray-500" />
@@ -311,11 +200,11 @@ function MobileSearchBarInner() {
                 <button
                   onClick={() => {
                     // 创建一个临时的 date input 并触发选择器
-                    const input = document.createElement('input');
-                    input.type = 'date';
-                    input.style.position = 'absolute';
-                    input.style.opacity = '0';
-                    input.style.pointerEvents = 'none';
+                    const input = document.createElement("input");
+                    input.type = "date";
+                    input.style.position = "absolute";
+                    input.style.opacity = "0";
+                    input.style.pointerEvents = "none";
                     document.body.appendChild(input);
 
                     input.onchange = (event) => {
@@ -366,8 +255,8 @@ function MobileSearchBarInner() {
                       onClick={() => handleThemeSelect(null)}
                       className={`px-3 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-1.5 ${
                         !selectedTheme
-                          ? 'bg-sakura-500 text-white shadow-sm'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          ? "bg-sakura-500 text-white shadow-sm"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                       }`}
                     >
                       <Sparkles className="w-4 h-4" />
@@ -381,8 +270,8 @@ function MobileSearchBarInner() {
                           onClick={() => handleThemeSelect(theme)}
                           className={`px-3 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-1.5 ${
                             selectedTheme?.id === theme.id
-                              ? 'bg-sakura-500 text-white shadow-sm'
-                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                              ? "bg-sakura-500 text-white shadow-sm"
+                              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                           }`}
                         >
                           <IconComponent className="w-4 h-4" />
@@ -401,7 +290,7 @@ function MobileSearchBarInner() {
             <button
               onClick={() => {
                 handleSearch();
-                setIsMobileModalOpen(false);
+                closeMobileSearchModal();
               }}
               className="w-full bg-sakura-500 hover:bg-sakura-600 text-white font-medium py-3 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all"
             >

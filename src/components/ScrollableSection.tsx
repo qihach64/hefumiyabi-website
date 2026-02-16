@@ -35,7 +35,7 @@ export default function ScrollableSection({
 
   // 使用共享的图标工具获取图标组件
   const IconComponent = icon ? getThemeIcon(icon) : null;
-  const iconColor = color || '#6b7280';
+  const iconColor = color || "#6b7280";
 
   return (
     <div>
@@ -54,10 +54,7 @@ export default function ScrollableSection({
               className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center transition-all duration-300 hover:scale-105"
               style={{ backgroundColor: `${iconColor}15` }}
             >
-              <IconComponent
-                className="w-5 h-5 md:w-6 md:h-6"
-                style={{ color: iconColor }}
-              />
+              <IconComponent className="w-5 h-5 md:w-6 md:h-6" style={{ color: iconColor }} />
             </div>
           )}
 
@@ -88,9 +85,10 @@ export default function ScrollableSection({
             onClick={() => scrollerRef.current?.scrollLeft()}
             disabled={!canScrollLeft}
             className={`w-8 h-8 flex items-center justify-center rounded-full border transition-all duration-200
-              ${!canScrollLeft
-                ? 'bg-wabi-50 border-wabi-100 text-wabi-300 cursor-not-allowed'
-                : 'bg-white border-wabi-200 text-wabi-600 hover:border-sakura-200 hover:text-sakura-500 active:scale-95'
+              ${
+                !canScrollLeft
+                  ? "bg-wabi-50 border-wabi-100 text-wabi-300 cursor-not-allowed"
+                  : "bg-white border-wabi-200 text-wabi-600 hover:border-sakura-200 hover:text-sakura-500 active:scale-95"
               }`}
             aria-label="向左滚动"
           >
@@ -100,9 +98,10 @@ export default function ScrollableSection({
             onClick={() => scrollerRef.current?.scrollRight()}
             disabled={!canScrollRight}
             className={`w-8 h-8 flex items-center justify-center rounded-full border transition-all duration-200
-              ${!canScrollRight
-                ? 'bg-wabi-50 border-wabi-100 text-wabi-300 cursor-not-allowed'
-                : 'bg-white border-wabi-200 text-wabi-600 hover:border-sakura-200 hover:text-sakura-500 active:scale-95'
+              ${
+                !canScrollRight
+                  ? "bg-wabi-50 border-wabi-100 text-wabi-300 cursor-not-allowed"
+                  : "bg-white border-wabi-200 text-wabi-600 hover:border-sakura-200 hover:text-sakura-500 active:scale-95"
               }`}
             aria-label="向右滚动"
           >
@@ -121,7 +120,7 @@ export default function ScrollableSection({
       {featuredChild ? (
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
           {/* 左侧：大卡片 - 调整宽度以配合单行滚动 */}
-          <div className="w-full lg:w-[320px] xl:w-[360px] 2xl:w-[400px] flex-shrink-0">
+          <div className="hidden lg:block lg:w-[320px] xl:w-[360px] 2xl:w-[400px] flex-shrink-0">
             {featuredChild}
           </div>
 
@@ -129,14 +128,16 @@ export default function ScrollableSection({
           <div className="flex-1 min-w-0">
             <div className="relative -mx-4 md:mx-0">
               {/* 滚动箭头按钮 - 已移动到 Header，此处移除 */}
-              
+
               {/* 桌面端：两行网格横向滚动 */}
               <HorizontalScroller
                 ref={scrollerRef}
                 className={`${scrollerClassName} lg:!grid lg:!grid-rows-2 lg:!grid-flow-col lg:!gap-4 lg:!snap-x lg:!snap-mandatory lg:!pr-4`}
-                style={{
-                  gridAutoColumns: '250px', // 4列刚好适配 scroller 可用宽度
-                } as React.CSSProperties}
+                style={
+                  {
+                    gridAutoColumns: "250px", // 4列刚好适配 scroller 可用宽度
+                  } as React.CSSProperties
+                }
                 onScrollStateChange={handleScrollStateChange}
               >
                 {children}

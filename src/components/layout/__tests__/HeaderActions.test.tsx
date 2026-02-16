@@ -130,4 +130,28 @@ describe("HeaderActions", () => {
       expect(screen.getByTestId("cart-icon")).toBeInTheDocument();
     });
   });
+
+  describe("样式 regression 防护", () => {
+    // 防止 Header 右侧按钮字体过大，破坏与左侧 Logo 的视觉平衡
+
+    it('"成为商家" 按钮使用 text-xs（不大于 text-sm）', async () => {
+      render(<HeaderActions isLoggedIn={false} merchant={null} />);
+      await act(async () => {});
+
+      const link = screen.getByText("成为商家").closest("a");
+      expect(link!.className).toContain("text-xs");
+      expect(link!.className).not.toContain("text-sm");
+      expect(link!.className).not.toContain("text-base");
+    });
+
+    it("按钮 padding 紧凑（py 不超过 2）", async () => {
+      render(<HeaderActions isLoggedIn={false} merchant={null} />);
+      await act(async () => {});
+
+      const link = screen.getByText("成为商家").closest("a");
+      // 不应使用 py-2 或更大的 padding
+      expect(link!.className).not.toContain("py-2");
+      expect(link!.className).not.toContain("py-3");
+    });
+  });
 });

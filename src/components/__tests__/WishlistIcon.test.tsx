@@ -67,4 +67,15 @@ describe("WishlistIcon", () => {
     await act(async () => {});
     expect(screen.getByText("99+")).toBeInTheDocument();
   });
+
+  describe("样式 regression 防护", () => {
+    it("图标容器尺寸为 h-9 w-9（不大于 h-10 w-10）", () => {
+      render(<WishlistIcon />);
+      const link = screen.getByRole("link");
+      expect(link.className).toContain("h-9");
+      expect(link.className).toContain("w-9");
+      expect(link.className).not.toContain("h-10");
+      expect(link.className).not.toContain("w-10");
+    });
+  });
 });
