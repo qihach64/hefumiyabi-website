@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Home, Search, ShoppingBag, User, type LucideIcon } from "lucide-react";
 import { useCartStore } from "@/store/cart";
 import { useSearchBar } from "@/contexts/SearchBarContext";
+import { useScrollDirection } from "@/shared/hooks/useScrollDirection";
 
 interface NavItemProps {
   icon: LucideIcon;
@@ -68,19 +69,26 @@ export default function BottomNav() {
     setItemCount(storeItemCount);
   }, [storeItemCount]);
   const { openMobileSearchModal, isMobileSearchModalOpen } = useSearchBar();
+  const scrollDirection = useScrollDirection();
 
   // 搜索模态框打开时隐藏底部导航
   if (isMobileSearchModalOpen) return null;
+
+  const isHidden = scrollDirection === "down";
 
   return (
     <nav
       className="fixed bottom-0 inset-x-0 z-50
                  border-t border-wabi-100
-                 h-16 pb-safe md:hidden"
+                 h-16 pb-safe md:hidden
+                 transition-transform duration-300"
       style={{
         background: "rgba(255, 255, 255, 0.92)",
         backdropFilter: "blur(16px)",
         WebkitBackdropFilter: "blur(16px)",
+        transform: isHidden
+          ? "translateY(calc(100% + env(safe-area-inset-bottom, 0px)))"
+          : "translateY(0)",
       }}
     >
       <div className="flex items-center justify-around h-full max-w-lg mx-auto">
