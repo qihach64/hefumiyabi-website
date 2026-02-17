@@ -3,7 +3,10 @@ import { Instagram, Youtube, Twitter } from "lucide-react";
 
 export default function Footer() {
   return (
-    <footer className="w-full bg-white border-t border-gray-200">
+    <footer className="w-full bg-[#FDFBF7]">
+      {/* 顶部装饰线 */}
+      <div className="h-px bg-gradient-to-r from-transparent via-sakura-300 to-transparent" />
+
       <div className="container py-12 md:py-16">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12">
           {/* 品牌区域 */}
@@ -19,7 +22,7 @@ export default function Footer() {
                       "repeating-conic-gradient(from 0deg, transparent 0deg 30deg, rgba(236, 72, 153, 0.06) 30deg 60deg)",
                   }}
                 />
-                <div className="absolute inset-[6px] rounded-full bg-white" />
+                <div className="absolute inset-[6px] rounded-full bg-[#FDFBF7]" />
                 <div className="absolute inset-0 flex items-center justify-center">
                   <span
                     className="font-serif text-[14px] font-medium text-sakura-600 select-none"
