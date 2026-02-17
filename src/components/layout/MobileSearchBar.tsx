@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, Suspense } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { Search, MapPin, X, Sparkles } from "lucide-react";
 import { useSearchFormState } from "@/shared/hooks";
@@ -63,6 +63,35 @@ function MobileSearchBarInner() {
 
   // 手风琴当前展开区块
   const [activeSection, setActiveSection] = useState<AccordionSection>("location");
+  // 保存打开模态框前的滚动位置
+  const savedScrollY = useRef(0);
+
+  // 锁定背景滚动（iOS Safari 兼容）
+  useLayoutEffect(() => {
+    if (isMobileSearchModalOpen) {
+      savedScrollY.current = window.scrollY || savedScrollY.current;
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${savedScrollY.current}px`;
+      document.body.style.left = "0";
+      document.body.style.right = "0";
+      document.body.style.overflow = "hidden";
+
+      // 拦截 touchmove —— iOS Safari 最终保障
+      const preventScroll = (e: TouchEvent) => e.preventDefault();
+      document.addEventListener("touchmove", preventScroll, { passive: false });
+
+      return () => {
+        document.removeEventListener("touchmove", preventScroll);
+        const scrollY = savedScrollY.current;
+        document.body.style.position = "";
+        document.body.style.top = "";
+        document.body.style.left = "";
+        document.body.style.right = "";
+        document.body.style.overflow = "";
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [isMobileSearchModalOpen]);
 
   // 模态框打开时重置手风琴到目的地
   useEffect(() => {
@@ -124,7 +153,10 @@ function MobileSearchBarInner() {
       {/* Airbnb 风格大搜索栏按钮 */}
       <div className="md:hidden sticky top-16 z-40 bg-white/80 backdrop-blur-md px-4 py-2">
         <button
-          onClick={openMobileSearchModal}
+          onClick={() => {
+            savedScrollY.current = window.scrollY;
+            openMobileSearchModal();
+          }}
           className="w-full rounded-full shadow-sm border border-gray-200 bg-white px-5 py-3 flex items-center gap-3 active:scale-[0.98] transition-all"
         >
           <div className="w-8 h-8 rounded-full bg-sakura-500 flex items-center justify-center flex-shrink-0">
@@ -136,7 +168,7 @@ function MobileSearchBarInner() {
 
       {/* 全屏搜索模态框 */}
       {isMobileSearchModalOpen && (
-        <div className="md:hidden fixed inset-0 bg-gray-50 z-50 flex flex-col">
+        <div className="md:hidden fixed inset-0 bg-gray-50 z-50 flex flex-col overflow-hidden overscroll-contain">
           {/* 顶部栏 */}
           <div className="flex items-center px-4 pt-4 pb-2">
             <button
@@ -148,7 +180,7 @@ function MobileSearchBarInner() {
           </div>
 
           {/* 手风琴区域 */}
-          <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-3">
+          <div className="flex-1 overflow-hidden px-4 pb-4 space-y-3">
             {/* === 目的地 === */}
             {activeSection === "location" ? (
               <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
@@ -160,7 +192,7 @@ function MobileSearchBarInner() {
                     placeholder="搜索目的地"
                     value={localLocation}
                     onChange={(e) => handleLocationChange(e.target.value)}
-                    autoFocus
+                    // 不自动聚焦，避免移动端弹出键盘影响布局
                     className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-xl text-[16px] focus:border-sakura-500 focus:ring-2 focus:ring-sakura-100 outline-none transition-all"
                   />
                   {localLocation && (
