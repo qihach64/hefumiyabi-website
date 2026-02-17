@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Home, Search, ShoppingBag, User, type LucideIcon } from "lucide-react";
 import { useCartStore } from "@/store/cart";
 import { useSearchBar } from "@/contexts/SearchBarContext";
@@ -23,7 +24,7 @@ function NavItem({ icon: Icon, label, href, onClick, active, badge }: NavItemPro
       <div className="relative">
         <Icon
           className={`w-6 h-6 transition-colors duration-200 ${
-            active ? "text-sakura-500" : "text-wabi-400"
+            active ? "text-sakura-500" : "text-gray-700"
           }`}
         />
         {badge !== undefined && badge > 0 && (
@@ -34,7 +35,7 @@ function NavItem({ icon: Icon, label, href, onClick, active, badge }: NavItemPro
       </div>
       <span
         className={`text-[10px] font-medium mt-0.5 transition-colors duration-200 ${
-          active ? "text-sakura-500" : "text-wabi-400"
+          active ? "text-sakura-500" : "text-gray-700"
         }`}
       >
         {label}
@@ -62,6 +63,8 @@ function NavItem({ icon: Icon, label, href, onClick, active, badge }: NavItemPro
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { data: session } = useSession();
   // 延迟读取购物车数量，避免 SSR/客户端 hydration 不匹配
   const storeItemCount = useCartStore((state) => state.getTotalItems());
   const [itemCount, setItemCount] = useState(0);
@@ -70,6 +73,17 @@ export default function BottomNav() {
   }, [storeItemCount]);
   const { openMobileSearchModal, isMobileSearchModalOpen } = useSearchBar();
   const scrollDirection = useScrollDirection();
+
+  const isLoggedIn = !!session?.user;
+
+  // 首页按钮：已在首页时滚动到顶部，否则正常导航
+  const handleHomeClick = () => {
+    if (pathname === "/") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      router.push("/");
+    }
+  };
 
   // 搜索模态框打开时隐藏底部导航
   if (isMobileSearchModalOpen) return null;
@@ -92,7 +106,7 @@ export default function BottomNav() {
       }}
     >
       <div className="flex items-center justify-around h-full max-w-lg mx-auto">
-        <NavItem icon={Home} label="首页" href="/" active={pathname === "/"} />
+        <NavItem icon={Home} label="首页" onClick={handleHomeClick} active={pathname === "/"} />
         <NavItem icon={Search} label="搜索" onClick={openMobileSearchModal} />
         <NavItem
           icon={ShoppingBag}
@@ -103,8 +117,8 @@ export default function BottomNav() {
         />
         <NavItem
           icon={User}
-          label="我的"
-          href="/profile"
+          label={isLoggedIn ? "我的" : "登录"}
+          href={isLoggedIn ? "/profile" : "/login"}
           active={pathname === "/profile" || pathname.startsWith("/profile/")}
         />
       </div>

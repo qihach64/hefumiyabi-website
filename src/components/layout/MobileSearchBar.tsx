@@ -66,29 +66,21 @@ function MobileSearchBarInner() {
   // 保存打开模态框前的滚动位置
   const savedScrollY = useRef(0);
 
-  // 锁定背景滚动（iOS Safari 兼容）
+  // 锁定背景滚动 —— 不修改 body/html 样式，纯靠事件拦截，避免破坏 sticky
   useLayoutEffect(() => {
     if (isMobileSearchModalOpen) {
       savedScrollY.current = window.scrollY || savedScrollY.current;
-      document.body.style.position = "fixed";
-      document.body.style.top = `-${savedScrollY.current}px`;
-      document.body.style.left = "0";
-      document.body.style.right = "0";
-      document.body.style.overflow = "hidden";
 
-      // 拦截 touchmove —— iOS Safari 最终保障
-      const preventScroll = (e: TouchEvent) => e.preventDefault();
-      document.addEventListener("touchmove", preventScroll, { passive: false });
+      // 拦截所有滚动事件（模态框 fixed inset-0 z-50 已覆盖整个视口）
+      const preventTouch = (e: TouchEvent) => e.preventDefault();
+      const preventWheel = (e: WheelEvent) => e.preventDefault();
+      document.addEventListener("touchmove", preventTouch, { passive: false });
+      document.addEventListener("wheel", preventWheel, { passive: false });
 
       return () => {
-        document.removeEventListener("touchmove", preventScroll);
-        const scrollY = savedScrollY.current;
-        document.body.style.position = "";
-        document.body.style.top = "";
-        document.body.style.left = "";
-        document.body.style.right = "";
-        document.body.style.overflow = "";
-        window.scrollTo(0, scrollY);
+        document.removeEventListener("touchmove", preventTouch);
+        document.removeEventListener("wheel", preventWheel);
+        window.scrollTo(0, savedScrollY.current);
       };
     }
   }, [isMobileSearchModalOpen]);
