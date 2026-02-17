@@ -12,8 +12,7 @@ import { getThemeIcon } from "@/lib/themeIcons";
 function MobileSearchBarInner() {
   const router = useRouter();
   const pathname = usePathname();
-  const { isHeroVisible, isMobileSearchModalOpen, openMobileSearchModal, closeMobileSearchModal } =
-    useSearchBar();
+  const { isMobileSearchModalOpen, openMobileSearchModal, closeMobileSearchModal } = useSearchBar();
 
   // 使用共享的搜索表单状态（延迟加载主题）
   const {
@@ -92,14 +91,8 @@ function MobileSearchBarInner() {
 
   return (
     <>
-      {/* 移动端搜索按钮 - 在 Header 下方显示，Hero 可见时隐藏 */}
-      <div
-        className={`md:hidden sticky top-16 z-40 transition-all duration-300 ${
-          isHeroVisible
-            ? "max-h-0 overflow-hidden opacity-0 pointer-events-none"
-            : "max-h-20 bg-white border-b border-gray-200 px-4 py-3 opacity-100"
-        }`}
-      >
+      {/* 移动端搜索按钮 - 始终在 Header 下方显示 */}
+      <div className="md:hidden sticky top-16 z-40 bg-white border-b border-gray-200 px-4 py-3">
         <button
           onClick={handleOpenModal}
           className="w-full flex items-center gap-3 bg-white border border-gray-300 rounded-full px-4 py-3 shadow-sm active:scale-[0.98] transition-all"

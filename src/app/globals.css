@@ -316,6 +316,23 @@ body {
   transform: translateY(-1px);
 }
 
+/* Hero 搜索 Pill - Glassmorphism (移动端) */
+.glass-pill {
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(16px) saturate(1.8);
+  -webkit-backdrop-filter: blur(16px) saturate(1.8);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.06),
+    0 1px 4px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  transition: transform 0.2s ease;
+}
+
+.glass-pill:active {
+  transform: scale(0.98);
+}
+
 /* iOS 安全区域填充 */
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 0);

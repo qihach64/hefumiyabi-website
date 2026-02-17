@@ -64,7 +64,7 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
   return (
     <section
       ref={heroRef}
-      className="relative h-[85svh] md:h-svh w-full overflow-hidden bg-white -mt-16 md:-mt-20"
+      className="hidden md:block relative h-svh w-full overflow-hidden bg-white -mt-20"
     >
       {/* Layer 1: 背景图片 - Ken Burns 缓慢缩放 */}
       <div className="absolute inset-0 z-0 animate-ken-burns">

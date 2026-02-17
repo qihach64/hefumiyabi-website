@@ -163,9 +163,7 @@ export default function HeroSearchPanel({
   };
 
   return (
-    <div
-      className={`rounded-2xl p-1.5 md:p-2 ${isLight ? "glass-panel-light" : "glass-panel shadow-2xl"}`}
-    >
+    <div className={`rounded-2xl p-2 ${isLight ? "glass-panel-light" : "glass-panel shadow-2xl"}`}>
       {/* 上部：地点 + 日期 + 搜索按钮 */}
       <div className="flex flex-col md:flex-row">
         {/* 地点选择 */}
