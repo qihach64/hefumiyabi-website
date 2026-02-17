@@ -11,16 +11,6 @@ import HeaderSearchBar from "./HeaderSearchBar";
 import NavMenuButton from "./NavMenuButton";
 import { useSearchBar } from "@/contexts/SearchBarContext";
 
-// 预计算装饰点位置（避免每次渲染计算三角函数）
-const DECORATION_DOTS = [0, 72, 144, 216, 288].map((angle) => {
-  const radius = 17;
-  const rad = (angle - 90) * (Math.PI / 180);
-  return {
-    x: Math.cos(rad) * radius,
-    y: Math.sin(rad) * radius,
-  };
-});
-
 export default function Header() {
   const pathname = usePathname();
   const { data: session } = useSession();
@@ -125,87 +115,58 @@ export default function Header() {
               merchant={merchant}
             />
 
-            {/* Logo - 家紋スタイル CSS Version - Sakura Theme */}
-            <Link href="/" className="flex items-center gap-2.5 md:gap-3 shrink-0 group">
-              {/* 家紋 Kamon - CSS Rendered */}
-              <div className="relative w-10 h-10 md:w-12 md:h-12 transition-transform duration-300 group-hover:scale-105">
-                {/* Outer ring */}
+            {/* Logo - 与抽屉菜单统一的家紋风格 */}
+            <Link href="/" className="flex items-center gap-3 shrink-0 group">
+              {/* CSS 家纹 Kamon */}
+              <div className="relative w-10 h-10 shrink-0 transition-transform duration-300 group-hover:scale-105">
                 <div
                   className={`absolute inset-0 rounded-full border-2 transition-colors duration-300 ${
                     isTransparent
-                      ? "border-sakura-600 shadow-[0_0_8px_rgba(255,255,255,0.3)]"
+                      ? "border-sakura-600"
                       : "border-sakura-500 group-hover:border-sakura-600"
                   }`}
                 />
-                {/* Decorative middle ring with pattern simulation */}
                 <div
-                  className={`absolute inset-[3px] md:inset-1 rounded-full transition-colors duration-300 ${
-                    isTransparent ? "border border-sakura-500/60" : "border border-sakura-400/50"
-                  }`}
+                  className="absolute inset-1 rounded-full border border-sakura-400/50"
                   style={{
-                    background: isTransparent
-                      ? "repeating-conic-gradient(from 0deg, transparent 0deg 30deg, rgba(236, 72, 153, 0.08) 30deg 60deg)"
-                      : "repeating-conic-gradient(from 0deg, transparent 0deg 30deg, rgba(236, 72, 153, 0.06) 30deg 60deg)",
+                    background:
+                      "repeating-conic-gradient(from 0deg, transparent 0deg 30deg, rgba(236, 72, 153, 0.06) 30deg 60deg)",
                   }}
                 />
-                {/* Inner circle - background */}
                 <div
-                  className={`absolute inset-[6px] md:inset-2 rounded-full transition-colors duration-300 ${
+                  className={`absolute inset-[6px] rounded-full transition-colors duration-300 ${
                     isTransparent ? "bg-white/90 backdrop-blur-sm" : "bg-white"
                   }`}
                 />
-                {/* Center character 一 */}
                 <div className="absolute inset-0 flex items-center justify-center">
                   <span
-                    className={`font-serif text-base md:text-lg font-medium transition-colors duration-300 select-none ${
+                    className={`font-serif text-[14px] font-medium transition-colors duration-300 select-none ${
                       isTransparent
                         ? "text-sakura-700"
                         : "text-sakura-600 group-hover:text-sakura-700"
                     }`}
-                    style={{
-                      fontFamily: '"Noto Serif JP", "Source Han Serif", serif',
-                      marginTop: "1px",
-                    }}
+                    style={{ fontFamily: '"Noto Serif JP", "Source Han Serif", serif' }}
                   >
                     一
                   </span>
                 </div>
-                {/* Decorative dots - 桜 petals hint (5 points like cherry blossom) */}
-                {DECORATION_DOTS.map((dot, i) => (
-                  <div
-                    key={i}
-                    className={`absolute w-1 h-1 rounded-full transition-all duration-300 ${
-                      isTransparent
-                        ? "bg-sakura-500/70"
-                        : "bg-sakura-400/60 group-hover:bg-sakura-500/70"
-                    }`}
-                    style={{
-                      top: `calc(50% + ${dot.y}px)`,
-                      left: `calc(50% + ${dot.x}px)`,
-                      transform: "translate(-50%, -50%)",
-                    }}
-                  />
-                ))}
               </div>
-
-              {/* Typography - 和モダン Style - Sakura Theme */}
+              {/* 品牌名 */}
               <div className="flex flex-col leading-none">
-                {/* Main brand name */}
                 <span
-                  className={`font-serif text-lg md:text-xl tracking-tight transition-all duration-300 ${
+                  className={`font-serif text-[18px] transition-colors duration-300 ${
                     isTransparent
-                      ? "text-sakura-700 drop-shadow-[0_1px_2px_rgba(255,255,255,0.8)]"
+                      ? "text-sakura-700"
                       : "text-sakura-600 group-hover:text-sakura-700"
                   }`}
                 >
                   <span className="italic font-medium">Kimono</span>
                   <span className="font-light ml-1">One</span>
                 </span>
-                {/* Japanese subtitle */}
                 <span
-                  className={`hidden md:block text-[10px] tracking-[0.25em] mt-1 font-medium transition-colors duration-300 ${
+                  className={`text-[10px] tracking-[0.25em] mt-1 font-medium transition-colors duration-300 ${
                     isTransparent
-                      ? "text-sakura-600/80 drop-shadow-[0_1px_1px_rgba(255,255,255,0.6)]"
+                      ? "text-sakura-600/80"
                       : "text-sakura-500/70 group-hover:text-sakura-600/80"
                   }`}
                 >
@@ -226,13 +187,13 @@ export default function Header() {
             </div>
           )}
 
-          {/* 右侧：菜单和用户 */}
-          <div className="flex items-center gap-2 md:gap-3 shrink-0">
+          {/* 右侧：菜单和用户（移动端隐藏，功能已在 BottomNav 提供） */}
+          <div className="hidden md:flex items-center gap-2 md:gap-3 shrink-0">
             {/* 购物车按钮 */}
             <HeaderActions isLoggedIn={!!session?.user} merchant={merchant} />
 
-            {/* 导航菜单 + 用户头像（合并按钮，Airbnb 风格） */}
-            <div className="hidden md:flex items-center gap-2 relative">
+            {/* 导航菜单 + 用户头像 */}
+            <div className="flex items-center gap-2 relative">
               <NavMenuButton navLinks={navLinks} />
 
               {session?.user ? (
@@ -240,7 +201,7 @@ export default function Header() {
               ) : (
                 <Link
                   href="/login"
-                  className="inline-flex items-center justify-center rounded-full text-sm font-medium transition-colors hover:bg-sakura-50 hover:text-sakura-700 h-10 px-4 border border-gray-300"
+                  className="inline-flex items-center justify-center rounded-full text-xs font-medium transition-colors hover:bg-sakura-50 hover:text-sakura-700 h-9 px-3.5 border border-gray-300"
                 >
                   登录
                 </Link>

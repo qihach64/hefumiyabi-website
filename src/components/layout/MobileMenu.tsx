@@ -12,7 +12,6 @@ import {
   Globe,
   ChevronRight,
   Heart,
-  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -27,7 +26,7 @@ interface MobileMenuProps {
   } | null;
 }
 
-export default function MobileMenu({ isLoggedIn, userName, userEmail, merchant }: MobileMenuProps) {
+export default function MobileMenu({ merchant }: MobileMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
 
@@ -72,7 +71,7 @@ export default function MobileMenu({ isLoggedIn, userName, userEmail, merchant }
       <div
         className={cn(
           "fixed top-0 left-0 bottom-0 w-80 max-w-[85vw] z-[60] md:hidden",
-          "bg-white/95 backdrop-blur-xl",
+          "bg-white/95 backdrop-blur-xl pb-16",
           "transform transition-transform duration-300 ease-out",
           "shadow-2xl flex flex-col overflow-hidden",
           isOpen ? "translate-x-0" : "-translate-x-full"
@@ -134,23 +133,6 @@ export default function MobileMenu({ isLoggedIn, userName, userEmail, merchant }
 
         {/* 主要导航区域 */}
         <div className="relative flex-1 overflow-y-auto">
-          {/* 特色功能入口 */}
-          <div className="p-4 border-b border-sakura-100/50">
-            <Link
-              href="/virtual-tryon"
-              className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-sakura-50 to-sakura-100/50 hover:from-sakura-100 hover:to-sakura-100 transition-all duration-200 active:scale-[0.98]"
-            >
-              <div className="w-10 h-10 rounded-xl bg-sakura-500 flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-white" />
-              </div>
-              <div className="flex-1">
-                <div className="font-medium text-gray-900">AI 试穿</div>
-                <div className="text-[12px] text-sakura-600">体验虚拟和服试穿</div>
-              </div>
-              <ChevronRight className="w-5 h-5 text-sakura-400" />
-            </Link>
-          </div>
-
           {/* 商家入口 */}
           <div className="p-4 border-b border-sakura-100/50">
             <p className="px-4 mb-2 text-[11px] uppercase tracking-[0.15em] text-sakura-500 font-medium">
@@ -227,41 +209,13 @@ export default function MobileMenu({ isLoggedIn, userName, userEmail, merchant }
                 <span className="flex-1 font-medium">关于我们</span>
                 <ChevronRight className="w-4 h-4 text-gray-400" />
               </Link>
-              <button
-                className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-sakura-50 transition-all duration-200 active:scale-[0.98] w-full"
-              >
+              <button className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-sakura-50 transition-all duration-200 active:scale-[0.98] w-full">
                 <Globe className="w-5 h-5 text-sakura-500" />
                 <span className="flex-1 font-medium text-left">语言 / 货币</span>
                 <span className="text-[12px] text-gray-500">简中 / ¥</span>
               </button>
             </div>
           </div>
-        </div>
-
-        {/* 底部 - 简化版用户信息 */}
-        <div className="relative p-4 border-t border-sakura-100/50 bg-gradient-to-t from-sakura-50/50 to-transparent">
-          {isLoggedIn ? (
-            <div className="flex items-center gap-3">
-              <div className="flex-1 min-w-0 px-2">
-                <p className="text-[13px] text-gray-600 truncate">
-                  {userName || userEmail || "用户"}
-                </p>
-              </div>
-              <Link
-                href="/api/auth/signout"
-                className="text-[13px] text-gray-500 hover:text-sakura-600 transition-colors"
-              >
-                退出
-              </Link>
-            </div>
-          ) : (
-            <Link
-              href="/login"
-              className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-gradient-to-r from-sakura-500 to-sakura-600 text-white rounded-xl font-medium hover:from-sakura-600 hover:to-sakura-700 transition-all duration-200 active:scale-[0.98] shadow-md"
-            >
-              登录 / 注册
-            </Link>
-          )}
         </div>
       </div>
     </>

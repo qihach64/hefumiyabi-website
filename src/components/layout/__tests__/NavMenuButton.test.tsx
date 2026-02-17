@@ -82,4 +82,25 @@ describe("NavMenuButton", () => {
     fireEvent.click(screen.getByText("和服套餐"));
     expect(screen.queryByText("店铺信息")).not.toBeInTheDocument();
   });
+
+  describe("样式 regression 防护", () => {
+    // 防止菜单按钮字体过大，破坏 Header 视觉平衡
+
+    it("菜单按钮文字使用 text-xs（不大于 text-sm）", () => {
+      render(<NavMenuButton navLinks={navLinks} />);
+      const menuLabel = screen.getByText("菜单");
+      expect(menuLabel.className).toContain("text-xs");
+      expect(menuLabel.className).not.toContain("text-sm");
+      expect(menuLabel.className).not.toContain("text-base");
+    });
+
+    it("菜单图标不超过 w-4 h-4", () => {
+      const { container } = render(<NavMenuButton navLinks={navLinks} />);
+      const svg = container.querySelector("button svg");
+      expect(svg).toBeInTheDocument();
+      // 不应使用 w-5/h-5 或更大的尺寸
+      expect(svg!.className).not.toContain("w-5");
+      expect(svg!.className).not.toContain("h-5");
+    });
+  });
 });

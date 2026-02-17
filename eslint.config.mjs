@@ -26,6 +26,7 @@ const eslintConfig = [
     rules: {
       "@typescript-eslint/no-explicit-any": "warn",
       "react/no-unescaped-entities": "warn",
+      "no-console": ["warn", { allow: ["warn", "error"] }],
     },
   },
   // 测试文件允许 any（mock 场景常见）

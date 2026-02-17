@@ -34,9 +34,9 @@ const HeaderActions = memo(function HeaderActions({ isLoggedIn, merchant }: Head
         {merchant && merchant.status === "APPROVED" && (
           <Link
             href="/merchant/dashboard"
-            className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-full text-sm font-medium transition-all bg-sakura-50 hover:bg-sakura-100 text-sakura-700 border border-sakura-200"
+            className="flex items-center gap-1.5 px-3 md:px-3.5 py-1.5 rounded-full text-xs font-medium transition-all bg-sakura-50 hover:bg-sakura-100 text-sakura-700 border border-sakura-200"
           >
-            <Store className="w-4 h-4" />
+            <Store className="w-3.5 h-3.5" />
             <span className="hidden md:inline">商家中心</span>
             <span className="md:hidden">商家</span>
           </Link>
@@ -45,9 +45,9 @@ const HeaderActions = memo(function HeaderActions({ isLoggedIn, merchant }: Head
         {merchant && (merchant.status === "PENDING" || merchant.status === "REJECTED") && (
           <Link
             href="/merchant/pending"
-            className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-full text-sm font-medium transition-all bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border border-yellow-200"
+            className="flex items-center gap-1.5 px-3 md:px-3.5 py-1.5 rounded-full text-xs font-medium transition-all bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border border-yellow-200"
           >
-            <Store className="w-4 h-4" />
+            <Store className="w-3.5 h-3.5" />
             <span className="hidden md:inline">
               {merchant.status === "PENDING" ? "审核中" : "申请被拒"}
             </span>
@@ -58,9 +58,9 @@ const HeaderActions = memo(function HeaderActions({ isLoggedIn, merchant }: Head
         {!merchant && (
           <Link
             href="/merchant/register"
-            className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-full text-sm font-medium transition-all border-2 border-sakura-300 text-sakura-600 hover:bg-sakura-50"
+            className="flex items-center gap-1.5 px-3 md:px-3.5 py-1.5 rounded-full text-xs font-medium transition-all border-2 border-sakura-300 text-sakura-600 hover:bg-sakura-50"
           >
-            <Store className="w-4 h-4" />
+            <Store className="w-3.5 h-3.5" />
             <span className="hidden md:inline">成为商家</span>
             <span className="md:hidden">商家</span>
           </Link>
@@ -81,7 +81,7 @@ const HeaderActions = memo(function HeaderActions({ isLoggedIn, merchant }: Head
             // 在商家页面，显示"切换到客户模式"
             <Link
               href="/"
-              className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-full text-sm font-medium transition-all hover:bg-sakura-50 text-gray-700 hover:text-sakura-700"
+              className="flex items-center gap-1.5 px-3 md:px-3.5 py-1.5 rounded-full text-xs font-medium transition-all hover:bg-sakura-50 text-gray-700 hover:text-sakura-700"
             >
               <ArrowRight className="w-4 h-4 rotate-180" />
               <span className="hidden md:inline">客户模式</span>
@@ -90,9 +90,9 @@ const HeaderActions = memo(function HeaderActions({ isLoggedIn, merchant }: Head
             // 在客户页面，显示"切换到商家模式"
             <Link
               href="/merchant/dashboard"
-              className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-full text-sm font-medium transition-all bg-sakura-50 hover:bg-sakura-100 text-sakura-700 border border-sakura-200"
+              className="flex items-center gap-1.5 px-3 md:px-3.5 py-1.5 rounded-full text-xs font-medium transition-all bg-sakura-50 hover:bg-sakura-100 text-sakura-700 border border-sakura-200"
             >
-              <Store className="w-4 h-4" />
+              <Store className="w-3.5 h-3.5" />
               <span className="hidden md:inline">商家中心</span>
               <span className="md:hidden">商家</span>
             </Link>
@@ -104,9 +104,9 @@ const HeaderActions = memo(function HeaderActions({ isLoggedIn, merchant }: Head
       {merchant && (merchant.status === "PENDING" || merchant.status === "REJECTED") && (
         <Link
           href="/merchant/pending"
-          className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-full text-sm font-medium transition-all bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border border-yellow-200"
+          className="flex items-center gap-1.5 px-3 md:px-3.5 py-1.5 rounded-full text-xs font-medium transition-all bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border border-yellow-200"
         >
-          <Store className="w-4 h-4" />
+          <Store className="w-3.5 h-3.5" />
           <span className="hidden md:inline">
             {merchant.status === "PENDING" ? "审核中" : "申请被拒"}
           </span>
@@ -118,9 +118,9 @@ const HeaderActions = memo(function HeaderActions({ isLoggedIn, merchant }: Head
       {!merchant && (
         <Link
           href="/merchant/register"
-          className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-full text-sm font-medium transition-all border-2 border-sakura-300 text-sakura-600 hover:bg-sakura-50"
+          className="flex items-center gap-1.5 px-3 md:px-3.5 py-1.5 rounded-full text-xs font-medium transition-all border-2 border-sakura-300 text-sakura-600 hover:bg-sakura-50"
         >
-          <Store className="w-4 h-4" />
+          <Store className="w-3.5 h-3.5" />
           <span className="hidden md:inline">成为商家</span>
           <span className="md:hidden">商家</span>
         </Link>

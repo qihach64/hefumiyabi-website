@@ -109,6 +109,36 @@ describe("SearchBarContext", () => {
     });
   });
 
+  describe("移动端搜索模态框", () => {
+    it("初始状态为关闭", () => {
+      const { result } = renderHook(() => useSearchBar(), { wrapper });
+      expect(result.current.isMobileSearchModalOpen).toBe(false);
+    });
+
+    it("openMobileSearchModal / closeMobileSearchModal 正确切换状态", () => {
+      const { result } = renderHook(() => useSearchBar(), { wrapper });
+
+      act(() => {
+        result.current.openMobileSearchModal();
+      });
+      expect(result.current.isMobileSearchModalOpen).toBe(true);
+
+      act(() => {
+        result.current.closeMobileSearchModal();
+      });
+      expect(result.current.isMobileSearchModalOpen).toBe(false);
+    });
+
+    it("返回所有 BottomNav 依赖的方法", () => {
+      const { result } = renderHook(() => useSearchBar(), { wrapper });
+
+      // BottomNav 依赖这些方法，缺少会导致 undefined 调用
+      expect(result.current.openMobileSearchModal).toBeDefined();
+      expect(result.current.closeMobileSearchModal).toBeDefined();
+      expect(typeof result.current.isMobileSearchModalOpen).toBe("boolean");
+    });
+  });
+
   describe("scroll 行为", () => {
     it("滚动超过阈值(100px)后搜索栏收起", async () => {
       const { result } = renderHook(() => useSearchBar(), { wrapper });

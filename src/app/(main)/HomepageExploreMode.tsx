@@ -34,19 +34,14 @@ export function HomepageExploreMode({
   return (
     <>
       {/* Hero Section */}
-      <HeroSection
-        themes={heroThemes}
-        onHeroVisibilityChange={onHeroVisibilityChange}
-      />
+      <HeroSection themes={heroThemes} onHeroVisibilityChange={onHeroVisibilityChange} />
 
       {/* Theme Sections - Miyabi 风格：背景色交替 + 无边框 */}
       <div>
         {themeSections.map((section, index) => (
           <section
             key={section.id}
-            className={`py-8 md:py-12 ${
-              index % 2 === 0 ? "bg-white" : "bg-[#FDFBF7]"
-            }`}
+            className={`py-8 md:py-12 ${index % 2 === 0 ? "bg-white" : "bg-[#FDFBF7]"}`}
           >
             <div className="container">
               {section.plans.length > 0 ? (
@@ -58,13 +53,26 @@ export function HomepageExploreMode({
                   scrollerClassName="flex gap-3 md:gap-4 overflow-x-auto scroll-smooth pb-4 -mb-4 scrollbar-hide snap-x snap-mandatory px-4 md:px-0 scroll-pl-4 md:scroll-pl-0 scroll-pad-fix"
                   featuredChild={
                     section.plans.length > 0 ? (
-                      <FeaturedPlanCard
-                        plan={section.plans[0]}
-                        themeColor={section.color}
-                      />
+                      <FeaturedPlanCard plan={section.plans[0]} themeColor={section.color} />
                     ) : undefined
                   }
                 >
+                  {/* 移动端：第一个套餐作为普通卡片（带推荐标签），桌面端隐藏 */}
+                  {section.plans.length > 0 && (
+                    <div
+                      key={`mobile-featured-${section.plans[0].id}`}
+                      className="snap-start flex-shrink-0 w-[75vw] max-w-[280px] sm:w-[280px] md:w-[260px] lg:hidden lg:h-full"
+                    >
+                      <PlanCard
+                        plan={section.plans[0]}
+                        variant="soft"
+                        showMerchant={true}
+                        isRecommended={true}
+                        themeSlug={section.slug}
+                        themeColor={section.color}
+                      />
+                    </div>
+                  )}
                   {/* 其他套餐（跳过第一个） */}
                   {section.plans.slice(1).map((plan) => (
                     <div
@@ -87,9 +95,7 @@ export function HomepageExploreMode({
                       <div className="w-12 h-12 rounded-full bg-wabi-50 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform duration-300">
                         <Sparkles className="w-6 h-6 text-wabi-400 group-hover:text-sakura-400 transition-colors duration-300" />
                       </div>
-                      <h3 className="text-stone-800 font-semibold mb-2">
-                        更多款式筹备中
-                      </h3>
+                      <h3 className="text-stone-800 font-semibold mb-2">更多款式筹备中</h3>
                       <p className="text-[14px] text-wabi-500 mb-4">
                         我们正在为您精心挑选更多{section.label}主题的和服
                       </p>
@@ -103,9 +109,7 @@ export function HomepageExploreMode({
                   <div className="snap-start flex-shrink-0 w-[75vw] max-w-[280px] sm:w-[280px] md:w-[260px] lg:w-full lg:snap-start lg:h-full">
                     <div
                       className="h-full flex flex-col bg-white rounded-xl border-2 border-dashed border-wabi-200 p-6 items-center justify-center text-center relative overflow-hidden group cursor-pointer hover:border-sakura-200 hover:-translate-y-2 hover:shadow-xl transition-all duration-300"
-                      onClick={() =>
-                        (window.location.href = "/merchant/register")
-                      }
+                      onClick={() => (window.location.href = "/merchant/register")}
                     >
                       <div className="w-12 h-12 rounded-full flex items-center justify-center mb-4 bg-wabi-50 group-hover:scale-105 transition-transform duration-300">
                         <StoreIcon className="w-6 h-6 text-wabi-400 group-hover:text-sakura-500 transition-colors duration-300" />
