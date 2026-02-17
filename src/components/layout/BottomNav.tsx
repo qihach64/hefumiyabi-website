@@ -67,7 +67,10 @@ export default function BottomNav() {
   useEffect(() => {
     setItemCount(storeItemCount);
   }, [storeItemCount]);
-  const { openMobileSearchModal } = useSearchBar();
+  const { openMobileSearchModal, isMobileSearchModalOpen } = useSearchBar();
+
+  // 搜索模态框打开时隐藏底部导航
+  if (isMobileSearchModalOpen) return null;
 
   return (
     <nav

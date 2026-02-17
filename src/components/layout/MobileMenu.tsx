@@ -29,7 +29,13 @@ interface MobileMenuProps {
 
 export default function MobileMenu({ merchant }: MobileMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
+
+  // 客户端挂载后启用 portal
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // 路由变化时关闭菜单
   useEffect(() => {
@@ -60,7 +66,7 @@ export default function MobileMenu({ merchant }: MobileMenuProps) {
       </button>
 
       {/* 遮罩层 + 侧边抽屉 — 用 Portal 渲染到 body，避免 header 的 backdrop-filter 创建 containing block 导致 fixed 定位被截断 */}
-      {typeof document !== "undefined" &&
+      {mounted &&
         createPortal(
           <>
             {/* 遮罩层 */}

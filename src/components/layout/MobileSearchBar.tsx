@@ -1,20 +1,45 @@
 "use client";
 
-import { useCallback, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { Search, MapPin, X, Calendar, Palette, Sparkles } from "lucide-react";
+import { Search, MapPin, X, Sparkles } from "lucide-react";
 import { useSearchFormState } from "@/shared/hooks";
 import { useSearchBar } from "@/contexts/SearchBarContext";
-import { useLocationDropdown } from "@/features/guest/discovery";
+import { useLocationDropdown, DateDropdown } from "@/features/guest/discovery";
 import { getThemeIcon } from "@/lib/themeIcons";
 
-// 内部组件，使用 useSearchParams
+type AccordionSection = "location" | "date" | "theme";
+
+// 收起态卡片
+function CollapsedCard({
+  label,
+  value,
+  placeholder,
+  onClick,
+}: {
+  label: string;
+  value: string;
+  placeholder: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="w-full bg-white rounded-xl px-5 py-4 flex items-center justify-between shadow-sm border border-gray-200 transition-colors active:bg-gray-50"
+    >
+      <span className="text-[14px] font-semibold text-gray-500">{label}</span>
+      <span className={`text-[14px] font-medium ${value ? "text-gray-900" : "text-gray-400"}`}>
+        {value || placeholder}
+      </span>
+    </button>
+  );
+}
+
 function MobileSearchBarInner() {
   const router = useRouter();
   const pathname = usePathname();
   const { isMobileSearchModalOpen, openMobileSearchModal, closeMobileSearchModal } = useSearchBar();
 
-  // 使用共享的搜索表单状态（延迟加载主题）
   const {
     localLocation,
     setLocalLocation,
@@ -27,229 +52,203 @@ function MobileSearchBarInner() {
     buildSearchUrl,
   } = useSearchFormState({ lazyLoadThemes: true, lazyLoadTrigger: isMobileSearchModalOpen });
 
-  // 使用共享的 location dropdown hook
   const {
+    allLocations,
     filteredLocations,
-    isOpen: showDropdown,
     open: openLocationDropdown,
     close: closeLocationDropdown,
     filter: filterLocations,
+    getLocationDescription,
   } = useLocationDropdown();
 
-  // 搜索栏只在首页显示
-  const shouldHide = pathname !== "/";
+  // 手风琴当前展开区块
+  const [activeSection, setActiveSection] = useState<AccordionSection>("location");
+
+  // 模态框打开时重置手风琴到目的地
+  useEffect(() => {
+    if (isMobileSearchModalOpen) {
+      setActiveSection("location");
+    }
+  }, [isMobileSearchModalOpen]);
+
+  // 当目的地区块展开且城市数据已加载时，显示城市列表
+  useEffect(() => {
+    if (isMobileSearchModalOpen && activeSection === "location" && allLocations.length > 0) {
+      openLocationDropdown(localLocation);
+    }
+  }, [
+    isMobileSearchModalOpen,
+    activeSection,
+    allLocations.length,
+    openLocationDropdown,
+    localLocation,
+  ]);
 
   const handleLocationChange = (value: string) => {
     setLocalLocation(value);
     filterLocations(value);
   };
 
-  const handleLocationFocus = () => {
-    openLocationDropdown(localLocation);
+  const handleLocationSelect = (loc: string) => {
+    setLocalLocation(loc);
+    closeLocationDropdown();
+    setActiveSection("date");
   };
 
   const handleSearch = () => {
     router.push(buildSearchUrl());
+    closeMobileSearchModal();
   };
 
-  // 生成按钮文本 - 只显示已选中的值
-  const getButtonText = () => {
-    const parts: string[] = [];
-
-    if (localLocation) {
-      parts.push(localLocation);
-    }
-
-    if (localDate) {
-      const dateObj = new Date(localDate + "T00:00:00");
-      const month = dateObj.getMonth() + 1;
-      const day = dateObj.getDate();
-      parts.push(`${month}月${day}日`);
-    }
-
-    if (selectedTheme) {
-      parts.push(selectedTheme.name);
-    }
-
-    // 如果没有选择任何值，显示"开始搜索"
-    if (parts.length === 0) {
-      return "开始搜索";
-    }
-
-    // 用 · 分隔已选择的值
-    return parts.join(" · ");
+  const handleClearAll = () => {
+    setLocalLocation("");
+    setLocalDate("");
+    handleThemeSelect(null);
+    setActiveSection("location");
+    openLocationDropdown("");
   };
 
-  const handleOpenModal = () => {
-    openMobileSearchModal();
+  const hasAnySelection = localLocation || localDate || selectedTheme;
+
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return "";
+    const dateObj = new Date(dateStr + "T00:00:00");
+    return `${dateObj.getMonth() + 1}月${dateObj.getDate()}日`;
   };
 
-  // 非首页不渲染
-  if (shouldHide) {
-    return null;
-  }
+  // 搜索栏只在首页显示
+  if (pathname !== "/") return null;
 
   return (
     <>
-      {/* 移动端搜索按钮 - 始终在 Header 下方显示 */}
-      <div className="md:hidden sticky top-16 z-40 bg-white border-b border-gray-200 px-4 py-3">
+      {/* Airbnb 风格大搜索栏按钮 */}
+      <div className="md:hidden sticky top-16 z-40 bg-white/80 backdrop-blur-md px-4 py-2">
         <button
-          onClick={handleOpenModal}
-          className="w-full flex items-center gap-3 bg-white border border-gray-300 rounded-full px-4 py-3 shadow-sm active:scale-[0.98] transition-all"
+          onClick={openMobileSearchModal}
+          className="w-full rounded-full shadow-sm border border-gray-200 bg-white px-5 py-3 flex items-center gap-3 active:scale-[0.98] transition-all"
         >
-          <Search className="w-4 h-4 text-gray-600 flex-shrink-0" />
-          <span className="text-sm text-gray-900 font-medium flex-1 text-left truncate">
-            {getButtonText()}
-          </span>
+          <div className="w-8 h-8 rounded-full bg-sakura-500 flex items-center justify-center flex-shrink-0">
+            <Search className="w-4 h-4 text-white" />
+          </div>
+          <span className="text-[15px] font-medium text-gray-800">搜索和服体验</span>
         </button>
       </div>
 
-      {/* 移动端全屏搜索模态框 */}
+      {/* 全屏搜索模态框 */}
       {isMobileSearchModalOpen && (
-        <div className="md:hidden fixed inset-0 bg-white z-50 flex flex-col">
+        <div className="md:hidden fixed inset-0 bg-gray-50 z-50 flex flex-col">
           {/* 顶部栏 */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">搜索和服体验</h2>
+          <div className="flex items-center px-4 pt-4 pb-2">
             <button
               onClick={closeMobileSearchModal}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-full active:bg-gray-100 transition-colors"
             >
-              <X className="w-5 h-5 text-gray-600" />
+              <X className="w-4 h-4 text-gray-600" />
             </button>
           </div>
 
-          {/* 搜索表单 */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {/* 目的地 */}
-            <div className="relative">
-              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                <MapPin className="w-4 h-4 text-sakura-500" />
-                目的地
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="东京、京都..."
-                  value={localLocation}
-                  onChange={(e) => handleLocationChange(e.target.value)}
-                  onFocus={handleLocationFocus}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-sakura-500 focus:ring-2 focus:ring-sakura-100 outline-none transition-all"
-                />
-                {localLocation && (
-                  <button
-                    onClick={() => {
-                      setLocalLocation("");
-                      closeLocationDropdown();
-                    }}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-200 rounded-full transition-colors"
-                  >
-                    <X className="w-4 h-4 text-gray-500" />
-                  </button>
+          {/* 手风琴区域 */}
+          <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-3">
+            {/* === 目的地 === */}
+            {activeSection === "location" ? (
+              <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
+                <h3 className="text-[22px] font-semibold text-gray-900 mb-4">去哪里？</h3>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="搜索目的地"
+                    value={localLocation}
+                    onChange={(e) => handleLocationChange(e.target.value)}
+                    autoFocus
+                    className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-xl text-[16px] focus:border-sakura-500 focus:ring-2 focus:ring-sakura-100 outline-none transition-all"
+                  />
+                  {localLocation && (
+                    <button
+                      onClick={() => {
+                        setLocalLocation("");
+                        filterLocations("");
+                      }}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1 active:bg-gray-200 rounded-full transition-colors"
+                    >
+                      <X className="w-4 h-4 text-gray-500" />
+                    </button>
+                  )}
+                </div>
+
+                {/* 城市列表 */}
+                {filteredLocations.length > 0 && (
+                  <div className="mt-3 space-y-1">
+                    {filteredLocations.map((loc, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleLocationSelect(loc)}
+                        className="w-full px-3 py-3 text-left flex items-center gap-3 rounded-xl transition-all duration-200 active:bg-gray-100"
+                      >
+                        <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center">
+                          <MapPin className="w-5 h-5 text-gray-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[14px] font-medium text-gray-900">{loc}</div>
+                          <div className="text-[12px] text-gray-500 mt-0.5">
+                            {getLocationDescription(loc)}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
                 )}
               </div>
+            ) : (
+              <CollapsedCard
+                label="目的地"
+                value={localLocation}
+                placeholder="搜索目的地"
+                onClick={() => {
+                  setActiveSection("location");
+                  openLocationDropdown(localLocation);
+                }}
+              />
+            )}
 
-              {/* 移动端下拉菜单 */}
-              {showDropdown && filteredLocations.length > 0 && (
-                <div className="mt-2 bg-white rounded-xl border border-gray-200 shadow-lg max-h-60 overflow-y-auto">
-                  {filteredLocations.map((loc, index) => (
-                    <button
-                      key={index}
-                      onClick={() => {
-                        setLocalLocation(loc);
-                        closeLocationDropdown();
-                      }}
-                      className="w-full px-4 py-3 text-left flex items-center gap-3 hover:bg-sakura-50 active:bg-sakura-100 transition-colors border-b border-gray-100 last:border-b-0"
-                    >
-                      <MapPin className="w-4 h-4 text-sakura-500 flex-shrink-0" />
-                      <span className="text-sm text-gray-900">{loc}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            {/* === 日期 === */}
+            {activeSection === "date" ? (
+              <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
+                <h3 className="text-[22px] font-semibold text-gray-900 mb-4">什么时候？</h3>
+                <DateDropdown
+                  value={localDate}
+                  onChange={(date) => setLocalDate(date)}
+                  onSelect={() => setActiveSection("theme")}
+                  isOpen={true}
+                  onClose={() => {}}
+                  className="!static !mt-0 !shadow-none !border-0 !max-h-none !min-w-0 !animate-none w-full"
+                />
+              </div>
+            ) : (
+              <CollapsedCard
+                label="到店日期"
+                value={localDate ? formatDate(localDate) : ""}
+                placeholder="选择日期"
+                onClick={() => setActiveSection("date")}
+              />
+            )}
 
-            {/* 日期 */}
-            <div>
-              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                <Calendar className="w-4 h-4 text-sakura-500" />
-                到店日期
-              </label>
-              {localDate ? (
-                <div className="relative">
-                  <input
-                    type="date"
-                    value={localDate}
-                    onChange={(e) => setLocalDate(e.target.value)}
-                    className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-xl focus:border-sakura-500 focus:ring-2 focus:ring-sakura-100 outline-none transition-all text-gray-900 [&::-webkit-calendar-picker-indicator]:hidden [&::-moz-calendar-picker-indicator]:hidden"
-                  />
-                  <button
-                    onClick={() => setLocalDate("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-200 rounded-full transition-colors"
-                  >
-                    <X className="w-4 h-4 text-gray-500" />
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => {
-                    // 创建一个临时的 date input 并触发选择器
-                    const input = document.createElement("input");
-                    input.type = "date";
-                    input.style.position = "absolute";
-                    input.style.opacity = "0";
-                    input.style.pointerEvents = "none";
-                    document.body.appendChild(input);
-
-                    input.onchange = (event) => {
-                      const target = event.target as HTMLInputElement;
-                      if (target.value) {
-                        setLocalDate(target.value);
-                      }
-                      document.body.removeChild(input);
-                    };
-
-                    input.onblur = () => {
-                      setTimeout(() => {
-                        if (document.body.contains(input)) {
-                          document.body.removeChild(input);
-                        }
-                      }, 100);
-                    };
-
-                    input.click();
-                    try {
-                      input.showPicker?.();
-                    } catch {
-                      input.focus();
-                    }
-                  }}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl text-left text-sm text-gray-400 hover:border-sakura-500 hover:bg-sakura-50/30 transition-all"
-                >
-                  选择日期
-                </button>
-              )}
-            </div>
-
-            {/* 主题选择 */}
-            <div>
-              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                <Palette className="w-4 h-4 text-sakura-500" />
-                主题
-              </label>
-              <div className="border border-gray-300 rounded-xl p-3">
+            {/* === 主题 === */}
+            {activeSection === "theme" ? (
+              <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
+                <h3 className="text-[22px] font-semibold text-gray-900 mb-4">选择主题</h3>
                 {isLoadingThemes ? (
-                  <div className="text-sm text-gray-500 py-2">加载中...</div>
+                  <div className="text-[14px] text-gray-500 py-2">加载中...</div>
                 ) : themes.length === 0 ? (
-                  <div className="text-sm text-gray-500 py-2">暂无主题</div>
+                  <div className="text-[14px] text-gray-500 py-2">暂无主题</div>
                 ) : (
                   <div className="flex flex-wrap gap-2">
-                    {/* 全部选项 */}
                     <button
                       onClick={() => handleThemeSelect(null)}
-                      className={`px-3 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-1.5 ${
+                      className={`px-3 py-2 rounded-full text-[14px] font-medium transition-all duration-300 flex items-center gap-1.5 ${
                         !selectedTheme
                           ? "bg-sakura-500 text-white shadow-sm"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          : "bg-gray-100 text-gray-700 active:bg-gray-200"
                       }`}
                     >
                       <Sparkles className="w-4 h-4" />
@@ -261,10 +260,10 @@ function MobileSearchBarInner() {
                         <button
                           key={theme.id}
                           onClick={() => handleThemeSelect(theme)}
-                          className={`px-3 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-1.5 ${
+                          className={`px-3 py-2 rounded-full text-[14px] font-medium transition-all duration-300 flex items-center gap-1.5 ${
                             selectedTheme?.id === theme.id
                               ? "bg-sakura-500 text-white shadow-sm"
-                              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                              : "bg-gray-100 text-gray-700 active:bg-gray-200"
                           }`}
                         >
                           <IconComponent className="w-4 h-4" />
@@ -275,19 +274,33 @@ function MobileSearchBarInner() {
                   </div>
                 )}
               </div>
-            </div>
+            ) : (
+              <CollapsedCard
+                label="主题"
+                value={selectedTheme?.name ?? ""}
+                placeholder="选择主题"
+                onClick={() => setActiveSection("theme")}
+              />
+            )}
           </div>
 
-          {/* 底部搜索按钮 */}
-          <div className="p-4 border-t border-gray-200 bg-white">
+          {/* 底部操作栏 */}
+          <div className="flex items-center justify-between p-4 border-t border-gray-200 bg-white">
+            {hasAnySelection ? (
+              <button
+                onClick={handleClearAll}
+                className="text-[14px] font-semibold underline text-gray-900"
+              >
+                清除全部
+              </button>
+            ) : (
+              <div />
+            )}
             <button
-              onClick={() => {
-                handleSearch();
-                closeMobileSearchModal();
-              }}
-              className="w-full bg-sakura-500 hover:bg-sakura-600 text-white font-medium py-3 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all"
+              onClick={handleSearch}
+              className="bg-sakura-500 hover:bg-sakura-600 text-white font-medium py-3 px-6 rounded-xl flex items-center gap-2 active:scale-95 transition-all"
             >
-              <Search className="w-5 h-5" />
+              <Search className="w-4 h-4" />
               搜索
             </button>
           </div>
@@ -297,10 +310,19 @@ function MobileSearchBarInner() {
   );
 }
 
+// 骨架屏 — 与大搜索栏按钮尺寸一致，消除 CLS
+function MobileSearchBarSkeleton() {
+  return (
+    <div className="md:hidden sticky top-16 z-40 bg-white/80 backdrop-blur-md px-4 py-2">
+      <div className="h-14 rounded-full bg-gray-100 animate-pulse" />
+    </div>
+  );
+}
+
 // 外部组件，包裹 Suspense 以支持静态页面预渲染
 export default function MobileSearchBar() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<MobileSearchBarSkeleton />}>
       <MobileSearchBarInner />
     </Suspense>
   );

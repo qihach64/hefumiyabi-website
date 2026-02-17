@@ -101,7 +101,7 @@ export default function Header() {
         <div
           className={`flex items-center justify-between gap-4 transition-all duration-300 ease-in-out ${
             isSearchBarExpanded && !isHeroVisible && !shouldHideSearchBar
-              ? "h-20 md:h-24 py-2"
+              ? "h-16 md:h-24 md:py-2"
               : "h-16 md:h-20"
           }`}
         >
@@ -179,7 +179,7 @@ export default function Header() {
           {/* 中间：搜索栏（Hero 可见时隐藏，滚动后显示；详情页完全隐藏） */}
           {!shouldHideSearchBar && (
             <div
-              className={`flex-1 flex justify-center max-w-2xl mx-4 transition-all duration-300 ${
+              className={`hidden md:flex flex-1 justify-center max-w-2xl mx-4 transition-all duration-300 ${
                 isHeroVisible ? "opacity-0 pointer-events-none scale-95" : "opacity-100 scale-100"
               }`}
             >
