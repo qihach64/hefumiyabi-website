@@ -13,21 +13,29 @@ body {
 }
 
 :root {
-  /* === 樱花粉红色系 === */
-  --sakura-50: #fff5f7;
-  --sakura-100: #ffe4ed;
-  --sakura-200: #ffc0d3;
-  --sakura-300: #ff9db5;
-  --sakura-400: #ff7a9a;
-  --sakura-500: #ff5780;
-  --sakura-600: #e63462;
-  --sakura-700: #cc2851;
-  --sakura-800: #a61d3f;
-  --sakura-900: #8a1634;
+  /* === 朱色 Shu — 主品牌色 (鳥居朱紅) === */
+  --shu-50: #FFF7F5;
+  --shu-100: #FFEDE9;
+  --shu-200: #FFD5CC;
+  --shu-300: #F7A99A;
+  --shu-400: #E8806E;
+  --shu-500: #D45B47;
+  --shu-600: #B8412E;
+  --shu-700: #962E1D;
+  --shu-800: #6E2014;
+  --shu-900: #4A120A;
 
-  /* === Airbnb 风格主色 === */
-  --rausch-pink: #ff385c;
-  --rausch-pink-dark: #e31c5f;
+  /* === 樱色 Sakura — 温暖珊瑚朱砂 === */
+  --sakura-50: #FFF8F6;
+  --sakura-100: #FFEFEB;
+  --sakura-200: #FFDDD6;
+  --sakura-300: #F2B0A5;
+  --sakura-400: #E3948A;
+  --sakura-500: #D87B70;
+  --sakura-600: #C0635A;
+  --sakura-700: #9E4D45;
+  --sakura-800: #7A3832;
+  --sakura-900: #522520;
 
   /* === 中性色系统 (Airbnb 灰度) === */
   --gray-50: #f9fafb;
@@ -45,22 +53,22 @@ body {
   --background: #ffffff;
   --foreground: #1f2937;
 
-  /* 主色 - 樱花粉 */
-  --primary: #ff7a9a;
+  /* 主色 - 朱色 (鳥居朱紅) */
+  --primary: #D45B47;
   --primary-foreground: #ffffff;
 
   /* 次要色 - 淡雅米色 */
   --secondary: #f9fafb;
   --secondary-foreground: #4b5563;
 
-  /* 强调色 - Rausch Pink */
-  --accent: #ff385c;
+  /* 强调色 - 朱色深 */
+  --accent: #B8412E;
   --accent-foreground: #ffffff;
 
   /* 边框和输入 */
   --border: #e5e7eb;
   --input: #e5e7eb;
-  --ring: #ff7a9a;
+  --ring: #D45B47;
 
   /* 卡片 */
   --card: #ffffff;
@@ -109,8 +117,10 @@ body {
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
   --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-  --shadow-sakura: 0 10px 25px -5px rgb(255 122 154 / 0.15);
-  --shadow-sakura-lg: 0 20px 40px -10px rgb(255 122 154 / 0.2);
+  --shadow-shu: 0 10px 25px -5px rgb(212 91 71 / 0.15);
+  --shadow-shu-lg: 0 20px 40px -10px rgb(212 91 71 / 0.2);
+  --shadow-sakura: 0 10px 25px -5px rgb(216 123 112 / 0.15);
+  --shadow-sakura-lg: 0 20px 40px -10px rgb(216 123 112 / 0.2);
 }
 
 @theme inline {
@@ -133,7 +143,19 @@ body {
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
 
-  /* 樱花色系 */
+  /* 朱色系 — 主品牌色 */
+  --color-shu-50: var(--shu-50);
+  --color-shu-100: var(--shu-100);
+  --color-shu-200: var(--shu-200);
+  --color-shu-300: var(--shu-300);
+  --color-shu-400: var(--shu-400);
+  --color-shu-500: var(--shu-500);
+  --color-shu-600: var(--shu-600);
+  --color-shu-700: var(--shu-700);
+  --color-shu-800: var(--shu-800);
+  --color-shu-900: var(--shu-900);
+
+  /* 樱花色系 — 温暖珊瑚辅助色 */
   --color-sakura-50: var(--sakura-50);
   --color-sakura-100: var(--sakura-100);
   --color-sakura-200: var(--sakura-200);
@@ -227,15 +249,15 @@ body {
 }
 
 .bg-sakura-gradient-warm {
-  background: linear-gradient(135deg, #ffb5c5 0%, #ff6b9d 100%);
+  background: linear-gradient(135deg, var(--shu-200) 0%, var(--shu-400) 100%);
 }
 
 .bg-sakura-gradient-cool {
-  background: linear-gradient(135deg, #ffd4e5 0%, #ff8fab 100%);
+  background: linear-gradient(135deg, var(--shu-100) 0%, var(--shu-300) 100%);
 }
 
 .bg-hero-gradient {
-  background: linear-gradient(135deg, var(--sakura-50) 0%, var(--sakura-100) 50%, #ffd4e5 100%);
+  background: linear-gradient(135deg, var(--shu-50) 0%, var(--shu-100) 50%, var(--shu-200) 100%);
 }
 
 /* 樱花阴影 */
@@ -481,7 +503,7 @@ body {
    Sonner Toast 图标样式
    ================================ */
 [data-sonner-toast][data-type="success"] [data-icon] svg {
-  color: var(--sakura-500) !important;
+  color: var(--shu-500) !important;
 }
 
 /* ================================

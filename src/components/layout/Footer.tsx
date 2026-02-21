@@ -19,7 +19,7 @@ export default function Footer() {
                   className="absolute inset-1 rounded-full border border-sakura-400/50"
                   style={{
                     background:
-                      "repeating-conic-gradient(from 0deg, transparent 0deg 30deg, rgba(236, 72, 153, 0.06) 30deg 60deg)",
+                      "repeating-conic-gradient(from 0deg, transparent 0deg 30deg, rgba(212, 91, 71, 0.06) 30deg 60deg)",
                   }}
                 />
                 <div className="absolute inset-[6px] rounded-full bg-[#FDFBF7]" />

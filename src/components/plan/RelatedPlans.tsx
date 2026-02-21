@@ -55,8 +55,8 @@ export default function RelatedPlans({
 
   // 获取主题色
   const accentColor = themeSlug
-    ? themeColorMap[themeSlug] || themeColor || "#FF7A9A"
-    : "#FF7A9A";
+    ? themeColorMap[themeSlug] || themeColor || "#D45B47"
+    : "#D45B47";
 
   return (
     <section className="py-12 border-t border-wabi-100">

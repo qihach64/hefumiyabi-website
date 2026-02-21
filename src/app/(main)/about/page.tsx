@@ -51,7 +51,7 @@ export default function AboutPage() {
                         className="absolute inset-2 rounded-full border border-sakura-200/40"
                         style={{
                           background:
-                            "repeating-conic-gradient(from 0deg, transparent 0deg 30deg, rgba(236, 72, 153, 0.05) 30deg 60deg)",
+                            "repeating-conic-gradient(from 0deg, transparent 0deg 30deg, rgba(212, 91, 71, 0.05) 30deg 60deg)",
                         }}
                       />
                       <div className="absolute inset-4 rounded-full bg-white/80" />

@@ -71,7 +71,7 @@ export default function PlanCard({
   showMerchant = false,
   isRecommended = false,
   themeSlug,
-  themeColor = "#FF7A9A", // 默认樱花色
+  themeColor = "#D45B47", // 默认朱色
   aspectRatio = "square", // 默认 1:1
 }: PlanCardProps) {
   // 使用主题色作为点缀色

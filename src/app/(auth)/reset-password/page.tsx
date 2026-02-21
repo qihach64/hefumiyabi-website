@@ -71,7 +71,7 @@ function ResetPasswordForm() {
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">密码已重置</h1>
           <p className="text-gray-600">您的密码已成功更新，正在跳转到登录页...</p>
-          <Link href="/login" className="inline-block mt-4 text-sakura-600 hover:text-sakura-700 font-medium">
+          <Link href="/login" className="inline-block mt-4 text-shu-600 hover:text-shu-700 font-medium">
             立即登录
           </Link>
         </div>
@@ -100,7 +100,7 @@ function ResetPasswordForm() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={!token}
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-sakura-500 focus:border-transparent outline-none transition disabled:bg-gray-50"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-shu-500 focus:border-transparent outline-none transition disabled:bg-gray-50"
                 placeholder="至少6位"
               />
             </div>
@@ -116,7 +116,7 @@ function ResetPasswordForm() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 disabled={!token}
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-sakura-500 focus:border-transparent outline-none transition disabled:bg-gray-50"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-shu-500 focus:border-transparent outline-none transition disabled:bg-gray-50"
                 placeholder="再次输入新密码"
               />
             </div>
@@ -124,14 +124,14 @@ function ResetPasswordForm() {
             <button
               type="submit"
               disabled={loading || !token}
-              className="w-full bg-gradient-to-r from-sakura-500 to-sakura-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-sakura-600 hover:to-sakura-700 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-md hover:shadow-lg"
+              className="w-full bg-shu-500 text-white font-semibold py-3 px-6 rounded-lg hover:bg-shu-600 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-md hover:shadow-lg"
             >
               {loading ? "重置中..." : "确认重置"}
             </button>
           </form>
 
           <div className="mt-6 text-center">
-            <Link href="/forgot-password" className="text-sakura-600 hover:text-sakura-700 font-medium text-sm">
+            <Link href="/forgot-password" className="text-shu-600 hover:text-shu-700 font-medium text-sm">
               重新发送重置邮件
             </Link>
           </div>
@@ -143,24 +143,24 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#FFF5F7]/60 via-white to-[#FFF5F7]/30 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#FFF7F5]/60 via-white to-[#FFF7F5]/30 px-4">
       <div className="max-w-md w-full">
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-3 group">
             <div className="relative w-14 h-14">
-              <div className="absolute inset-0 rounded-full border-2 border-sakura-500 transition-colors duration-300 group-hover:border-sakura-600" />
+              <div className="absolute inset-0 rounded-full border-2 border-shu-500 transition-colors duration-300 group-hover:border-shu-600" />
               <div
-                className="absolute inset-1 rounded-full border border-sakura-400/50"
+                className="absolute inset-1 rounded-full border border-shu-400/50"
                 style={{
                   background:
-                    "repeating-conic-gradient(from 0deg, transparent 0deg 30deg, rgba(236, 72, 153, 0.06) 30deg 60deg)",
+                    "repeating-conic-gradient(from 0deg, transparent 0deg 30deg, rgba(212, 91, 71, 0.06) 30deg 60deg)",
                 }}
               />
               <div className="absolute inset-2 rounded-full bg-white" />
               <div className="absolute inset-0 flex items-center justify-center">
                 <span
-                  className="font-serif text-[18px] font-medium text-sakura-600 select-none"
+                  className="font-serif text-[18px] font-medium text-shu-600 select-none"
                   style={{ fontFamily: '"Noto Serif JP", "Source Han Serif", serif' }}
                 >
                   一
