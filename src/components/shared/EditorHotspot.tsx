@@ -187,7 +187,7 @@ export default function EditorHotspot({
         `}
         style={{
           boxShadow: isSelected || isDragging
-            ? "0 4px 12px -2px rgba(255, 122, 154, 0.5)"
+            ? "0 4px 12px -2px rgba(212, 91, 71, 0.5)"
             : undefined,
         }}
         aria-label={isEditable ? `拖拽调整 ${name} 位置` : `查看 ${name} 详情`}
@@ -207,11 +207,11 @@ export default function EditorHotspot({
 
         // 根据选中状态决定颜色
         const lineColor = isSelected || isLabelDragging
-          ? "rgba(255, 122, 154, 0.6)"  // sakura-400 with opacity
+          ? "rgba(212, 91, 71, 0.6)"  // sakura-400 with opacity
           : "rgba(180, 168, 154, 0.5)"; // wabi-400 (#B8A89A) with opacity
 
         const dotColor = isSelected || isLabelDragging
-          ? "rgb(255, 122, 154)"  // sakura-400
+          ? "rgb(212, 91, 71)"  // sakura-400
           : "rgb(180, 168, 154)"; // wabi-400
 
         return (
@@ -280,7 +280,7 @@ export default function EditorHotspot({
           `}
           style={{
             boxShadow: isSelected || isLabelDragging
-              ? "0 4px 16px -4px rgba(255, 122, 154, 0.25)"
+              ? "0 4px 16px -4px rgba(212, 91, 71, 0.25)"
               : undefined,
           }}
         >

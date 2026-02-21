@@ -754,7 +754,7 @@ const HeaderSearchBarInner = memo(function HeaderSearchBarInner() {
                               >
                                 <IconComponent
                                   className="w-5 h-5"
-                                  style={{ color: isSelected ? "white" : theme.color || "#FF7A9A" }}
+                                  style={{ color: isSelected ? "white" : theme.color || "#D45B47" }}
                                 />
                               </div>
                               <span className="text-[14px] font-medium truncate">{theme.name}</span>

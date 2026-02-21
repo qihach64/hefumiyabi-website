@@ -35,7 +35,7 @@ interface FeaturedPlanCardProps {
   themeColor?: string;
 }
 
-export default function FeaturedPlanCard({ plan, themeColor = "#FF7A9A" }: FeaturedPlanCardProps) {
+export default function FeaturedPlanCard({ plan, themeColor = "#D45B47" }: FeaturedPlanCardProps) {
   const { isInCart, isAdding, justChanged, lastAction, handleToggleCart } = useCartToggle(plan);
 
   const searchParams = useSearchParams();

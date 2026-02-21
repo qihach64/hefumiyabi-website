@@ -204,7 +204,7 @@ function PlansClientInner({
     (sortBy !== "recommended" ? 1 : 0);
 
   // 获取当前显示主题的颜色
-  const themeColor = displayTheme?.color || "#FF7A9A";
+  const themeColor = displayTheme?.color || "#D45B47";
 
   return (
     <div className="min-h-screen bg-gray-50">

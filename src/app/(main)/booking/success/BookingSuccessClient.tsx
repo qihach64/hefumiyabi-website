@@ -56,7 +56,7 @@ export default function BookingSuccessClient() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#FFF5F7]/60 via-white to-[#FFF5F7]/30 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#FFF7F5]/60 via-white to-[#FFF7F5]/30 py-12 px-4">
       <div className="max-w-2xl mx-auto">
         {/* 成功图标 */}
         <div className="text-center mb-8">

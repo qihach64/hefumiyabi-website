@@ -129,7 +129,7 @@ export default function HeroSection({ themes, onHeroVisibilityChange }: HeroSect
               <span
                 className="block text-[40px] md:text-[72px] lg:text-[88px] font-mincho font-medium tracking-[0.15em] text-wabi-800"
                 style={{
-                  textShadow: "0 2px 12px rgba(255, 122, 154, 0.2)",
+                  textShadow: "0 2px 12px rgba(212, 91, 71, 0.2)",
                 }}
               >
                 一の着物
