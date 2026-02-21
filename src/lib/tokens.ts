@@ -50,3 +50,39 @@ export async function deleteToken(token: string) {
     where: { token },
   });
 }
+
+// 生成密码重置 token（identifier 前缀 reset:，过期1小时）
+export async function generatePasswordResetToken(email: string) {
+  const token = crypto.randomBytes(32).toString("hex");
+  const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 小时后过期
+  const identifier = `reset:${email}`;
+
+  // 删除该邮箱的旧重置 token
+  await prisma.verificationToken.deleteMany({
+    where: { identifier },
+  });
+
+  await prisma.verificationToken.create({
+    data: { identifier, token, expires },
+  });
+
+  return token;
+}
+
+// 验证密码重置 token
+export async function verifyPasswordResetToken(token: string) {
+  const record = await prisma.verificationToken.findUnique({
+    where: { token },
+  });
+
+  if (!record || !record.identifier.startsWith("reset:")) {
+    return { valid: false, error: "无效的重置链接" };
+  }
+
+  if (record.expires < new Date()) {
+    await prisma.verificationToken.delete({ where: { token } });
+    return { valid: false, error: "重置链接已过期" };
+  }
+
+  return { valid: true, email: record.identifier.slice("reset:".length) };
+}

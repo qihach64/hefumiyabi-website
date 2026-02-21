@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { registerSchema, loginSchema } from "../auth.schema";
+import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema, changePasswordSchema } from "../auth.schema";
 
 describe("registerSchema", () => {
   const validRegister = {
@@ -102,5 +102,57 @@ describe("loginSchema", () => {
   it("短密码通过 (登录仅要求非空)", () => {
     const result = loginSchema.safeParse({ ...validLogin, password: "x" });
     expect(result.success).toBe(true);
+  });
+});
+
+describe("forgotPasswordSchema", () => {
+  it("合法邮箱通过", () => {
+    expect(forgotPasswordSchema.safeParse({ email: "user@example.com" }).success).toBe(true);
+  });
+
+  it("无效邮箱被拒绝", () => {
+    expect(forgotPasswordSchema.safeParse({ email: "not-an-email" }).success).toBe(false);
+  });
+
+  it("空邮箱被拒绝", () => {
+    expect(forgotPasswordSchema.safeParse({ email: "" }).success).toBe(false);
+  });
+});
+
+describe("resetPasswordSchema", () => {
+  it("合法输入通过", () => {
+    expect(resetPasswordSchema.safeParse({ token: "abc123", password: "123456" }).success).toBe(true);
+  });
+
+  it("token 为空被拒绝", () => {
+    expect(resetPasswordSchema.safeParse({ token: "", password: "123456" }).success).toBe(false);
+  });
+
+  it("密码少于6位被拒绝", () => {
+    expect(resetPasswordSchema.safeParse({ token: "abc", password: "12345" }).success).toBe(false);
+  });
+
+  it("密码恰好6位通过", () => {
+    expect(resetPasswordSchema.safeParse({ token: "abc", password: "123456" }).success).toBe(true);
+  });
+});
+
+describe("changePasswordSchema", () => {
+  const valid = { currentPassword: "old-pass", newPassword: "new-pass1" };
+
+  it("合法输入通过", () => {
+    expect(changePasswordSchema.safeParse(valid).success).toBe(true);
+  });
+
+  it("currentPassword 为空被拒绝", () => {
+    expect(changePasswordSchema.safeParse({ ...valid, currentPassword: "" }).success).toBe(false);
+  });
+
+  it("newPassword 少于6位被拒绝", () => {
+    expect(changePasswordSchema.safeParse({ ...valid, newPassword: "12345" }).success).toBe(false);
+  });
+
+  it("newPassword 恰好6位通过", () => {
+    expect(changePasswordSchema.safeParse({ ...valid, newPassword: "123456" }).success).toBe(true);
   });
 });

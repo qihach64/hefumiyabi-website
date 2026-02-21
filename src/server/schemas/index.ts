@@ -31,6 +31,12 @@ export {
 export {
   registerSchema,
   loginSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  changePasswordSchema,
   type RegisterInput,
   type LoginInput,
+  type ForgotPasswordInput,
+  type ResetPasswordInput,
+  type ChangePasswordInput,
 } from './auth.schema';

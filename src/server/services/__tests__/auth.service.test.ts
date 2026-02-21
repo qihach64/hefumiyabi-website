@@ -5,9 +5,11 @@ import { TRPCError } from '@trpc/server';
 vi.mock('bcryptjs', () => ({
   default: {
     hash: vi.fn().mockResolvedValue('hashed-password'),
+    compare: vi.fn(),
   },
 }));
 
+import bcrypt from 'bcryptjs';
 import { authService } from '../auth.service';
 
 // mock prisma（authService 接收 prisma 作为参数）
@@ -15,6 +17,7 @@ const mockPrisma = {
   user: {
     findUnique: vi.fn(),
     create: vi.fn(),
+    update: vi.fn(),
   },
 } as any;
 
@@ -98,6 +101,114 @@ describe('authService', () => {
         id: 'user-1',
         email: 'test@example.com',
         name: '测试用户',
+      });
+    });
+  });
+
+  describe('requestPasswordReset', () => {
+    const mockGenerate = vi.fn().mockResolvedValue('reset-token-123');
+    const mockSend = vi.fn().mockResolvedValue({ success: true });
+
+    it('用户不存在时仍返回成功（防枚举）', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue(null);
+
+      const result = await authService.requestPasswordReset(
+        mockPrisma, 'nouser@example.com', mockGenerate, mockSend,
+      );
+
+      expect(result).toEqual({ success: true });
+      // 不应调用 token 生成或发邮件
+      expect(mockGenerate).not.toHaveBeenCalled();
+      expect(mockSend).not.toHaveBeenCalled();
+    });
+
+    it('正常时生成 token 并发邮件', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({ id: 'user-1', email: 'test@example.com' });
+
+      const result = await authService.requestPasswordReset(
+        mockPrisma, 'test@example.com', mockGenerate, mockSend,
+      );
+
+      expect(result).toEqual({ success: true });
+      expect(mockGenerate).toHaveBeenCalledWith('test@example.com');
+      expect(mockSend).toHaveBeenCalledWith('test@example.com', 'reset-token-123');
+    });
+  });
+
+  describe('confirmPasswordReset', () => {
+    const mockVerify = vi.fn();
+    const mockDelete = vi.fn().mockResolvedValue(undefined);
+
+    it('token 无效时抛错', async () => {
+      mockVerify.mockResolvedValue({ valid: false, error: '无效的重置链接' });
+
+      await expect(
+        authService.confirmPasswordReset(mockPrisma, 'bad-token', 'newpass', mockVerify, mockDelete),
+      ).rejects.toThrow('无效的重置链接');
+    });
+
+    it('token 过期时抛错', async () => {
+      mockVerify.mockResolvedValue({ valid: false, error: '重置链接已过期' });
+
+      await expect(
+        authService.confirmPasswordReset(mockPrisma, 'old-token', 'newpass', mockVerify, mockDelete),
+      ).rejects.toThrow('重置链接已过期');
+    });
+
+    it('成功时更新密码并删除 token', async () => {
+      mockVerify.mockResolvedValue({ valid: true, email: 'test@example.com' });
+      mockPrisma.user.update.mockResolvedValue({});
+
+      const result = await authService.confirmPasswordReset(
+        mockPrisma, 'valid-token', 'newpass123', mockVerify, mockDelete,
+      );
+
+      expect(result).toEqual({ success: true });
+      expect(mockPrisma.user.update).toHaveBeenCalledWith({
+        where: { email: 'test@example.com' },
+        data: { passwordHash: 'hashed-password' },
+      });
+      expect(mockDelete).toHaveBeenCalledWith('valid-token');
+    });
+  });
+
+  describe('changePassword', () => {
+    it('用户不存在时抛 NOT_FOUND', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue(null);
+
+      await expect(
+        authService.changePassword(mockPrisma, 'user-1', 'old', 'new'),
+      ).rejects.toThrow('用户不存在');
+    });
+
+    it('OAuth 用户（passwordHash 为 null）抛错', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({ id: 'user-1', passwordHash: null });
+
+      await expect(
+        authService.changePassword(mockPrisma, 'user-1', 'old', 'new'),
+      ).rejects.toThrow('通过 Google 登录');
+    });
+
+    it('旧密码错误时抛 UNAUTHORIZED', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({ id: 'user-1', passwordHash: 'hash' });
+      vi.mocked(bcrypt.compare).mockResolvedValue(false as never);
+
+      await expect(
+        authService.changePassword(mockPrisma, 'user-1', 'wrong', 'new'),
+      ).rejects.toThrow('当前密码错误');
+    });
+
+    it('成功时更新密码', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({ id: 'user-1', passwordHash: 'old-hash' });
+      vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
+      mockPrisma.user.update.mockResolvedValue({});
+
+      const result = await authService.changePassword(mockPrisma, 'user-1', 'correct', 'newpass');
+
+      expect(result).toEqual({ success: true });
+      expect(mockPrisma.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: { passwordHash: 'hashed-password' },
       });
     });
   });

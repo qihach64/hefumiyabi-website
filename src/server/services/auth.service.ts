@@ -48,4 +48,83 @@ export const authService = {
       name: user.name,
     };
   },
+
+  // 申请密码重置（用户不存在也返回成功，防枚举攻击）
+  async requestPasswordReset(
+    prisma: PrismaClient,
+    email: string,
+    generateResetToken: (email: string) => Promise<string>,
+    sendResetEmail: (email: string, token: string) => Promise<unknown>,
+  ) {
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) return { success: true }; // 防枚举：不泄露用户是否存在
+
+    try {
+      const token = await generateResetToken(email);
+      await sendResetEmail(email, token);
+    } catch {
+      // 邮件发送失败不影响响应（避免信息泄露）
+    }
+
+    return { success: true };
+  },
+
+  // 确认密码重置
+  async confirmPasswordReset(
+    prisma: PrismaClient,
+    token: string,
+    newPassword: string,
+    verifyResetToken: (token: string) => Promise<{ valid: boolean; email?: string; error?: string }>,
+    deleteUsedToken: (token: string) => Promise<void>,
+  ) {
+    const result = await verifyResetToken(token);
+    if (!result.valid || !result.email) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: result.error || '无效的重置链接',
+      });
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+
+    await prisma.user.update({
+      where: { email: result.email },
+      data: { passwordHash },
+    });
+
+    await deleteUsedToken(token);
+
+    return { success: true };
+  },
+
+  // 修改密码（已登录用户）
+  async changePassword(
+    prisma: PrismaClient,
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new TRPCError({ code: 'NOT_FOUND', message: '用户不存在' });
+    }
+
+    // OAuth 用户没有密码
+    if (!user.passwordHash) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: '您的账户通过 Google 登录，不支持密码修改',
+      });
+    }
+
+    const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!isValid) {
+      throw new TRPCError({ code: 'UNAUTHORIZED', message: '当前密码错误' });
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await prisma.user.update({ where: { id: userId }, data: { passwordHash } });
+
+    return { success: true };
+  },
 };

@@ -116,6 +116,109 @@ export async function sendVerificationEmail(email: string, token: string) {
   }
 }
 
+// 发送密码重置邮件
+export async function sendPasswordResetEmail(email: string, token: string) {
+  const resetUrl = `${process.env.NEXTAUTH_URL}/reset-password?token=${token}`;
+
+  const mailOptions = {
+    from: process.env.SMTP_FROM,
+    to: email,
+    subject: "重置密码 - 江戸和装工房雅",
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body {
+              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+              line-height: 1.6;
+              color: #333;
+              max-width: 600px;
+              margin: 0 auto;
+              padding: 20px;
+            }
+            .container {
+              background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
+              border-radius: 20px;
+              padding: 40px;
+              text-align: center;
+            }
+            .logo {
+              font-size: 32px;
+              font-weight: bold;
+              color: #be123c;
+              margin-bottom: 20px;
+            }
+            h1 {
+              color: #be123c;
+              margin-bottom: 20px;
+            }
+            .button {
+              display: inline-block;
+              background: linear-gradient(135deg, #be123c 0%, #db2777 100%);
+              color: white;
+              padding: 16px 32px;
+              border-radius: 12px;
+              text-decoration: none;
+              font-weight: bold;
+              margin: 30px 0;
+              box-shadow: 0 4px 15px rgba(190, 18, 60, 0.3);
+            }
+            .footer {
+              margin-top: 30px;
+              font-size: 12px;
+              color: #666;
+            }
+            .code {
+              background: white;
+              padding: 15px;
+              border-radius: 8px;
+              font-family: monospace;
+              font-size: 14px;
+              color: #666;
+              margin: 20px 0;
+              word-break: break-all;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="logo">🌸 江戸和装工房雅</div>
+            <h1>重置您的密码</h1>
+            <p>我们收到了您的密码重置请求。请点击下方按钮设置新密码：</p>
+
+            <a href="${resetUrl}" class="button">重置密码</a>
+
+            <p style="margin-top: 30px;">或复制以下链接到浏览器：</p>
+            <div class="code">${resetUrl}</div>
+
+            <div class="footer">
+              <p>此重置链接将在 1 小时后失效</p>
+              <p>如果您没有请求重置密码，请忽略此邮件，您的账户仍然安全</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `,
+    text: `
+      请访问以下链接重置您的密码：
+      ${resetUrl}
+
+      此重置链接将在 1 小时后失效。
+      如果您没有请求重置密码，请忽略此邮件。
+    `,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    return { success: true };
+  } catch (error) {
+    console.error("Password reset email error:", error);
+    return { success: false, error };
+  }
+}
+
 // 发送预约确认邮件
 export async function sendBookingConfirmationEmail(
   email: string,
