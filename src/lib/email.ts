@@ -219,6 +219,72 @@ export async function sendPasswordResetEmail(email: string, token: string) {
   }
 }
 
+// 发送支付成功邮件
+export async function sendPaymentSuccessEmail(
+  email: string,
+  name: string,
+  booking: { id: string; totalAmount: number; visitDate: Date; visitTime: string },
+) {
+  const visitDate = new Date(booking.visitDate).toLocaleDateString("zh-CN", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+  const amount = `¥${(booking.totalAmount / 100).toLocaleString()}`;
+
+  const mailOptions = {
+    from: process.env.SMTP_FROM,
+    to: email,
+    subject: "支付成功 - 江戸和装工房雅",
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+            .container { background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%); border-radius: 20px; padding: 40px; text-align: center; }
+            .logo { font-size: 32px; font-weight: bold; color: #be123c; margin-bottom: 20px; }
+            h1 { color: #16a34a; margin-bottom: 20px; }
+            .amount { font-size: 28px; font-weight: bold; color: #be123c; margin: 20px 0; }
+            .info { background: white; border-radius: 12px; padding: 20px; margin: 20px 0; text-align: left; }
+            .info-row { padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+            .info-row:last-child { border-bottom: none; }
+            .footer { margin-top: 30px; font-size: 12px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="logo">🌸 江戸和装工房雅</div>
+            <h1>✅ 支付成功</h1>
+            <p>尊敬的 ${name}，您的在线支付已成功完成！</p>
+            <div class="amount">${amount}</div>
+            <div class="info">
+              <div class="info-row"><strong>预约编号：</strong>${booking.id.slice(0, 8)}</div>
+              <div class="info-row"><strong>到店日期：</strong>${visitDate} ${booking.visitTime}</div>
+              <div class="info-row"><strong>支付方式：</strong>在线支付 (Stripe)</div>
+            </div>
+            <p>请在预约时间前15分钟到店，祝您体验愉快！</p>
+            <div class="footer">
+              <p>如有任何问题，请联系我们</p>
+              <p>江戸和装工房雅团队</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `,
+    text: `尊敬的 ${name}，您的在线支付已成功完成！\n\n支付金额：${amount}\n预约编号：${booking.id.slice(0, 8)}\n到店日期：${visitDate} ${booking.visitTime}\n\n请在预约时间前15分钟到店。\n\n江戸和装工房雅团队`,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    return { success: true };
+  } catch (error) {
+    console.error("Payment success email error:", error);
+    return { success: false, error };
+  }
+}
+
 // 发送预约确认邮件
 export async function sendBookingConfirmationEmail(
   email: string,

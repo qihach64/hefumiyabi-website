@@ -6,6 +6,7 @@ import { bookingRouter } from './booking';
 import { favoriteRouter } from './favorite';
 import { merchantRouter } from './merchant';
 import { tagRouter } from './tag';
+import { paymentRouter } from './payment';
 
 export const appRouter = router({
   health: healthRouter,
@@ -15,6 +16,7 @@ export const appRouter = router({
   favorite: favoriteRouter,
   merchant: merchantRouter,
   tag: tagRouter,
+  payment: paymentRouter,
 });
 
 export type AppRouter = typeof appRouter;
