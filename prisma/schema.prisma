@@ -311,6 +311,7 @@ model Booking {
   specialRequests String?
   visitDate       DateTime
   visitTime       String
+  viewToken       String?       @unique // 游客查询预约状态的凭证
   items           BookingItem[]
   user            User?         @relation(fields: [userId], references: [id])
   merchant        Merchant?     @relation(fields: [merchantId], references: [id])
@@ -319,6 +320,7 @@ model Booking {
   @@index([merchantId])
   @@index([visitDate])
   @@index([status])
+  @@index([viewToken])
   @@map("bookings")
 }
 

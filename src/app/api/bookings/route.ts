@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { sendBookingConfirmationEmail } from "@/lib/email";
@@ -117,7 +118,7 @@ export async function POST(request: Request) {
     }
 
     // Create bookings for each store
-    const createdBookings: { id: string; storeId: string; storeName?: string }[] = [];
+    const createdBookings: { id: string; storeId: string; storeName?: string; viewToken?: string | null }[] = [];
 
     for (const [storeId, storeItems] of itemsByStore) {
       // Calculate store booking totals
@@ -132,6 +133,9 @@ export async function POST(request: Request) {
       const bookingDate = firstItem.visitDate || data.visitDate!;
       const bookingTime = firstItem.visitTime || data.visitTime!;
 
+      // 生成 viewToken（游客可用于查询预约状态）
+      const viewToken = randomUUID();
+
       // Create booking for this store
       const booking = await prisma.booking.create({
         data: {
@@ -141,6 +145,7 @@ export async function POST(request: Request) {
           guestPhone: data.guestPhone || null,
           visitDate: new Date(bookingDate),
           visitTime: bookingTime,
+          viewToken,
           specialRequests: data.specialRequests || null,
           totalAmount: storeTotal,
           depositAmount: 0, // MVP: no deposit calculation yet
@@ -176,6 +181,7 @@ export async function POST(request: Request) {
         id: booking.id,
         storeId,
         storeName,
+        viewToken: booking.viewToken,
       });
 
       // Send confirmation email for each booking (non-blocking)
@@ -201,6 +207,7 @@ export async function POST(request: Request) {
       // Single store booking - return simple response
       return NextResponse.json({
         id: createdBookings[0].id,
+        viewToken: createdBookings[0].viewToken,
         status: "success",
       });
     } else {

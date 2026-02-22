@@ -206,7 +206,10 @@ function BookingContent() {
       const result = await response.json();
 
       if (result.id) {
-        router.push(`/booking/success?id=${result.id}`);
+        const successUrl = result.viewToken
+          ? `/booking/success?id=${result.id}&viewToken=${result.viewToken}`
+          : `/booking/success?id=${result.id}`;
+        router.push(successUrl);
         setTimeout(() => clearCart(), 100);
       } else {
         router.push("/booking/success");
