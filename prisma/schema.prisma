@@ -308,19 +308,24 @@ model Booking {
   status          BookingStatus @default(PENDING)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
-  specialRequests String?
-  visitDate       DateTime
-  visitTime       String
-  viewToken       String?       @unique // 游客查询预约状态的凭证
-  items           BookingItem[]
-  user            User?         @relation(fields: [userId], references: [id])
-  merchant        Merchant?     @relation(fields: [merchantId], references: [id])
+  specialRequests  String?
+  visitDate        DateTime
+  visitTime        String
+  viewToken        String?       @unique // 游客查询预约状态的凭证
+  stripeSessionId  String?   @map("stripe_session_id")
+  paidAt           DateTime? @map("paid_at")
+  refundedAt       DateTime? @map("refunded_at")
+  refundAmount     Int       @default(0) @map("refund_amount")
+  items            BookingItem[]
+  user             User?         @relation(fields: [userId], references: [id])
+  merchant         Merchant?     @relation(fields: [merchantId], references: [id])
 
   @@index([userId])
   @@index([merchantId])
   @@index([visitDate])
   @@index([status])
   @@index([viewToken])
+  @@index([stripeSessionId])
   @@map("bookings")
 }
 

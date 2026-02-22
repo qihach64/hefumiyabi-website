@@ -206,10 +206,13 @@ function BookingContent() {
       const result = await response.json();
 
       if (result.id) {
-        const successUrl = result.viewToken
-          ? `/booking/success?id=${result.id}&viewToken=${result.viewToken}`
-          : `/booking/success?id=${result.id}`;
-        router.push(successUrl);
+        // 跳转到支付页面选择支付方式
+        const viewTokenParam = result.viewToken ? `&viewToken=${result.viewToken}` : '';
+        router.push(`/booking/pay?bookingId=${result.id}${viewTokenParam}`);
+        setTimeout(() => clearCart(), 100);
+      } else if (result.ids && result.ids.length > 0) {
+        // 多店铺拆分：跳转第一个预约的支付页
+        router.push(`/booking/pay?bookingId=${result.ids[0]}`);
         setTimeout(() => clearCart(), 100);
       } else {
         router.push("/booking/success");
