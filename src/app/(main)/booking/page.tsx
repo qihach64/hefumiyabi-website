@@ -207,7 +207,8 @@ function BookingContent() {
 
       if (result.id) {
         // 跳转到支付页面选择支付方式
-        router.push(`/booking/pay?bookingId=${result.id}`);
+        const viewTokenParam = result.viewToken ? `&viewToken=${result.viewToken}` : '';
+        router.push(`/booking/pay?bookingId=${result.id}${viewTokenParam}`);
         setTimeout(() => clearCart(), 100);
       } else if (result.ids && result.ids.length > 0) {
         // 多店铺拆分：跳转第一个预约的支付页

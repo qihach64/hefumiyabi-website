@@ -34,6 +34,7 @@ interface BookingData {
   visitTime: string;
   guestEmail: string | null;
   userEmail: string | null;
+  viewToken: string | null;
   items: BookingItem[];
 }
 
@@ -219,14 +220,14 @@ export default function BookingSuccessClient({ booking, paymentMethod }: Props) 
 
         {/* 游客注册提示 */}
         {!booking.userId && (
-          <div className="bg-sakura-50 border border-sakura-200 rounded-xl p-6 mb-6">
-            <h3 className="text-[15px] font-semibold text-sakura-900 mb-2">注册账户享受更多优惠</h3>
-            <p className="text-[14px] text-sakura-800 mb-4">
+          <div className="bg-shu-50 border border-shu-200 rounded-xl p-6 mb-6">
+            <h3 className="text-[15px] font-semibold text-shu-900 mb-2">注册账户享受更多优惠</h3>
+            <p className="text-[14px] text-shu-800 mb-4">
               注册后可以查看预约历史、获得会员折扣、优先预约特别活动
             </p>
             <Link
               href="/register"
-              className="inline-flex items-center gap-2 bg-sakura-600 hover:bg-sakura-700 text-white font-medium py-2 px-6 rounded-lg transition-colors text-[14px]"
+              className="inline-flex items-center gap-2 bg-shu-500 text-white font-semibold py-2 px-6 rounded-lg hover:bg-shu-600 transition shadow-md hover:shadow-lg text-[14px]"
             >
               <User className="w-4 h-4" />
               立即注册
@@ -236,14 +237,21 @@ export default function BookingSuccessClient({ booking, paymentMethod }: Props) 
 
         {/* 操作按钮 */}
         <div className="flex flex-col sm:flex-row gap-4">
-          {booking.userId && (
+          {booking.userId ? (
             <Link
               href="/profile#bookings"
-              className="flex-1 text-center bg-sakura-600 hover:bg-sakura-700 text-white font-medium py-3 px-6 rounded-lg transition-colors"
+              className="flex-1 text-center bg-shu-500 text-white font-semibold py-3 px-6 rounded-lg hover:bg-shu-600 transition shadow-md hover:shadow-lg"
             >
               查看我的预约
             </Link>
-          )}
+          ) : booking.viewToken ? (
+            <Link
+              href={`/booking/status?token=${booking.viewToken}`}
+              className="flex-1 text-center bg-shu-500 text-white font-semibold py-3 px-6 rounded-lg hover:bg-shu-600 transition shadow-md hover:shadow-lg"
+            >
+              查看预约状态
+            </Link>
+          ) : null}
           <Link
             href="/"
             className="flex-1 text-center border border-gray-300 text-gray-700 font-medium py-3 px-6 rounded-lg hover:bg-gray-50 transition-colors"

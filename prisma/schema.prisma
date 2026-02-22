@@ -311,6 +311,7 @@ model Booking {
   specialRequests  String?
   visitDate        DateTime
   visitTime        String
+  viewToken        String?       @unique // 游客查询预约状态的凭证
   stripeSessionId  String?   @map("stripe_session_id")
   paidAt           DateTime? @map("paid_at")
   refundedAt       DateTime? @map("refunded_at")
@@ -323,6 +324,7 @@ model Booking {
   @@index([merchantId])
   @@index([visitDate])
   @@index([status])
+  @@index([viewToken])
   @@index([stripeSessionId])
   @@map("bookings")
 }

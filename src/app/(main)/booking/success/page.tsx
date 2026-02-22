@@ -68,6 +68,7 @@ async function BookingSuccessContent({ searchParams }: Props) {
     visitTime: booking.visitTime,
     guestEmail: booking.guestEmail,
     userEmail: booking.user?.email || null,
+    viewToken: booking.viewToken ?? null,
     items: booking.items.map((item) => ({
       id: item.id,
       planName: item.plan?.name || '和服租赁',

@@ -178,10 +178,13 @@ export default function InstantBookingModal({
         throw new Error(data.error || "预订失败，请稍后重试");
       }
 
-      const { id: bookingId } = await response.json();
+      const { id: bookingId, viewToken } = await response.json();
 
       // Redirect to success page
-      router.push(`/booking/success?id=${bookingId}`);
+      const successUrl = viewToken
+        ? `/booking/success?id=${bookingId}&viewToken=${viewToken}`
+        : `/booking/success?id=${bookingId}`;
+      router.push(successUrl);
     } catch (err) {
       setError(err instanceof Error ? err.message : "预订失败，请稍后重试");
     } finally {
